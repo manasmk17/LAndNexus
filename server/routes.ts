@@ -636,6 +636,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get professional profile by user ID (used by several components)
+  app.get("/api/professional-profiles/by-user", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      const profile = await storage.getProfessionalProfileByUserId(user.id);
+      if (!profile) {
+        // Instead of 404, return null to handle case of newly registered users without profiles yet
+        return res.json(null);
+      }
+      
+      res.json(profile);
+    } catch (err) {
+      console.error("Error fetching professional profile by user ID:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Expertise Routes
   app.get("/api/expertise", async (req, res) => {
     const expertiseList = await storage.getAllExpertise();
@@ -820,6 +838,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(profile);
     } catch (err) {
       console.error("Error fetching company profile:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Get company profile by user ID (used by dashboard)
+  app.get("/api/company-profiles/by-user", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      const profile = await storage.getCompanyProfileByUserId(user.id);
+      if (!profile) {
+        // Instead of 404, return null to handle case of newly registered users without profiles yet
+        return res.json(null);
+      }
+      
+      res.json(profile);
+    } catch (err) {
+      console.error("Error fetching company profile by user ID:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });

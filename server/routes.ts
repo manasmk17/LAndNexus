@@ -1139,6 +1139,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/resources/:id", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.user as any;
+      
+      // Get resource to verify it exists
+      const resource = await storage.getResource(id);
+      if (!resource) {
+        return res.status(404).json({ message: "Resource not found" });
+      }
+      
+      // Check if the user is the author of the resource
+      if (resource.authorId !== user.id) {
+        return res.status(403).json({ message: "You can only update your own resources" });
+      }
+      
+      // Only allow updating certain fields
+      const allowedFields = ["title", "description", "content", "type", "imageUrl"];
+      const updateData: Partial<Resource> = {};
+      
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          updateData[field as keyof Partial<Resource>] = req.body[field];
+        }
+      }
+      
+      // Update the resource
+      const updatedResource = await storage.updateResource(id, updateData);
+      res.json(updatedResource);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Forum Routes
   app.post("/api/forum-posts", isAuthenticated, async (req, res) => {
     try {

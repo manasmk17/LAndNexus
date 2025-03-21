@@ -15,11 +15,9 @@ export default function FeaturedJobs() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center mb-10">
           <h2 className="text-3xl font-heading font-bold">Latest L&D Opportunities</h2>
-          <Link href="/jobs">
-            <a className="text-primary hover:text-primary-dark flex items-center">
-              View all jobs
-              <ArrowRight className="ml-1 h-4 w-4" />
-            </a>
+          <Link href="/jobs" className="text-primary hover:text-primary-dark flex items-center">
+            View all jobs
+            <ArrowRight className="ml-1 h-4 w-4" />
           </Link>
         </div>
         

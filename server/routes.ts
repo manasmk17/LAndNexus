@@ -103,6 +103,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .json({ message: "Error creating payment intent: " + error.message });
     }
   });
+  
+  // Stripe subscription route
+  app.post('/api/create-subscription', isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { paymentMethodId, priceId, tier } = req.body;
+      
+      if (!paymentMethodId || !priceId || !tier) {
+        return res.status(400).json({ 
+          message: "Missing required parameters: paymentMethodId, priceId, or tier" 
+        });
+      }
+
+      let customerId = user.stripeCustomerId;
+      
+      // If user doesn't have a Stripe customer ID, create one
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: `${user.firstName} ${user.lastName}`,
+          payment_method: paymentMethodId,
+          invoice_settings: {
+            default_payment_method: paymentMethodId,
+          },
+        });
+        
+        customerId = customer.id;
+        // Update user with Stripe customer ID
+        await storage.updateStripeCustomerId(user.id, customerId);
+      } else {
+        // If they do have a customer ID, update their payment method
+        await stripe.paymentMethods.attach(paymentMethodId, {
+          customer: customerId,
+        });
+        
+        await stripe.customers.update(customerId, {
+          invoice_settings: {
+            default_payment_method: paymentMethodId,
+          },
+        });
+      }
+      
+      // Create the subscription
+      const subscription = await stripe.subscriptions.create({
+        customer: customerId,
+        items: [
+          {
+            price: priceId,
+          },
+        ],
+        payment_behavior: 'default_incomplete',
+        expand: ['latest_invoice.payment_intent'],
+      });
+      
+      // Update user with subscription data
+      await storage.updateStripeSubscriptionId(user.id, subscription.id);
+      await storage.updateUserSubscription(user.id, tier, subscription.status);
+      
+      const invoice = subscription.latest_invoice as any;
+      const paymentIntent = invoice.payment_intent as any;
+      
+      res.json({
+        subscriptionId: subscription.id,
+        clientSecret: paymentIntent.client_secret,
+      });
+    } catch (error: any) {
+      res.status(500).json({ 
+        message: "Error creating subscription: " + error.message 
+      });
+    }
+  });
+  
+  // Stripe webhook handler
+  app.post('/api/webhook', async (req, res) => {
+    const signature = req.headers['stripe-signature'] as string;
+    let event;
+
+    try {
+      // Verify webhook signature
+      // (In production, you should store your webhook secret in an environment variable)
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+      
+      if (!webhookSecret) {
+        return res.status(400).json({ message: "Webhook secret is not configured" });
+      }
+      
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        signature,
+        webhookSecret
+      );
+    } catch (err: any) {
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Handle the event
+    switch (event.type) {
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted':
+        const subscription = event.data.object as any;
+        // Find the user by their Stripe customer ID
+        const user = await storage.getUserByStripeCustomerId(subscription.customer);
+        
+        if (user) {
+          // Update the subscription status
+          await storage.updateUserSubscription(
+            user.id, 
+            user.subscriptionTier || null, 
+            subscription.status
+          );
+        }
+        break;
+      default:
+        // Unexpected event type
+        console.log(`Unhandled event type ${event.type}`);
+    }
+
+    // Return a 200 response to acknowledge receipt of the event
+    res.json({ received: true });
+  });
 
   // Consultation payment endpoint
   app.post("/api/consultations/:id/pay", isAuthenticated, async (req, res) => {

@@ -14,7 +14,8 @@ import {
   insertForumPostSchema,
   insertForumCommentSchema,
   insertMessageSchema,
-  insertConsultationSchema
+  insertConsultationSchema,
+  type Resource
 } from "@shared/schema";
 import { generateCareerRecommendations } from "./career-recommendations";
 import { 
@@ -1073,10 +1074,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.user as any;
 
-      const resourceData = insertResourceSchema.parse({
-        ...req.body,
-        authorId: user.id
-      });
+      // Ensure the content field is populated (use link if content is empty)
+      let resourceData = { ...req.body, authorId: user.id };
+      
+      // If content is empty but link is provided, use link for content
+      if (!resourceData.content && resourceData.link) {
+        resourceData.content = resourceData.link;
+      }
+
+      // Validate with schema
+      resourceData = insertResourceSchema.parse(resourceData);
 
       const resource = await storage.createResource(resourceData);
       res.status(201).json(resource);
@@ -1084,6 +1091,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid input", errors: err.errors });
       }
+      console.error("Error creating resource:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });

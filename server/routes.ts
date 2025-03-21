@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
 import { 
   insertUserSchema, 
   insertProfessionalProfileSchema,
@@ -418,27 +419,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Debug endpoint to create a test admin user (only for development)
   app.post("/api/create-admin", async (req, res) => {
     try {
-      // Check if admin user already exists and delete it if it does
-      const existingAdmin = await storage.getUserByUsername("admin");
-      
-      if (existingAdmin) {
-        try {
-          // In a real app, we'd use a proper delete method. This is just for development.
-          // Delete the admin user manually from the database
-          await db.delete(users).where(eq(users.username, "admin"));
-          console.log("Deleted existing admin user");
-        } catch (error) {
-          console.error("Error deleting admin user:", error);
-        }
-      }
-      
-      // Create admin user with plain text password so Passport can hash it
+      // Create a new admin user with a unique username and email
+      const timestamp = Date.now();
       const adminUser = await storage.createUser({
-        username: "adminuser",
-        password: "admin123", // plain text password - will be hashed by Passport
-        userType: "admin",
+        username: "admin" + timestamp, // Ensure unique username
+        password: "admin123", // plain text password
+        userType: "admin", 
         isAdmin: true,
-        email: "admin@example.com",
+        email: `admin_${timestamp}@example.com`, // Ensure unique email
         firstName: "Admin",
         lastName: "User"
       });

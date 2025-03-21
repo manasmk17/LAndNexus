@@ -496,6 +496,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Internal server error" });
     }
   });
+  
+  // Get professional profile for the current user
+  app.get("/api/professionals/me", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      if (user.userType !== "professional") {
+        return res.status(403).json({ message: "Only professionals can access this endpoint" });
+      }
+      
+      const profile = await storage.getProfessionalProfileByUserId(user.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Professional profile not found for current user" });
+      }
+      
+      res.json(profile);
+    } catch (err) {
+      console.error("Error fetching professional profile:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   // Expertise Routes
   app.get("/api/expertise", async (req, res) => {
@@ -662,6 +683,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     res.json(profile);
+  });
+  
+  // Get company profile for the current user
+  app.get("/api/companies/me", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      if (user.userType !== "company") {
+        return res.status(403).json({ message: "Only companies can access this endpoint" });
+      }
+      
+      const profile = await storage.getCompanyProfileByUserId(user.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Company profile not found for current user" });
+      }
+      
+      res.json(profile);
+    } catch (err) {
+      console.error("Error fetching company profile:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   // Career Recommendations

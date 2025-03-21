@@ -104,6 +104,11 @@ export default function Navbar() {
                         Profile Settings
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Link href="/manage-resources">
+                        Manage Resources
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} className="text-red-500 cursor-pointer">
                       <LogOut className="mr-2 h-4 w-4" />
@@ -188,6 +193,11 @@ export default function Navbar() {
                   <li>
                     <Link href="/edit-profile" className="block px-2 py-1 text-neutral-dark hover:text-primary">
                       Profile Settings
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/manage-resources" className="block px-2 py-1 text-neutral-dark hover:text-primary">
+                      Manage Resources
                     </Link>
                   </li>
                   <li>

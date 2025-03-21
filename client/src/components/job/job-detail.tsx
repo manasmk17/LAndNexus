@@ -542,6 +542,10 @@ export default function JobDetail({ jobId }: JobDetailProps) {
             </Card>
           ) : null}
           
+          {(user?.userType === "company" || user?.isAdmin) && (
+            <JobMatches jobId={jobId} companyId={company?.id} />
+          )}
+          
           <Card>
             <CardHeader>
               <CardTitle>Similar Jobs</CardTitle>

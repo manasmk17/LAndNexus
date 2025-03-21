@@ -38,7 +38,7 @@ export default function JobMatches({ jobId, companyId }: JobMatchesProps) {
     error 
   } = useQuery<MatchResult[]>({
     queryKey: [`/api/jobs/${jobId}/matches`],
-    enabled: !!shouldFetch,
+    enabled: !!shouldFetch && !!jobId,
   });
 
   const handleMessageProfessional = (professionalId: number) => {

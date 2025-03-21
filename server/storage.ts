@@ -296,6 +296,7 @@ export class MemStorage implements IStorage {
     const user: User = { 
       ...insertUser, 
       id, 
+      isAdmin: insertUser.isAdmin || false,
       createdAt: new Date(),
       stripeCustomerId: null,
       stripeSubscriptionId: null,
@@ -762,7 +763,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(user: InsertUser): Promise<User> {
-    const [createdUser] = await db.insert(users).values(user).returning();
+    // Make sure isAdmin is set to false if not provided
+    const userData = { 
+      ...user,
+      isAdmin: user.isAdmin || false
+    };
+    const [createdUser] = await db.insert(users).values(userData).returning();
     return createdUser;
   }
 

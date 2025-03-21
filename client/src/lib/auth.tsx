@@ -4,7 +4,8 @@ import { apiRequest } from "./queryClient";
 export interface AuthUser {
   id: number;
   username: string;
-  userType: "professional" | "company";
+  userType: "professional" | "company" | "admin";
+  isAdmin: boolean;
   firstName?: string;
   lastName?: string;
   email?: string;

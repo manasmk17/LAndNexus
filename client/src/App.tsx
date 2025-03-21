@@ -46,6 +46,7 @@ function Router() {
       <Route path="/messages" component={Messages} />
       <Route path="/checkout" component={Checkout} />
       <Route path="/subscribe" component={Subscribe} />
+      <Route path="/subscribe/:tierId" component={Subscribe} />
       <Route path="/subscription-success" component={SubscriptionSuccess} />
       <Route component={NotFound} />
     </Switch>

@@ -82,6 +82,9 @@ export default function Navbar() {
                 <Link href="/messages" className="text-neutral-dark hover:text-primary">
                   Messages
                 </Link>
+                <Link href="/subscribe" className="text-neutral-dark hover:text-primary">
+                  Subscribe
+                </Link>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
@@ -175,6 +178,11 @@ export default function Navbar() {
                   <li>
                     <Link href="/messages" className="block px-2 py-1 text-neutral-dark hover:text-primary">
                       Messages
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/subscribe" className="block px-2 py-1 text-neutral-dark hover:text-primary">
+                      Subscribe
                     </Link>
                   </li>
                   <li>

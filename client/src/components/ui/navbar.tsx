@@ -40,27 +40,27 @@ export default function Navbar() {
             <nav className="hidden md:block ml-10">
               <ul className="flex space-x-8">
                 <li>
-                  <Link href="/" className={`text-neutral-dark hover:text-primary font-medium ${location === "/" ? "text-primary" : ""}`}>
+                  <Link href="/" className={`text-gray-800 hover:text-primary font-medium ${location === "/" ? "text-primary" : ""}`}>
                     Home
                   </Link>
                 </li>
                 <li>
-                  <Link href="/professionals" className={`text-neutral-dark hover:text-primary font-medium ${location === "/professionals" ? "text-primary" : ""}`}>
+                  <Link href="/professionals" className={`text-gray-800 hover:text-primary font-medium ${location === "/professionals" ? "text-primary" : ""}`}>
                     Find Professionals
                   </Link>
                 </li>
                 <li>
-                  <Link href="/jobs" className={`text-neutral-dark hover:text-primary font-medium ${location === "/jobs" ? "text-primary" : ""}`}>
+                  <Link href="/jobs" className={`text-gray-800 hover:text-primary font-medium ${location === "/jobs" ? "text-primary" : ""}`}>
                     Job Board
                   </Link>
                 </li>
                 <li>
-                  <Link href="/resources" className={`text-neutral-dark hover:text-primary font-medium ${location === "/resources" ? "text-primary" : ""}`}>
+                  <Link href="/resources" className={`text-gray-800 hover:text-primary font-medium ${location === "/resources" ? "text-primary" : ""}`}>
                     Resources
                   </Link>
                 </li>
                 <li>
-                  <Link href="/forum" className={`text-neutral-dark hover:text-primary font-medium ${location === "/forum" ? "text-primary" : ""}`}>
+                  <Link href="/forum" className={`text-gray-800 hover:text-primary font-medium ${location === "/forum" ? "text-primary" : ""}`}>
                     Community
                   </Link>
                 </li>
@@ -71,22 +71,22 @@ export default function Navbar() {
             {user ? (
               <div className="hidden md:flex items-center space-x-4">
                 {user.isAdmin ? (
-                  <Link href="/admin-dashboard" className="text-neutral-dark hover:text-primary">
+                  <Link href="/admin-dashboard" className="text-gray-800 hover:text-primary">
                     Admin Dashboard
                   </Link>
                 ) : user.userType === "professional" ? (
-                  <Link href="/professional-dashboard" className="text-neutral-dark hover:text-primary">
+                  <Link href="/professional-dashboard" className="text-gray-800 hover:text-primary">
                     Dashboard
                   </Link>
                 ) : (
-                  <Link href="/company-dashboard" className="text-neutral-dark hover:text-primary">
+                  <Link href="/company-dashboard" className="text-gray-800 hover:text-primary">
                     Dashboard
                   </Link>
                 )}
-                <Link href="/messages" className="text-neutral-dark hover:text-primary">
+                <Link href="/messages" className="text-gray-800 hover:text-primary">
                   Messages
                 </Link>
-                <Link href="/subscribe" className="text-neutral-dark hover:text-primary">
+                <Link href="/subscribe" className="text-gray-800 hover:text-primary">
                   Subscribe
                 </Link>
                 <DropdownMenu>
@@ -123,7 +123,7 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="hidden md:flex items-center space-x-4">
-                <Link href="/login" className="text-neutral-dark hover:text-primary">
+                <Link href="/login" className="text-gray-800 hover:text-primary">
                   Sign In
                 </Link>
                 <Link href="/register" className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-dark">
@@ -132,7 +132,7 @@ export default function Navbar() {
               </div>
             )}
             <button 
-              className="md:hidden text-neutral-dark" 
+              className="md:hidden text-gray-800" 
               onClick={toggleMobileMenu}
               aria-label="Toggle mobile menu"
             >
@@ -146,27 +146,27 @@ export default function Navbar() {
           <div className="md:hidden pb-4">
             <ul className="space-y-2">
               <li>
-                <Link href="/" className={`block px-2 py-1 text-neutral-dark hover:text-primary ${location === "/" ? "text-primary" : ""}`}>
+                <Link href="/" className={`block px-2 py-1 text-gray-800 hover:text-primary ${location === "/" ? "text-primary" : ""}`}>
                   Home
                 </Link>
               </li>
               <li>
-                <Link href="/professionals" className={`block px-2 py-1 text-neutral-dark hover:text-primary ${location === "/professionals" ? "text-primary" : ""}`}>
+                <Link href="/professionals" className={`block px-2 py-1 text-gray-800 hover:text-primary ${location === "/professionals" ? "text-primary" : ""}`}>
                   Find Professionals
                 </Link>
               </li>
               <li>
-                <Link href="/jobs" className={`block px-2 py-1 text-neutral-dark hover:text-primary ${location === "/jobs" ? "text-primary" : ""}`}>
+                <Link href="/jobs" className={`block px-2 py-1 text-gray-800 hover:text-primary ${location === "/jobs" ? "text-primary" : ""}`}>
                   Job Board
                 </Link>
               </li>
               <li>
-                <Link href="/resources" className={`block px-2 py-1 text-neutral-dark hover:text-primary ${location === "/resources" ? "text-primary" : ""}`}>
+                <Link href="/resources" className={`block px-2 py-1 text-gray-800 hover:text-primary ${location === "/resources" ? "text-primary" : ""}`}>
                   Resources
                 </Link>
               </li>
               <li>
-                <Link href="/forum" className={`block px-2 py-1 text-neutral-dark hover:text-primary ${location === "/forum" ? "text-primary" : ""}`}>
+                <Link href="/forum" className={`block px-2 py-1 text-gray-800 hover:text-primary ${location === "/forum" ? "text-primary" : ""}`}>
                   Community
                 </Link>
               </li>
@@ -175,36 +175,36 @@ export default function Navbar() {
                 <>
                   <li>
                     {user.isAdmin ? (
-                      <Link href="/admin-dashboard" className="block px-2 py-1 text-neutral-dark hover:text-primary">
+                      <Link href="/admin-dashboard" className="block px-2 py-1 text-gray-800 hover:text-primary">
                         Admin Dashboard
                       </Link>
                     ) : user.userType === "professional" ? (
-                      <Link href="/professional-dashboard" className="block px-2 py-1 text-neutral-dark hover:text-primary">
+                      <Link href="/professional-dashboard" className="block px-2 py-1 text-gray-800 hover:text-primary">
                         Dashboard
                       </Link>
                     ) : (
-                      <Link href="/company-dashboard" className="block px-2 py-1 text-neutral-dark hover:text-primary">
+                      <Link href="/company-dashboard" className="block px-2 py-1 text-gray-800 hover:text-primary">
                         Dashboard
                       </Link>
                     )}
                   </li>
                   <li>
-                    <Link href="/messages" className="block px-2 py-1 text-neutral-dark hover:text-primary">
+                    <Link href="/messages" className="block px-2 py-1 text-gray-800 hover:text-primary">
                       Messages
                     </Link>
                   </li>
                   <li>
-                    <Link href="/subscribe" className="block px-2 py-1 text-neutral-dark hover:text-primary">
+                    <Link href="/subscribe" className="block px-2 py-1 text-gray-800 hover:text-primary">
                       Subscribe
                     </Link>
                   </li>
                   <li>
-                    <Link href="/edit-profile" className="block px-2 py-1 text-neutral-dark hover:text-primary">
+                    <Link href="/edit-profile" className="block px-2 py-1 text-gray-800 hover:text-primary">
                       Profile Settings
                     </Link>
                   </li>
                   <li>
-                    <Link href="/manage-resources" className="block px-2 py-1 text-neutral-dark hover:text-primary">
+                    <Link href="/manage-resources" className="block px-2 py-1 text-gray-800 hover:text-primary">
                       Manage Resources
                     </Link>
                   </li>
@@ -220,7 +220,7 @@ export default function Navbar() {
               ) : (
                 <>
                   <li>
-                    <Link href="/login" className="block px-2 py-1 text-neutral-dark hover:text-primary">
+                    <Link href="/login" className="block px-2 py-1 text-gray-800 hover:text-primary">
                       Sign In
                     </Link>
                   </li>

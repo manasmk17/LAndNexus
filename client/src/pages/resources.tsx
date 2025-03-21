@@ -187,17 +187,101 @@ export default function Resources() {
         </TabsList>
       </Tabs>
       
-      {/* Search section */}
+      {/* Search and filter section */}
       <div className="bg-white p-4 rounded-lg shadow-sm mb-8">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <Input
-            placeholder="Search resources by title or description..."
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="space-y-4">
+          {/* Search input */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <Input
+              placeholder="Search resources by title or description..."
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          {/* Category filter */}
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="w-full md:w-1/2">
+              <Select 
+                value={selectedCategory?.toString() || ""} 
+                onValueChange={(value) => setSelectedCategory(value ? parseInt(value) : null)}
+              >
+                <SelectTrigger className="w-full">
+                  <div className="flex items-center">
+                    <Tag className="w-4 h-4 mr-2" />
+                    <SelectValue placeholder="Filter by category" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Categories</SelectItem>
+                  {categories?.map((category) => (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Reset filters button */}
+            {(searchTerm || resourceType !== "all" || selectedCategory) && (
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setSearchTerm("");
+                  setResourceType("all");
+                  setSelectedCategory(null);
+                }}
+              >
+                Clear Filters
+              </Button>
+            )}
+          </div>
         </div>
+      </div>
+      
+      {/* Active filters display */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {selectedCategory && categories && (
+          <Badge variant="outline" className="flex items-center gap-1 px-3 py-1">
+            <Tag className="h-3 w-3" />
+            <span>{categories.find(cat => cat.id === selectedCategory)?.name}</span>
+            <button 
+              className="ml-1 text-gray-500 hover:text-gray-700" 
+              onClick={() => setSelectedCategory(null)}
+            >
+              ×
+            </button>
+          </Badge>
+        )}
+        
+        {resourceType && resourceType !== "all" && (
+          <Badge variant="outline" className="flex items-center gap-1 px-3 py-1">
+            {getResourceTypeIcon(resourceType)}
+            <span>{resourceType.charAt(0).toUpperCase() + resourceType.slice(1)}</span>
+            <button 
+              className="ml-1 text-gray-500 hover:text-gray-700" 
+              onClick={() => setResourceType("all")}
+            >
+              ×
+            </button>
+          </Badge>
+        )}
+        
+        {searchTerm && (
+          <Badge variant="outline" className="flex items-center gap-1 px-3 py-1">
+            <Search className="h-3 w-3" />
+            <span>"{searchTerm}"</span>
+            <button 
+              className="ml-1 text-gray-500 hover:text-gray-700" 
+              onClick={() => setSearchTerm("")}
+            >
+              ×
+            </button>
+          </Badge>
+        )}
       </div>
       
       {/* Results count */}

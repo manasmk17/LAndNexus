@@ -62,11 +62,12 @@ export default function Professionals() {
       (professional.ratePerHour >= rateRange[0] && professional.ratePerHour <= rateRange[1]);
 
     // Filter by experience level
+    const yearsExp = professional.yearsExperience || 0;
     const matchesExperience = !experienceLevel || 
-      (experienceLevel === "junior" && (professional.yearsExperience <= 2)) ||
-      (experienceLevel === "mid-level" && (professional.yearsExperience > 2 && professional.yearsExperience <= 5)) ||
-      (experienceLevel === "senior" && (professional.yearsExperience > 5 && professional.yearsExperience <= 8)) ||
-      (experienceLevel === "expert" && (professional.yearsExperience > 8)) ||
+      (experienceLevel === "junior" && (yearsExp <= 2)) ||
+      (experienceLevel === "mid-level" && (yearsExp > 2 && yearsExp <= 5)) ||
+      (experienceLevel === "senior" && (yearsExp > 5 && yearsExp <= 8)) ||
+      (experienceLevel === "expert" && (yearsExp > 8)) ||
       professional.title.toLowerCase().includes(experienceLevel.toLowerCase());
 
     // For expertise, we just show all if "all" is selected
@@ -94,10 +95,10 @@ export default function Professionals() {
   
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 bg-gradient-to-r from-primary/10 to-blue-100 p-6 rounded-lg">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Find L&D Professionals</h1>
-          <p className="text-gray-500">Connect with expert trainers and consultants</p>
+          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-blue-600 inline-block text-transparent bg-clip-text">Find L&D Professionals</h1>
+          <p className="text-gray-600">Connect with expert trainers and consultants</p>
         </div>
       </div>
       

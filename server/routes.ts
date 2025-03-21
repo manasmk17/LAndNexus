@@ -718,6 +718,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/professional-profiles/:id", async (req, res) => {
     const id = parseInt(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid profile ID" });
+    }
+    
     const profile = await storage.getProfessionalProfile(id);
 
     if (!profile) {
@@ -814,6 +819,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/professional-profiles/:id/expertise", async (req, res) => {
     const id = parseInt(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid profile ID" });
+    }
+    
     const expertise = await storage.getProfessionalExpertise(id);
     res.json(expertise);
   });
@@ -851,6 +861,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Certification Routes
   app.get("/api/professional-profiles/:id/certifications", async (req, res) => {
     const id = parseInt(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid profile ID" });
+    }
+    
     const certifications = await storage.getProfessionalCertifications(id);
     res.json(certifications);
   });
@@ -951,6 +966,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/company-profiles/:id", async (req, res) => {
     const id = parseInt(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid profile ID" });
+    }
+    
     const profile = await storage.getCompanyProfile(id);
 
     if (!profile) {
@@ -1162,6 +1182,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/job-postings/:id", async (req, res) => {
     const id = parseInt(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid job posting ID" });
+    }
+    
     const job = await storage.getJobPosting(id);
 
     if (!job) {

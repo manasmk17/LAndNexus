@@ -20,9 +20,9 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
   });
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group border border-blue-200">
-      <div className="flex items-center p-6 border-b border-blue-100 bg-gradient-to-r from-white via-blue-50 to-white">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-600 via-blue-500 to-sky-400 flex items-center justify-center overflow-hidden shadow-lg transform group-hover:scale-105 transition-transform duration-300 border-2 border-blue-300">
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group border border-emerald-200">
+      <div className="flex items-center p-6 border-b border-emerald-100 bg-gradient-to-r from-white via-emerald-50 to-white">
+        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-400 flex items-center justify-center overflow-hidden shadow-lg transform group-hover:scale-105 transition-transform duration-300 border-2 border-emerald-300">
           {professional.profileImageUrl ? (
             <img 
               src={professional.profileImageUrl} 
@@ -34,8 +34,8 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
           )}
         </div>
         <div className="ml-5">
-          <h3 className="text-xl font-heading font-bold text-blue-800 group-hover:text-blue-700 transition-colors">{professional.title}</h3>
-          <p className="text-blue-700/90 flex items-center mt-1">📍 {professional.location}</p>
+          <h3 className="text-xl font-heading font-bold text-emerald-800 group-hover:text-emerald-700 transition-colors">{professional.title}</h3>
+          <p className="text-emerald-700/90 flex items-center mt-1">📍 {professional.location}</p>
           <div className="flex mt-1">
             {[...Array(5)].map((_, i) => (
               <Star 
@@ -44,16 +44,16 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
                 fill={i < Math.floor((professional.rating || 0) / 20) ? 'currentColor' : 'none'}
               />
             ))}
-            <span className="ml-1 text-sm text-blue-700 font-medium">
+            <span className="ml-1 text-sm text-emerald-700 font-medium">
               {((professional.rating || 0) / 20).toFixed(1)} ({professional.reviewCount || 0} reviews)
             </span>
           </div>
         </div>
       </div>
-      <div className="p-6 bg-gradient-to-b from-blue-50 to-slate-50">
+      <div className="p-6 bg-gradient-to-b from-emerald-50 to-slate-50">
         <div className="mb-4">
           <h4 className="text-sm font-bold uppercase mb-2 flex items-center">
-            <span className="bg-gradient-to-r from-blue-600 to-sky-500 text-white px-3 py-1 rounded-lg shadow-sm">Expertise</span>
+            <span className="bg-gradient-to-r from-emerald-600 to-teal-500 text-white px-3 py-1 rounded-lg shadow-sm">Expertise</span>
           </h4>
           {isLoadingExpertise ? (
             <div className="flex flex-wrap gap-2">
@@ -64,7 +64,7 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
           ) : expertise && expertise.length > 0 ? (
             <div className="flex flex-wrap gap-2 mt-3">
               {expertise.map(area => (
-                <Badge key={area.id} variant="secondary" className="bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors font-medium border border-blue-200">
+                <Badge key={area.id} variant="secondary" className="bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors font-medium border border-emerald-200">
                   {area.name}
                 </Badge>
               ))}
@@ -75,7 +75,7 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
         </div>
         <div className="mb-5">
           <h4 className="text-sm font-bold uppercase mb-2 flex items-center">
-            <span className="bg-gradient-to-r from-indigo-600 to-blue-500 text-white px-3 py-1 rounded-lg shadow-sm">Certifications</span>
+            <span className="bg-gradient-to-r from-teal-600 to-emerald-500 text-white px-3 py-1 rounded-lg shadow-sm">Certifications</span>
           </h4>
           {isLoadingCertifications ? (
             <div className="space-y-2">

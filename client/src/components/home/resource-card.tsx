@@ -1,15 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
-import { FileText, BookOpen, Video, HeadphonesIcon, User } from "lucide-react";
-import type { Resource, User } from "@shared/schema";
+import { FileText, BookOpen, Video, HeadphonesIcon, User as UserIcon } from "lucide-react";
+import type { Resource, User as UserType } from "@shared/schema";
 
 interface ResourceCardProps {
   resource: Resource;
 }
 
 export default function ResourceCard({ resource }: ResourceCardProps) {
-  const { data: author } = useQuery<User>({
+  const { data: author } = useQuery<UserType>({
     queryKey: [`/api/me/${resource.authorId}`],
   });
 
@@ -93,7 +93,7 @@ export default function ResourceCard({ resource }: ResourceCardProps) {
                   {author.firstName.charAt(0)}{author.lastName.charAt(0)}
                 </span>
               ) : (
-                <User className="w-4 h-4 text-gray-400" />
+                <UserIcon className="w-4 h-4 text-gray-400" />
               )}
             </div>
             <span className="ml-2 text-sm text-gray-500">

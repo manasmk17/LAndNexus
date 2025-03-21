@@ -20,6 +20,7 @@ import Resources from "@/pages/resources";
 import ResourceDetail from "@/pages/resource-detail";
 import Forum from "@/pages/forum";
 import Messages from "@/pages/messages";
+import Checkout from "@/pages/checkout";
 import NotFound from "@/pages/not-found";
 import { AuthProvider } from "@/lib/auth";
 
@@ -41,6 +42,7 @@ function Router() {
       <Route path="/resource/:id" component={ResourceDetail} />
       <Route path="/forum" component={Forum} />
       <Route path="/messages" component={Messages} />
+      <Route path="/checkout" component={Checkout} />
       <Route component={NotFound} />
     </Switch>
   );

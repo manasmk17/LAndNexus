@@ -20,8 +20,18 @@ import { z } from "zod";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
+import Stripe from "stripe";
+import memorystore from "memorystore";
 
-const MemoryStore = require('memorystore')(session);
+// Initialize Stripe with secret key
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+}
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: "2023-10-16" as const,
+});
+
+const MemoryStore = memorystore(session);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Configure session
@@ -77,6 +87,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     res.status(401).json({ message: "Unauthorized" });
   };
+  
+  // Stripe payment route for one-time payments
+  app.post("/api/create-payment-intent", isAuthenticated, async (req, res) => {
+    try {
+      const { amount } = req.body;
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency: "usd",
+      });
+      res.json({ clientSecret: paymentIntent.client_secret });
+    } catch (error: any) {
+      res
+        .status(500)
+        .json({ message: "Error creating payment intent: " + error.message });
+    }
+  });
+
+  // Consultation payment endpoint
+  app.post("/api/consultations/:id/pay", isAuthenticated, async (req, res) => {
+    try {
+      const consultationId = parseInt(req.params.id);
+      const { paymentMethodId, amount } = req.body;
+      
+      // Get consultation to validate
+      const consultation = await storage.getConsultation(consultationId);
+      if (!consultation) {
+        return res.status(404).json({ message: "Consultation not found" });
+      }
+      
+      // Create payment
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100),
+        currency: "usd",
+        payment_method: paymentMethodId,
+        confirm: true,
+      });
+      
+      // Update consultation status
+      await storage.updateConsultationStatus(consultationId, "paid");
+      
+      res.json({ success: true, paymentIntent });
+    } catch (error: any) {
+      res.status(500).json({ message: "Payment failed: " + error.message });
+    }
+  });
 
   // Auth Routes
   app.post("/api/register", async (req, res) => {

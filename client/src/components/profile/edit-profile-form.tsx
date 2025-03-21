@@ -50,7 +50,9 @@ const professionalProfileFormSchema = insertProfessionalProfileSchema.extend({
 });
 
 // Extended company profile schema for form validation
-const companyProfileFormSchema = insertCompanyProfileSchema.extend({});
+const companyProfileFormSchema = insertCompanyProfileSchema.extend({
+  profileImage: z.instanceof(File).optional()
+});
 
 export default function EditProfileForm() {
   const [, setLocation] = useLocation();
@@ -288,20 +290,49 @@ export default function EditProfileForm() {
       setIsSubmitting(true);
       
       // Remove additional form fields
-      const { newExpertise, newCertification, ...profileData } = data;
+      const { newExpertise, newCertification, profileImage, ...profileData } = data;
+      
+      // Create FormData for file upload
+      const formData = new FormData();
+      
+      // Add text fields to FormData
+      Object.entries(profileData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          formData.append(key, String(value));
+        }
+      });
+      
+      // Add file if provided
+      if (profileImage instanceof File) {
+        formData.append('profileImage', profileImage);
+      }
       
       let response;
       
       if (professionalProfile) {
-        // Update existing profile
-        response = await apiRequest(
-          "PUT", 
+        // Update existing profile with FormData
+        response = await fetch(
           `/api/professional-profiles/${professionalProfile.id}`, 
-          profileData
+          {
+            method: 'PUT',
+            body: formData,
+            credentials: 'include'
+          }
         );
       } else {
-        // Create new profile
-        response = await apiRequest("POST", "/api/professional-profiles", profileData);
+        // Create new profile with FormData
+        response = await fetch(
+          "/api/professional-profiles", 
+          {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+          }
+        );
+      }
+      
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status} ${response.statusText}`);
       }
       
       const savedProfile = await response.json();
@@ -350,18 +381,50 @@ export default function EditProfileForm() {
     try {
       setIsSubmitting(true);
       
+      // Extract file from form data
+      const { profileImage, ...profileData } = data;
+      
+      // Create FormData for file upload
+      const formData = new FormData();
+      
+      // Add text fields to FormData
+      Object.entries(profileData).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          formData.append(key, String(value));
+        }
+      });
+      
+      // Add file if provided
+      if (profileImage instanceof File) {
+        formData.append('profileImage', profileImage);
+      }
+      
       let response;
       
       if (companyProfile) {
-        // Update existing profile
-        response = await apiRequest(
-          "PUT", 
+        // Update existing profile with FormData
+        response = await fetch(
           `/api/company-profiles/${companyProfile.id}`, 
-          data
+          {
+            method: 'PUT',
+            body: formData,
+            credentials: 'include'
+          }
         );
       } else {
-        // Create new profile
-        response = await apiRequest("POST", "/api/company-profiles", data);
+        // Create new profile with FormData
+        response = await fetch(
+          "/api/company-profiles", 
+          {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+          }
+        );
+      }
+      
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status} ${response.statusText}`);
       }
       
       toast({

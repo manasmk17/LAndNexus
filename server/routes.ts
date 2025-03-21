@@ -1092,29 +1092,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/resources", async (req, res) => {
-    const { query, type } = req.query;
-    
-    // Get all resources first
-    const allResources = await storage.getAllResources();
-    
-    // Filter resources if query or type parameters are provided
-    let filteredResources = allResources;
-    
-    if (query) {
-      const searchTerm = (query as string).toLowerCase();
-      filteredResources = filteredResources.filter(resource => 
-        resource.title.toLowerCase().includes(searchTerm) || 
-        resource.description.toLowerCase().includes(searchTerm)
+    try {
+      const { query, type, categoryId } = req.query;
+      
+      // Use the new search function with all possible filters
+      const filteredResources = await storage.searchResources(
+        query as string | undefined,
+        type as string | undefined,
+        categoryId ? parseInt(categoryId as string) : undefined
       );
+      
+      res.json(filteredResources);
+    } catch (err) {
+      console.error("Error fetching resources:", err);
+      res.status(500).json({ message: "Internal server error" });
     }
-    
-    if (type) {
-      filteredResources = filteredResources.filter(resource => 
-        resource.resourceType.toLowerCase() === (type as string).toLowerCase()
-      );
+  });
+  
+  // Resource Categories endpoints
+  app.get("/api/resource-categories", async (req, res) => {
+    try {
+      const categories = await storage.getAllResourceCategories();
+      res.json(categories);
+    } catch (err) {
+      console.error("Error fetching resource categories:", err);
+      res.status(500).json({ message: "Internal server error" });
     }
-    
-    res.json(filteredResources);
+  });
+  
+  app.get("/api/resource-categories/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const category = await storage.getResourceCategory(id);
+      
+      if (!category) {
+        return res.status(404).json({ message: "Resource category not found" });
+      }
+      
+      res.json(category);
+    } catch (err) {
+      console.error("Error fetching resource category:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.get("/api/resource-categories/:id/resources", async (req, res) => {
+    try {
+      const categoryId = parseInt(req.params.id);
+      const category = await storage.getResourceCategory(categoryId);
+      
+      if (!category) {
+        return res.status(404).json({ message: "Resource category not found" });
+      }
+      
+      const resources = await storage.getResourcesByCategory(categoryId);
+      res.json(resources);
+    } catch (err) {
+      console.error("Error fetching resources by category:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.post("/api/resource-categories", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      // Only allow admins to create categories
+      if (user.userType !== "admin") {
+        return res.status(403).json({ message: "Only administrators can create resource categories" });
+      }
+      
+      const categoryData = insertResourceCategorySchema.parse(req.body);
+      const category = await storage.createResourceCategory(categoryData);
+      
+      res.status(201).json(category);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      console.error("Error creating resource category:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   app.get("/api/resources/featured", async (req, res) => {
@@ -1180,7 +1238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Only allow updating certain fields
-      const allowedFields = ["title", "description", "content", "type", "imageUrl"];
+      const allowedFields = ["title", "description", "content", "resourceType", "imageUrl", "categoryId"];
       const updateData: Partial<Resource> = {};
       
       for (const field of allowedFields) {

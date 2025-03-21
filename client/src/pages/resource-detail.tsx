@@ -21,10 +21,11 @@ import {
   HeadphonesIcon,
   Share2,
   Download,
-  ThumbsUp
+  ThumbsUp,
+  Tag
 } from "lucide-react";
 import { format } from "date-fns";
-import type { Resource, User as UserType } from "@shared/schema";
+import type { Resource, User as UserType, ResourceCategory } from "@shared/schema";
 
 export default function ResourceDetail() {
   // Get the resource ID from URL parameters
@@ -57,6 +58,15 @@ export default function ResourceDetail() {
   } = useQuery<Resource[]>({
     queryKey: [`/api/resources/related/${resource?.resourceType}?exclude=${resourceId}`],
     enabled: !!resource,
+  });
+  
+  // Fetch resource categories
+  const {
+    data: categories,
+    isLoading: isLoadingCategories
+  } = useQuery<ResourceCategory[]>({
+    queryKey: ["/api/resource-categories"],
+    enabled: !!resource?.categoryId,
   });
 
   // Helper to get resource type icon
@@ -150,6 +160,14 @@ export default function ResourceDetail() {
               {getResourceTypeIcon(resource.resourceType)}
               <span className="ml-1">{resource.resourceType.charAt(0).toUpperCase() + resource.resourceType.slice(1)}</span>
             </Badge>
+            
+            {resource.categoryId && categories?.some(cat => cat.id === resource.categoryId) && (
+              <Badge variant="outline" className="flex items-center">
+                <Tag className="mr-1 h-4 w-4" />
+                <span>{categories?.find(cat => cat.id === resource.categoryId)?.name || "Uncategorized"}</span>
+              </Badge>
+            )}
+            
             <Badge variant="outline" className="text-gray-500">
               <Calendar className="mr-1 h-4 w-4" />
               {format(new Date(resource.createdAt), "MMMM d, yyyy")}
@@ -276,6 +294,14 @@ export default function ResourceDetail() {
                       <div className="flex items-center mb-2">
                         {getResourceTypeIcon(relatedResource.resourceType)}
                         <h3 className="ml-2 font-medium line-clamp-1">{relatedResource.title}</h3>
+                      </div>
+                      <div className="flex gap-2 mb-2">
+                        {relatedResource.categoryId && categories?.some(cat => cat.id === relatedResource.categoryId) && (
+                          <Badge variant="outline" className="flex items-center py-0.5">
+                            <Tag className="h-3 w-3 mr-1" />
+                            <span className="text-xs">{categories?.find(cat => cat.id === relatedResource.categoryId)?.name}</span>
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-gray-500 text-sm line-clamp-2">{relatedResource.description}</p>
                     </CardContent>

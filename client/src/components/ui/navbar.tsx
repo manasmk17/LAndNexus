@@ -70,7 +70,11 @@ export default function Navbar() {
           <div className="flex items-center space-x-4">
             {user ? (
               <div className="hidden md:flex items-center space-x-4">
-                {user.userType === "professional" ? (
+                {user.isAdmin ? (
+                  <Link href="/admin-dashboard" className="text-neutral-dark hover:text-primary">
+                    Admin Dashboard
+                  </Link>
+                ) : user.userType === "professional" ? (
                   <Link href="/professional-dashboard" className="text-neutral-dark hover:text-primary">
                     Dashboard
                   </Link>
@@ -170,7 +174,11 @@ export default function Navbar() {
               {user ? (
                 <>
                   <li>
-                    {user.userType === "professional" ? (
+                    {user.isAdmin ? (
+                      <Link href="/admin-dashboard" className="block px-2 py-1 text-neutral-dark hover:text-primary">
+                        Admin Dashboard
+                      </Link>
+                    ) : user.userType === "professional" ? (
                       <Link href="/professional-dashboard" className="block px-2 py-1 text-neutral-dark hover:text-primary">
                         Dashboard
                       </Link>

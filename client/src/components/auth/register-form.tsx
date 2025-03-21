@@ -74,7 +74,7 @@ export default function RegisterForm({ initialUserType }: RegisterFormProps) {
         throw new Error(data.message || "Registration failed");
       }
 
-      await login(values.username, values.password);
+      await login({ username: values.username, password: values.password });
       toast({
         title: "Registration successful!",
         description: "Welcome to L&D Nexus",

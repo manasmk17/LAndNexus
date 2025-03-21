@@ -237,7 +237,16 @@ export class MemStorage implements IStorage {
   
   async createProfessionalProfile(profile: InsertProfessionalProfile): Promise<ProfessionalProfile> {
     const id = this.profProfileId++;
-    const newProfile: ProfessionalProfile = { ...profile, id };
+    const newProfile: ProfessionalProfile = { 
+      ...profile, 
+      id,
+      videoIntroUrl: profile.videoIntroUrl || null,
+      ratePerHour: profile.ratePerHour || null,
+      profileImageUrl: profile.profileImageUrl || null,
+      featured: profile.featured || false,
+      rating: profile.rating || 0,
+      reviewCount: profile.reviewCount || 0
+    };
     this.professionalProfiles.set(id, newProfile);
     return newProfile;
   }
@@ -326,7 +335,12 @@ export class MemStorage implements IStorage {
   
   async createCompanyProfile(profile: InsertCompanyProfile): Promise<CompanyProfile> {
     const id = this.companyProfileId++;
-    const newProfile: CompanyProfile = { ...profile, id };
+    const newProfile: CompanyProfile = { 
+      ...profile, 
+      id,
+      website: profile.website || null,
+      logoUrl: profile.logoUrl || null
+    };
     this.companyProfiles.set(id, newProfile);
     return newProfile;
   }
@@ -365,7 +379,15 @@ export class MemStorage implements IStorage {
     const newJob: JobPosting = { 
       ...job, 
       id, 
-      createdAt: new Date() 
+      createdAt: new Date(),
+      status: job.status || "open",
+      featured: job.featured || false,
+      minCompensation: job.minCompensation || null,
+      maxCompensation: job.maxCompensation || null,
+      duration: job.duration || null,
+      expiresAt: job.expiresAt || null,
+      compensationUnit: job.compensationUnit || null,
+      remote: job.remote || false
     };
     this.jobPostings.set(id, newJob);
     return newJob;
@@ -413,7 +435,8 @@ export class MemStorage implements IStorage {
     const newApplication: JobApplication = { 
       ...application, 
       id, 
-      createdAt: new Date() 
+      createdAt: new Date(),
+      status: application.status || "pending"
     };
     this.jobApplications.set(id, newApplication);
     return newApplication;

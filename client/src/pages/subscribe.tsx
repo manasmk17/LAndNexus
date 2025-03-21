@@ -64,12 +64,14 @@ const SubscriptionForm = ({ selectedTier }: { selectedTier: Tier }) => {
     e.preventDefault();
 
     if (!stripe || !elements) {
+      console.error("Stripe or elements not initialized");
       return;
     }
 
     setLoading(true);
 
     try {
+      console.log("Processing payment for tier:", selectedTier.id);
       // Confirm the payment with Stripe
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
@@ -80,12 +82,14 @@ const SubscriptionForm = ({ selectedTier }: { selectedTier: Tier }) => {
       });
 
       if (error) {
+        console.error("Payment confirmation error:", error);
         toast({
           title: "Payment Failed",
-          description: error.message,
+          description: error.message || "Your payment could not be processed. Please try again.",
           variant: "destructive",
         });
       } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+        console.log("Payment succeeded:", paymentIntent.id);
         // Once payment is successful, update the subscription status
         try {
           const response = await apiRequest("POST", "/api/update-subscription", {
@@ -95,6 +99,7 @@ const SubscriptionForm = ({ selectedTier }: { selectedTier: Tier }) => {
           });
           
           if (response.ok) {
+            console.log("Subscription updated successfully");
             toast({
               title: "Subscription Successful",
               description: `You are now subscribed to the ${selectedTier.name} plan!`,
@@ -102,24 +107,35 @@ const SubscriptionForm = ({ selectedTier }: { selectedTier: Tier }) => {
             // Redirect to success page
             navigate('/subscription-success');
           } else {
+            const errorData = await response.json().catch(() => ({}));
+            console.error("Subscription update failed:", errorData);
             toast({
               title: "Warning",
-              description: "Payment processed but subscription update failed. Please contact support.",
+              description: errorData.message || "Payment processed but subscription update failed. Please contact support.",
               variant: "destructive",
             });
           }
         } catch (err: any) {
+          console.error("Error updating subscription:", err);
           toast({
             title: "Warning",
             description: "Payment processed but subscription update failed. Please contact support.",
             variant: "destructive",
           });
         }
+      } else {
+        console.log("Payment intent status:", paymentIntent?.status);
+        toast({
+          title: "Payment Status",
+          description: `Payment status: ${paymentIntent?.status || 'unknown'}. Please check your payment method.`,
+          variant: "warning",
+        });
       }
     } catch (err: any) {
+      console.error("Payment submission error:", err);
       toast({
         title: "Error",
-        description: err.message || "An unexpected error occurred",
+        description: err.message || "An unexpected error occurred during payment processing",
         variant: "destructive",
       });
     } finally {
@@ -174,17 +190,15 @@ export default function Subscribe() {
     const createIntent = async () => {
       setLoading(true);
       try {
-        // For this demo, we'll use direct Stripe API creation
-        // In a production environment, we would use more secure methods
-        // of handling the payment information
-        
         // Use hardcoded price IDs for demonstration purposes
         // In production, these would come from your Stripe dashboard
         const stripePriceIds = {
-          basic: 'price_1OzPWO2eZvKYlo2CVW2OGvzS', // Example ID, will be replaced by Stripe
-          premium: 'price_1OzPXX2eZvKYlo2CQgKgId4W' // Example ID, will be replaced by Stripe
+          basic: 'price_basic', // Example ID, will be dynamically replaced by Stripe
+          premium: 'price_premium' // Example ID, will be dynamically replaced by Stripe
         };
         
+        // Create payment intent for one-time payment
+        // In a real implementation, we would use proper subscription creation
         const response = await apiRequest("POST", "/api/create-payment-intent", { 
           amount: selectedTier.price,
           tier: selectedTierId
@@ -201,6 +215,7 @@ export default function Subscribe() {
           });
         }
       } catch (error: any) {
+        console.error("Payment initialization error:", error);
         toast({
           title: "Error",
           description: error.message || "An unexpected error occurred",
@@ -212,7 +227,7 @@ export default function Subscribe() {
     };
 
     createIntent();
-  }, [user, selectedTierId, toast]);
+  }, [user, selectedTierId, selectedTier.price, toast]);
 
   if (!user) {
     return (

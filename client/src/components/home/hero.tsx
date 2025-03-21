@@ -31,41 +31,41 @@ export default function Hero() {
             <div className="flex flex-col sm:flex-row gap-4">
               {user ? (
                 user.isAdmin ? (
-                  <Link href="/admin-dashboard">
-                    <Button size="lg" className="font-medium bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-700 border-none shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto">
+                  <Button size="lg" className="font-medium bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-700 border-none shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto" asChild>
+                    <Link href="/admin-dashboard">
                       Admin Dashboard
                       <ArrowRight className="ml-2 h-5 w-5" />
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 ) : user.userType === "professional" ? (
-                  <Link href="/professional-dashboard">
-                    <Button size="lg" className="font-medium bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-700 border-none shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto">
+                  <Button size="lg" className="font-medium bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-700 border-none shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto" asChild>
+                    <Link href="/professional-dashboard">
                       My Dashboard
                       <ArrowRight className="ml-2 h-5 w-5" />
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 ) : (
-                  <Link href="/company-dashboard">
-                    <Button size="lg" className="font-medium bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-700 border-none shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto">
+                  <Button size="lg" className="font-medium bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-700 border-none shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto" asChild>
+                    <Link href="/company-dashboard">
                       My Dashboard
                       <ArrowRight className="ml-2 h-5 w-5" />
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 )
               ) : (
                 <>
-                  <Link href="/register?type=company">
-                    <Button size="lg" className="font-medium bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-700 border-none shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto">
+                  <Button size="lg" className="font-medium bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-700 border-none shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto" asChild>
+                    <Link href="/register?type=company">
                       I'm an Employer
                       <Briefcase className="ml-2 h-5 w-5" />
-                    </Button>
-                  </Link>
-                  <Link href="/register?type=professional">
-                    <Button size="lg" variant="outline" className="font-medium border-2 border-blue-400 text-blue-100 bg-blue-900/20 backdrop-blur-sm hover:bg-blue-800/40 hover:border-blue-300 hover:text-white transition-all duration-300 w-full sm:w-auto">
+                    </Link>
+                  </Button>
+                  <Button size="lg" variant="outline" className="font-medium border-2 border-blue-400 text-blue-100 bg-blue-900/20 backdrop-blur-sm hover:bg-blue-800/40 hover:border-blue-300 hover:text-white transition-all duration-300 w-full sm:w-auto" asChild>
+                    <Link href="/register?type=professional">
                       I'm an L&D Professional
                       <Award className="ml-2 h-5 w-5" />
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 </>
               )}
             </div>

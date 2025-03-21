@@ -89,10 +89,7 @@ export default function CTA() {
               </div>
             </div>
             
-            {/* Bottom badge */}
-            <div className="absolute bottom-5 right-5 md:bottom-8 md:right-8 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-sm text-white font-medium border border-white/10">
-              Trusted by 500+ companies
-            </div>
+            {/* Bottom badge removed */}
           </div>
         </div>
       </div>

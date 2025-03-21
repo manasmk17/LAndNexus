@@ -223,7 +223,7 @@ export default function EditProfileForm() {
     
     const certData = professionalForm.getValues("newCertification");
     
-    if (!certData.name || !certData.issuer || !certData.year) {
+    if (!certData || !certData.name || !certData.issuer || !certData.year) {
       toast({
         title: "Incomplete information",
         description: "Please fill in all certification fields",
@@ -521,6 +521,7 @@ export default function EditProfileForm() {
                         type="number" 
                         placeholder="e.g. 150" 
                         {...field}
+                        value={field.value || ''}
                         onChange={(e) => field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value))}
                       />
                     </FormControl>
@@ -755,7 +756,11 @@ export default function EditProfileForm() {
                   <FormItem className="mt-6">
                     <FormLabel>Video Introduction URL</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://example.com/your-video.mp4" {...field} />
+                      <Input 
+                        placeholder="https://example.com/your-video.mp4" 
+                        {...field} 
+                        value={field.value || ''} 
+                      />
                     </FormControl>
                     <FormDescription>
                       Link to a short video introducing yourself and your services
@@ -891,7 +896,11 @@ export default function EditProfileForm() {
                   <FormItem className="mt-4">
                     <FormLabel>Website</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://example.com" {...field} />
+                      <Input 
+                        placeholder="https://example.com" 
+                        {...field} 
+                        value={field.value || ''}
+                      />
                     </FormControl>
                     <FormDescription>
                       Your company's website URL
@@ -908,7 +917,11 @@ export default function EditProfileForm() {
                   <FormItem className="mt-4">
                     <FormLabel>Logo URL</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://example.com/logo.png" {...field} />
+                      <Input 
+                        placeholder="https://example.com/logo.png" 
+                        {...field}
+                        value={field.value || ''} 
+                      />
                     </FormControl>
                     <FormDescription>
                       URL to your company logo (optional if uploading image below)
@@ -942,11 +955,11 @@ export default function EditProfileForm() {
                             Selected: {(value as File).name}
                           </p>
                         )}
-                        {companyProfile?.profileImagePath && (
+                        {companyProfile?.logoImagePath && (
                           <div className="mt-2">
                             <p className="text-sm text-muted-foreground mb-2">Current logo:</p>
                             <img 
-                              src={`/${companyProfile.profileImagePath}`} 
+                              src={`/${companyProfile.logoImagePath}`} 
                               alt="Company logo" 
                               className="w-32 h-32 object-contain rounded-md border"
                             />

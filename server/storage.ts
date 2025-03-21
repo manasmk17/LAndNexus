@@ -1380,6 +1380,40 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedConsultation;
   }
+
+  // Skill Recommendation operations
+  async getSkillRecommendation(id: number): Promise<SkillRecommendation | undefined> {
+    const [recommendation] = await db
+      .select()
+      .from(skillRecommendations)
+      .where(eq(skillRecommendations.id, id));
+    return recommendation;
+  }
+
+  async getSkillRecommendationsByProfessional(professionalId: number): Promise<SkillRecommendation | undefined> {
+    const [recommendation] = await db
+      .select()
+      .from(skillRecommendations)
+      .where(eq(skillRecommendations.professionalId, professionalId));
+    return recommendation;
+  }
+
+  async createSkillRecommendation(recommendation: InsertSkillRecommendation): Promise<SkillRecommendation> {
+    const [createdRecommendation] = await db
+      .insert(skillRecommendations)
+      .values(recommendation)
+      .returning();
+    return createdRecommendation;
+  }
+
+  async updateSkillRecommendation(id: number, recommendation: Partial<InsertSkillRecommendation>): Promise<SkillRecommendation | undefined> {
+    const [updatedRecommendation] = await db
+      .update(skillRecommendations)
+      .set({ ...recommendation, updatedAt: new Date() })
+      .where(eq(skillRecommendations.id, id))
+      .returning();
+    return updatedRecommendation;
+  }
 }
 
 // Use DatabaseStorage instead of MemStorage

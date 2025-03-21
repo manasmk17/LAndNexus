@@ -129,7 +129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   const isAdmin = (req: Request, res: Response, next: Function) => {
-    if (req.isAuthenticated() && req.user && req.user.isAdmin) {
+    if (req.isAuthenticated() && req.user && (req.user as User).isAdmin) {
       return next();
     }
     res.status(403).json({ message: "Forbidden: Admin access required" });

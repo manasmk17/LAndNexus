@@ -55,8 +55,28 @@ import {
   ResourceCategory,
   ForumPost,
   Expertise,
+  InsertResourceCategory,
+  InsertExpertise,
 } from "@shared/schema";
-import { ChevronDown, ChevronUp, Edit, Eye, Trash, Plus, Save, Check, X, AlertTriangle } from "lucide-react";
+import { 
+  ChevronDown, 
+  ChevronUp, 
+  Edit, 
+  Eye, 
+  Trash, 
+  Plus, 
+  Save, 
+  Check, 
+  X, 
+  AlertTriangle,
+  Filter,
+  ChevronsUpDown,
+  Download,
+  Upload,
+  Settings,
+  MoreHorizontal,
+} from "lucide-react";
+import { queryClient } from "@/lib/queryClient";
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -496,7 +516,7 @@ function ProfessionalsTab() {
                   <TableCell>{profile.rating} ({profile.reviewCount} reviews)</TableCell>
                   <TableCell>
                     <Switch 
-                      checked={profile.featured} 
+                      checked={!!profile.featured} 
                       onCheckedChange={() => toggleFeatured(profile)}
                       aria-label="Toggle featured status"
                     />
@@ -908,7 +928,7 @@ function JobsTab() {
                     </TableCell>
                     <TableCell>
                       <Switch 
-                        checked={job.featured || false} 
+                        checked={!!job.featured} 
                         onCheckedChange={() => toggleFeatured(job)}
                         aria-label="Toggle featured status"
                       />
@@ -962,7 +982,9 @@ function ResourcesTab() {
   const [categoryFilter, setCategoryFilter] = useState<number | "all">("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
+  const [showResourceDialog, setShowResourceDialog] = useState(false);
   const [newCategory, setNewCategory] = useState({ name: "", description: "" });
+  const [editingResource, setEditingResource] = useState<Resource | null>(null);
 
   const { data: resources = [], isLoading: resourcesLoading } = useQuery({
     queryKey: ['/api/admin/resources'],
@@ -1000,8 +1022,9 @@ function ResourcesTab() {
 
   const toggleFeatured = async (resource: Resource) => {
     try {
+      const featured = resource.featured === true ? false : true; // Convert possible null/undefined to boolean
       await apiRequest("PUT", `/api/admin/resources/${resource.id}/featured`, {
-        featured: !resource.featured
+        featured: featured
       });
       queryClient.invalidateQueries({ queryKey: ['/api/admin/resources'] });
       toast({
@@ -1188,7 +1211,7 @@ function ResourcesTab() {
                       <TableCell>{resource.authorId}</TableCell>
                       <TableCell>
                         <Switch 
-                          checked={resource.featured || false} 
+                          checked={!!resource.featured} 
                           onCheckedChange={() => toggleFeatured(resource)}
                           aria-label="Toggle featured status"
                         />

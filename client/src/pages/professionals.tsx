@@ -32,6 +32,8 @@ export default function Professionals() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedExpertise, setSelectedExpertise] = useState<string>("");
   const [sortOrder, setSortOrder] = useState<string>("rating");
+  const [experienceLevel, setExperienceLevel] = useState<string>("");
+  const [rateRange, setRateRange] = useState<[number, number]>([0, 500]);
   
   // Fetch all professionals
   const { 
@@ -49,16 +51,23 @@ export default function Professionals() {
   
   // Filter and sort professionals
   const filteredProfessionals = professionals?.filter(professional => {
-    // Search by title or location
+    // Search by title, bio or location
     const matchesSearch = !searchTerm || 
       professional.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       professional.bio.toLowerCase().includes(searchTerm.toLowerCase()) ||
       professional.location.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // For exact expertise matching, we'd need to fetch expertise for each professional
-    // In a real app, this would be done on the server side
-    // For now, we'll skip expertise filtering if no expertise is selected
-    return matchesSearch;
+    // Filter by rate range
+    const matchesRate = !professional.ratePerHour || 
+      (professional.ratePerHour >= rateRange[0] && professional.ratePerHour <= rateRange[1]);
+
+    // Filter by experience level
+    const matchesExperience = !experienceLevel || professional.title.toLowerCase().includes(experienceLevel.toLowerCase());
+
+    // Filter by expertise (simplified version)
+    const matchesExpertise = !selectedExpertise || professional.bio.toLowerCase().includes(selectedExpertise.toLowerCase());
+    
+    return matchesSearch && matchesRate && matchesExperience && matchesExpertise;
   }) || [];
   
   // Sort professionals
@@ -97,6 +106,24 @@ export default function Professionals() {
             />
           </div>
           
+          {/* Experience Level filter */}
+          <div>
+            <Select value={experienceLevel} onValueChange={setExperienceLevel}>
+              <SelectTrigger className="w-full">
+                <div className="flex items-center">
+                  <Filter className="mr-2 h-4 w-4" />
+                  <SelectValue placeholder="Experience level" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="junior">Junior</SelectItem>
+                <SelectItem value="mid-level">Mid Level</SelectItem>
+                <SelectItem value="senior">Senior</SelectItem>
+                <SelectItem value="expert">Expert</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Expertise filter */}
           <div>
             <Select value={selectedExpertise} onValueChange={setSelectedExpertise}>
@@ -135,11 +162,48 @@ export default function Professionals() {
         </div>
       </div>
       
-      {/* Results count and info */}
+      {/* Rate range filter */}
+      <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
+        <label className="block text-sm font-medium mb-2">Hourly Rate Range ($)</label>
+        <div className="flex items-center gap-4">
+          <input
+            type="range"
+            min="0"
+            max="500"
+            value={rateRange[0]}
+            onChange={(e) => setRateRange([parseInt(e.target.value), rateRange[1]])}
+            className="w-full"
+          />
+          <input
+            type="range"
+            min="0"
+            max="500"
+            value={rateRange[1]}
+            onChange={(e) => setRateRange([rateRange[0], parseInt(e.target.value)])}
+            className="w-full"
+          />
+          <span className="text-sm text-gray-500">
+            ${rateRange[0]} - ${rateRange[1]}
+          </span>
+        </div>
+      </div>
+
+      {/* Results count and filters */}
       <div className="flex justify-between items-center mb-6">
         <p className="text-gray-500">
           {sortedProfessionals.length} professionals found
         </p>
+        <Button
+          variant="outline"
+          onClick={() => {
+            setSearchTerm("");
+            setSelectedExpertise("");
+            setExperienceLevel("");
+            setRateRange([0, 500]);
+          }}
+        >
+          Clear All Filters
+        </Button>
       </div>
       
       {/* Professionals listing */}

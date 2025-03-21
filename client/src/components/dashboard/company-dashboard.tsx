@@ -136,77 +136,86 @@ export default function CompanyDashboard() {
         </div>
       </div>
       
-      {/* Company Profile Summary Card */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Building className="mr-2 h-5 w-5" /> Company Overview
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoadingProfile ? (
-            <div className="space-y-4">
-              <div className="flex items-center">
-                <Skeleton className="h-16 w-16 rounded" />
-                <div className="ml-4 space-y-2">
-                  <Skeleton className="h-5 w-48" />
-                  <Skeleton className="h-4 w-32" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+        {/* Company Profile Summary Card */}
+        <div className="md:col-span-2">
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Building className="mr-2 h-5 w-5" /> Company Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoadingProfile ? (
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <Skeleton className="h-16 w-16 rounded" />
+                    <div className="ml-4 space-y-2">
+                      <Skeleton className="h-5 w-48" />
+                      <Skeleton className="h-4 w-32" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
                 </div>
-              </div>
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-            </div>
-          ) : profile ? (
-            <div>
-              <div className="flex items-center mb-4">
-                <div className="w-16 h-16 rounded bg-primary bg-opacity-10 flex items-center justify-center">
-                  {profile.logoUrl ? (
-                    <img
-                      src={profile.logoUrl}
-                      alt={profile.companyName}
-                      className="w-full h-full object-contain rounded"
-                    />
-                  ) : (
-                    <Building className="h-8 w-8 text-primary" />
+              ) : profile ? (
+                <div>
+                  <div className="flex items-center mb-4">
+                    <div className="w-16 h-16 rounded bg-primary bg-opacity-10 flex items-center justify-center">
+                      {profile.logoUrl ? (
+                        <img
+                          src={profile.logoUrl}
+                          alt={profile.companyName}
+                          className="w-full h-full object-contain rounded"
+                        />
+                      ) : (
+                        <Building className="h-8 w-8 text-primary" />
+                      )}
+                    </div>
+                    <div className="ml-4">
+                      <h3 className="font-medium text-lg">{profile.companyName}</h3>
+                      <div className="flex flex-wrap gap-x-4 text-gray-500 text-sm">
+                        <span className="flex items-center">
+                          <Globe className="h-3 w-3 mr-1" /> {profile.industry}
+                        </span>
+                        <span className="flex items-center">
+                          <Users className="h-3 w-3 mr-1" /> {profile.size}
+                        </span>
+                        <span className="flex items-center">
+                          <MapPin className="h-3 w-3 mr-1" /> {profile.location}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <p className="text-gray-700 mb-4">
+                    {profile.description.substring(0, 200)}
+                    {profile.description.length > 200 ? '...' : ''}
+                  </p>
+                  
+                  {profile.website && (
+                    <Button variant="link" className="p-0 h-auto" asChild>
+                      <a href={profile.website} target="_blank" rel="noopener noreferrer">Visit Website</a>
+                    </Button>
                   )}
                 </div>
-                <div className="ml-4">
-                  <h3 className="font-medium text-lg">{profile.companyName}</h3>
-                  <div className="flex flex-wrap gap-x-4 text-gray-500 text-sm">
-                    <span className="flex items-center">
-                      <Globe className="h-3 w-3 mr-1" /> {profile.industry}
-                    </span>
-                    <span className="flex items-center">
-                      <Users className="h-3 w-3 mr-1" /> {profile.size}
-                    </span>
-                    <span className="flex items-center">
-                      <MapPin className="h-3 w-3 mr-1" /> {profile.location}
-                    </span>
-                  </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-gray-500 mb-4">You haven't created a company profile yet.</p>
+                  <Link href="/edit-profile">
+                    <Button>Complete Your Company Profile</Button>
+                  </Link>
                 </div>
-              </div>
-              
-              <p className="text-gray-700 mb-4">
-                {profile.description.substring(0, 200)}
-                {profile.description.length > 200 ? '...' : ''}
-              </p>
-              
-              {profile.website && (
-                <Button variant="link" className="p-0 h-auto" asChild>
-                  <a href={profile.website} target="_blank" rel="noopener noreferrer">Visit Website</a>
-                </Button>
               )}
-            </div>
-          ) : (
-            <div className="text-center py-4">
-              <p className="text-gray-500 mb-4">You haven't created a company profile yet.</p>
-              <Link href="/edit-profile">
-                <Button>Complete Your Company Profile</Button>
-              </Link>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Subscription Status Card */}
+        <div>
+          <SubscriptionStatus />
+        </div>
+      </div>
       
       <Tabs defaultValue="jobs">
         <TabsList className="grid grid-cols-3 w-full mb-8">

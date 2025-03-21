@@ -49,14 +49,42 @@ export default function SubscriptionSuccess() {
       }
     };
 
+    // Check if payment was successful from URL params
     const urlParams = new URLSearchParams(window.location.search);
     const paymentStatus = urlParams.get('payment_status');
+    const paymentIntent = urlParams.get('payment_intent');
+    const redirectStatus = urlParams.get('redirect_status');
     
-    if (paymentStatus === 'success') {
+    const handleSuccessfulPayment = async () => {
+      // If we have a successful payment or redirect status, update subscription
+      if ((paymentStatus === 'success' || redirectStatus === 'succeeded') && paymentIntent) {
+        try {
+          console.log('Payment success detected, updating subscription status');
+          // Default to basic tier if we don't have specific info
+          const tier = localStorage.getItem('selectedSubscriptionTier') || 'basic';
+          
+          // Update subscription based on the successful payment
+          const updateResponse = await apiRequest('POST', '/api/update-subscription', {
+            tierId: tier,
+            status: 'active',
+            paymentIntentId: paymentIntent
+          });
+          
+          if (updateResponse.ok) {
+            console.log('Subscription updated successfully');
+          } else {
+            console.error('Failed to update subscription');
+          }
+        } catch (error) {
+          console.error('Error updating subscription:', error);
+        }
+      }
+      
+      // Fetch subscription status regardless of payment param
       fetchSubscriptionStatus();
-    } else {
-      setLoading(false);
-    }
+    };
+    
+    handleSuccessfulPayment();
   }, [user, navigate, toast]);
 
   const handleDashboardClick = () => {

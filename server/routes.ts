@@ -94,16 +94,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(401).json({ message: "Unauthorized" });
   };
 
-  // Stripe payment route for one-time payments
+  // Stripe payment route for one-time payments (used for subscription initialization)
   app.post("/api/create-payment-intent", isAuthenticated, async (req, res) => {
     try {
-      const { amount } = req.body;
+      const user = req.user as any;
+      const { amount, tier } = req.body;
+      
+      if (!amount) {
+        return res.status(400).json({ message: "Amount is required" });
+      }
+      
+      // Create a proper description based on the tier
+      const description = tier 
+        ? `L&D Nexus ${tier.charAt(0).toUpperCase() + tier.slice(1)} Subscription` 
+        : 'L&D Nexus Subscription';
+      
+      // Create a payment intent with metadata to track the purpose
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100), // Convert to cents
         currency: "usd",
+        description: description,
+        metadata: {
+          userId: user.id.toString(),
+          tier: tier || 'basic',
+          type: 'subscription'
+        }
       });
-      res.json({ clientSecret: paymentIntent.client_secret });
+      
+      console.log(`Created payment intent ${paymentIntent.id} for user ${user.id}, tier: ${tier}`);
+      
+      res.json({ 
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id 
+      });
     } catch (error: any) {
+      console.error("Error creating payment intent:", error);
       res
         .status(500)
         .json({ message: "Error creating payment intent: " + error.message });

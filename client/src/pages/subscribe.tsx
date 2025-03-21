@@ -128,7 +128,7 @@ const SubscriptionForm = ({ selectedTier }: { selectedTier: Tier }) => {
         toast({
           title: "Payment Status",
           description: `Payment status: ${paymentIntent?.status || 'unknown'}. Please check your payment method.`,
-          variant: "warning",
+          variant: "destructive",
         });
       }
     } catch (err: any) {
@@ -171,6 +171,8 @@ export default function Subscribe() {
   useEffect(() => {
     if (match && params.tierId && (params.tierId === 'basic' || params.tierId === 'premium')) {
       setSelectedTierId(params.tierId);
+      // Store selected tier for cross-page reference
+      localStorage.setItem('selectedSubscriptionTier', params.tierId);
     }
   }, [match, params]);
 
@@ -251,7 +253,10 @@ export default function Subscribe() {
       <div className="mb-8">
         <RadioGroup 
           value={selectedTierId} 
-          onValueChange={setSelectedTierId}
+          onValueChange={(value) => {
+            setSelectedTierId(value);
+            localStorage.setItem('selectedSubscriptionTier', value);
+          }}
           className="grid grid-cols-1 md:grid-cols-2 gap-6"
         >
           {tiers.map((tier) => (

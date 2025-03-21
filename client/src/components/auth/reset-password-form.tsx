@@ -67,7 +67,7 @@ export default function ResetPasswordForm() {
       }
       
       try {
-        const response = await apiRequest("POST", "/api/auth/verify-reset-token", { token });
+        const response = await apiRequest("GET", `/api/auth/verify-reset-token?token=${token}`);
         const result = await response.json();
         
         if (result.valid) {

@@ -41,6 +41,7 @@ import {
 
 // Extended professional profile schema for form validation
 const professionalProfileFormSchema = insertProfessionalProfileSchema.extend({
+  profileImage: z.instanceof(File).optional(),
   newExpertise: z.string().optional(),
   newCertification: z.object({
     name: z.string().optional(),
@@ -910,7 +911,51 @@ export default function EditProfileForm() {
                       <Input placeholder="https://example.com/logo.png" {...field} />
                     </FormControl>
                     <FormDescription>
-                      URL to your company logo
+                      URL to your company logo (optional if uploading image below)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={companyForm.control}
+                name="profileImage"
+                render={({ field: { value, onChange, ...fieldProps } }) => (
+                  <FormItem className="mt-4">
+                    <FormLabel>Upload Company Logo</FormLabel>
+                    <FormControl>
+                      <div className="flex flex-col space-y-2">
+                        <Input 
+                          type="file" 
+                          accept="image/*" 
+                          {...fieldProps}
+                          onChange={(e) => {
+                            // Handle file selection for the form
+                            const file = e.target.files?.[0];
+                            onChange(file || null);
+                          }} 
+                        />
+                        {/* Show selected file name or existing profile image */}
+                        {(value && typeof value === 'object') && (
+                          <p className="text-sm text-muted-foreground">
+                            Selected: {(value as File).name}
+                          </p>
+                        )}
+                        {companyProfile?.profileImagePath && (
+                          <div className="mt-2">
+                            <p className="text-sm text-muted-foreground mb-2">Current logo:</p>
+                            <img 
+                              src={`/${companyProfile.profileImagePath}`} 
+                              alt="Company logo" 
+                              className="w-32 h-32 object-contain rounded-md border"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      Upload a company logo (JPG, PNG, GIF, WEBP up to 25MB)
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

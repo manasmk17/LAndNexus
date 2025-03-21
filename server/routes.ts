@@ -1425,10 +1425,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/admin/resources/:id", isAdmin, async (req, res) => {
     try {
       const resourceId = parseInt(req.params.id);
-      // This is a placeholder since our storage interface doesn't have deleteResource method
-      // In a real implementation, you would add this method to the storage interface
+      const success = await storage.deleteResource(resourceId);
       
-      res.json({ success: true, message: "Resource deleted successfully" });
+      if (success) {
+        res.json({ success: true, message: "Resource deleted successfully" });
+      } else {
+        res.status(404).json({ success: false, message: "Resource not found" });
+      }
     } catch (err) {
       console.error("Error deleting resource:", err);
       res.status(500).json({ message: "Error deleting resource" });

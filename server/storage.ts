@@ -588,6 +588,10 @@ export class MemStorage implements IStorage {
     return updated;
   }
   
+  async deleteResource(id: number): Promise<boolean> {
+    return this.resources.delete(id);
+  }
+  
   // Forum operations
   async getForumPost(id: number): Promise<ForumPost | undefined> {
     return this.forumPosts.get(id);
@@ -1188,6 +1192,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(resources.id, id))
       .returning();
     return updatedResource;
+  }
+  
+  async deleteResource(id: number): Promise<boolean> {
+    const result = await db
+      .delete(resources)
+      .where(eq(resources.id, id))
+      .returning({ id: resources.id });
+    return result.length > 0;
   }
 
   // Forum operations

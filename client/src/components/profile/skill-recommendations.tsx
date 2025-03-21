@@ -119,7 +119,7 @@ export default function SkillRecommendations({ professionalId, isCurrentUser }: 
     );
   }
 
-  if (!data || !data.recommendationsJson) {
+  if (!data || !data.recommendations) {
     return (
       <Card className="w-full mb-6 shadow-md">
         <CardHeader>
@@ -151,7 +151,7 @@ export default function SkillRecommendations({ professionalId, isCurrentUser }: 
 
   let recommendations: SkillRecommendation[];
   try {
-    recommendations = JSON.parse(data.recommendationsJson);
+    recommendations = JSON.parse(data.recommendations);
   } catch (e) {
     return (
       <Card className="w-full mb-6 shadow-md">

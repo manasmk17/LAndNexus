@@ -642,4 +642,483 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import { db } from "./db";
+import { eq, and, desc, asc, or, isNull, not } from "drizzle-orm";
+
+export class DatabaseStorage implements IStorage {
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const [createdUser] = await db.insert(users).values(user).returning();
+    return createdUser;
+  }
+
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set(userData)
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
+  }
+
+  // Stripe operations
+  async updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined> {
+    return this.updateUser(userId, { stripeCustomerId: customerId });
+  }
+
+  async updateStripeSubscriptionId(userId: number, subscriptionId: string): Promise<User | undefined> {
+    return this.updateUser(userId, { stripeSubscriptionId: subscriptionId });
+  }
+
+  async updateUserSubscription(userId: number, tier: string, status: string): Promise<User | undefined> {
+    return this.updateUser(userId, { subscriptionTier: tier, subscriptionStatus: status });
+  }
+
+  async getUserByStripeCustomerId(customerId: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.stripeCustomerId, customerId));
+    return user;
+  }
+
+  // Professional Profile operations
+  async getProfessionalProfile(id: number): Promise<ProfessionalProfile | undefined> {
+    const [profile] = await db
+      .select()
+      .from(professionalProfiles)
+      .where(eq(professionalProfiles.id, id));
+    return profile;
+  }
+
+  async getProfessionalProfileByUserId(userId: number): Promise<ProfessionalProfile | undefined> {
+    const [profile] = await db
+      .select()
+      .from(professionalProfiles)
+      .where(eq(professionalProfiles.userId, userId));
+    return profile;
+  }
+
+  async getAllProfessionalProfiles(): Promise<ProfessionalProfile[]> {
+    return db.select().from(professionalProfiles);
+  }
+
+  async getFeaturedProfessionalProfiles(limit: number): Promise<ProfessionalProfile[]> {
+    return db
+      .select()
+      .from(professionalProfiles)
+      .where(eq(professionalProfiles.featured, true))
+      .limit(limit);
+  }
+
+  async createProfessionalProfile(profile: InsertProfessionalProfile): Promise<ProfessionalProfile> {
+    const [createdProfile] = await db
+      .insert(professionalProfiles)
+      .values(profile)
+      .returning();
+    return createdProfile;
+  }
+
+  async updateProfessionalProfile(
+    id: number,
+    profile: Partial<InsertProfessionalProfile>
+  ): Promise<ProfessionalProfile | undefined> {
+    const [updatedProfile] = await db
+      .update(professionalProfiles)
+      .set(profile)
+      .where(eq(professionalProfiles.id, id))
+      .returning();
+    return updatedProfile;
+  }
+
+  // Expertise operations
+  async getAllExpertise(): Promise<Expertise[]> {
+    return db.select().from(expertise);
+  }
+
+  async getExpertiseById(id: number): Promise<Expertise | undefined> {
+    const [exp] = await db.select().from(expertise).where(eq(expertise.id, id));
+    return exp;
+  }
+
+  async createExpertise(exp: InsertExpertise): Promise<Expertise> {
+    const [createdExpertise] = await db.insert(expertise).values(exp).returning();
+    return createdExpertise;
+  }
+
+  async getProfessionalExpertise(professionalId: number): Promise<Expertise[]> {
+    const professionalExps = await db
+      .select()
+      .from(professionalExpertise)
+      .where(eq(professionalExpertise.professionalId, professionalId));
+
+    const expertiseIds = professionalExps.map((pe) => pe.expertiseId);
+    if (expertiseIds.length === 0) return [];
+
+    return db
+      .select()
+      .from(expertise)
+      .where(
+        or(...expertiseIds.map((id) => eq(expertise.id, id)))
+      );
+  }
+
+  async addProfessionalExpertise(
+    professionalExpertiseData: InsertProfessionalExpertise
+  ): Promise<ProfessionalExpertise> {
+    const [createdProfExpertise] = await db
+      .insert(professionalExpertise)
+      .values(professionalExpertiseData)
+      .returning();
+    return createdProfExpertise;
+  }
+
+  // Certification operations
+  async getProfessionalCertifications(professionalId: number): Promise<Certification[]> {
+    return db
+      .select()
+      .from(certifications)
+      .where(eq(certifications.professionalId, professionalId));
+  }
+
+  async createCertification(certification: InsertCertification): Promise<Certification> {
+    const [createdCertification] = await db
+      .insert(certifications)
+      .values(certification)
+      .returning();
+    return createdCertification;
+  }
+
+  async deleteCertification(id: number): Promise<boolean> {
+    const result = await db
+      .delete(certifications)
+      .where(eq(certifications.id, id))
+      .returning({ id: certifications.id });
+    return result.length > 0;
+  }
+
+  // Company Profile operations
+  async getCompanyProfile(id: number): Promise<CompanyProfile | undefined> {
+    const [profile] = await db
+      .select()
+      .from(companyProfiles)
+      .where(eq(companyProfiles.id, id));
+    return profile;
+  }
+
+  async getCompanyProfileByUserId(userId: number): Promise<CompanyProfile | undefined> {
+    const [profile] = await db
+      .select()
+      .from(companyProfiles)
+      .where(eq(companyProfiles.userId, userId));
+    return profile;
+  }
+
+  async getAllCompanyProfiles(): Promise<CompanyProfile[]> {
+    return db.select().from(companyProfiles);
+  }
+
+  async createCompanyProfile(profile: InsertCompanyProfile): Promise<CompanyProfile> {
+    const [createdProfile] = await db
+      .insert(companyProfiles)
+      .values(profile)
+      .returning();
+    return createdProfile;
+  }
+
+  async updateCompanyProfile(
+    id: number,
+    profile: Partial<InsertCompanyProfile>
+  ): Promise<CompanyProfile | undefined> {
+    const [updatedProfile] = await db
+      .update(companyProfiles)
+      .set(profile)
+      .where(eq(companyProfiles.id, id))
+      .returning();
+    return updatedProfile;
+  }
+
+  // Job Posting operations
+  async getJobPosting(id: number): Promise<JobPosting | undefined> {
+    const [jobPosting] = await db
+      .select()
+      .from(jobPostings)
+      .where(eq(jobPostings.id, id));
+    return jobPosting;
+  }
+
+  async getAllJobPostings(): Promise<JobPosting[]> {
+    return db
+      .select()
+      .from(jobPostings)
+      .where(eq(jobPostings.status, "open"))
+      .orderBy(desc(jobPostings.createdAt));
+  }
+
+  async getLatestJobPostings(limit: number): Promise<JobPosting[]> {
+    return db
+      .select()
+      .from(jobPostings)
+      .where(eq(jobPostings.status, "open"))
+      .orderBy(desc(jobPostings.createdAt))
+      .limit(limit);
+  }
+
+  async getCompanyJobPostings(companyId: number): Promise<JobPosting[]> {
+    return db
+      .select()
+      .from(jobPostings)
+      .where(eq(jobPostings.companyId, companyId))
+      .orderBy(desc(jobPostings.createdAt));
+  }
+
+  async createJobPosting(job: InsertJobPosting): Promise<JobPosting> {
+    const [createdJob] = await db.insert(jobPostings).values(job).returning();
+    return createdJob;
+  }
+
+  async updateJobPosting(
+    id: number,
+    job: Partial<InsertJobPosting>
+  ): Promise<JobPosting | undefined> {
+    const [updatedJob] = await db
+      .update(jobPostings)
+      .set(job)
+      .where(eq(jobPostings.id, id))
+      .returning();
+    return updatedJob;
+  }
+
+  async deleteJobPosting(id: number): Promise<boolean> {
+    const result = await db
+      .delete(jobPostings)
+      .where(eq(jobPostings.id, id))
+      .returning({ id: jobPostings.id });
+    return result.length > 0;
+  }
+
+  // Job Application operations
+  async getJobApplication(id: number): Promise<JobApplication | undefined> {
+    const [jobApplication] = await db
+      .select()
+      .from(jobApplications)
+      .where(eq(jobApplications.id, id));
+    return jobApplication;
+  }
+
+  async getJobApplicationsByJob(jobId: number): Promise<JobApplication[]> {
+    return db
+      .select()
+      .from(jobApplications)
+      .where(eq(jobApplications.jobId, jobId))
+      .orderBy(desc(jobApplications.createdAt));
+  }
+
+  async getJobApplicationsByProfessional(professionalId: number): Promise<JobApplication[]> {
+    return db
+      .select()
+      .from(jobApplications)
+      .where(eq(jobApplications.professionalId, professionalId))
+      .orderBy(desc(jobApplications.createdAt));
+  }
+
+  async createJobApplication(application: InsertJobApplication): Promise<JobApplication> {
+    const [createdApplication] = await db
+      .insert(jobApplications)
+      .values(application)
+      .returning();
+    return createdApplication;
+  }
+
+  async updateJobApplicationStatus(
+    id: number,
+    status: string
+  ): Promise<JobApplication | undefined> {
+    const [updatedApplication] = await db
+      .update(jobApplications)
+      .set({ status })
+      .where(eq(jobApplications.id, id))
+      .returning();
+    return updatedApplication;
+  }
+
+  // Resource operations
+  async getResource(id: number): Promise<Resource | undefined> {
+    const [resource] = await db
+      .select()
+      .from(resources)
+      .where(eq(resources.id, id));
+    return resource;
+  }
+
+  async getAllResources(): Promise<Resource[]> {
+    return db.select().from(resources).orderBy(desc(resources.createdAt));
+  }
+
+  async getFeaturedResources(limit: number): Promise<Resource[]> {
+    return db
+      .select()
+      .from(resources)
+      .where(eq(resources.featured, true))
+      .orderBy(desc(resources.createdAt))
+      .limit(limit);
+  }
+
+  async createResource(resource: InsertResource): Promise<Resource> {
+    const [createdResource] = await db
+      .insert(resources)
+      .values(resource)
+      .returning();
+    return createdResource;
+  }
+
+  // Forum operations
+  async getForumPost(id: number): Promise<ForumPost | undefined> {
+    const [post] = await db
+      .select()
+      .from(forumPosts)
+      .where(eq(forumPosts.id, id));
+    return post;
+  }
+
+  async getAllForumPosts(): Promise<ForumPost[]> {
+    return db
+      .select()
+      .from(forumPosts)
+      .orderBy(desc(forumPosts.createdAt));
+  }
+
+  async createForumPost(post: InsertForumPost): Promise<ForumPost> {
+    const [createdPost] = await db.insert(forumPosts).values(post).returning();
+    return createdPost;
+  }
+
+  async getPostComments(postId: number): Promise<ForumComment[]> {
+    return db
+      .select()
+      .from(forumComments)
+      .where(eq(forumComments.postId, postId))
+      .orderBy(asc(forumComments.createdAt));
+  }
+
+  async createForumComment(comment: InsertForumComment): Promise<ForumComment> {
+    const [createdComment] = await db
+      .insert(forumComments)
+      .values(comment)
+      .returning();
+    return createdComment;
+  }
+
+  // Message operations
+  async getUserMessages(userId: number): Promise<Message[]> {
+    return db
+      .select()
+      .from(messages)
+      .where(
+        or(
+          eq(messages.senderId, userId),
+          eq(messages.receiverId, userId)
+        )
+      )
+      .orderBy(desc(messages.createdAt));
+  }
+
+  async getConversation(user1Id: number, user2Id: number): Promise<Message[]> {
+    return db
+      .select()
+      .from(messages)
+      .where(
+        or(
+          and(
+            eq(messages.senderId, user1Id),
+            eq(messages.receiverId, user2Id)
+          ),
+          and(
+            eq(messages.senderId, user2Id),
+            eq(messages.receiverId, user1Id)
+          )
+        )
+      )
+      .orderBy(asc(messages.createdAt));
+  }
+
+  async createMessage(message: InsertMessage): Promise<Message> {
+    const [createdMessage] = await db
+      .insert(messages)
+      .values(message)
+      .returning();
+    return createdMessage;
+  }
+
+  async markMessageAsRead(id: number): Promise<boolean> {
+    const result = await db
+      .update(messages)
+      .set({ read: true })
+      .where(eq(messages.id, id))
+      .returning({ id: messages.id });
+    return result.length > 0;
+  }
+
+  // Consultation operations
+  async getConsultation(id: number): Promise<Consultation | undefined> {
+    const [consultation] = await db
+      .select()
+      .from(consultations)
+      .where(eq(consultations.id, id));
+    return consultation;
+  }
+
+  async getProfessionalConsultations(professionalId: number): Promise<Consultation[]> {
+    return db
+      .select()
+      .from(consultations)
+      .where(eq(consultations.professionalId, professionalId))
+      .orderBy(desc(consultations.createdAt));
+  }
+
+  async getCompanyConsultations(companyId: number): Promise<Consultation[]> {
+    return db
+      .select()
+      .from(consultations)
+      .where(eq(consultations.companyId, companyId))
+      .orderBy(desc(consultations.createdAt));
+  }
+
+  async createConsultation(consultation: InsertConsultation): Promise<Consultation> {
+    const [createdConsultation] = await db
+      .insert(consultations)
+      .values(consultation)
+      .returning();
+    return createdConsultation;
+  }
+
+  async updateConsultationStatus(
+    id: number,
+    status: string
+  ): Promise<Consultation | undefined> {
+    const [updatedConsultation] = await db
+      .update(consultations)
+      .set({ status })
+      .where(eq(consultations.id, id))
+      .returning();
+    return updatedConsultation;
+  }
+}
+
+// Use DatabaseStorage instead of MemStorage
+export const storage = new DatabaseStorage();

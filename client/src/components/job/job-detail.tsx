@@ -29,6 +29,7 @@ import {
 import { format, formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import JobApplicationForm from "./job-application-form";
+import JobMatches from "./job-matches";
 import type { 
   JobPosting, 
   CompanyProfile,

@@ -428,10 +428,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Create admin user
+      // Create admin user with plain text password so Passport can hash it
       const adminUser = await storage.createUser({
         username: "admin",
-        password: "$2b$10$X3kL/EMLN55g2Q6UPyBoquI4E.1BeX0WXkpE54E57nGG/q//IXuRe", // password: "admin123"
+        password: "admin123", // plain text password - will be hashed by Passport
         userType: "admin",
         isAdmin: true,
         email: "admin@example.com",

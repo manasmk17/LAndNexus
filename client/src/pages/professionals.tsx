@@ -95,23 +95,23 @@ export default function Professionals() {
   
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 bg-gradient-to-r from-purple-900/20 via-fuchsia-100/30 to-purple-200 p-8 rounded-xl shadow-lg border border-purple-100">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 bg-gradient-to-r from-indigo-950 via-purple-900 to-indigo-900 p-8 rounded-xl shadow-lg">
         <div>
-          <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-purple-700 via-fuchsia-600 to-pink-600 inline-block text-transparent bg-clip-text">Find L&D Professionals</h1>
-          <p className="text-gray-700 text-lg">Connect with expert trainers and unlock your potential</p>
+          <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 inline-block text-transparent bg-clip-text">Find L&D Professionals</h1>
+          <p className="text-gray-300 text-lg">Connect with expert trainers and unlock your potential</p>
         </div>
       </div>
       
       {/* Search and filter section */}
-      <div className="bg-white p-6 rounded-xl shadow-md mb-8 border border-purple-100">
-        <h2 className="text-xl font-semibold mb-4 text-purple-800">Find Your Perfect Match</h2>
+      <div className="bg-slate-800 p-6 rounded-xl shadow-md mb-8 border border-indigo-900">
+        <h2 className="text-xl font-semibold mb-4 text-indigo-300">Find Your Perfect Match</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Search box */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-indigo-400" />
             <Input
               placeholder="Search by title, skills, or location..."
-              className="pl-10 border-purple-200 focus:border-purple-500 focus:ring-purple-500"
+              className="pl-10 bg-slate-700 border-slate-600 text-slate-200 focus:border-indigo-500 focus:ring-indigo-500 placeholder:text-slate-400"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -120,18 +120,18 @@ export default function Professionals() {
           {/* Experience Level filter */}
           <div>
             <Select value={experienceLevel} onValueChange={setExperienceLevel}>
-              <SelectTrigger className="w-full border-purple-200">
+              <SelectTrigger className="w-full bg-slate-700 border-slate-600 text-slate-200">
                 <div className="flex items-center">
-                  <Filter className="mr-2 h-4 w-4 text-purple-500" />
+                  <Filter className="mr-2 h-4 w-4 text-indigo-400" />
                   <SelectValue placeholder="Experience level" />
                 </div>
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="any">Any Experience Level</SelectItem>
-                <SelectItem value="junior">Junior (0-2 years)</SelectItem>
-                <SelectItem value="mid-level">Mid Level (2-5 years)</SelectItem>
-                <SelectItem value="senior">Senior (5-8 years)</SelectItem>
-                <SelectItem value="expert">Expert (8+ years)</SelectItem>
+              <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectItem value="any" className="text-slate-200 focus:bg-indigo-900 focus:text-indigo-200">Any Experience Level</SelectItem>
+                <SelectItem value="junior" className="text-slate-200 focus:bg-indigo-900 focus:text-indigo-200">Junior (0-2 years)</SelectItem>
+                <SelectItem value="mid-level" className="text-slate-200 focus:bg-indigo-900 focus:text-indigo-200">Mid Level (2-5 years)</SelectItem>
+                <SelectItem value="senior" className="text-slate-200 focus:bg-indigo-900 focus:text-indigo-200">Senior (5-8 years)</SelectItem>
+                <SelectItem value="expert" className="text-slate-200 focus:bg-indigo-900 focus:text-indigo-200">Expert (8+ years)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -139,16 +139,16 @@ export default function Professionals() {
           {/* Expertise filter */}
           <div>
             <Select value={selectedExpertise} onValueChange={setSelectedExpertise}>
-              <SelectTrigger className="w-full border-purple-200">
+              <SelectTrigger className="w-full bg-slate-700 border-slate-600 text-slate-200">
                 <div className="flex items-center">
-                  <Filter className="mr-2 h-4 w-4 text-purple-500" />
+                  <Filter className="mr-2 h-4 w-4 text-indigo-400" />
                   <SelectValue placeholder="Filter by expertise" />
                 </div>
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Expertise</SelectItem>
+              <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectItem value="all" className="text-slate-200 focus:bg-indigo-900 focus:text-indigo-200">All Expertise</SelectItem>
                 {expertise?.map((exp) => (
-                  <SelectItem key={exp.id} value={exp.name}>
+                  <SelectItem key={exp.id} value={exp.name} className="text-slate-200 focus:bg-indigo-900 focus:text-indigo-200">
                     {exp.name}
                   </SelectItem>
                 ))}
@@ -159,15 +159,15 @@ export default function Professionals() {
           {/* Sort options */}
           <div>
             <Select value={sortOrder} onValueChange={setSortOrder}>
-              <SelectTrigger className="w-full border-purple-200">
+              <SelectTrigger className="w-full bg-slate-700 border-slate-600 text-slate-200">
                 <div className="flex items-center">
-                  <ArrowUpDown className="mr-2 h-4 w-4 text-purple-500" />
+                  <ArrowUpDown className="mr-2 h-4 w-4 text-indigo-400" />
                   <SelectValue placeholder="Sort by" />
                 </div>
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="rating">Highest Rated</SelectItem>
-                <SelectItem value="ratePerHour">Hourly Rate</SelectItem>
+              <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectItem value="rating" className="text-slate-200 focus:bg-indigo-900 focus:text-indigo-200">Highest Rated</SelectItem>
+                <SelectItem value="ratePerHour" className="text-slate-200 focus:bg-indigo-900 focus:text-indigo-200">Hourly Rate</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -175,8 +175,8 @@ export default function Professionals() {
       </div>
       
       {/* Rate range filter */}
-      <div className="bg-white p-6 rounded-xl shadow-md mb-5 border border-purple-100">
-        <label className="block text-lg font-medium mb-3 text-purple-800">Hourly Rate Range ($)</label>
+      <div className="bg-slate-800 p-6 rounded-xl shadow-md mb-5 border border-indigo-900">
+        <label className="block text-lg font-medium mb-3 text-indigo-300">Hourly Rate Range ($)</label>
         <div className="flex items-center gap-6">
           <input
             type="range"
@@ -184,7 +184,7 @@ export default function Professionals() {
             max="500"
             value={rateRange[0]}
             onChange={(e) => setRateRange([parseInt(e.target.value), rateRange[1]])}
-            className="w-full accent-purple-600"
+            className="w-full accent-indigo-600"
           />
           <input
             type="range"
@@ -192,18 +192,18 @@ export default function Professionals() {
             max="500"
             value={rateRange[1]}
             onChange={(e) => setRateRange([rateRange[0], parseInt(e.target.value)])}
-            className="w-full accent-purple-600"
+            className="w-full accent-indigo-600"
           />
-          <span className="text-md font-semibold bg-purple-100 text-purple-800 px-4 py-2 rounded-md min-w-[100px] text-center">
+          <span className="text-md font-semibold bg-indigo-900 text-indigo-200 px-4 py-2 rounded-md min-w-[100px] text-center">
             ${rateRange[0]} - ${rateRange[1]}
           </span>
         </div>
       </div>
 
       {/* Results count and filters */}
-      <div className="flex justify-between items-center mb-6 bg-purple-50 p-4 rounded-lg">
-        <p className="text-purple-700 font-medium">
-          <span className="font-bold text-lg">{sortedProfessionals.length}</span> professionals found
+      <div className="flex justify-between items-center mb-6 bg-slate-900 p-4 rounded-lg border border-indigo-950">
+        <p className="text-indigo-300 font-medium">
+          <span className="font-bold text-lg text-indigo-200">{sortedProfessionals.length}</span> professionals found
         </p>
         <Button
           variant="outline"
@@ -213,7 +213,7 @@ export default function Professionals() {
             setExperienceLevel("");
             setRateRange([0, 500]);
           }}
-          className="border-purple-300 hover:bg-purple-100 text-purple-700"
+          className="border-indigo-800 bg-indigo-900/50 hover:bg-indigo-800 text-indigo-200"
         >
           Clear All Filters
         </Button>
@@ -284,13 +284,13 @@ export default function Professionals() {
       
       {/* Pagination (simplified for now) */}
       {sortedProfessionals.length > 0 && (
-        <div className="flex justify-center mt-10 bg-white p-4 rounded-xl shadow-md">
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" className="border-purple-200 hover:bg-purple-100 text-purple-800 font-medium">Previous</Button>
-            <Button variant="outline" className="border-purple-200 bg-purple-100 text-purple-800 font-bold">1</Button>
-            <Button variant="outline" className="border-purple-200 hover:bg-purple-100 text-purple-800 font-medium">2</Button>
-            <Button variant="outline" className="border-purple-200 hover:bg-purple-100 text-purple-800 font-medium">3</Button>
-            <Button variant="outline" className="border-purple-200 hover:bg-purple-100 text-purple-800 font-medium">Next</Button>
+        <div className="flex justify-center mt-10 bg-slate-800 p-5 rounded-xl shadow-md border border-indigo-900">
+          <div className="flex items-center space-x-3">
+            <Button variant="outline" className="border-indigo-800 bg-slate-900 hover:bg-indigo-900 text-indigo-300 font-medium">Previous</Button>
+            <Button variant="outline" className="border-indigo-700 bg-indigo-900 text-indigo-200 font-bold">1</Button>
+            <Button variant="outline" className="border-indigo-800 bg-slate-900 hover:bg-indigo-900 text-indigo-300 font-medium">2</Button>
+            <Button variant="outline" className="border-indigo-800 bg-slate-900 hover:bg-indigo-900 text-indigo-300 font-medium">3</Button>
+            <Button variant="outline" className="border-indigo-800 bg-slate-900 hover:bg-indigo-900 text-indigo-300 font-medium">Next</Button>
           </div>
         </div>
       )}

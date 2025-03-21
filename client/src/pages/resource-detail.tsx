@@ -288,7 +288,7 @@ export default function ResourceDetail() {
             <h2 className="text-2xl font-bold mb-6">Related Resources</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {relatedResources.slice(0, 3).map((relatedResource) => (
-                <Link key={relatedResource.id} href={`/resource/${relatedResource.id}`}>
+                <Link key={relatedResource.id} href={`/resources/${relatedResource.id}`}>
                   <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
                     <CardContent className="p-4">
                       <div className="flex items-center mb-2">

@@ -192,13 +192,6 @@ export default function Subscribe() {
     const createIntent = async () => {
       setLoading(true);
       try {
-        // Use hardcoded price IDs for demonstration purposes
-        // In production, these would come from your Stripe dashboard
-        const stripePriceIds = {
-          basic: 'price_basic', // Example ID, will be dynamically replaced by Stripe
-          premium: 'price_premium' // Example ID, will be dynamically replaced by Stripe
-        };
-        
         // Create payment intent for one-time payment
         // In a real implementation, we would use proper subscription creation
         const response = await apiRequest("POST", "/api/create-payment-intent", { 

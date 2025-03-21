@@ -1,0 +1,136 @@
+import { useEffect, useState } from 'react';
+import { useLocation } from 'wouter';
+import { apiRequest } from '@/lib/queryClient';
+import { useAuth } from '@/hooks/use-auth';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { CheckCircle } from 'lucide-react';
+
+export default function SubscriptionSuccess() {
+  const [, navigate] = useLocation();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [subscriptionDetails, setSubscriptionDetails] = useState<{
+    tier: string;
+    status: string;
+    nextBillingDate?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    const fetchSubscriptionStatus = async () => {
+      try {
+        const response = await apiRequest('GET', '/api/subscription-status');
+        
+        if (response.ok) {
+          const data = await response.json();
+          setSubscriptionDetails(data);
+        } else {
+          toast({
+            title: 'Error',
+            description: 'Could not verify subscription status.',
+            variant: 'destructive',
+          });
+        }
+      } catch (error) {
+        toast({
+          title: 'Error',
+          description: 'An unexpected error occurred.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment_status');
+    
+    if (paymentStatus === 'success') {
+      fetchSubscriptionStatus();
+    } else {
+      setLoading(false);
+    }
+  }, [user, navigate, toast]);
+
+  const handleDashboardClick = () => {
+    if (user?.userType === 'professional') {
+      navigate('/professional-dashboard');
+    } else if (user?.userType === 'company') {
+      navigate('/company-dashboard');
+    } else {
+      navigate('/');
+    }
+  };
+
+  return (
+    <div className="container max-w-2xl mx-auto py-16 px-4">
+      <Card className="text-center">
+        <CardHeader>
+          <div className="mx-auto w-16 h-16 flex items-center justify-center bg-green-100 rounded-full mb-4">
+            <CheckCircle className="h-10 w-10 text-green-600" />
+          </div>
+          <CardTitle className="text-2xl">Subscription Complete!</CardTitle>
+          <CardDescription>
+            Thank you for subscribing to the L&D Nexus platform.
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent>
+          {loading ? (
+            <div className="py-8 flex justify-center">
+              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+            </div>
+          ) : subscriptionDetails ? (
+            <div className="space-y-4 py-4">
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <p className="font-medium">Subscription Details</p>
+                <div className="mt-2 text-sm">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="text-left text-gray-500">Plan:</div>
+                    <div className="text-right font-medium capitalize">{subscriptionDetails.tier} Plan</div>
+                    
+                    <div className="text-left text-gray-500">Status:</div>
+                    <div className="text-right font-medium capitalize">{subscriptionDetails.status}</div>
+                    
+                    {subscriptionDetails.nextBillingDate && (
+                      <>
+                        <div className="text-left text-gray-500">Next Billing Date:</div>
+                        <div className="text-right font-medium">{subscriptionDetails.nextBillingDate}</div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <p>
+                You now have access to all features included in your subscription plan.
+                Visit your dashboard to explore the platform's capabilities.
+              </p>
+            </div>
+          ) : (
+            <p className="py-4">
+              Your subscription has been processed successfully. You can now enjoy all the benefits
+              of your subscription plan.
+            </p>
+          )}
+        </CardContent>
+        
+        <CardFooter className="flex flex-col space-y-2">
+          <Button onClick={handleDashboardClick} className="w-full">
+            Go to Dashboard
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/')} className="w-full">
+            Return to Home
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
+  );
+}

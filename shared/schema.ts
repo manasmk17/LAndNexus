@@ -12,6 +12,10 @@ export const users = pgTable("users", {
   lastName: text("last_name").notNull(),
   userType: text("user_type").notNull(), // "professional" or "company"
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  stripeCustomerId: text("stripe_customer_id"),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  subscriptionTier: text("subscription_tier"), // "free", "basic", "premium"
+  subscriptionStatus: text("subscription_status"), // "active", "trialing", "past_due", "canceled"
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({

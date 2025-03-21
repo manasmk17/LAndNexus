@@ -50,7 +50,7 @@ export default function ForgotPasswordForm() {
     setIsLoading(true);
     
     try {
-      const response = await apiRequest("POST", "/api/forgot-password", data);
+      const response = await apiRequest("POST", "/api/auth/forgot-password", data);
       const result = await response.json();
       
       if (result.success) {

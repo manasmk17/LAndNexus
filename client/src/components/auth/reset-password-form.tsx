@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,6 +24,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Loader2 } from "lucide-react";
 
 // Form schema
 const resetPasswordSchema = z.object({
@@ -40,10 +41,12 @@ export default function ResetPasswordForm() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [isTokenValid, setIsTokenValid] = useState(false);
   const [location] = useLocation();
   
   // Extract token from query string
-  const params = new URLSearchParams(location.split("?")[1]);
+  const params = new URLSearchParams(location.split("?")[1] || "");
   const token = params.get("token");
   
   // Initialize form
@@ -54,6 +57,32 @@ export default function ResetPasswordForm() {
       confirmPassword: "",
     },
   });
+
+  // Verify token when component loads
+  useEffect(() => {
+    async function verifyToken() {
+      if (!token) {
+        setIsVerifying(false);
+        return;
+      }
+      
+      try {
+        const response = await apiRequest("POST", "/api/auth/verify-reset-token", { token });
+        const result = await response.json();
+        
+        if (result.valid) {
+          setIsTokenValid(true);
+        }
+      } catch (error) {
+        console.error("Token verification error:", error);
+        // Token is invalid, we'll show the error UI
+      } finally {
+        setIsVerifying(false);
+      }
+    }
+    
+    verifyToken();
+  }, [token]);
 
   async function onSubmit(data: ResetPasswordFormValues) {
     if (!token) {
@@ -68,7 +97,7 @@ export default function ResetPasswordForm() {
     setIsLoading(true);
     
     try {
-      const response = await apiRequest("POST", "/api/reset-password", {
+      const response = await apiRequest("POST", "/api/auth/reset-password", {
         token,
         newPassword: data.password,
       });
@@ -100,7 +129,23 @@ export default function ResetPasswordForm() {
     }
   }
 
-  if (!token) {
+  if (isVerifying) {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold text-center">Verifying Reset Link</CardTitle>
+          <CardDescription className="text-center">
+            Please wait while we verify your reset link
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center py-6">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!token || !isTokenValid) {
     return (
       <Card className="w-full max-w-md mx-auto">
         <CardHeader className="space-y-1">
@@ -175,7 +220,13 @@ export default function ResetPasswordForm() {
                 className="w-full"
                 disabled={isLoading}
               >
-                {isLoading ? "Resetting..." : "Reset Password"}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Resetting...
+                  </>
+                ) : (
+                  "Reset Password"
+                )}
               </Button>
             </form>
           </Form>

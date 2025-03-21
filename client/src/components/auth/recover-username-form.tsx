@@ -50,7 +50,7 @@ export default function RecoverUsernameForm() {
     setIsLoading(true);
     
     try {
-      const response = await apiRequest("POST", "/api/recover-username", data);
+      const response = await apiRequest("POST", "/api/auth/recover-username", data);
       const result = await response.json();
       
       if (result.success) {

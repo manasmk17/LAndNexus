@@ -2336,6 +2336,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Career Recommendations API Endpoint
+  app.get("/api/career-recommendations", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      // Only professionals can get career recommendations
+      if (user.userType !== "professional") {
+        return res.status(403).json({ message: "Only professionals can access career recommendations" });
+      }
+      
+      // Get the professional profile
+      const profile = await storage.getProfessionalProfileByUserId(user.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Professional profile not found" });
+      }
+      
+      // Get professional's expertise
+      const expertise = await storage.getProfessionalExpertise(profile.id);
+      
+      // Check if we have the OpenAI API key
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(503).json({ 
+          message: "Career recommendations service is currently unavailable" 
+        });
+      }
+      
+      // Generate career recommendations
+      const recommendations = await generateCareerRecommendations(profile, expertise);
+      
+      res.json(recommendations);
+    } catch (err) {
+      console.error("Error generating career recommendations:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

@@ -15,10 +15,12 @@ import {
   PencilIcon,
   FileText,
   CheckCircle,
-  XCircle
+  XCircle,
+  CreditCard
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
+import SubscriptionStatus from "@/components/dashboard/subscription-status";
 import type { 
   ProfessionalProfile, 
   JobApplication, 
@@ -102,76 +104,85 @@ export default function ProfessionalDashboard() {
         )}
       </div>
       
-      {/* Profile Summary Card */}
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <User className="mr-2 h-5 w-5" /> Profile Overview
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoadingProfile ? (
-            <div className="space-y-4">
-              <div className="flex items-center">
-                <Skeleton className="h-12 w-12 rounded-full" />
-                <div className="ml-4 space-y-2">
-                  <Skeleton className="h-5 w-48" />
-                  <Skeleton className="h-4 w-32" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+        {/* Profile Summary Card */}
+        <div className="md:col-span-2">
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <User className="mr-2 h-5 w-5" /> Profile Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoadingProfile ? (
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="ml-4 space-y-2">
+                      <Skeleton className="h-5 w-48" />
+                      <Skeleton className="h-4 w-32" />
+                    </div>
+                    <Skeleton className="ml-auto h-8 w-24" />
+                  </div>
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
                 </div>
-                <Skeleton className="ml-auto h-8 w-24" />
-              </div>
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-            </div>
-          ) : profile ? (
-            <div>
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 rounded-full bg-primary bg-opacity-10 flex items-center justify-center">
-                  {profile.profileImageUrl ? (
-                    <img
-                      src={profile.profileImageUrl}
-                      alt={profile.title}
-                      className="w-full h-full object-cover rounded-full"
-                    />
-                  ) : (
-                    <User className="h-6 w-6 text-primary" />
-                  )}
+              ) : profile ? (
+                <div>
+                  <div className="flex items-center mb-4">
+                    <div className="w-12 h-12 rounded-full bg-primary bg-opacity-10 flex items-center justify-center">
+                      {profile.profileImageUrl ? (
+                        <img
+                          src={profile.profileImageUrl}
+                          alt={profile.title}
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      ) : (
+                        <User className="h-6 w-6 text-primary" />
+                      )}
+                    </div>
+                    <div className="ml-4">
+                      <h3 className="font-medium text-lg">{profile.title}</h3>
+                      <p className="text-gray-500">{profile.location}</p>
+                    </div>
+                    <div className="ml-auto flex items-center">
+                      <Star className="h-4 w-4 text-yellow-400 mr-1" />
+                      <span>{(profile.rating / 20).toFixed(1)}</span>
+                      <span className="text-gray-500 ml-1">({profile.reviewCount} reviews)</span>
+                    </div>
+                  </div>
+                  
+                  <p className="text-gray-700 mb-4">
+                    {profile.bio.substring(0, 200)}
+                    {profile.bio.length > 200 ? '...' : ''}
+                  </p>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    {profile.featured && (
+                      <Badge className="bg-amber-100 text-amber-800">Featured Profile</Badge>
+                    )}
+                    <Badge className="bg-blue-100 text-blue-800">
+                      {profile.ratePerHour ? `$${profile.ratePerHour}/hr` : 'Rate not specified'}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="ml-4">
-                  <h3 className="font-medium text-lg">{profile.title}</h3>
-                  <p className="text-gray-500">{profile.location}</p>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-gray-500 mb-4">You haven't created a professional profile yet.</p>
+                  <Link href="/edit-profile">
+                    <Button>Complete Your Profile</Button>
+                  </Link>
                 </div>
-                <div className="ml-auto flex items-center">
-                  <Star className="h-4 w-4 text-yellow-400 mr-1" />
-                  <span>{(profile.rating / 20).toFixed(1)}</span>
-                  <span className="text-gray-500 ml-1">({profile.reviewCount} reviews)</span>
-                </div>
-              </div>
-              
-              <p className="text-gray-700 mb-4">
-                {profile.bio.substring(0, 200)}
-                {profile.bio.length > 200 ? '...' : ''}
-              </p>
-              
-              <div className="flex flex-wrap gap-2">
-                {profile.featured && (
-                  <Badge className="bg-amber-100 text-amber-800">Featured Profile</Badge>
-                )}
-                <Badge className="bg-blue-100 text-blue-800">
-                  {profile.ratePerHour ? `$${profile.ratePerHour}/hr` : 'Rate not specified'}
-                </Badge>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-4">
-              <p className="text-gray-500 mb-4">You haven't created a professional profile yet.</p>
-              <Link href="/edit-profile">
-                <Button>Complete Your Profile</Button>
-              </Link>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Subscription Status Card */}
+        <div>
+          <SubscriptionStatus />
+        </div>
+      </div>
       
       <Tabs defaultValue="applications">
         <TabsList className="grid grid-cols-3 w-full mb-8">

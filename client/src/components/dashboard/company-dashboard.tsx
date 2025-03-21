@@ -17,10 +17,12 @@ import {
   ChevronRight,
   PencilIcon,
   FileText,
-  User
+  User,
+  CreditCard
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
+import SubscriptionStatus from "@/components/dashboard/subscription-status";
 import type { 
   CompanyProfile, 
   JobPosting, 

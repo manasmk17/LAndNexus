@@ -410,6 +410,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
+  
+  // Debug endpoint to create a test admin user (only for development)
+  app.get("/api/debug/create-admin", async (req, res) => {
+    try {
+      // Check if admin user already exists
+      const existingAdmin = await storage.getUserByUsername("admin");
+      
+      if (existingAdmin) {
+        return res.json({ 
+          message: "Admin user already exists",
+          user: {
+            id: existingAdmin.id,
+            username: existingAdmin.username,
+            isAdmin: existingAdmin.isAdmin
+          }
+        });
+      }
+      
+      // Create admin user
+      const adminUser = await storage.createUser({
+        username: "admin",
+        password: "$2b$10$X3kL/EMLN55g2Q6UPyBoquI4E.1BeX0WXkpE54E57nGG/q//IXuRe", // password: "admin123"
+        userType: "admin",
+        isAdmin: true,
+        email: "admin@example.com",
+        firstName: "Admin",
+        lastName: "User"
+      });
+      
+      res.json({ 
+        message: "Admin user created successfully",
+        user: {
+          id: adminUser.id,
+          username: adminUser.username,
+          isAdmin: adminUser.isAdmin
+        }
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: "Error creating admin user: " + error.message });
+    }
+  });
 
   app.get("/api/subscription-status", isAuthenticated, async (req, res) => {
     try {

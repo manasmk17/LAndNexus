@@ -323,10 +323,62 @@ export class MemStorage implements IStorage {
       stripeCustomerId: null,
       stripeSubscriptionId: null,
       subscriptionTier: null,
-      subscriptionStatus: null
+      subscriptionStatus: null,
+      resetToken: null,
+      resetTokenExpiry: null
     };
     this.users.set(id, user);
     return user;
+  }
+  
+  // Password and account recovery operations
+  async createResetToken(email: string): Promise<string | null> {
+    const user = await this.getUserByEmail(email);
+    if (!user) return null;
+    
+    // Generate a random token
+    const token = Math.random().toString(36).substring(2, 15) + 
+                  Math.random().toString(36).substring(2, 15);
+    
+    // Set expiry to 1 hour from now
+    const expiryDate = new Date();
+    expiryDate.setHours(expiryDate.getHours() + 1);
+    
+    // Update user with token
+    const updated = { 
+      ...user, 
+      resetToken: token,
+      resetTokenExpiry: expiryDate 
+    };
+    
+    this.users.set(user.id, updated);
+    return token;
+  }
+  
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    const now = new Date();
+    
+    return Array.from(this.users.values()).find(
+      (user) => user.resetToken === token && 
+                user.resetTokenExpiry && 
+                user.resetTokenExpiry > now
+    );
+  }
+  
+  async resetPassword(token: string, newPassword: string): Promise<boolean> {
+    const user = await this.getUserByResetToken(token);
+    if (!user) return false;
+    
+    // Update user with new password and clear token
+    const updated = { 
+      ...user, 
+      password: newPassword,
+      resetToken: null,
+      resetTokenExpiry: null
+    };
+    
+    this.users.set(user.id, updated);
+    return true;
   }
   
   // Professional Profile operations
@@ -821,6 +873,75 @@ export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
+  }
+  
+  // Password and account recovery operations
+  async createResetToken(email: string): Promise<string | null> {
+    try {
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      if (!user) return null;
+      
+      // Generate a random token
+      const token = Math.random().toString(36).substring(2, 15) + 
+                    Math.random().toString(36).substring(2, 15);
+      
+      // Set expiry to 1 hour from now
+      const expiryDate = new Date();
+      expiryDate.setHours(expiryDate.getHours() + 1);
+      
+      // Update user with token
+      await db.update(users)
+        .set({
+          resetToken: token,
+          resetTokenExpiry: expiryDate
+        })
+        .where(eq(users.id, user.id));
+      
+      return token;
+    } catch (error) {
+      console.error("Error creating reset token:", error);
+      return null;
+    }
+  }
+  
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    try {
+      const now = new Date();
+      const [user] = await db.select()
+        .from(users)
+        .where(
+          and(
+            eq(users.resetToken, token),
+            sql`${users.resetTokenExpiry} > ${now}`
+          )
+        );
+      
+      return user;
+    } catch (error) {
+      console.error("Error getting user by reset token:", error);
+      return undefined;
+    }
+  }
+  
+  async resetPassword(token: string, newPassword: string): Promise<boolean> {
+    try {
+      const user = await this.getUserByResetToken(token);
+      if (!user) return false;
+      
+      // Update user with new password and clear token
+      await db.update(users)
+        .set({
+          password: newPassword,
+          resetToken: null,
+          resetTokenExpiry: null
+        })
+        .where(eq(users.id, user.id));
+      
+      return true;
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      return false;
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {

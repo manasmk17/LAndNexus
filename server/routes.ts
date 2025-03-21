@@ -396,6 +396,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Logged out" });
     });
   });
+  
+  // Password recovery endpoints
+  app.post("/api/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      
+      // Create reset token
+      const token = await storage.createResetToken(email);
+      
+      if (!token) {
+        // Don't reveal whether the email exists or not for security
+        return res.json({ success: true, message: "If your email exists in our system, you will receive a password reset link." });
+      }
+      
+      // In a real implementation, you would send an email with a reset link
+      // For this implementation, we'll just return the token directly 
+      // (in production, this should be sent via email)
+      res.json({ 
+        success: true, 
+        message: "Password reset link generated. In a production environment, this would be emailed.",
+        token: token, // Note: In production, don't return the token directly
+        resetLink: `/reset-password?token=${token}`
+      });
+    } catch (err) {
+      console.error("Forgot password error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.post("/api/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+      
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: "Token and new password are required" });
+      }
+      
+      // Reset the password
+      const success = await storage.resetPassword(token, newPassword);
+      
+      if (!success) {
+        return res.status(400).json({ message: "Invalid or expired token" });
+      }
+      
+      res.json({ success: true, message: "Password has been reset successfully" });
+    } catch (err) {
+      console.error("Reset password error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Username recovery endpoint
+  app.post("/api/recover-username", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      
+      if (!user) {
+        // Don't reveal whether the email exists or not for security
+        return res.json({ success: true, message: "If your email exists in our system, you will receive your username." });
+      }
+      
+      // In a real implementation, you would send an email with the username
+      // For this implementation, we'll just return the username directly
+      res.json({ 
+        success: true, 
+        message: "Username recovery successful. In a production environment, this would be emailed.",
+        username: user.username // Note: In production, don't return the username directly
+      });
+    } catch (err) {
+      console.error("Username recovery error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   app.get("/api/me", isAuthenticated, async (req, res) => {
     res.json(req.user);

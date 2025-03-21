@@ -109,13 +109,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return done(null, false, { message: "Incorrect username or email" });
       }
       
-      // For regular users, passwords should be hashed, but for this demo, we'll do direct comparison
-      // In a production app, we would use bcrypt.compare() here
-      if (user.password !== password) {
-        return done(null, false, { message: "Incorrect password" });
+      // Use scrypt for password comparison - assuming passwords are stored as hash.salt
+      try {
+        // For development purposes, also support plain text passwords
+        if (!user.password.includes('.')) {
+          // Direct comparison for non-hashed passwords (dev only)
+          if (user.password !== password) {
+            return done(null, false, { message: "Incorrect password" });
+          } else {
+            return done(null, user);
+          }
+        }
+        
+        // If password is in hash.salt format, use secure comparison
+        const [storedHash, salt] = user.password.split('.');
+        const keyLen = Buffer.from(storedHash, 'hex').length;
+        
+        // Use crypto scrypt to compare passwords
+        const crypto = require('crypto');
+        crypto.scrypt(password, salt, keyLen, (err: any, derivedKey: Buffer) => {
+          if (err) {
+            return done(err);
+          }
+          
+          let passwordMatches = false;
+          try {
+            passwordMatches = crypto.timingSafeEqual(
+              Buffer.from(storedHash, 'hex'),
+              derivedKey
+            );
+          } catch (error) {
+            console.error("Error comparing passwords:", error);
+            return done(null, false, { message: "Password verification error" });
+          }
+          
+          if (!passwordMatches) {
+            return done(null, false, { message: "Incorrect password" });
+          }
+          
+          return done(null, user);
+        });
+        
+        // Don't return here - the callback in scrypt will handle it
+      } catch (error) {
+        console.error("Error during password verification:", error);
+        return done(null, false, { message: "Password verification error" });
       }
-      
-      return done(null, user);
     } catch (err) {
       return done(err);
     }

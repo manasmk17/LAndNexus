@@ -50,21 +50,21 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
           </div>
         </div>
       </div>
-      <div className="p-6 bg-gradient-to-b from-slate-900 to-gray-900">
+      <div className="p-6 bg-gradient-to-b from-gray-800 to-slate-800">
         <div className="mb-4">
           <h4 className="text-sm font-bold uppercase mb-2 flex items-center">
-            <span className="bg-gradient-to-r from-emerald-600 to-teal-500 text-white px-3 py-1 rounded-lg shadow-sm">Expertise</span>
+            <span className="bg-gradient-to-r from-blue-600 to-sky-500 text-white px-3 py-1 rounded-lg shadow-sm">Expertise</span>
           </h4>
           {isLoadingExpertise ? (
             <div className="flex flex-wrap gap-2">
-              <Skeleton className="h-7 w-24 rounded-full bg-slate-800" />
-              <Skeleton className="h-7 w-28 rounded-full bg-slate-800" />
-              <Skeleton className="h-7 w-20 rounded-full bg-slate-800" />
+              <Skeleton className="h-7 w-24 rounded-full bg-slate-700" />
+              <Skeleton className="h-7 w-28 rounded-full bg-slate-700" />
+              <Skeleton className="h-7 w-20 rounded-full bg-slate-700" />
             </div>
           ) : expertise && expertise.length > 0 ? (
             <div className="flex flex-wrap gap-2 mt-3">
               {expertise.map(area => (
-                <Badge key={area.id} variant="secondary" className="bg-emerald-900/80 text-emerald-100 hover:bg-emerald-800 transition-colors font-medium">
+                <Badge key={area.id} variant="secondary" className="bg-blue-800/70 text-blue-100 hover:bg-blue-700 transition-colors font-medium">
                   {area.name}
                 </Badge>
               ))}
@@ -75,48 +75,48 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
         </div>
         <div className="mb-5">
           <h4 className="text-sm font-bold uppercase mb-2 flex items-center">
-            <span className="bg-gradient-to-r from-teal-600 to-emerald-500 text-white px-3 py-1 rounded-lg shadow-sm">Certifications</span>
+            <span className="bg-gradient-to-r from-indigo-600 to-blue-500 text-white px-3 py-1 rounded-lg shadow-sm">Certifications</span>
           </h4>
           {isLoadingCertifications ? (
             <div className="space-y-2">
-              <Skeleton className="h-5 w-48 bg-slate-800" />
-              <Skeleton className="h-5 w-40 bg-slate-800" />
+              <Skeleton className="h-5 w-48 bg-slate-700" />
+              <Skeleton className="h-5 w-40 bg-slate-700" />
             </div>
           ) : certifications && certifications.length > 0 ? (
             <div className="flex flex-wrap gap-2 mt-3">
               {certifications.slice(0, 2).map(cert => (
-                <span key={cert.id} className="flex items-center text-sm text-teal-200 bg-teal-900/80 px-3 py-1.5 rounded-md border border-teal-800/60">
-                  <Verified className="text-teal-300 mr-1.5 h-4 w-4" />
+                <span key={cert.id} className="flex items-center text-sm text-sky-100 bg-sky-800/60 px-3 py-1.5 rounded-md border border-sky-700/50">
+                  <Verified className="text-sky-300 mr-1.5 h-4 w-4" />
                   {cert.name}
                 </span>
               ))}
               {certifications.length > 2 && (
-                <span className="text-xs text-emerald-200 font-medium ml-1 bg-emerald-900/80 px-2 py-1 rounded-md">+{certifications.length - 2} more</span>
+                <span className="text-xs text-blue-200 font-medium ml-1 bg-blue-800/60 px-2 py-1 rounded-md">+{certifications.length - 2} more</span>
               )}
             </div>
           ) : (
             <p className="text-sm text-slate-400">No expertise listed</p>
           )}
         </div>
-        <p className="text-slate-100 mb-6 bg-emerald-950/30 p-4 rounded-lg italic border-l-4 border-emerald-700/50 shadow-md">
+        <p className="text-slate-100 mb-6 bg-slate-700/40 p-4 rounded-lg italic border-l-4 border-blue-600/50 shadow-md">
           "{professional.bio.length > 120 
             ? professional.bio.substring(0, 120) + '...' 
             : professional.bio}"
         </p>
         
         {professional.ratePerHour && (
-          <div className="flex items-center mb-5 text-emerald-200 font-bold bg-slate-900 px-4 py-2.5 rounded-lg shadow-md border border-emerald-900/40">
-            <span className="text-md">Rate: <span className="text-emerald-300">${professional.ratePerHour}/hour</span></span>
+          <div className="flex items-center mb-5 text-blue-200 font-bold bg-slate-700/60 px-4 py-2.5 rounded-lg shadow-md border border-blue-800/30">
+            <span className="text-md">Rate: <span className="text-sky-300">${professional.ratePerHour}/hour</span></span>
           </div>
         )}
         
         <div className="flex space-x-3">
-          <Button className="flex-grow bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-700 hover:to-teal-600 transition-all duration-300 transform hover:-translate-y-1 shadow-md" asChild>
+          <Button className="flex-grow bg-gradient-to-r from-blue-600 to-sky-500 hover:from-blue-700 hover:to-sky-600 transition-all duration-300 transform hover:-translate-y-1 shadow-md" asChild>
             <Link href={`/professional-profile/${professional.id}`}>
               View Profile
             </Link>
           </Button>
-          <Button variant="outline" size="icon" className="bg-slate-800/50 hover:bg-emerald-900/60 border-emerald-800/60 hover:border-emerald-700/60 text-emerald-300 transition-colors" asChild>
+          <Button variant="outline" size="icon" className="bg-slate-700/40 hover:bg-blue-800/60 border-blue-700/50 hover:border-blue-600/50 text-blue-300 transition-colors" asChild>
             <Link href={`/messages?professional=${professional.id}`}>
               <Calendar className="h-4 w-4" />
             </Link>

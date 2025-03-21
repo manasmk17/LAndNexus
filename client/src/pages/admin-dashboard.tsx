@@ -1437,7 +1437,7 @@ function ResourcesTab() {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Uncategorized</SelectItem>
+                    <SelectItem value="0">Uncategorized</SelectItem>
                     {categories.map((category) => (
                       <SelectItem key={category.id} value={category.id.toString()}>
                         {category.name}

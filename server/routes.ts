@@ -87,7 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     res.status(401).json({ message: "Unauthorized" });
   };
-  
+
   // Stripe payment route for one-time payments
   app.post("/api/create-payment-intent", isAuthenticated, async (req, res) => {
     try {
@@ -103,13 +103,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .json({ message: "Error creating payment intent: " + error.message });
     }
   });
-  
+
   // Stripe subscription route
   app.post('/api/create-subscription', isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
       const { paymentMethodId, priceId, tier } = req.body;
-      
+
       if (!paymentMethodId || !priceId || !tier) {
         return res.status(400).json({ 
           message: "Missing required parameters: paymentMethodId, priceId, or tier" 
@@ -117,7 +117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       let customerId = user.stripeCustomerId;
-      
+
       // If user doesn't have a Stripe customer ID, create one
       if (!customerId) {
         const customer = await stripe.customers.create({
@@ -128,7 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             default_payment_method: paymentMethodId,
           },
         });
-        
+
         customerId = customer.id;
         // Update user with Stripe customer ID
         await storage.updateStripeCustomerId(user.id, customerId);
@@ -137,14 +137,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await stripe.paymentMethods.attach(paymentMethodId, {
           customer: customerId,
         });
-        
+
         await stripe.customers.update(customerId, {
           invoice_settings: {
             default_payment_method: paymentMethodId,
           },
         });
       }
-      
+
       // Create the subscription
       const subscription = await stripe.subscriptions.create({
         customer: customerId,
@@ -156,14 +156,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         payment_behavior: 'default_incomplete',
         expand: ['latest_invoice.payment_intent'],
       });
-      
+
       // Update user with subscription data
       await storage.updateStripeSubscriptionId(user.id, subscription.id);
       await storage.updateUserSubscription(user.id, tier, subscription.status);
-      
+
       const invoice = subscription.latest_invoice as any;
       const paymentIntent = invoice.payment_intent as any;
-      
+
       res.json({
         subscriptionId: subscription.id,
         clientSecret: paymentIntent.client_secret,
@@ -174,7 +174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     }
   });
-  
+
   // Stripe webhook handler
   app.post('/api/webhook', async (req, res) => {
     const signature = req.headers['stripe-signature'] as string;
@@ -184,11 +184,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verify webhook signature
       // (In production, you should store your webhook secret in an environment variable)
       const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-      
+
       if (!webhookSecret) {
         return res.status(400).json({ message: "Webhook secret is not configured" });
       }
-      
+
       event = stripe.webhooks.constructEvent(
         req.body,
         signature,
@@ -205,7 +205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const subscription = event.data.object as any;
         // Find the user by their Stripe customer ID
         const user = await storage.getUserByStripeCustomerId(subscription.customer);
-        
+
         if (user) {
           // Update the subscription status
           const subscriptionTier = user.subscriptionTier || "basic";
@@ -230,13 +230,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const consultationId = parseInt(req.params.id);
       const { paymentMethodId, amount } = req.body;
-      
+
       // Get consultation to validate
       const consultation = await storage.getConsultation(consultationId);
       if (!consultation) {
         return res.status(404).json({ message: "Consultation not found" });
       }
-      
+
       // Create payment
       const paymentIntent = await stripe.paymentIntents.create({
         amount: Math.round(amount * 100),
@@ -244,10 +244,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         payment_method: paymentMethodId,
         confirm: true,
       });
-      
+
       // Update consultation status
       await storage.updateConsultationStatus(consultationId, "paid");
-      
+
       res.json({ success: true, paymentIntent });
     } catch (error: any) {
       res.status(500).json({ message: "Payment failed: " + error.message });
@@ -258,20 +258,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/register", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);
-      
+
       // Check if username or email already exists
       const existingUsername = await storage.getUserByUsername(userData.username);
       if (existingUsername) {
         return res.status(400).json({ message: "Username already exists" });
       }
-      
+
       const existingEmail = await storage.getUserByEmail(userData.email);
       if (existingEmail) {
         return res.status(400).json({ message: "Email already exists" });
       }
-      
+
       const user = await storage.createUser(userData);
-      
+
       // Log the user in
       req.login(user, (err) => {
         if (err) {
@@ -313,19 +313,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/me", isAuthenticated, async (req, res) => {
     res.json(req.user);
   });
-  
+
   app.get("/api/subscription-status", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       // If user doesn't have a subscription, return appropriate response
       if (!user.stripeSubscriptionId) {
         return res.status(404).json({ message: "No active subscription found" });
       }
-      
+
       // Get subscription details from Stripe
       const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
-      
+
       // Format subscription details
       const response = {
         tier: user.subscriptionTier,
@@ -333,7 +333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Convert timestamp to ISO string for frontend formatting
         nextBillingDate: new Date(subscription.current_period_end * 1000).toISOString(),
       };
-      
+
       res.json(response);
     } catch (error: any) {
       res.status(500).json({ message: "Error retrieving subscription status: " + error.message });
@@ -344,22 +344,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/professional-profiles", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       if (user.userType !== "professional") {
         return res.status(403).json({ message: "Only professionals can create profiles" });
       }
-      
+
       // Check if user already has a profile
       const existingProfile = await storage.getProfessionalProfileByUserId(user.id);
       if (existingProfile) {
         return res.status(400).json({ message: "User already has a professional profile" });
       }
-      
+
       const profileData = insertProfessionalProfileSchema.parse({
         ...req.body,
         userId: user.id
       });
-      
+
       const profile = await storage.createProfessionalProfile(profileData);
       res.status(201).json(profile);
     } catch (err) {
@@ -384,11 +384,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/professional-profiles/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     const profile = await storage.getProfessionalProfile(id);
-    
+
     if (!profile) {
       return res.status(404).json({ message: "Profile not found" });
     }
-    
+
     res.json(profile);
   });
 
@@ -396,20 +396,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const user = req.user as any;
-      
+
       // Check if profile exists and belongs to user
       const profile = await storage.getProfessionalProfile(id);
       if (!profile) {
         return res.status(404).json({ message: "Profile not found" });
       }
-      
+
       if (profile.userId !== user.id) {
         return res.status(403).json({ message: "You can only update your own profile" });
       }
-      
+
       const updateData = req.body;
       const updatedProfile = await storage.updateProfessionalProfile(id, updateData);
-      
+
       res.json(updatedProfile);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -448,22 +448,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const professionalId = parseInt(req.params.id);
       const user = req.user as any;
-      
+
       // Check if profile exists and belongs to user
       const profile = await storage.getProfessionalProfile(professionalId);
       if (!profile) {
         return res.status(404).json({ message: "Profile not found" });
       }
-      
+
       if (profile.userId !== user.id) {
         return res.status(403).json({ message: "You can only update your own profile" });
       }
-      
+
       const expertiseData = insertProfessionalExpertiseSchema.parse({
         ...req.body,
         professionalId
       });
-      
+
       const expertise = await storage.addProfessionalExpertise(expertiseData);
       res.status(201).json(expertise);
     } catch (err) {
@@ -485,22 +485,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const professionalId = parseInt(req.params.id);
       const user = req.user as any;
-      
+
       // Check if profile exists and belongs to user
       const profile = await storage.getProfessionalProfile(professionalId);
       if (!profile) {
         return res.status(404).json({ message: "Profile not found" });
       }
-      
+
       if (profile.userId !== user.id) {
         return res.status(403).json({ message: "You can only update your own profile" });
       }
-      
+
       const certificationData = insertCertificationSchema.parse({
         ...req.body,
         professionalId
       });
-      
+
       const certification = await storage.createCertification(certificationData);
       res.status(201).json(certification);
     } catch (err) {
@@ -515,21 +515,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const user = req.user as any;
-      
+
       // Get the certification to check ownership
       const certification = await storage.getProfessionalCertifications(id);
       if (!certification) {
         return res.status(404).json({ message: "Certification not found" });
       }
-      
+
       // Get the profile to check if it belongs to the user
       const profile = await storage.getProfessionalProfile(certification[0].professionalId);
       if (profile?.userId !== user.id) {
         return res.status(403).json({ message: "You can only delete your own certifications" });
       }
-      
+
       const success = await storage.deleteCertification(id);
-      
+
       if (success) {
         res.status(204).send();
       } else {
@@ -544,22 +544,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/company-profiles", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       if (user.userType !== "company") {
         return res.status(403).json({ message: "Only companies can create company profiles" });
       }
-      
+
       // Check if user already has a profile
       const existingProfile = await storage.getCompanyProfileByUserId(user.id);
       if (existingProfile) {
         return res.status(400).json({ message: "User already has a company profile" });
       }
-      
+
       const profileData = insertCompanyProfileSchema.parse({
         ...req.body,
         userId: user.id
       });
-      
+
       const profile = await storage.createCompanyProfile(profileData);
       res.status(201).json(profile);
     } catch (err) {
@@ -578,11 +578,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/company-profiles/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     const profile = await storage.getCompanyProfile(id);
-    
+
     if (!profile) {
       return res.status(404).json({ message: "Profile not found" });
     }
-    
+
     res.json(profile);
   });
 
@@ -590,20 +590,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const user = req.user as any;
-      
+
       // Check if profile exists and belongs to user
       const profile = await storage.getCompanyProfile(id);
       if (!profile) {
         return res.status(404).json({ message: "Profile not found" });
       }
-      
+
       if (profile.userId !== user.id) {
         return res.status(403).json({ message: "You can only update your own profile" });
       }
-      
+
       const updateData = req.body;
       const updatedProfile = await storage.updateCompanyProfile(id, updateData);
-      
+
       res.json(updatedProfile);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -613,26 +613,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Job Matching
+  app.get("/api/jobs/:jobId/matches", isAuthenticated, async (req, res) => {
+    try {
+      const jobId = parseInt(req.params.jobId);
+      const job = await storage.getJobPosting(jobId);
+
+      if (!job) {
+        return res.status(404).json({ message: "Job not found" });
+      }
+
+      const professionals = await storage.getAllProfessionalProfiles();
+      const jobEmbedding = await generateJobEmbedding(job);
+
+      const matches = await Promise.all(
+        professionals.map(async (profile) => {
+          const profileEmbedding = await generateProfileEmbedding(profile);
+          const score = calculateMatchScore(jobEmbedding, profileEmbedding);
+          return { profile, score };
+        })
+      );
+
+      const topMatches = matches
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5);
+
+      res.json(topMatches);
+    } catch (err) {
+      res.status(500).json({ message: "Error finding matches" });
+    }
+  });
+
   // Job Posting Routes
   app.post("/api/job-postings", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       if (user.userType !== "company") {
         return res.status(403).json({ message: "Only companies can post jobs" });
       }
-      
+
       // Get the company profile
       const companyProfile = await storage.getCompanyProfileByUserId(user.id);
       if (!companyProfile) {
         return res.status(404).json({ message: "Company profile not found" });
       }
-      
+
       const jobData = insertJobPostingSchema.parse({
         ...req.body,
         companyId: companyProfile.id
       });
-      
+
       const job = await storage.createJobPosting(jobData);
       res.status(201).json(job);
     } catch (err) {
@@ -663,11 +694,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/job-postings/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     const job = await storage.getJobPosting(id);
-    
+
     if (!job) {
       return res.status(404).json({ message: "Job posting not found" });
     }
-    
+
     res.json(job);
   });
 
@@ -675,22 +706,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const user = req.user as any;
-      
+
       // Check if job exists
       const job = await storage.getJobPosting(id);
       if (!job) {
         return res.status(404).json({ message: "Job posting not found" });
       }
-      
+
       // Check if the company profile belongs to the user
       const companyProfile = await storage.getCompanyProfile(job.companyId);
       if (companyProfile?.userId !== user.id) {
         return res.status(403).json({ message: "You can only update your own job postings" });
       }
-      
+
       const updateData = req.body;
       const updatedJob = await storage.updateJobPosting(id, updateData);
-      
+
       res.json(updatedJob);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -704,21 +735,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const user = req.user as any;
-      
+
       // Check if job exists
       const job = await storage.getJobPosting(id);
       if (!job) {
         return res.status(404).json({ message: "Job posting not found" });
       }
-      
+
       // Check if the company profile belongs to the user
       const companyProfile = await storage.getCompanyProfile(job.companyId);
       if (companyProfile?.userId !== user.id) {
         return res.status(403).json({ message: "You can only delete your own job postings" });
       }
-      
+
       const success = await storage.deleteJobPosting(id);
-      
+
       if (success) {
         res.status(204).send();
       } else {
@@ -734,40 +765,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const jobId = parseInt(req.params.id);
       const user = req.user as any;
-      
+
       if (user.userType !== "professional") {
         return res.status(403).json({ message: "Only professionals can apply to jobs" });
       }
-      
+
       // Check if job exists
       const job = await storage.getJobPosting(jobId);
       if (!job) {
         return res.status(404).json({ message: "Job posting not found" });
       }
-      
+
       // Get professional profile
       const professionalProfile = await storage.getProfessionalProfileByUserId(user.id);
       if (!professionalProfile) {
         return res.status(404).json({ message: "Professional profile not found" });
       }
-      
+
       const applicationData = insertJobApplicationSchema.parse({
         ...req.body,
         jobId,
         professionalId: professionalProfile.id
       });
-      
+
       const application = await storage.createJobApplication(applicationData);
       res.status(201).json(application);
     } catch (err) {
       if (err instanceof Error && err.message === "Professional has already applied to this job") {
         return res.status(400).json({ message: err.message });
       }
-      
+
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid input", errors: err.errors });
       }
-      
+
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -776,19 +807,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const jobId = parseInt(req.params.id);
       const user = req.user as any;
-      
+
       // Check if job exists
       const job = await storage.getJobPosting(jobId);
       if (!job) {
         return res.status(404).json({ message: "Job posting not found" });
       }
-      
+
       // Check if user is the company that posted the job
       const companyProfile = await storage.getCompanyProfile(job.companyId);
       if (companyProfile?.userId !== user.id) {
         return res.status(403).json({ message: "You can only view applications for your own job postings" });
       }
-      
+
       const applications = await storage.getJobApplicationsByJob(jobId);
       res.json(applications);
     } catch (err) {
@@ -800,13 +831,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const professionalId = parseInt(req.params.id);
       const user = req.user as any;
-      
+
       // Check if user is the professional
       const professionalProfile = await storage.getProfessionalProfile(professionalId);
       if (!professionalProfile || professionalProfile.userId !== user.id) {
         return res.status(403).json({ message: "You can only view your own applications" });
       }
-      
+
       const applications = await storage.getJobApplicationsByProfessional(professionalId);
       res.json(applications);
     } catch (err) {
@@ -818,30 +849,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const user = req.user as any;
-      
+
       // Get application
       const application = await storage.getJobApplication(id);
       if (!application) {
         return res.status(404).json({ message: "Application not found" });
       }
-      
+
       // Get job posting
       const job = await storage.getJobPosting(application.jobId);
       if (!job) {
         return res.status(404).json({ message: "Job posting not found" });
       }
-      
+
       // Check if user is the company that posted the job
       const companyProfile = await storage.getCompanyProfile(job.companyId);
       if (companyProfile?.userId !== user.id) {
         return res.status(403).json({ message: "You can only update status for applications to your own job postings" });
       }
-      
+
       const { status } = req.body;
       if (!status || !["pending", "reviewed", "accepted", "rejected"].includes(status)) {
         return res.status(400).json({ message: "Invalid status" });
       }
-      
+
       const updatedApplication = await storage.updateJobApplicationStatus(id, status);
       res.json(updatedApplication);
     } catch (err) {
@@ -853,12 +884,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/resources", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       const resourceData = insertResourceSchema.parse({
         ...req.body,
         authorId: user.id
       });
-      
+
       const resource = await storage.createResource(resourceData);
       res.status(201).json(resource);
     } catch (err) {
@@ -883,11 +914,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/resources/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     const resource = await storage.getResource(id);
-    
+
     if (!resource) {
       return res.status(404).json({ message: "Resource not found" });
     }
-    
+
     res.json(resource);
   });
 
@@ -895,12 +926,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/forum-posts", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       const postData = insertForumPostSchema.parse({
         ...req.body,
         authorId: user.id
       });
-      
+
       const post = await storage.createForumPost(postData);
       res.status(201).json(post);
     } catch (err) {
@@ -919,11 +950,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/forum-posts/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     const post = await storage.getForumPost(id);
-    
+
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
     }
-    
+
     res.json(post);
   });
 
@@ -937,19 +968,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const postId = parseInt(req.params.id);
       const user = req.user as any;
-      
+
       // Check if post exists
       const post = await storage.getForumPost(postId);
       if (!post) {
         return res.status(404).json({ message: "Post not found" });
       }
-      
+
       const commentData = insertForumCommentSchema.parse({
         ...req.body,
         postId,
         authorId: user.id
       });
-      
+
       const comment = await storage.createForumComment(commentData);
       res.status(201).json(comment);
     } catch (err) {
@@ -970,7 +1001,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/messages/:userId", isAuthenticated, async (req, res) => {
     const user = req.user as any;
     const otherUserId = parseInt(req.params.userId);
-    
+
     const conversation = await storage.getConversation(user.id, otherUserId);
     res.json(conversation);
   });
@@ -978,12 +1009,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/messages", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       const messageData = insertMessageSchema.parse({
         ...req.body,
         senderId: user.id
       });
-      
+
       const message = await storage.createMessage(messageData);
       res.status(201).json(message);
     } catch (err) {
@@ -998,20 +1029,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const user = req.user as any;
-      
+
       // Get message
       const message = await storage.getMessage(id);
       if (!message) {
         return res.status(404).json({ message: "Message not found" });
       }
-      
+
       // Check if user is the receiver
       if (message.receiverId !== user.id) {
         return res.status(403).json({ message: "You can only mark messages sent to you as read" });
       }
-      
+
       const success = await storage.markMessageAsRead(id);
-      
+
       if (success) {
         res.status(204).send();
       } else {
@@ -1026,22 +1057,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/consultations", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       if (user.userType !== "company") {
         return res.status(403).json({ message: "Only companies can book consultations" });
       }
-      
+
       // Get company profile
       const companyProfile = await storage.getCompanyProfileByUserId(user.id);
       if (!companyProfile) {
         return res.status(404).json({ message: "Company profile not found" });
       }
-      
+
       const consultationData = insertConsultationSchema.parse({
         ...req.body,
         companyId: companyProfile.id
       });
-      
+
       const consultation = await storage.createConsultation(consultationData);
       res.status(201).json(consultation);
     } catch (err) {
@@ -1056,13 +1087,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const professionalId = parseInt(req.params.id);
       const user = req.user as any;
-      
+
       // Check if user is the professional
       const professionalProfile = await storage.getProfessionalProfile(professionalId);
       if (!professionalProfile || professionalProfile.userId !== user.id) {
         return res.status(403).json({ message: "You can only view your own consultations" });
       }
-      
+
       const consultations = await storage.getProfessionalConsultations(professionalId);
       res.json(consultations);
     } catch (err) {
@@ -1074,13 +1105,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const companyId = parseInt(req.params.id);
       const user = req.user as any;
-      
+
       // Check if user is the company
       const companyProfile = await storage.getCompanyProfile(companyId);
       if (!companyProfile || companyProfile.userId !== user.id) {
         return res.status(403).json({ message: "You can only view your own consultations" });
       }
-      
+
       const consultations = await storage.getCompanyConsultations(companyId);
       res.json(consultations);
     } catch (err) {
@@ -1092,26 +1123,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const user = req.user as any;
-      
+
       // Get consultation
       const consultation = await storage.getConsultation(id);
       if (!consultation) {
         return res.status(404).json({ message: "Consultation not found" });
       }
-      
+
       // Check if user is involved in the consultation
       const professionalProfile = await storage.getProfessionalProfile(consultation.professionalId);
       const companyProfile = await storage.getCompanyProfile(consultation.companyId);
-      
+
       if (professionalProfile?.userId !== user.id && companyProfile?.userId !== user.id) {
         return res.status(403).json({ message: "You can only update status for your own consultations" });
       }
-      
+
       const { status } = req.body;
       if (!status || !["scheduled", "completed", "cancelled"].includes(status)) {
         return res.status(400).json({ message: "Invalid status" });
       }
-      
+
       const updatedConsultation = await storage.updateConsultationStatus(id, status);
       res.json(updatedConsultation);
     } catch (err) {

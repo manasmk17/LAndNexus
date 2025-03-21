@@ -901,14 +901,14 @@ function JobsTab() {
                     <TableCell>
                       <Badge variant={
                         job.status === "open" ? "default" :
-                        job.status === "filled" ? "success" : "secondary"
+                        job.status === "filled" ? "outline" : "secondary"
                       }>
                         {job.status}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <Switch 
-                        checked={job.featured} 
+                        checked={job.featured || false} 
                         onCheckedChange={() => toggleFeatured(job)}
                         aria-label="Toggle featured status"
                       />
@@ -1188,7 +1188,7 @@ function ResourcesTab() {
                       <TableCell>{resource.authorId}</TableCell>
                       <TableCell>
                         <Switch 
-                          checked={resource.featured} 
+                          checked={resource.featured || false} 
                           onCheckedChange={() => toggleFeatured(resource)}
                           aria-label="Toggle featured status"
                         />

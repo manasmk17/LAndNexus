@@ -10,6 +10,7 @@ import Register from "@/pages/register";
 import Login from "@/pages/login";
 import ProfessionalDashboard from "@/pages/professional-dashboard";
 import CompanyDashboard from "@/pages/company-dashboard";
+import AdminDashboard from "@/pages/admin-dashboard";
 import Professionals from "@/pages/professionals";
 import ProfessionalProfile from "@/pages/professional-profile";
 import EditProfile from "@/pages/edit-profile";
@@ -36,6 +37,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/professional-dashboard" component={ProfessionalDashboard} />
       <Route path="/company-dashboard" component={CompanyDashboard} />
+      <Route path="/admin-dashboard" component={AdminDashboard} />
       <Route path="/professionals" component={Professionals} />
       <Route path="/professional-profile/:id" component={ProfessionalProfile} />
       <Route path="/edit-profile" component={EditProfile} />

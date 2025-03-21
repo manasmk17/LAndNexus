@@ -147,8 +147,8 @@ export default function ProfessionalDashboard() {
                     </div>
                     <div className="ml-auto flex items-center">
                       <Star className="h-4 w-4 text-yellow-400 mr-1" />
-                      <span>{(profile.rating / 20).toFixed(1)}</span>
-                      <span className="text-gray-500 ml-1">({profile.reviewCount} reviews)</span>
+                      <span>{((profile.rating || 0) / 20).toFixed(1)}</span>
+                      <span className="text-gray-500 ml-1">({profile.reviewCount || 0} reviews)</span>
                     </div>
                   </div>
                   

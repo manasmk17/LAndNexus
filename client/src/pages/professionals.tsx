@@ -30,7 +30,7 @@ import type { ProfessionalProfile, Expertise } from "@shared/schema";
 
 export default function Professionals() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedExpertise, setSelectedExpertise] = useState<string>("");
+  const [selectedExpertise, setSelectedExpertise] = useState<string>("all");
   const [sortOrder, setSortOrder] = useState<string>("rating");
   const [experienceLevel, setExperienceLevel] = useState<string>("");
   const [rateRange, setRateRange] = useState<[number, number]>([0, 500]);
@@ -73,14 +73,18 @@ export default function Professionals() {
   // Sort professionals
   const sortedProfessionals = [...filteredProfessionals].sort((a, b) => {
     if (sortOrder === "rating") {
-      return b.rating - a.rating;
+      const aRating = a.rating || 0;
+      const bRating = b.rating || 0;
+      return bRating - aRating;
     } else if (sortOrder === "ratePerHour") {
       const aRate = a.ratePerHour || 0;
       const bRate = b.ratePerHour || 0;
       return bRate - aRate;
     }
     // Default sorting by rating
-    return b.rating - a.rating;
+    const aRating = a.rating || 0;
+    const bRating = b.rating || 0;
+    return bRating - aRating;
   });
   
   return (
@@ -135,7 +139,7 @@ export default function Professionals() {
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Expertise</SelectItem>
+                <SelectItem value="all">All Expertise</SelectItem>
                 {expertise?.map((exp) => (
                   <SelectItem key={exp.id} value={exp.name}>
                     {exp.name}
@@ -198,7 +202,7 @@ export default function Professionals() {
           variant="outline"
           onClick={() => {
             setSearchTerm("");
-            setSelectedExpertise("");
+            setSelectedExpertise("all");
             setExperienceLevel("");
             setRateRange([0, 500]);
           }}
@@ -261,7 +265,7 @@ export default function Professionals() {
               </p>
               <Button onClick={() => {
                 setSearchTerm("");
-                setSelectedExpertise("");
+                setSelectedExpertise("all");
               }}>
                 Clear Filters
               </Button>

@@ -33,7 +33,7 @@ import type { JobPosting } from "@shared/schema";
 export default function Jobs() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [jobType, setJobType] = useState<string>("");
+  const [jobType, setJobType] = useState<string>("all");
   const [remoteOnly, setRemoteOnly] = useState(false);
   
   // Fetch all job postings
@@ -55,7 +55,7 @@ export default function Jobs() {
       job.requirements.toLowerCase().includes(searchTerm.toLowerCase());
     
     // Filter by job type
-    const matchesType = !jobType || job.jobType === jobType;
+    const matchesType = jobType === "all" || job.jobType === jobType;
     
     // Filter by remote option
     const matchesRemote = !remoteOnly || job.remote;
@@ -112,7 +112,7 @@ export default function Jobs() {
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Job Types</SelectItem>
+                <SelectItem value="all">All Job Types</SelectItem>
                 <SelectItem value="full-time">Full-time</SelectItem>
                 <SelectItem value="part-time">Part-time</SelectItem>
                 <SelectItem value="contract">Contract</SelectItem>
@@ -209,7 +209,7 @@ export default function Jobs() {
               </p>
               <Button onClick={() => {
                 setSearchTerm("");
-                setJobType("");
+                setJobType("all");
                 setRemoteOnly(false);
               }}>
                 Clear Filters

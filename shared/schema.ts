@@ -17,6 +17,8 @@ export const users = pgTable("users", {
   stripeSubscriptionId: text("stripe_subscription_id"),
   subscriptionTier: text("subscription_tier"), // "free", "basic", "premium"
   subscriptionStatus: text("subscription_status"), // "active", "trialing", "past_due", "canceled"
+  resetToken: text("reset_token"),
+  resetTokenExpiry: timestamp("reset_token_expiry"),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({

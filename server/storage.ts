@@ -118,6 +118,7 @@ export class MemStorage implements IStorage {
   private jobPostings: Map<number, JobPosting>;
   private jobApplications: Map<number, JobApplication>;
   private resources: Map<number, Resource>;
+  private resourceCategories: Map<number, ResourceCategory>;
   private forumPosts: Map<number, ForumPost>;
   private forumComments: Map<number, ForumComment>;
   private messages: Map<number, Message>;
@@ -132,6 +133,7 @@ export class MemStorage implements IStorage {
   private jobPostingId: number;
   private jobApplicationId: number;
   private resourceId: number;
+  private resourceCategoryId: number;
   private forumPostId: number;
   private forumCommentId: number;
   private messageId: number;
@@ -147,6 +149,7 @@ export class MemStorage implements IStorage {
     this.jobPostings = new Map();
     this.jobApplications = new Map();
     this.resources = new Map();
+    this.resourceCategories = new Map();
     this.forumPosts = new Map();
     this.forumComments = new Map();
     this.messages = new Map();
@@ -161,6 +164,7 @@ export class MemStorage implements IStorage {
     this.jobPostingId = 1;
     this.jobApplicationId = 1;
     this.resourceId = 1;
+    this.resourceCategoryId = 1;
     this.forumPostId = 1;
     this.forumCommentId = 1;
     this.messageId = 1;
@@ -168,6 +172,9 @@ export class MemStorage implements IStorage {
     
     // Initialize with some expertise areas
     this.initExpertise();
+    
+    // Initialize with some resource categories
+    this.initResourceCategories();
   }
   
   private initExpertise() {
@@ -190,6 +197,78 @@ export class MemStorage implements IStorage {
       const id = this.expertiseId++;
       this.expertises.set(id, { id, name });
     });
+  }
+  
+  private initResourceCategories() {
+    const categories = [
+      { name: "Leadership", description: "Resources focused on leadership development and skills" },
+      { name: "Technical Skills", description: "Resources for technical skill development" },
+      { name: "Soft Skills", description: "Resources for communication and interpersonal skills" },
+      { name: "Compliance", description: "Resources related to compliance and regulatory training" },
+      { name: "Best Practices", description: "Best practices in Learning & Development" }
+    ];
+    
+    categories.forEach(cat => {
+      const id = this.resourceCategoryId++;
+      const category: ResourceCategory = {
+        id,
+        name: cat.name,
+        description: cat.description
+      };
+      this.resourceCategories.set(id, category);
+    });
+  }
+  
+  // Resource Category operations
+  async getResourceCategory(id: number): Promise<ResourceCategory | undefined> {
+    return this.resourceCategories.get(id);
+  }
+  
+  async getAllResourceCategories(): Promise<ResourceCategory[]> {
+    return Array.from(this.resourceCategories.values());
+  }
+  
+  async createResourceCategory(category: InsertResourceCategory): Promise<ResourceCategory> {
+    const id = this.resourceCategoryId++;
+    const newCategory: ResourceCategory = { 
+      id, 
+      name: category.name,
+      description: category.description || null
+    };
+    this.resourceCategories.set(id, newCategory);
+    return newCategory;
+  }
+  
+  // Additional Resource operations
+  async getResourcesByCategory(categoryId: number): Promise<Resource[]> {
+    return Array.from(this.resources.values())
+      .filter(resource => resource.categoryId === categoryId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+  
+  async searchResources(query?: string, type?: string, categoryId?: number): Promise<Resource[]> {
+    return Array.from(this.resources.values())
+      .filter(resource => {
+        const matchesQuery = !query || 
+          resource.title.toLowerCase().includes(query.toLowerCase()) ||
+          resource.description.toLowerCase().includes(query.toLowerCase());
+          
+        const matchesType = !type || resource.resourceType === type;
+        
+        const matchesCategory = !categoryId || resource.categoryId === categoryId;
+        
+        return matchesQuery && matchesType && matchesCategory;
+      })
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+  
+  async setResourceFeatured(id: number, featured: boolean): Promise<Resource | undefined> {
+    const resource = this.resources.get(id);
+    if (!resource) return undefined;
+    
+    const updated = { ...resource, featured };
+    this.resources.set(id, updated);
+    return updated;
   }
 
   // User operations
@@ -483,7 +562,8 @@ export class MemStorage implements IStorage {
       id, 
       createdAt: new Date(),
       featured: resource.featured || false,
-      imageUrl: resource.imageUrl || null
+      imageUrl: resource.imageUrl || null,
+      categoryId: resource.categoryId || null
     };
     this.resources.set(id, newResource);
     return newResource;
@@ -662,7 +742,7 @@ export class MemStorage implements IStorage {
 }
 
 import { db } from "./db";
-import { eq, and, desc, asc, or, isNull, not } from "drizzle-orm";
+import { eq, and, desc, asc, or, isNull, not, sql } from "drizzle-orm";
 
 export class DatabaseStorage implements IStorage {
   // User operations

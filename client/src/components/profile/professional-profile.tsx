@@ -20,9 +20,11 @@ import {
   Video, 
   MessageSquare, 
   Briefcase, 
-  CheckCircle
+  CheckCircle,
+  Lightbulb
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import SkillRecommendations from "@/components/profile/skill-recommendations";
 import type { 
   ProfessionalProfile, 
   Expertise, 
@@ -169,8 +171,8 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                 </div>
                 <div className="flex items-center text-gray-600 mb-3">
                   <Star className="w-4 h-4 text-yellow-400 mr-1" />
-                  <span>{(profile.rating / 20).toFixed(1)}</span>
-                  <span className="ml-1 text-gray-500">({profile.reviewCount} reviews)</span>
+                  <span>{((profile.rating || 0) / 20).toFixed(1)}</span>
+                  <span className="ml-1 text-gray-500">({profile.reviewCount || 0} reviews)</span>
                 </div>
                 
                 <div className="flex flex-wrap gap-2">
@@ -220,6 +222,12 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
             <TabsList className="w-full">
               <TabsTrigger value="about">About</TabsTrigger>
               <TabsTrigger value="expertise">Expertise & Certifications</TabsTrigger>
+              <TabsTrigger value="skill-recommendations">
+                <span className="flex items-center">
+                  <Lightbulb className="mr-1 h-4 w-4" />
+                  Skill Recommendations
+                </span>
+              </TabsTrigger>
               {profile.videoIntroUrl && <TabsTrigger value="video">Video Introduction</TabsTrigger>}
               {resources && resources.length > 0 && <TabsTrigger value="resources">Resources</TabsTrigger>}
             </TabsList>
@@ -307,6 +315,13 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                 </div>
               </TabsContent>
             )}
+            
+            <TabsContent value="skill-recommendations" className="mt-6">
+              <SkillRecommendations 
+                professionalId={professionalId} 
+                isCurrentUser={user?.id === profile.userId}
+              />
+            </TabsContent>
             
             {resources && resources.length > 0 && (
               <TabsContent value="resources" className="mt-6">

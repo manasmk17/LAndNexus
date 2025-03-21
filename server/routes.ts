@@ -1956,9 +1956,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Save recommendations to database
           if (generatedRecommendations) {
+            // Import the schema first
+            const { insertSkillRecommendationSchema } = await import("@shared/schema");
+            
             const recommendationData = insertSkillRecommendationSchema.parse({
               professionalId,
-              recommendationsJson: JSON.stringify(generatedRecommendations)
+              recommendations: JSON.stringify(generatedRecommendations)
             });
             
             recommendations = await storage.createSkillRecommendation(recommendationData);

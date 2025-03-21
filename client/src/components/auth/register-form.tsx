@@ -19,12 +19,12 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const registerSchema = z.object({
-  username: z.string().min(3).max(50),
-  email: z.string().email(),
+  username: z.string().min(3).max(50).transform(val => val.trim()),
+  email: z.string().email().transform(val => val.trim()),
   password: z.string().min(8),
   confirmPassword: z.string(),
-  firstName: z.string().min(2),
-  lastName: z.string().min(2),
+  firstName: z.string().min(2).transform(val => val.trim()),
+  lastName: z.string().min(2).transform(val => val.trim()),
   userType: z.enum(["professional", "company"])
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",

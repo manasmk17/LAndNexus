@@ -1,12 +1,11 @@
-import { useState } from "react";
-import { useLocation } from "wouter";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
 
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useLocation } from "wouter";
+import { useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import {
   Form,
   FormControl,
@@ -18,26 +17,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2 } from "lucide-react";
 
 const registerSchema = z.object({
-  username: z
-    .string()
-    .min(3, { message: "Username must be at least 3 characters" })
-    .max(50),
-  email: z.string().email({ message: "Please enter a valid email address" }),
-  password: z
-    .string()
-    .min(8, { message: "Password must be at least 8 characters" }),
+  username: z.string().min(3).max(50),
+  email: z.string().email(),
+  password: z.string().min(8),
   confirmPassword: z.string(),
-  firstName: z.string().min(1, { message: "First name is required" }),
-  lastName: z.string().min(1, { message: "Last name is required" }),
-  userType: z.enum(["professional", "company"], {
-    required_error: "Please select a user type",
-  }),
+  firstName: z.string().min(2),
+  lastName: z.string().min(2),
+  userType: z.enum(["professional", "company"])
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
-  path: ["confirmPassword"],
+  path: ["confirmPassword"]
 });
 
 type RegisterFormProps = {
@@ -65,45 +56,80 @@ export default function RegisterForm({ initialUserType }: RegisterFormProps) {
     },
   });
 
-  const onSubmit = async (data: z.infer<typeof registerSchema>) => {
+  async function onSubmit(values: z.infer<typeof registerSchema>) {
     try {
       setIsSubmitting(true);
       
-      // Remove confirmPassword as it's not in the API schema
-      const { confirmPassword, ...registerData } = data;
-      
-      const response = await apiRequest("POST", "/api/register", registerData);
-      const userData = await response.json();
-      
-      toast({
-        title: "Account created successfully!",
-        description: "Welcome to L&D Nexus.",
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
       });
       
-      // Login the user
-      await login(userData);
+      const data = await response.json();
       
-      // Redirect based on user type
-      if (userData.userType === "professional") {
-        setLocation("/professional-dashboard");
-      } else {
-        setLocation("/company-dashboard");
+      if (!response.ok) {
+        throw new Error(data.message || "Registration failed");
       }
-    } catch (error) {
-      console.error("Registration error:", error);
+
+      await login(values.username, values.password);
       toast({
-        title: "Registration failed",
-        description: error instanceof Error ? error.message : "Please try again later",
+        title: "Registration successful!",
+        description: "Welcome to L&D Nexus",
+      });
+      
+      setLocation(values.userType === "professional" ? "/professional-dashboard" : "/company-dashboard");
+    } catch (error: any) {
+      toast({
         variant: "destructive",
+        title: "Registration failed",
+        description: error.message,
       });
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="userType"
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <FormLabel>I am a...</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="flex space-x-4"
+                >
+                  <FormItem className="flex items-center space-x-2">
+                    <FormControl>
+                      <RadioGroupItem value="professional" />
+                    </FormControl>
+                    <FormLabel className="font-normal">
+                      L&D Professional
+                    </FormLabel>
+                  </FormItem>
+                  <FormItem className="flex items-center space-x-2">
+                    <FormControl>
+                      <RadioGroupItem value="company" />
+                    </FormControl>
+                    <FormLabel className="font-normal">
+                      Company
+                    </FormLabel>
+                  </FormItem>
+                </RadioGroup>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -190,49 +216,8 @@ export default function RegisterForm({ initialUserType }: RegisterFormProps) {
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name="userType"
-          render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel>I am a...</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  className="flex flex-col space-y-1"
-                >
-                  <FormItem className="flex items-center space-x-3 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="professional" />
-                    </FormControl>
-                    <FormLabel className="font-normal cursor-pointer">
-                      L&D Professional
-                    </FormLabel>
-                  </FormItem>
-                  <FormItem className="flex items-center space-x-3 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="company" />
-                    </FormControl>
-                    <FormLabel className="font-normal cursor-pointer">
-                      Company / Employer
-                    </FormLabel>
-                  </FormItem>
-                </RadioGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating Account...
-            </>
-          ) : (
-            "Create Account"
-          )}
+          {isSubmitting ? "Creating account..." : "Create Account"}
         </Button>
       </form>
     </Form>

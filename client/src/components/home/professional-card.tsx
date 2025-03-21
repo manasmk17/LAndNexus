@@ -20,9 +20,9 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
   });
 
   return (
-    <div className="bg-slate-900 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group border border-emerald-800/40">
-      <div className="flex items-center p-6 border-b border-emerald-800/30 bg-gradient-to-r from-slate-900 via-emerald-950/20 to-slate-900">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-600 to-teal-400 flex items-center justify-center overflow-hidden shadow-lg transform group-hover:scale-105 transition-transform duration-300 border-2 border-emerald-700">
+    <div className="bg-gray-900 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group border border-blue-900/30">
+      <div className="flex items-center p-6 border-b border-blue-800/20 bg-gradient-to-r from-gray-900 via-blue-950/20 to-gray-900">
+        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-600 via-blue-500 to-sky-400 flex items-center justify-center overflow-hidden shadow-lg transform group-hover:scale-105 transition-transform duration-300 border-2 border-blue-700/60">
           {professional.profileImageUrl ? (
             <img 
               src={professional.profileImageUrl} 
@@ -34,17 +34,17 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
           )}
         </div>
         <div className="ml-5">
-          <h3 className="text-xl font-heading font-bold text-emerald-100 group-hover:text-white transition-colors">{professional.title}</h3>
-          <p className="text-emerald-300/80 flex items-center mt-1">📍 {professional.location}</p>
+          <h3 className="text-xl font-heading font-bold text-blue-100 group-hover:text-white transition-colors">{professional.title}</h3>
+          <p className="text-blue-300/90 flex items-center mt-1">📍 {professional.location}</p>
           <div className="flex mt-1">
             {[...Array(5)].map((_, i) => (
               <Star 
                 key={i} 
-                className={`${i < Math.floor((professional.rating || 0) / 20) ? 'text-yellow-400' : 'text-slate-700'} h-4 w-4 ${i < ((professional.rating || 0) / 20) && i >= Math.floor((professional.rating || 0) / 20) ? 'fill-[50%]' : ''}`}
+                className={`${i < Math.floor((professional.rating || 0) / 20) ? 'text-amber-400' : 'text-gray-700'} h-4 w-4 ${i < ((professional.rating || 0) / 20) && i >= Math.floor((professional.rating || 0) / 20) ? 'fill-[50%]' : ''}`}
                 fill={i < Math.floor((professional.rating || 0) / 20) ? 'currentColor' : 'none'}
               />
             ))}
-            <span className="ml-1 text-sm text-emerald-200 font-medium">
+            <span className="ml-1 text-sm text-blue-200 font-medium">
               {((professional.rating || 0) / 20).toFixed(1)} ({professional.reviewCount || 0} reviews)
             </span>
           </div>

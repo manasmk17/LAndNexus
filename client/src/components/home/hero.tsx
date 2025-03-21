@@ -12,10 +12,10 @@ export default function Hero() {
       <div className="absolute inset-0 bg-gradient-to-b from-slate-900 to-blue-900"></div>
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-700/20 via-transparent to-transparent"></div>
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-slate-800/40 via-transparent to-transparent"></div>
-      
+
       {/* Grid pattern overlay */}
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iLjUiIGZpbGw9Im5vbmUiIGZpbGwtcnVsZT0iZXZlbm9kZCIgb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNNjAgMEgwdjYwaDYweiIvPjwvZz48L3N2Zz4=')] opacity-30"></div>
-      
+
       <div className="container mx-auto px-4 py-20 lg:py-32 relative z-10">
         <div className="flex flex-col md:flex-row items-center gap-12">
           <div className="md:w-1/2 mb-8 md:mb-0">
@@ -81,7 +81,7 @@ export default function Hero() {
                 height="400"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
-              
+
               {/* Feature badges */}
               <div className="absolute bottom-0 left-0 right-0 p-6 flex flex-wrap gap-3 justify-center">
                 <div className="bg-blue-900/80 backdrop-blur-sm rounded-full px-4 py-2 flex items-center text-sm text-blue-100 border border-blue-700/50">

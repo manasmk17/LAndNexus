@@ -100,12 +100,10 @@ export default function ResourceCard({ resource }: ResourceCardProps) {
               By {author ? `${author.firstName} ${author.lastName}` : "Unknown Author"}
             </span>
           </div>
-          <Link href={`/resource/${resource.id}`}>
-            <a className="text-primary hover:text-primary-dark text-sm font-medium">
-              {resource.resourceType === "template" ? "Download" : 
-               resource.resourceType === "video" ? "Watch" : 
-               resource.resourceType === "webinar" ? "Watch" : "Read More"}
-            </a>
+          <Link href={`/resource/${resource.id}`} className="text-primary hover:text-primary-dark text-sm font-medium">
+            {resource.resourceType === "template" ? "Download" : 
+             resource.resourceType === "video" ? "Watch" : 
+             resource.resourceType === "webinar" ? "Watch" : "Read More"}
           </Link>
         </div>
       </div>

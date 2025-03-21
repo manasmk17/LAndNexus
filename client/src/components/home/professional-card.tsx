@@ -40,12 +40,12 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
             {[...Array(5)].map((_, i) => (
               <Star 
                 key={i} 
-                className={`${i < Math.floor(professional.rating / 20) ? 'text-yellow-400' : 'text-gray-200'} h-4 w-4 ${i < (professional.rating / 20) && i >= Math.floor(professional.rating / 20) ? 'fill-[50%]' : ''}`}
-                fill={i < Math.floor(professional.rating / 20) ? 'currentColor' : 'none'}
+                className={`${i < Math.floor((professional.rating || 0) / 20) ? 'text-yellow-400' : 'text-gray-200'} h-4 w-4 ${i < ((professional.rating || 0) / 20) && i >= Math.floor((professional.rating || 0) / 20) ? 'fill-[50%]' : ''}`}
+                fill={i < Math.floor((professional.rating || 0) / 20) ? 'currentColor' : 'none'}
               />
             ))}
             <span className="ml-1 text-sm text-gray-500">
-              {(professional.rating / 20).toFixed(1)} ({professional.reviewCount} reviews)
+              {((professional.rating || 0) / 20).toFixed(1)} ({professional.reviewCount || 0} reviews)
             </span>
           </div>
         </div>
@@ -100,14 +100,16 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
             : professional.bio}
         </p>
         <div className="flex space-x-2">
-          <Link href={`/professional-profile/${professional.id}`}>
-            <Button className="flex-grow">View Profile</Button>
-          </Link>
-          <Link href={`/messages?professional=${professional.id}`}>
-            <Button variant="outline" size="icon">
+          <Button className="flex-grow" asChild>
+            <Link href={`/professional-profile/${professional.id}`}>
+              View Profile
+            </Link>
+          </Button>
+          <Button variant="outline" size="icon" asChild>
+            <Link href={`/messages?professional=${professional.id}`}>
               <Calendar className="h-4 w-4" />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </div>
     </div>

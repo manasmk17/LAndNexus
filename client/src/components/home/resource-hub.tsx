@@ -27,40 +27,32 @@ export default function ResourceHub() {
         
         {/* Resource Categories */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-          <Link href="/resources?type=templates">
-            <a className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-              <div className="bg-blue-100 text-primary p-4 rounded-full mb-3">
-                <FileText className="h-6 w-6" />
-              </div>
-              <h3 className="font-heading font-medium text-center">Templates</h3>
-            </a>
+          <Link href="/resources?type=templates" className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div className="bg-blue-100 text-primary p-4 rounded-full mb-3">
+              <FileText className="h-6 w-6" />
+            </div>
+            <h3 className="font-heading font-medium text-center">Templates</h3>
           </Link>
           
-          <Link href="/resources?type=articles">
-            <a className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-              <div className="bg-teal-100 text-teal-600 p-4 rounded-full mb-3">
-                <BookOpen className="h-6 w-6" />
-              </div>
-              <h3 className="font-heading font-medium text-center">Articles</h3>
-            </a>
+          <Link href="/resources?type=articles" className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div className="bg-teal-100 text-teal-600 p-4 rounded-full mb-3">
+              <BookOpen className="h-6 w-6" />
+            </div>
+            <h3 className="font-heading font-medium text-center">Articles</h3>
           </Link>
           
-          <Link href="/resources?type=videos">
-            <a className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-              <div className="bg-amber-100 text-amber-600 p-4 rounded-full mb-3">
-                <Video className="h-6 w-6" />
-              </div>
-              <h3 className="font-heading font-medium text-center">Videos</h3>
-            </a>
+          <Link href="/resources?type=videos" className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div className="bg-amber-100 text-amber-600 p-4 rounded-full mb-3">
+              <Video className="h-6 w-6" />
+            </div>
+            <h3 className="font-heading font-medium text-center">Videos</h3>
           </Link>
           
-          <Link href="/forum">
-            <a className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-              <div className="bg-blue-100 text-primary p-4 rounded-full mb-3">
-                <MessageSquare className="h-6 w-6" />
-              </div>
-              <h3 className="font-heading font-medium text-center">Community</h3>
-            </a>
+          <Link href="/forum" className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div className="bg-blue-100 text-primary p-4 rounded-full mb-3">
+              <MessageSquare className="h-6 w-6" />
+            </div>
+            <h3 className="font-heading font-medium text-center">Community</h3>
           </Link>
         </div>
         
@@ -101,12 +93,12 @@ export default function ResourceHub() {
         )}
         
         <div className="text-center mt-10">
-          <Link href="/resources">
-            <Button className="inline-flex items-center">
+          <Button className="inline-flex items-center" asChild>
+            <Link href="/resources">
               Explore All Resources
               <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </div>
     </section>

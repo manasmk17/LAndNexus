@@ -15,11 +15,9 @@ export default function FeaturedProfessionals() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center mb-10">
           <h2 className="text-3xl font-heading font-bold">Featured L&D Professionals</h2>
-          <Link href="/professionals">
-            <a className="text-primary hover:text-primary-dark flex items-center">
-              View all
-              <ArrowRight className="ml-1 h-4 w-4" />
-            </a>
+          <Link href="/professionals" className="text-primary hover:text-primary-dark flex items-center">
+            View all
+            <ArrowRight className="ml-1 h-4 w-4" />
           </Link>
         </div>
         

@@ -80,6 +80,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize resource categories
   await initializeResourceCategories();
   
+  // Configure multer storage for file uploads
+  const storage25MB = multer.diskStorage({
+    destination: function (req, file, cb) {
+      // Create directory if it doesn't exist
+      const uploadDir = 'uploads/profiles';
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+      // Generate unique filename with original extension
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const ext = path.extname(file.originalname);
+      cb(null, uniqueSuffix + ext);
+    }
+  });
+
+  // Configure file limits (25MB max)
+  const fileFilterImages = (req: any, file: any, cb: any) => {
+    // Accept images only
+    if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+      return cb(new Error('Only image files are allowed!'), false);
+    }
+    cb(null, true);
+  };
+
+  // Create upload middleware
+  const uploadProfileImage = multer({ 
+    storage: storage25MB,
+    limits: { 
+      fileSize: 25 * 1024 * 1024 // 25MB in bytes
+    },
+    fileFilter: fileFilterImages
+  });
+  
   // Configure session
   app.use(
     session({
@@ -726,7 +762,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Professional Profile Routes
-  app.post("/api/professional-profiles", isAuthenticated, async (req, res) => {
+  app.post("/api/professional-profiles", isAuthenticated, uploadProfileImage.single('profileImage'), async (req, res) => {
     try {
       const user = req.user as any;
 
@@ -740,9 +776,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "User already has a professional profile" });
       }
 
+      // Process uploaded file if present
+      let profileImagePath = undefined;
+      if (req.file) {
+        profileImagePath = req.file.path;
+        console.log(`Profile image uploaded: ${profileImagePath}`);
+      }
+
       const profileData = insertProfessionalProfileSchema.parse({
         ...req.body,
-        userId: user.id
+        userId: user.id,
+        profileImagePath
       });
 
       const profile = await storage.createProfessionalProfile(profileData);
@@ -751,6 +795,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid input", errors: err.errors });
       }
+      console.error("Error creating professional profile:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -782,7 +827,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(profile);
   });
 
-  app.put("/api/professional-profiles/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/professional-profiles/:id", isAuthenticated, uploadProfileImage.single('profileImage'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const user = req.user as any;
@@ -797,7 +842,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You can only update your own profile" });
       }
 
-      const updateData = req.body;
+      // Process uploaded file if present
+      const updateData = {...req.body};
+      if (req.file) {
+        // If there's an existing image, we could delete it here
+        // if (profile.profileImagePath) {
+        //   try {
+        //     fs.unlinkSync(profile.profileImagePath);
+        //   } catch (err) {
+        //     console.warn(`Failed to delete previous profile image: ${profile.profileImagePath}`);
+        //   }
+        // }
+        
+        updateData.profileImagePath = req.file.path;
+        console.log(`Updated profile image: ${updateData.profileImagePath}`);
+      }
+
       const updatedProfile = await storage.updateProfessionalProfile(id, updateData);
 
       res.json(updatedProfile);
@@ -805,6 +865,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid input", errors: err.errors });
       }
+      console.error("Error updating professional profile:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -980,7 +1041,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Company Profile Routes
-  app.post("/api/company-profiles", isAuthenticated, async (req, res) => {
+  app.post("/api/company-profiles", isAuthenticated, uploadProfileImage.single('profileImage'), async (req, res) => {
     try {
       const user = req.user as any;
 
@@ -994,9 +1055,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "User already has a company profile" });
       }
 
+      // Process uploaded file if present
+      let profileImagePath = undefined;
+      if (req.file) {
+        profileImagePath = req.file.path;
+        console.log(`Company profile image uploaded: ${profileImagePath}`);
+      }
+
       const profileData = insertCompanyProfileSchema.parse({
         ...req.body,
-        userId: user.id
+        userId: user.id,
+        profileImagePath
       });
 
       const profile = await storage.createCompanyProfile(profileData);
@@ -1005,6 +1074,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid input", errors: err.errors });
       }
+      console.error("Error creating company profile:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -1091,7 +1161,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/company-profiles/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/company-profiles/:id", isAuthenticated, uploadProfileImage.single('profileImage'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const user = req.user as any;
@@ -1106,7 +1176,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You can only update your own profile" });
       }
 
-      const updateData = req.body;
+      // Process uploaded file if present
+      const updateData = {...req.body};
+      if (req.file) {
+        // If there's an existing image, we could delete it here
+        // if (profile.profileImagePath) {
+        //   try {
+        //     fs.unlinkSync(profile.profileImagePath);
+        //   } catch (err) {
+        //     console.warn(`Failed to delete previous company profile image: ${profile.profileImagePath}`);
+        //   }
+        // }
+        
+        updateData.profileImagePath = req.file.path;
+        console.log(`Updated company profile image: ${updateData.profileImagePath}`);
+      }
+
       const updatedProfile = await storage.updateCompanyProfile(id, updateData);
 
       res.json(updatedProfile);
@@ -1114,6 +1199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid input", errors: err.errors });
       }
+      console.error("Error updating company profile:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });

@@ -95,22 +95,23 @@ export default function Professionals() {
   
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 bg-gradient-to-r from-primary/10 to-blue-100 p-6 rounded-lg">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 bg-gradient-to-r from-purple-900/20 via-fuchsia-100/30 to-purple-200 p-8 rounded-xl shadow-lg border border-purple-100">
         <div>
-          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-blue-600 inline-block text-transparent bg-clip-text">Find L&D Professionals</h1>
-          <p className="text-gray-600">Connect with expert trainers and consultants</p>
+          <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-purple-700 via-fuchsia-600 to-pink-600 inline-block text-transparent bg-clip-text">Find L&D Professionals</h1>
+          <p className="text-gray-700 text-lg">Connect with expert trainers and unlock your potential</p>
         </div>
       </div>
       
       {/* Search and filter section */}
-      <div className="bg-white p-4 rounded-lg shadow-sm mb-8">
+      <div className="bg-white p-6 rounded-xl shadow-md mb-8 border border-purple-100">
+        <h2 className="text-xl font-semibold mb-4 text-purple-800">Find Your Perfect Match</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Search box */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-400" />
             <Input
               placeholder="Search by title, skills, or location..."
-              className="pl-10"
+              className="pl-10 border-purple-200 focus:border-purple-500 focus:ring-purple-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -119,9 +120,9 @@ export default function Professionals() {
           {/* Experience Level filter */}
           <div>
             <Select value={experienceLevel} onValueChange={setExperienceLevel}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full border-purple-200">
                 <div className="flex items-center">
-                  <Filter className="mr-2 h-4 w-4" />
+                  <Filter className="mr-2 h-4 w-4 text-purple-500" />
                   <SelectValue placeholder="Experience level" />
                 </div>
               </SelectTrigger>
@@ -138,9 +139,9 @@ export default function Professionals() {
           {/* Expertise filter */}
           <div>
             <Select value={selectedExpertise} onValueChange={setSelectedExpertise}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full border-purple-200">
                 <div className="flex items-center">
-                  <Filter className="mr-2 h-4 w-4" />
+                  <Filter className="mr-2 h-4 w-4 text-purple-500" />
                   <SelectValue placeholder="Filter by expertise" />
                 </div>
               </SelectTrigger>
@@ -158,9 +159,9 @@ export default function Professionals() {
           {/* Sort options */}
           <div>
             <Select value={sortOrder} onValueChange={setSortOrder}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger className="w-full border-purple-200">
                 <div className="flex items-center">
-                  <ArrowUpDown className="mr-2 h-4 w-4" />
+                  <ArrowUpDown className="mr-2 h-4 w-4 text-purple-500" />
                   <SelectValue placeholder="Sort by" />
                 </div>
               </SelectTrigger>
@@ -174,16 +175,16 @@ export default function Professionals() {
       </div>
       
       {/* Rate range filter */}
-      <div className="bg-white p-4 rounded-lg shadow-sm mb-4">
-        <label className="block text-sm font-medium mb-2">Hourly Rate Range ($)</label>
-        <div className="flex items-center gap-4">
+      <div className="bg-white p-6 rounded-xl shadow-md mb-5 border border-purple-100">
+        <label className="block text-lg font-medium mb-3 text-purple-800">Hourly Rate Range ($)</label>
+        <div className="flex items-center gap-6">
           <input
             type="range"
             min="0"
             max="500"
             value={rateRange[0]}
             onChange={(e) => setRateRange([parseInt(e.target.value), rateRange[1]])}
-            className="w-full"
+            className="w-full accent-purple-600"
           />
           <input
             type="range"
@@ -191,18 +192,18 @@ export default function Professionals() {
             max="500"
             value={rateRange[1]}
             onChange={(e) => setRateRange([rateRange[0], parseInt(e.target.value)])}
-            className="w-full"
+            className="w-full accent-purple-600"
           />
-          <span className="text-sm text-gray-500">
+          <span className="text-md font-semibold bg-purple-100 text-purple-800 px-4 py-2 rounded-md min-w-[100px] text-center">
             ${rateRange[0]} - ${rateRange[1]}
           </span>
         </div>
       </div>
 
       {/* Results count and filters */}
-      <div className="flex justify-between items-center mb-6">
-        <p className="text-gray-500">
-          {sortedProfessionals.length} professionals found
+      <div className="flex justify-between items-center mb-6 bg-purple-50 p-4 rounded-lg">
+        <p className="text-purple-700 font-medium">
+          <span className="font-bold text-lg">{sortedProfessionals.length}</span> professionals found
         </p>
         <Button
           variant="outline"
@@ -212,6 +213,7 @@ export default function Professionals() {
             setExperienceLevel("");
             setRateRange([0, 500]);
           }}
+          className="border-purple-300 hover:bg-purple-100 text-purple-700"
         >
           Clear All Filters
         </Button>
@@ -282,11 +284,14 @@ export default function Professionals() {
       
       {/* Pagination (simplified for now) */}
       {sortedProfessionals.length > 0 && (
-        <div className="flex justify-center mt-8">
-          <Button variant="outline" className="mx-1">1</Button>
-          <Button variant="outline" className="mx-1">2</Button>
-          <Button variant="outline" className="mx-1">3</Button>
-          <Button variant="outline" className="mx-1">Next</Button>
+        <div className="flex justify-center mt-10 bg-white p-4 rounded-xl shadow-md">
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" className="border-purple-200 hover:bg-purple-100 text-purple-800 font-medium">Previous</Button>
+            <Button variant="outline" className="border-purple-200 bg-purple-100 text-purple-800 font-bold">1</Button>
+            <Button variant="outline" className="border-purple-200 hover:bg-purple-100 text-purple-800 font-medium">2</Button>
+            <Button variant="outline" className="border-purple-200 hover:bg-purple-100 text-purple-800 font-medium">3</Button>
+            <Button variant="outline" className="border-purple-200 hover:bg-purple-100 text-purple-800 font-medium">Next</Button>
+          </div>
         </div>
       )}
     </div>

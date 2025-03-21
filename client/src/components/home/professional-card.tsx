@@ -20,9 +20,9 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
   });
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 hover:scale-[1.02] group border border-gray-100">
-      <div className="flex items-center p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-transparent">
-        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-blue-400 flex items-center justify-center overflow-hidden shadow-md transform group-hover:scale-105 transition-transform duration-300">
+    <div className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group border border-purple-100">
+      <div className="flex items-center p-6 border-b border-purple-100 bg-gradient-to-r from-purple-50 via-fuchsia-50 to-transparent">
+        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-600 to-fuchsia-500 flex items-center justify-center overflow-hidden shadow-lg transform group-hover:scale-105 transition-transform duration-300 border-2 border-white">
           {professional.profileImageUrl ? (
             <img 
               src={professional.profileImageUrl} 
@@ -30,21 +30,21 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
               className="w-full h-full object-cover"
             />
           ) : (
-            <User className="w-8 h-8 text-white" />
+            <User className="w-10 h-10 text-white" />
           )}
         </div>
-        <div className="ml-4">
-          <h3 className="text-xl font-heading font-medium text-gray-800 group-hover:text-primary transition-colors">{professional.title}</h3>
-          <p className="text-gray-500 flex items-center mt-1">📍 {professional.location}</p>
+        <div className="ml-5">
+          <h3 className="text-xl font-heading font-bold text-purple-900 group-hover:text-purple-700 transition-colors">{professional.title}</h3>
+          <p className="text-purple-600 flex items-center mt-1">📍 {professional.location}</p>
           <div className="flex mt-1">
             {[...Array(5)].map((_, i) => (
               <Star 
                 key={i} 
-                className={`${i < Math.floor((professional.rating || 0) / 20) ? 'text-yellow-400' : 'text-gray-200'} h-4 w-4 ${i < ((professional.rating || 0) / 20) && i >= Math.floor((professional.rating || 0) / 20) ? 'fill-[50%]' : ''}`}
+                className={`${i < Math.floor((professional.rating || 0) / 20) ? 'text-fuchsia-400' : 'text-gray-200'} h-4 w-4 ${i < ((professional.rating || 0) / 20) && i >= Math.floor((professional.rating || 0) / 20) ? 'fill-[50%]' : ''}`}
                 fill={i < Math.floor((professional.rating || 0) / 20) ? 'currentColor' : 'none'}
               />
             ))}
-            <span className="ml-1 text-sm text-gray-500">
+            <span className="ml-1 text-sm text-purple-500 font-medium">
               {((professional.rating || 0) / 20).toFixed(1)} ({professional.reviewCount || 0} reviews)
             </span>
           </div>

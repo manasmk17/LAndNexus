@@ -1921,6 +1921,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Skill Recommendation Routes
+  app.get("/api/professionals/:id/skill-recommendations", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const professionalId = parseInt(id);
+
+      // Check if the professional profile exists
+      const profile = await storage.getProfessionalProfile(professionalId);
+      if (!profile) {
+        return res.status(404).json({ message: "Professional profile not found" });
+      }
+
+      // Get existing recommendations or generate new ones
+      let recommendations = await storage.getSkillRecommendationsByProfessional(professionalId);
+
+      if (!recommendations) {
+        try {
+          // Check if we have the OpenAI API key
+          if (!process.env.OPENAI_API_KEY) {
+            return res.status(503).json({ 
+              message: "Skill recommendations service is currently unavailable" 
+            });
+          }
+
+          // Import the skill recommendations generator
+          const { generateSkillRecommendations } = await import('./skill-recommendations');
+          
+          // Get professional's expertise
+          const expertise = await storage.getProfessionalExpertise(professionalId);
+          
+          // Generate recommendations using OpenAI
+          const generatedRecommendations = await generateSkillRecommendations(profile, expertise);
+          
+          // Save recommendations to database
+          if (generatedRecommendations) {
+            const recommendationData = insertSkillRecommendationSchema.parse({
+              professionalId,
+              recommendationsJson: JSON.stringify(generatedRecommendations)
+            });
+            
+            recommendations = await storage.createSkillRecommendation(recommendationData);
+          }
+        } catch (error: any) {
+          console.error("Error generating skill recommendations:", error);
+          return res.status(500).json({ 
+            message: "Failed to generate skill recommendations", 
+            error: error.message 
+          });
+        }
+      }
+
+      res.json(recommendations);
+    } catch (err) {
+      console.error("Error retrieving skill recommendations:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/professionals/:id/refresh-skill-recommendations", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { id } = req.params;
+      const professionalId = parseInt(id);
+
+      // Check if user has permission (must be the professional or an admin)
+      const profile = await storage.getProfessionalProfile(professionalId);
+      if (!profile) {
+        return res.status(404).json({ message: "Professional profile not found" });
+      }
+
+      if (profile.userId !== user.id && !user.isAdmin) {
+        return res.status(403).json({ message: "Unauthorized to refresh recommendations" });
+      }
+
+      // Check if we have the OpenAI API key
+      if (!process.env.OPENAI_API_KEY) {
+        return res.status(503).json({ 
+          message: "Skill recommendations service is currently unavailable" 
+        });
+      }
+
+      // Import the skill recommendations generator
+      const { generateSkillRecommendations } = await import('./skill-recommendations');
+      
+      // Get professional's expertise
+      const expertise = await storage.getProfessionalExpertise(professionalId);
+      
+      // Generate new recommendations using OpenAI
+      const generatedRecommendations = await generateSkillRecommendations(profile, expertise);
+      
+      if (!generatedRecommendations) {
+        return res.status(500).json({ message: "Failed to generate recommendations" });
+      }
+
+      // Check if there are existing recommendations to update
+      const existingRecs = await storage.getSkillRecommendationsByProfessional(professionalId);
+      let recommendations;
+
+      if (existingRecs) {
+        // Update existing recommendations
+        recommendations = await storage.updateSkillRecommendation(
+          existingRecs.id, 
+          { recommendationsJson: JSON.stringify(generatedRecommendations) }
+        );
+      } else {
+        // Create new recommendations
+        const recommendationData = insertSkillRecommendationSchema.parse({
+          professionalId,
+          recommendationsJson: JSON.stringify(generatedRecommendations)
+        });
+        
+        recommendations = await storage.createSkillRecommendation(recommendationData);
+      }
+
+      res.json(recommendations);
+    } catch (err) {
+      console.error("Error refreshing skill recommendations:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

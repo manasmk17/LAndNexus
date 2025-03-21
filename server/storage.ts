@@ -347,16 +347,25 @@ export class MemStorage implements IStorage {
   
   async createProfessionalProfile(profile: InsertProfessionalProfile): Promise<ProfessionalProfile> {
     const id = this.profProfileId++;
+    
+    // Explicitly construct the profile to match the schema exactly
     const newProfile: ProfessionalProfile = { 
-      ...profile, 
       id,
+      userId: profile.userId,
+      title: profile.title,
+      bio: profile.bio,
+      location: profile.location,
       videoIntroUrl: profile.videoIntroUrl || null,
       ratePerHour: profile.ratePerHour || null,
       profileImageUrl: profile.profileImageUrl || null,
       featured: profile.featured || false,
       rating: profile.rating || 0,
-      reviewCount: profile.reviewCount || 0
+      reviewCount: profile.reviewCount || 0,
+      yearsExperience: profile.yearsExperience || 0,
+      interests: profile.interests || null,
+      industryFocus: profile.industryFocus || null
     };
+    
     this.professionalProfiles.set(id, newProfile);
     return newProfile;
   }

@@ -1427,10 +1427,10 @@ function ResourcesTab() {
                   Category
                 </Label>
                 <Select 
-                  value={editingResource.categoryId?.toString() || ""}
+                  value={editingResource.categoryId?.toString() || "0"}
                   onValueChange={(value) => setEditingResource({
                     ...editingResource, 
-                    categoryId: value ? parseInt(value) : null
+                    categoryId: value === "0" ? null : parseInt(value)
                   })}
                 >
                   <SelectTrigger id="edit-category" className="col-span-3">

@@ -14,6 +14,7 @@ import {
   messages, Message, InsertMessage,
   consultations, Consultation, InsertConsultation
 } from "@shared/schema";
+import { and, asc, desc, eq, or, sql, SQL } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -1087,14 +1088,13 @@ export class DatabaseStorage implements IStorage {
   }
   
   async searchResources(query?: string, type?: string, categoryId?: number): Promise<Resource[]> {
-    let baseQuery = db
-      .select()
-      .from(resources);
+    // Start with base query conditions
+    const conditions: SQL[] = [];
     
     // Add search conditions if query provided
     if (query) {
       const searchTerm = `%${query.toLowerCase()}%`;
-      baseQuery = baseQuery.where(
+      conditions.push(
         or(
           sql`LOWER(${resources.title}) LIKE ${searchTerm}`,
           sql`LOWER(${resources.description}) LIKE ${searchTerm}`
@@ -1104,15 +1104,31 @@ export class DatabaseStorage implements IStorage {
     
     // Add type filter if provided
     if (type) {
-      baseQuery = baseQuery.where(eq(resources.resourceType, type));
+      conditions.push(eq(resources.resourceType, type));
     }
     
     // Add category filter if provided
     if (categoryId) {
-      baseQuery = baseQuery.where(eq(resources.categoryId, categoryId));
+      conditions.push(eq(resources.categoryId, categoryId));
     }
     
-    return baseQuery.orderBy(desc(resources.createdAt));
+    // Execute query with all conditions
+    let query_result;
+    if (conditions.length > 0) {
+      query_result = await db
+        .select()
+        .from(resources)
+        .where(and(...conditions))
+        .orderBy(desc(resources.createdAt));
+    } else {
+      // No conditions, get all resources
+      query_result = await db
+        .select()
+        .from(resources)
+        .orderBy(desc(resources.createdAt));
+    }
+    
+    return query_result;
   }
   
   async getResourceCategory(id: number): Promise<ResourceCategory | undefined> {

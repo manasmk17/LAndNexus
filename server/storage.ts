@@ -1,5 +1,6 @@
 import { db } from "./db";
-import { and, asc, desc, eq, or, isNull, not, sql, SQL } from "drizzle-orm";
+import { and, asc, desc, eq, or, isNull, not, sql } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 import {
   users, User, InsertUser,
   professionalProfiles, ProfessionalProfile, InsertProfessionalProfile,
@@ -743,8 +744,6 @@ export class MemStorage implements IStorage {
   }
 }
 
-import { db } from "./db";
-
 export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: number): Promise<User | undefined> {
@@ -1089,16 +1088,14 @@ export class DatabaseStorage implements IStorage {
   
   async searchResources(query?: string, type?: string, categoryId?: number): Promise<Resource[]> {
     // Start with base query conditions
-    const conditions: SQL[] = [];
+    const conditions: SQL<unknown>[] = [];
     
     // Add search conditions if query provided
     if (query) {
       const searchTerm = `%${query.toLowerCase()}%`;
+      // Create a single SQL condition for text search
       conditions.push(
-        or(
-          sql`LOWER(${resources.title}) LIKE ${searchTerm}`,
-          sql`LOWER(${resources.description}) LIKE ${searchTerm}`
-        )
+        sql`(LOWER(${resources.title}) LIKE ${searchTerm} OR LOWER(${resources.description}) LIKE ${searchTerm})`
       );
     }
     

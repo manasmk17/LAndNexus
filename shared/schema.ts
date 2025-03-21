@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp, boolean, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, boolean, unique, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -37,6 +37,9 @@ export const professionalProfiles = pgTable("professional_profiles", {
   featured: boolean("featured").default(false),
   rating: integer("rating").default(0),
   reviewCount: integer("review_count").default(0),
+  yearsExperience: integer("years_experience").default(0),
+  interests: text("interests"),
+  industryFocus: text("industry_focus"),
 });
 
 export const insertProfessionalProfileSchema = createInsertSchema(professionalProfiles).omit({
@@ -276,3 +279,21 @@ export type InsertMessage = z.infer<typeof insertMessageSchema>;
 
 export type Consultation = typeof consultations.$inferSelect;
 export type InsertConsultation = z.infer<typeof insertConsultationSchema>;
+
+// Skill Recommendations
+export const skillRecommendations = pgTable("skill_recommendations", {
+  id: serial("id").primaryKey(),
+  professionalId: integer("professional_id").notNull().references(() => professionalProfiles.id),
+  recommendations: jsonb("recommendations").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertSkillRecommendationSchema = createInsertSchema(skillRecommendations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type SkillRecommendation = typeof skillRecommendations.$inferSelect;
+export type InsertSkillRecommendation = z.infer<typeof insertSkillRecommendationSchema>;

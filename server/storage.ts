@@ -111,6 +111,12 @@ export interface IStorage {
   getCompanyConsultations(companyId: number): Promise<Consultation[]>;
   createConsultation(consultation: InsertConsultation): Promise<Consultation>;
   updateConsultationStatus(id: number, status: string): Promise<Consultation | undefined>;
+  
+  // Skill Recommendation operations
+  getSkillRecommendation(id: number): Promise<SkillRecommendation | undefined>;
+  getSkillRecommendationsByProfessional(professionalId: number): Promise<SkillRecommendation | undefined>;
+  createSkillRecommendation(recommendation: InsertSkillRecommendation): Promise<SkillRecommendation>;
+  updateSkillRecommendation(id: number, recommendation: Partial<InsertSkillRecommendation>): Promise<SkillRecommendation | undefined>;
 }
 
 export class MemStorage implements IStorage {

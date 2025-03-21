@@ -36,6 +36,7 @@ export const professionalProfiles = pgTable("professional_profiles", {
   videoIntroUrl: text("video_intro_url"),
   ratePerHour: integer("rate_per_hour"),
   profileImageUrl: text("profile_image_url"),
+  profileImagePath: text("profile_image_path"), // For uploaded files
   featured: boolean("featured").default(false),
   rating: integer("rating").default(0),
   reviewCount: integer("review_count").default(0),
@@ -95,6 +96,7 @@ export const companyProfiles = pgTable("company_profiles", {
   description: text("description").notNull(),
   website: text("website"),
   logoUrl: text("logo_url"),
+  logoImagePath: text("logo_image_path"), // For uploaded files
   size: text("size").notNull(), // "small", "medium", "large", "enterprise"
   location: text("location").notNull(),
 });

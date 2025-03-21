@@ -28,6 +28,9 @@ import {
   generateProfileEmbedding, 
   calculateMatchScore 
 } from "./ai-matching";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 import { z } from "zod";
 import session from "express-session";
 import passport from "passport";

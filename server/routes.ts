@@ -349,7 +349,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (err) {
           return res.status(500).json({ message: "Error logging in after registration" });
         }
-        return res.status(201).json({ id: user.id, username: user.username, userType: user.userType });
+        return res.status(201).json({ 
+          id: user.id, 
+          username: user.username, 
+          userType: user.userType,
+          isAdmin: user.isAdmin
+        });
       });
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -371,7 +376,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (err) {
           return next(err);
         }
-        return res.json({ id: user.id, username: user.username, userType: user.userType });
+        return res.json({ 
+          id: user.id, 
+          username: user.username, 
+          userType: user.userType,
+          isAdmin: user.isAdmin 
+        });
       });
     })(req, res, next);
   });

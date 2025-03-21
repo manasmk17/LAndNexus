@@ -16,6 +16,8 @@ export default function Login() {
     if (user) {
       if (redirect) {
         setLocation(redirect);
+      } else if (user.isAdmin) {
+        setLocation("/admin-dashboard");
       } else if (user.userType === "professional") {
         setLocation("/professional-dashboard");
       } else {

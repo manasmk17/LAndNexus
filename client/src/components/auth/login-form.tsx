@@ -47,8 +47,10 @@ export default function LoginForm() {
         description: `Welcome back, ${user.username}!`,
       });
       
-      // Redirect based on user type
-      if (user.userType === "professional") {
+      // Redirect based on user type and admin status
+      if (user.isAdmin) {
+        setLocation("/admin-dashboard");
+      } else if (user.userType === "professional") {
         setLocation("/professional-dashboard");
       } else {
         setLocation("/company-dashboard");

@@ -395,6 +395,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/me", isAuthenticated, async (req, res) => {
     res.json(req.user);
   });
+  
+  // Debug endpoint to check user info
+  app.get("/api/debug/me", (req, res) => {
+    if (req.isAuthenticated()) {
+      res.json({
+        authenticated: true,
+        user: req.user,
+        isAdmin: (req.user as any).isAdmin
+      });
+    } else {
+      res.json({
+        authenticated: false
+      });
+    }
+  });
 
   app.get("/api/subscription-status", isAuthenticated, async (req, res) => {
     try {

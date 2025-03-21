@@ -11,9 +11,14 @@ export interface AuthUser {
   email?: string;
 }
 
+interface LoginCredentials {
+  username: string; // This can be either username or email
+  password: string;
+}
+
 interface AuthContextType {
   user: AuthUser | null;
-  login: (credentials: { username: string; password: string }) => Promise<AuthUser>;
+  login: (credentials: LoginCredentials) => Promise<AuthUser>;
   logout: () => Promise<void>;
   isLoading: boolean;
   error: string | null;
@@ -63,7 +68,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   // Login function
-  const login = async (credentials: { username: string; password: string }): Promise<AuthUser> => {
+  const login = async (credentials: LoginCredentials): Promise<AuthUser> => {
     setIsLoading(true);
     setError(null);
 

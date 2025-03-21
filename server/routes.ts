@@ -94,18 +94,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Configure Passport
-  passport.use(new LocalStrategy(async (username, password, done) => {
+  // Configure Passport with a custom callback to support both username and email login
+  passport.use(new LocalStrategy(async (identifier, password, done) => {
     try {
-      const user = await storage.getUserByUsername(username);
-      if (!user) {
-        return done(null, false, { message: "Incorrect username" });
+      // Check if the identifier is an email (contains @)
+      let user;
+      if (identifier.includes('@')) {
+        user = await storage.getUserByEmail(identifier);
+      } else {
+        user = await storage.getUserByUsername(identifier);
       }
+
+      if (!user) {
+        return done(null, false, { message: "Incorrect username or email" });
+      }
+      
       // For regular users, passwords should be hashed, but for this demo, we'll do direct comparison
       // In a production app, we would use bcrypt.compare() here
       if (user.password !== password) {
         return done(null, false, { message: "Incorrect password" });
       }
+      
       return done(null, user);
     } catch (err) {
       return done(err);
@@ -398,7 +407,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Password recovery endpoints
-  app.post("/api/forgot-password", async (req, res) => {
+  app.post("/api/auth/forgot-password", async (req, res) => {
     try {
       const { email } = req.body;
       
@@ -429,7 +438,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.post("/api/reset-password", async (req, res) => {
+  // Verify reset token before allowing password reset
+  app.post("/api/auth/verify-reset-token", async (req, res) => {
+    try {
+      const { token } = req.body;
+      
+      if (!token) {
+        return res.status(400).json({ message: "Token is required" });
+      }
+      
+      // Verify token
+      const user = await storage.getUserByResetToken(token);
+      
+      if (!user) {
+        return res.status(400).json({ message: "Invalid or expired token" });
+      }
+      
+      res.json({ valid: true });
+    } catch (err) {
+      console.error("Token verification error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.post("/api/auth/reset-password", async (req, res) => {
     try {
       const { token, newPassword } = req.body;
       
@@ -452,7 +484,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Username recovery endpoint
-  app.post("/api/recover-username", async (req, res) => {
+  app.post("/api/auth/recover-username", async (req, res) => {
     try {
       const { email } = req.body;
       

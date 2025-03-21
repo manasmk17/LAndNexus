@@ -16,6 +16,12 @@ import {
   insertMessageSchema,
   insertConsultationSchema
 } from "@shared/schema";
+import { generateCareerRecommendations } from "./career-recommendations";
+import { 
+  generateJobEmbedding, 
+  generateProfileEmbedding, 
+  calculateMatchScore 
+} from "./ai-matching";
 import { z } from "zod";
 import session from "express-session";
 import passport from "passport";
@@ -28,7 +34,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2023-10-16",
+  apiVersion: "2023-10-16" as any,
 });
 
 const MemoryStore = memorystore(session);
@@ -647,7 +653,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const professionals = await storage.getAllProfessionalProfiles();
       const jobEmbedding = await generateJobEmbedding(job);
+      
+      // If AI matching is not available, fall back to basic matching
+      if (jobEmbedding === null) {
+        // Simple keyword-based matching if OpenAI is not available
+        const matches = professionals.map(profile => {
+          // Calculate a basic score based on title keyword matching
+          const jobTitle = job.title.toLowerCase();
+          const profileTitle = profile.title ? profile.title.toLowerCase() : '';
+          const profileBio = profile.bio ? profile.bio.toLowerCase() : '';
+          
+          // Simple score based on whether keywords appear in the profile
+          let score = 0;
+          if (profileTitle.includes(jobTitle) || jobTitle.includes(profileTitle)) {
+            score += 0.5;
+          }
+          
+          // Check if any keywords from job description appear in bio
+          const jobKeywords = job.description.toLowerCase().split(/\s+/);
+          for (const keyword of jobKeywords) {
+            if (keyword.length > 4 && profileBio.includes(keyword)) {
+              score += 0.01;
+            }
+          }
+          
+          return { profile, score: Math.min(score, 1) };
+        });
+        
+        const topMatches = matches
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 5);
+          
+        return res.json(topMatches);
+      }
 
+      // Use AI-based matching if available
       const matches = await Promise.all(
         professionals.map(async (profile) => {
           const profileEmbedding = await generateProfileEmbedding(profile);
@@ -1052,8 +1092,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const user = req.user as any;
 
-      // Get message
-      const message = await storage.getMessage(id);
+      // Since MemStorage doesn't have getMessage, retrieve all messages for this user
+      const userMessages = await storage.getUserMessages(user.id);
+      const message = userMessages.find(msg => msg.id === id);
+      
       if (!message) {
         return res.status(404).json({ message: "Message not found" });
       }

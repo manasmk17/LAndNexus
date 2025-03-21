@@ -148,9 +148,13 @@ export default function Subscribe() {
     const createIntent = async () => {
       setLoading(true);
       try {
+        // In a real implementation, we'd first create a payment method
+        // That requires capturing credit card details with Stripe Elements
+        // For our demo, we'll simplify by just passing the tier ID
         const response = await apiRequest("POST", "/api/create-subscription", { 
           tierId: selectedTierId,
-          priceId: `price_${selectedTierId}`  // This would be replaced with actual Stripe price IDs
+          priceId: `price_${selectedTierId}`,  // This would be replaced with actual Stripe price IDs
+          paymentMethodId: 'pm_card_visa' // Test payment method ID
         });
         
         const data = await response.json();

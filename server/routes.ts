@@ -1403,6 +1403,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Add general resource update endpoint for admin dashboard
+  app.put("/api/admin/resources/:id", isAdmin, async (req, res) => {
+    try {
+      const resourceId = parseInt(req.params.id);
+      const resourceData = req.body;
+      
+      const resource = await storage.getResource(resourceId);
+      if (!resource) {
+        return res.status(404).json({ message: "Resource not found" });
+      }
+      
+      const updatedResource = await storage.updateResource(resourceId, resourceData);
+      res.json(updatedResource);
+    } catch (err) {
+      console.error("Error updating resource:", err);
+      res.status(500).json({ message: "Error updating resource" });
+    }
+  });
+  
   app.delete("/api/admin/resources/:id", isAdmin, async (req, res) => {
     try {
       const resourceId = parseInt(req.params.id);

@@ -90,6 +90,7 @@ export interface IStorage {
   createResource(resource: InsertResource): Promise<Resource>;
   updateResource(id: number, resource: Partial<Resource>): Promise<Resource | undefined>;
   setResourceFeatured(id: number, featured: boolean): Promise<Resource | undefined>;
+  deleteResource(id: number): Promise<boolean>;
   
   // Forum operations
   getForumPost(id: number): Promise<ForumPost | undefined>;

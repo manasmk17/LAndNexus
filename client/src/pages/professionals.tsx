@@ -62,12 +62,17 @@ export default function Professionals() {
       (professional.ratePerHour >= rateRange[0] && professional.ratePerHour <= rateRange[1]);
 
     // Filter by experience level
-    const matchesExperience = !experienceLevel || professional.title.toLowerCase().includes(experienceLevel.toLowerCase());
+    const matchesExperience = !experienceLevel || 
+      (experienceLevel === "junior" && (professional.yearsExperience <= 2)) ||
+      (experienceLevel === "mid-level" && (professional.yearsExperience > 2 && professional.yearsExperience <= 5)) ||
+      (experienceLevel === "senior" && (professional.yearsExperience > 5 && professional.yearsExperience <= 8)) ||
+      (experienceLevel === "expert" && (professional.yearsExperience > 8)) ||
+      professional.title.toLowerCase().includes(experienceLevel.toLowerCase());
 
-    // Filter by expertise (simplified version)
-    const matchesExpertise = !selectedExpertise || professional.bio.toLowerCase().includes(selectedExpertise.toLowerCase());
+    // For expertise, we just show all if "all" is selected
+    const matchesExpertise = selectedExpertise === "all";
     
-    return matchesSearch && matchesRate && matchesExperience && matchesExpertise;
+    return matchesSearch && matchesRate && matchesExperience || matchesExpertise;
   }) || [];
   
   // Sort professionals

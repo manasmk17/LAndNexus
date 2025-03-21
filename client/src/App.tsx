@@ -8,6 +8,9 @@ import Footer from "@/components/ui/footer";
 import Home from "@/pages/home";
 import Register from "@/pages/register";
 import Login from "@/pages/login";
+import ForgotPassword from "@/pages/forgot-password";
+import ResetPassword from "@/pages/reset-password";
+import RecoverUsername from "@/pages/recover-username";
 import ProfessionalDashboard from "@/pages/professional-dashboard";
 import CompanyDashboard from "@/pages/company-dashboard";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -35,6 +38,9 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/register" component={Register} />
       <Route path="/login" component={Login} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/recover-username" component={RecoverUsername} />
       <Route path="/professional-dashboard" component={ProfessionalDashboard} />
       <Route path="/company-dashboard" component={CompanyDashboard} />
       <Route path="/admin-dashboard" component={AdminDashboard} />

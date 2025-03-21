@@ -64,6 +64,8 @@ app.use((req, res, next) => {
     port,
     host: "0.0.0.0",
     reusePort: true,
+    keepAliveTimeout: 65000, // Increase keep-alive timeout
+    headersTimeout: 66000, // Increase headers timeout
   }, () => {
     log(`serving on port ${port}`);
   });

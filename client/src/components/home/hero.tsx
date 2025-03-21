@@ -18,7 +18,13 @@ export default function Hero() {
             </p>
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
               {user ? (
-                user.userType === "professional" ? (
+                user.isAdmin ? (
+                  <Link href="/admin-dashboard">
+                    <Button size="lg" className="font-bold bg-amber-500 hover:bg-amber-600">
+                      Admin Dashboard
+                    </Button>
+                  </Link>
+                ) : user.userType === "professional" ? (
                   <Link href="/professional-dashboard">
                     <Button size="lg" className="font-bold bg-amber-500 hover:bg-amber-600">
                       My Dashboard

@@ -253,10 +253,43 @@ export default function JobDetail({ jobId }: JobDetailProps) {
         </div>
         
         <div className="flex gap-2 mt-4 md:mt-0">
-          <Button variant="outline" size="icon">
+          <Button variant="outline" size="icon" className="border-slate-300 text-slate-700 hover:bg-slate-100">
             <Bookmark className="h-4 w-4" />
           </Button>
-          <Button onClick={handleMessageCompany}>
+
+          {user?.userType === "professional" && !hasAlreadyApplied && (
+            <Button 
+              onClick={handleApplyClick} 
+              disabled={!professionalProfile}
+              className="bg-gradient-to-r from-slate-800 to-blue-700 hover:from-slate-900 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4">
+                <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14" />
+                <path d="M16.5 9.4 7.55 4.24" />
+                <polyline points="3.29 7 12 12 20.71 7" />
+                <line x1="12" y1="22" x2="12" y2="12" />
+                <circle cx="18" cy="16" r="3" />
+                <path d="m21 16-6 6-6-6h4v-4h4v4Z" />
+              </svg>
+              Apply Now
+            </Button>
+          )}
+
+          {user?.userType === "professional" && hasAlreadyApplied && (
+            <Button 
+              disabled
+              className="bg-gradient-to-r from-green-600 to-green-800 opacity-80 cursor-not-allowed"
+            >
+              <CheckCircle className="mr-2 h-4 w-4" />
+              Already Applied
+            </Button>
+          )}
+
+          <Button 
+            onClick={handleMessageCompany}
+            className="border-slate-300 bg-white hover:bg-slate-100 text-slate-700"
+            variant="outline"
+          >
             <MessageSquare className="mr-2 h-4 w-4" />
             Message
           </Button>
@@ -313,13 +346,34 @@ export default function JobDetail({ jobId }: JobDetailProps) {
                 <Button 
                   onClick={handleApplyClick} 
                   disabled={hasAlreadyApplied || !professionalProfile}
-                  className="w-full"
+                  className={`w-full ${!hasAlreadyApplied && professionalProfile 
+                    ? "bg-gradient-to-r from-slate-800 to-blue-700 hover:from-slate-900 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200" 
+                    : hasAlreadyApplied 
+                      ? "bg-gradient-to-r from-green-600 to-green-800 opacity-80 cursor-not-allowed"
+                      : "bg-gradient-to-r from-slate-600 to-slate-800 opacity-70"}`}
                 >
-                  {!professionalProfile
-                    ? "Complete Your Profile to Apply"
-                    : hasAlreadyApplied
-                    ? "Already Applied"
-                    : "Apply Now"}
+                  {!professionalProfile ? (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                      Complete Your Profile to Apply
+                    </>
+                  ) : hasAlreadyApplied ? (
+                    <>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Already Applied
+                    </>
+                  ) : (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4">
+                        <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14" />
+                        <path d="m21 16-6 6-6-6h4v-4h4v4Z" />
+                      </svg>
+                      Apply for This Position
+                    </>
+                  )}
                 </Button>
               </CardContent>
             </Card>

@@ -199,20 +199,67 @@ export default function Footer() {
           </a>
         </div>
 
-        {/* Bottom Copyright */}
-        <div className="border-t border-slate-800 pt-8 mt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-slate-400 text-sm mb-4 md:mb-0">
-              &copy; {new Date().getFullYear()} L&D Nexus. All rights reserved.
-            </p>
-            <div className="flex flex-wrap justify-center gap-6">
-              <a href="#" className="text-slate-400 hover:text-white text-sm transition-colors">Privacy Policy</a>
-              <a href="#" className="text-slate-400 hover:text-white text-sm transition-colors">Terms of Service</a>
-              <a href="#" className="text-slate-400 hover:text-white text-sm transition-colors">Cookies</a>
-              <a href="#" className="text-slate-400 hover:text-white text-sm transition-colors">GDPR</a>
+        {/* Footer Content */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+              {/* Platform */}
+              <div>
+                <h4 className="text-white font-semibold mb-4">Platform</h4>
+                <ul className="space-y-2">
+                  <li><a href="/jobs" className="text-slate-400 hover:text-white transition-colors">Browse Jobs</a></li>
+                  <li><a href="/professionals" className="text-slate-400 hover:text-white transition-colors">Find Professionals</a></li>
+                  <li><a href="/resources" className="text-slate-400 hover:text-white transition-colors">Learning Resources</a></li>
+                  <li><a href="/forum" className="text-slate-400 hover:text-white transition-colors">Community Forum</a></li>
+                </ul>
+              </div>
+              
+              {/* For Professionals */}
+              <div>
+                <h4 className="text-white font-semibold mb-4">For Professionals</h4>
+                <ul className="space-y-2">
+                  <li><a href="/career-recommendations" className="text-slate-400 hover:text-white transition-colors">Career Guidance</a></li>
+                  <li><a href="/subscribe" className="text-slate-400 hover:text-white transition-colors">Premium Features</a></li>
+                  <li><a href="/resources" className="text-slate-400 hover:text-white transition-colors">Skill Development</a></li>
+                  <li><a href="/messages" className="text-slate-400 hover:text-white transition-colors">Messaging</a></li>
+                </ul>
+              </div>
+              
+              {/* For Companies */}
+              <div>
+                <h4 className="text-white font-semibold mb-4">For Companies</h4>
+                <ul className="space-y-2">
+                  <li><a href="/post-job" className="text-slate-400 hover:text-white transition-colors">Post a Job</a></li>
+                  <li><a href="/professionals" className="text-slate-400 hover:text-white transition-colors">Talent Search</a></li>
+                  <li><a href="/subscribe" className="text-slate-400 hover:text-white transition-colors">Enterprise Solutions</a></li>
+                  <li><a href="/resources" className="text-slate-400 hover:text-white transition-colors">L&D Resources</a></li>
+                </ul>
+              </div>
+              
+              {/* Support */}
+              <div>
+                <h4 className="text-white font-semibold mb-4">Support</h4>
+                <ul className="space-y-2">
+                  <li><a href="/help" className="text-slate-400 hover:text-white transition-colors">Help Center</a></li>
+                  <li><a href="/contact" className="text-slate-400 hover:text-white transition-colors">Contact Us</a></li>
+                  <li><a href="/about" className="text-slate-400 hover:text-white transition-colors">About L&D Nexus</a></li>
+                  <li><a href="/blog" className="text-slate-400 hover:text-white transition-colors">Blog</a></li>
+                </ul>
+              </div>
             </div>
-          </div>
-        </div>
+
+            {/* Bottom Copyright */}
+            <div className="border-t border-slate-800 pt-8 mt-8">
+              <div className="flex flex-col md:flex-row justify-between items-center">
+                <p className="text-slate-400 text-sm mb-4 md:mb-0">
+                  &copy; {new Date().getFullYear()} L&D Nexus. All rights reserved.
+                </p>
+                <div className="flex flex-wrap justify-center gap-6">
+                  <a href="/privacy" className="text-slate-400 hover:text-white text-sm transition-colors">Privacy Policy</a>
+                  <a href="/terms" className="text-slate-400 hover:text-white text-sm transition-colors">Terms of Service</a>
+                  <a href="/cookies" className="text-slate-400 hover:text-white text-sm transition-colors">Cookies</a>
+                  <a href="/gdpr" className="text-slate-400 hover:text-white text-sm transition-colors">GDPR</a>
+                </div>
+              </div>
+            </div>
       </div>
     </footer>
   );

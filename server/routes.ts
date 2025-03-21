@@ -401,6 +401,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(req.user);
   });
   
+  // Get a specific user by ID
+  app.get("/api/users/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = await storage.getUser(id);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Return user without sensitive information
+      const { password, ...userInfo } = user;
+      res.json(userInfo);
+    } catch (err) {
+      console.error("Error fetching user:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
   // Debug endpoint to check user info
   app.get("/api/debug/me", (req, res) => {
     if (req.isAuthenticated()) {

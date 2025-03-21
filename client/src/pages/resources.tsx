@@ -205,8 +205,8 @@ export default function Resources() {
           <div className="flex flex-col md:flex-row gap-4">
             <div className="w-full md:w-1/2">
               <Select 
-                value={selectedCategory?.toString() || ""} 
-                onValueChange={(value) => setSelectedCategory(value ? parseInt(value) : null)}
+                value={selectedCategory?.toString() || "0"} 
+                onValueChange={(value) => setSelectedCategory(value === "0" ? null : parseInt(value))}
               >
                 <SelectTrigger className="w-full">
                   <div className="flex items-center">
@@ -215,7 +215,7 @@ export default function Resources() {
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="0">All Categories</SelectItem>
                   {categories?.map((category) => (
                     <SelectItem key={category.id} value={category.id.toString()}>
                       {category.name}

@@ -15,7 +15,8 @@ import {
   forumPosts, ForumPost, InsertForumPost,
   forumComments, ForumComment, InsertForumComment,
   messages, Message, InsertMessage,
-  consultations, Consultation, InsertConsultation
+  consultations, Consultation, InsertConsultation,
+  skillRecommendations, SkillRecommendation, InsertSkillRecommendation
 } from "@shared/schema";
 
 export interface IStorage {
@@ -134,6 +135,7 @@ export class MemStorage implements IStorage {
   private forumComments: Map<number, ForumComment>;
   private messages: Map<number, Message>;
   private consultations: Map<number, Consultation>;
+  private skillRecommendations: Map<number, SkillRecommendation>;
   
   private userId: number;
   private profProfileId: number;
@@ -149,6 +151,7 @@ export class MemStorage implements IStorage {
   private forumCommentId: number;
   private messageId: number;
   private consultationId: number;
+  private skillRecommendationId: number;
 
   constructor() {
     this.users = new Map();
@@ -165,6 +168,7 @@ export class MemStorage implements IStorage {
     this.forumComments = new Map();
     this.messages = new Map();
     this.consultations = new Map();
+    this.skillRecommendations = new Map();
     
     this.userId = 1;
     this.profProfileId = 1;
@@ -180,6 +184,7 @@ export class MemStorage implements IStorage {
     this.forumCommentId = 1;
     this.messageId = 1;
     this.consultationId = 1;
+    this.skillRecommendationId = 1;
     
     // Initialize with some expertise areas
     this.initExpertise();

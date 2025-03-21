@@ -14,8 +14,8 @@ export async function generateJobEmbedding(job: JobPosting) {
   return response.data[0].embedding;
 }
 
-export async function generateProfileEmbedding(profile: ProfessionalProfile) {
-  const profileText = `${profile.title} ${profile.bio}`;
+export async function generateProfileEmbedding(profile: ProfessionalProfile, expertise: string[] = [], certifications: string[] = []) {
+  const profileText = `${profile.title} ${profile.bio} Skills: ${expertise.join(", ")} Certifications: ${certifications.join(", ")}`;
   const response = await openai.embeddings.create({
     input: profileText,
     model: "text-embedding-ada-002"

@@ -57,6 +57,24 @@ export const professionalExpertise = pgTable("professional_expertise", {
   id: serial("id").primaryKey(),
   professionalId: integer("professional_id").notNull().references(() => professionalProfiles.id),
   expertiseId: integer("expertise_id").notNull().references(() => expertise.id),
+
+export const jobIndustries = [
+  "Corporate Training",
+  "Higher Education",
+  "Technology",
+  "Healthcare",
+  "Manufacturing",
+  "Retail",
+  "Financial Services"
+] as const;
+
+export const experienceLevels = [
+  "Entry Level",
+  "Mid Level",
+  "Senior Level",
+  "Executive"
+] as const;
+
 }, (table) => {
   return {
     unq: unique().on(table.professionalId, table.expertiseId),

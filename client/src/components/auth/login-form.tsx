@@ -51,13 +51,22 @@ export default function LoginForm() {
         description: `Welcome back, ${user.username}!`,
       });
       
-      // Redirect based on user type and admin status
-      if (user.isAdmin) {
-        setLocation("/admin-dashboard");
-      } else if (user.userType === "professional") {
-        setLocation("/professional-dashboard");
+      // Check for redirect parameter
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get("redirect");
+      
+      if (redirect) {
+        // Redirect to the requested page after login
+        setLocation(redirect);
       } else {
-        setLocation("/company-dashboard");
+        // Default redirects based on user type
+        if (user.isAdmin) {
+          setLocation("/admin-dashboard");
+        } else if (user.userType === "professional") {
+          setLocation("/professional-dashboard");
+        } else {
+          setLocation("/company-dashboard");
+        }
       }
     } catch (error) {
       console.error("Login error:", error);

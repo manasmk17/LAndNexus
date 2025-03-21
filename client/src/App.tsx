@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 
 import Navbar from "@/components/ui/navbar";
 import Footer from "@/components/ui/footer";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 import Home from "@/pages/home";
 import Register from "@/pages/register";
 import Login from "@/pages/login";
@@ -35,31 +36,78 @@ import { AuthProvider } from "@/lib/auth";
 function Router() {
   return (
     <Switch>
+      {/* Public routes */}
       <Route path="/" component={Home} />
       <Route path="/register" component={Register} />
       <Route path="/login" component={Login} />
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/recover-username" component={RecoverUsername} />
-      <Route path="/professional-dashboard" component={ProfessionalDashboard} />
-      <Route path="/company-dashboard" component={CompanyDashboard} />
-      <Route path="/admin-dashboard" component={AdminDashboard} />
       <Route path="/professionals" component={Professionals} />
       <Route path="/professional-profile/:id" component={ProfessionalProfile} />
-      <Route path="/edit-profile" component={EditProfile} />
       <Route path="/jobs" component={Jobs} />
-      <Route path="/post-job" component={PostJob} />
       <Route path="/job/:id" component={JobDetail} />
       <Route path="/resources" component={Resources} />
-      <Route path="/manage-resources" component={ManageResources} />
-      <Route path="/career-recommendations" component={CareerRecommendations} />
       <Route path="/resource/:id" component={ResourceDetail} />
       <Route path="/forum" component={Forum} />
-      <Route path="/messages" component={Messages} />
-      <Route path="/checkout" component={Checkout} />
-      <Route path="/subscribe" component={Subscribe} />
-      <Route path="/subscribe/:tierId" component={Subscribe} />
-      <Route path="/subscription-success" component={SubscriptionSuccess} />
+
+      {/* Protected routes with user type restrictions */}
+      <ProtectedRoute 
+        path="/professional-dashboard" 
+        component={ProfessionalDashboard} 
+        userTypes={["professional"]} 
+      />
+      <ProtectedRoute 
+        path="/company-dashboard" 
+        component={CompanyDashboard} 
+        userTypes={["company"]} 
+      />
+      <ProtectedRoute 
+        path="/admin-dashboard" 
+        component={AdminDashboard} 
+        adminOnly={true} 
+      />
+      <ProtectedRoute 
+        path="/edit-profile" 
+        component={EditProfile} 
+      />
+      <ProtectedRoute 
+        path="/post-job" 
+        component={PostJob} 
+        userTypes={["company"]} 
+      />
+      <ProtectedRoute 
+        path="/manage-resources" 
+        component={ManageResources} 
+        userTypes={["professional", "admin"]} 
+      />
+      <ProtectedRoute 
+        path="/career-recommendations" 
+        component={CareerRecommendations} 
+        userTypes={["professional"]} 
+      />
+      <ProtectedRoute 
+        path="/messages" 
+        component={Messages} 
+      />
+      <ProtectedRoute 
+        path="/checkout" 
+        component={Checkout} 
+      />
+      <ProtectedRoute 
+        path="/subscribe" 
+        component={Subscribe} 
+      />
+      <ProtectedRoute 
+        path="/subscribe/:tierId" 
+        component={Subscribe} 
+      />
+      <ProtectedRoute 
+        path="/subscription-success" 
+        component={SubscriptionSuccess} 
+      />
+
+      {/* 404 route */}
       <Route component={NotFound} />
     </Switch>
   );

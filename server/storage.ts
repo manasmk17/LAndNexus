@@ -480,6 +480,15 @@ export class MemStorage implements IStorage {
     return newResource;
   }
   
+  async updateResource(id: number, resource: Partial<Resource>): Promise<Resource | undefined> {
+    const existing = this.resources.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { ...existing, ...resource };
+    this.resources.set(id, updated);
+    return updated;
+  }
+  
   // Forum operations
   async getForumPost(id: number): Promise<ForumPost | undefined> {
     return this.forumPosts.get(id);
@@ -986,6 +995,15 @@ export class DatabaseStorage implements IStorage {
       .values(resource)
       .returning();
     return createdResource;
+  }
+
+  async updateResource(id: number, resource: Partial<Resource>): Promise<Resource | undefined> {
+    const [updatedResource] = await db
+      .update(resources)
+      .set(resource)
+      .where(eq(resources.id, id))
+      .returning();
+    return updatedResource;
   }
 
   // Forum operations

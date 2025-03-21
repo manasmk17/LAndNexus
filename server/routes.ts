@@ -2,6 +2,9 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
+import multer from "multer";
+import fs from "fs";
+import path from "path";
 import { 
   insertUserSchema, 
   insertProfessionalProfileSchema,
@@ -28,9 +31,6 @@ import {
   generateProfileEmbedding, 
   calculateMatchScore 
 } from "./ai-matching";
-import multer from "multer";
-import path from "path";
-import fs from "fs";
 import { z } from "zod";
 import session from "express-session";
 import passport from "passport";

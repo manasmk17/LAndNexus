@@ -470,15 +470,42 @@ export default function EditProfileForm() {
               
               <FormField
                 control={professionalForm.control}
-                name="profileImageUrl"
-                render={({ field }) => (
+                name="profileImage"
+                render={({ field: { value, onChange, ...fieldProps } }) => (
                   <FormItem className="mt-4">
-                    <FormLabel>Profile Image URL</FormLabel>
+                    <FormLabel>Profile Image</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://example.com/your-image.jpg" {...field} />
+                      <div className="flex flex-col space-y-2">
+                        <Input 
+                          type="file" 
+                          accept="image/*" 
+                          {...fieldProps}
+                          onChange={(e) => {
+                            // Handle file selection for the form
+                            const file = e.target.files?.[0];
+                            onChange(file || null);
+                          }} 
+                        />
+                        {/* Show selected file name or existing profile image */}
+                        {(value && typeof value === 'object') && (
+                          <p className="text-sm text-muted-foreground">
+                            Selected: {(value as File).name}
+                          </p>
+                        )}
+                        {professionalProfile?.profileImagePath && (
+                          <div className="mt-2">
+                            <p className="text-sm text-muted-foreground mb-2">Current image:</p>
+                            <img 
+                              src={`/${professionalProfile.profileImagePath}`} 
+                              alt="Current profile" 
+                              className="w-32 h-32 object-cover rounded-md border"
+                            />
+                          </div>
+                        )}
+                      </div>
                     </FormControl>
                     <FormDescription>
-                      URL to your professional headshot
+                      Upload a professional headshot (JPG, PNG, GIF, WEBP up to 25MB)
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

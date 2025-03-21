@@ -1154,29 +1154,3 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   return httpServer;
 }
-
-app.get("/api/analytics/applications", isAuthenticated, async (req, res) => {
-  try {
-    const user = req.user as any;
-    const professionalProfile = await storage.getProfessionalProfileByUserId(user.id);
-    
-    if (!professionalProfile) {
-      return res.status(404).json({ message: "Professional profile not found" });
-    }
-
-    const applications = await storage.getJobApplicationsByProfessional(professionalProfile.id);
-    
-    const analytics = {
-      total: applications.length,
-      pending: applications.filter(app => app.status === "pending").length,
-      accepted: applications.filter(app => app.status === "accepted").length,
-      rejected: applications.filter(app => app.status === "rejected").length,
-      successRate: applications.length ? 
-        (applications.filter(app => app.status === "accepted").length / applications.length) * 100 : 0
-    };
-
-    res.json(analytics);
-  } catch (err) {
-    res.status(500).json({ message: "Internal server error" });
-  }
-});

@@ -963,18 +963,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/professionals/:id/applications", isAuthenticated, async (req, res) => {
     try {
-      const professionalId = parseInt(req.params.id);
       const user = req.user as any;
-
-      // Check if user is the professional
-      const professionalProfile = await storage.getProfessionalProfile(professionalId);
-      if (!professionalProfile || professionalProfile.userId !== user.id) {
-        return res.status(403).json({ message: "You can only view your own applications" });
+      let professionalProfile;
+      
+      // Special case for "me" endpoint
+      if (req.params.id === "me") {
+        professionalProfile = await storage.getProfessionalProfileByUserId(user.id);
+        if (!professionalProfile) {
+          return res.status(404).json({ message: "Professional profile not found for current user" });
+        }
+      } else {
+        // Regular case with profile ID
+        const professionalId = parseInt(req.params.id);
+        professionalProfile = await storage.getProfessionalProfile(professionalId);
+        
+        // Check if user is the professional
+        if (!professionalProfile || professionalProfile.userId !== user.id) {
+          return res.status(403).json({ message: "You can only view your own applications" });
+        }
       }
 
-      const applications = await storage.getJobApplicationsByProfessional(professionalId);
+      const applications = await storage.getJobApplicationsByProfessional(professionalProfile.id);
       res.json(applications);
     } catch (err) {
+      console.error("Error fetching professional applications:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -1221,36 +1233,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/professionals/:id/consultations", isAuthenticated, async (req, res) => {
     try {
-      const professionalId = parseInt(req.params.id);
       const user = req.user as any;
-
-      // Check if user is the professional
-      const professionalProfile = await storage.getProfessionalProfile(professionalId);
-      if (!professionalProfile || professionalProfile.userId !== user.id) {
-        return res.status(403).json({ message: "You can only view your own consultations" });
+      let professionalProfile;
+      
+      // Special case for "me" endpoint
+      if (req.params.id === "me") {
+        professionalProfile = await storage.getProfessionalProfileByUserId(user.id);
+        if (!professionalProfile) {
+          return res.status(404).json({ message: "Professional profile not found for current user" });
+        }
+      } else {
+        // Regular case with profile ID
+        const professionalId = parseInt(req.params.id);
+        professionalProfile = await storage.getProfessionalProfile(professionalId);
+        
+        // Check if user is the professional
+        if (!professionalProfile || professionalProfile.userId !== user.id) {
+          return res.status(403).json({ message: "You can only view your own consultations" });
+        }
       }
 
-      const consultations = await storage.getProfessionalConsultations(professionalId);
+      const consultations = await storage.getProfessionalConsultations(professionalProfile.id);
       res.json(consultations);
     } catch (err) {
+      console.error("Error fetching professional consultations:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });
 
   app.get("/api/companies/:id/consultations", isAuthenticated, async (req, res) => {
     try {
-      const companyId = parseInt(req.params.id);
       const user = req.user as any;
-
-      // Check if user is the company
-      const companyProfile = await storage.getCompanyProfile(companyId);
-      if (!companyProfile || companyProfile.userId !== user.id) {
-        return res.status(403).json({ message: "You can only view your own consultations" });
+      let companyProfile;
+      
+      // Special case for "me" endpoint
+      if (req.params.id === "me") {
+        companyProfile = await storage.getCompanyProfileByUserId(user.id);
+        if (!companyProfile) {
+          return res.status(404).json({ message: "Company profile not found for current user" });
+        }
+      } else {
+        // Regular case with profile ID
+        const companyId = parseInt(req.params.id);
+        companyProfile = await storage.getCompanyProfile(companyId);
+        
+        // Check if user is the company
+        if (!companyProfile || companyProfile.userId !== user.id) {
+          return res.status(403).json({ message: "You can only view your own consultations" });
+        }
       }
 
-      const consultations = await storage.getCompanyConsultations(companyId);
+      const consultations = await storage.getCompanyConsultations(companyProfile.id);
       res.json(consultations);
     } catch (err) {
+      console.error("Error fetching company consultations:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });

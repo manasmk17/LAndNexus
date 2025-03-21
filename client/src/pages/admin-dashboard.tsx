@@ -82,7 +82,6 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("users");
 
   // Redirect if not admin
@@ -114,7 +113,7 @@ export default function AdminDashboard() {
         <p className="text-gray-500">Manage all aspects of the L&D Nexus platform</p>
       </div>
 
-      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-7 md:w-auto w-full">
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="professionals">Professionals</TabsTrigger>

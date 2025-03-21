@@ -1074,14 +1074,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.user as any;
 
-      // Ensure the content field is populated (use link if content is empty)
+      // Prepare resource data
       let resourceData = { ...req.body, authorId: user.id };
       
-      // If content is empty but link is provided, use link for content
-      if (!resourceData.content && resourceData.link) {
-        resourceData.content = resourceData.link;
-      }
-
       // Validate with schema
       resourceData = insertResourceSchema.parse(resourceData);
 

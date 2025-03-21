@@ -194,7 +194,22 @@ export default function ResourceDetail() {
             
             <div className="prose max-w-none">
               <p className="text-gray-700 mb-4">{resource.description}</p>
-              <div className="whitespace-pre-line">{resource.content}</div>
+              
+              {/* Display content as a link if it's a URL */}
+              {resource.content.startsWith('http') ? (
+                <div className="mt-4">
+                  <a 
+                    href={resource.content} 
+                    target="_blank"
+                    rel="noopener noreferrer" 
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                  >
+                    Access Resource
+                  </a>
+                </div>
+              ) : (
+                <div className="whitespace-pre-line">{resource.content}</div>
+              )}
             </div>
             
             {getResourceActionButton(resource.resourceType) && (

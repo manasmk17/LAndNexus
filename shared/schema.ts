@@ -147,8 +147,7 @@ export const resources = pgTable("resources", {
   authorId: integer("author_id").notNull().references(() => users.id),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  content: text("content").notNull(),  // Keep existing column
-  link: text("link"),  // Adding new column as nullable for migration
+  content: text("content").notNull(),  // This field will store the URL for now
   resourceType: text("resource_type").notNull(), // "article", "template", "video", "webinar"
   imageUrl: text("image_url"),
   featured: boolean("featured").default(false),

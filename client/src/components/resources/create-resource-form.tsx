@@ -32,8 +32,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 const createResourceSchema = insertResourceSchema.extend({
   title: z.string().min(5, 'Title must be at least 5 characters'),
   description: z.string().min(20, 'Description must be at least 20 characters'),
-  link: z.string().url('Please enter a valid URL'),
-  content: z.string().default(''), // Add a default value for content
+  content: z.string().url('Please enter a valid URL'),
 });
 
 type FormValues = z.infer<typeof createResourceSchema>;
@@ -49,8 +48,7 @@ export default function CreateResourceForm() {
       title: '',
       description: '',
       resourceType: 'Article',
-      link: '',
-      content: '', // Add content field with empty default
+      content: '', // Content field is used for URL
       featured: false,
       authorId: user?.id || 0,
     },
@@ -167,7 +165,7 @@ export default function CreateResourceForm() {
             
             <FormField
               control={form.control}
-              name="link"
+              name="content"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Resource Link</FormLabel>
@@ -183,15 +181,6 @@ export default function CreateResourceForm() {
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
-              )}
-            />
-            
-            {/* Hidden content field - this is used for database compatibility */}
-            <FormField
-              control={form.control}
-              name="content"
-              render={({ field }) => (
-                <input type="hidden" {...field} />
               )}
             />
             

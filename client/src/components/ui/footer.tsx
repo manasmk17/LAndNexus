@@ -12,21 +12,21 @@ export default function Footer() {
               Connecting learning professionals and organizations to create impactful training solutions.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="text-white text-opacity-70 hover:text-opacity-100">
+              <span className="text-white text-opacity-70 hover:text-opacity-100 cursor-pointer">
                 <Facebook size={20} />
-              </a>
-              <a href="#" className="text-white text-opacity-70 hover:text-opacity-100">
+              </span>
+              <span className="text-white text-opacity-70 hover:text-opacity-100 cursor-pointer">
                 <Twitter size={20} />
-              </a>
-              <a href="#" className="text-white text-opacity-70 hover:text-opacity-100">
+              </span>
+              <span className="text-white text-opacity-70 hover:text-opacity-100 cursor-pointer">
                 <Linkedin size={20} />
-              </a>
-              <a href="#" className="text-white text-opacity-70 hover:text-opacity-100">
+              </span>
+              <span className="text-white text-opacity-70 hover:text-opacity-100 cursor-pointer">
                 <Instagram size={20} />
-              </a>
+              </span>
             </div>
           </div>
-          
+
           <div>
             <h3 className="text-lg font-heading font-medium mb-4">Platform</h3>
             <ul className="space-y-2">
@@ -57,7 +57,7 @@ export default function Footer() {
               </li>
             </ul>
           </div>
-          
+
           <div>
             <h3 className="text-lg font-heading font-medium mb-4">Company</h3>
             <ul className="space-y-2">
@@ -78,7 +78,7 @@ export default function Footer() {
               </li>
             </ul>
           </div>
-          
+
           <div>
             <h3 className="text-lg font-heading font-medium mb-4">Support</h3>
             <ul className="space-y-2">
@@ -100,7 +100,7 @@ export default function Footer() {
             </ul>
           </div>
         </div>
-        
+
         <div className="border-t border-white border-opacity-20 pt-6 mt-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-white text-opacity-60 text-sm mb-4 md:mb-0">

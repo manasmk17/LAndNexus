@@ -17,6 +17,7 @@ import Jobs from "@/pages/jobs";
 import PostJob from "@/pages/post-job";
 import JobDetail from "@/pages/job-detail";
 import Resources from "@/pages/resources";
+import CareerRecommendations from "@/pages/career-recommendations";
 import ResourceDetail from "@/pages/resource-detail";
 import Forum from "@/pages/forum";
 import Messages from "@/pages/messages";
@@ -41,6 +42,7 @@ function Router() {
       <Route path="/post-job" component={PostJob} />
       <Route path="/job/:id" component={JobDetail} />
       <Route path="/resources" component={Resources} />
+        <Route path="/career-recommendations" component={CareerRecommendations} />
       <Route path="/resource/:id" component={ResourceDetail} />
       <Route path="/forum" component={Forum} />
       <Route path="/messages" component={Messages} />

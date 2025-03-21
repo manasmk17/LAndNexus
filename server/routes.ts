@@ -586,6 +586,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(profile);
   });
 
+  // Career Recommendations
+  app.get("/api/career-recommendations", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      // Get professional profile
+      const profile = await storage.getProfessionalProfileByUserId(user.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Professional profile not found" });
+      }
+
+      // Get expertise
+      const expertise = await storage.getProfessionalExpertise(profile.id);
+
+      // Generate recommendations
+      const recommendations = await generateCareerRecommendations(profile, expertise);
+      res.json(recommendations);
+    } catch (err) {
+      res.status(500).json({ message: "Error generating recommendations" });
+    }
+  });
+
   app.put("/api/company-profiles/:id", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);

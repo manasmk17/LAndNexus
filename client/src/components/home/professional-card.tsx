@@ -20,9 +20,9 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
   });
 
   return (
-    <div className="bg-black rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group border border-blue-900">
-      <div className="flex items-center p-6 border-b border-blue-950 bg-gradient-to-r from-black via-blue-950/30 to-black">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-700 to-blue-500 flex items-center justify-center overflow-hidden shadow-lg transform group-hover:scale-105 transition-transform duration-300 border-2 border-blue-800">
+    <div className="bg-slate-900 rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:scale-[1.02] group border border-emerald-800/40">
+      <div className="flex items-center p-6 border-b border-emerald-800/30 bg-gradient-to-r from-slate-900 via-emerald-950/20 to-slate-900">
+        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-600 to-teal-400 flex items-center justify-center overflow-hidden shadow-lg transform group-hover:scale-105 transition-transform duration-300 border-2 border-emerald-700">
           {professional.profileImageUrl ? (
             <img 
               src={professional.profileImageUrl} 
@@ -34,26 +34,26 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
           )}
         </div>
         <div className="ml-5">
-          <h3 className="text-xl font-heading font-bold text-blue-200 group-hover:text-blue-100 transition-colors">{professional.title}</h3>
-          <p className="text-blue-400 flex items-center mt-1">📍 {professional.location}</p>
+          <h3 className="text-xl font-heading font-bold text-emerald-100 group-hover:text-white transition-colors">{professional.title}</h3>
+          <p className="text-emerald-300/80 flex items-center mt-1">📍 {professional.location}</p>
           <div className="flex mt-1">
             {[...Array(5)].map((_, i) => (
               <Star 
                 key={i} 
-                className={`${i < Math.floor((professional.rating || 0) / 20) ? 'text-blue-400' : 'text-slate-700'} h-4 w-4 ${i < ((professional.rating || 0) / 20) && i >= Math.floor((professional.rating || 0) / 20) ? 'fill-[50%]' : ''}`}
+                className={`${i < Math.floor((professional.rating || 0) / 20) ? 'text-yellow-400' : 'text-slate-700'} h-4 w-4 ${i < ((professional.rating || 0) / 20) && i >= Math.floor((professional.rating || 0) / 20) ? 'fill-[50%]' : ''}`}
                 fill={i < Math.floor((professional.rating || 0) / 20) ? 'currentColor' : 'none'}
               />
             ))}
-            <span className="ml-1 text-sm text-blue-300 font-medium">
+            <span className="ml-1 text-sm text-emerald-200 font-medium">
               {((professional.rating || 0) / 20).toFixed(1)} ({professional.reviewCount || 0} reviews)
             </span>
           </div>
         </div>
       </div>
-      <div className="p-6 bg-gradient-to-b from-black to-slate-950">
+      <div className="p-6 bg-gradient-to-b from-slate-900 to-gray-900">
         <div className="mb-4">
           <h4 className="text-sm font-bold uppercase mb-2 flex items-center">
-            <span className="bg-gradient-to-r from-blue-600 to-teal-500 text-white px-3 py-1 rounded-lg shadow-sm">Expertise</span>
+            <span className="bg-gradient-to-r from-emerald-600 to-teal-500 text-white px-3 py-1 rounded-lg shadow-sm">Expertise</span>
           </h4>
           {isLoadingExpertise ? (
             <div className="flex flex-wrap gap-2">
@@ -64,7 +64,7 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
           ) : expertise && expertise.length > 0 ? (
             <div className="flex flex-wrap gap-2 mt-3">
               {expertise.map(area => (
-                <Badge key={area.id} variant="secondary" className="bg-blue-900 text-blue-200 hover:bg-blue-800 transition-colors font-medium">
+                <Badge key={area.id} variant="secondary" className="bg-emerald-900/80 text-emerald-100 hover:bg-emerald-800 transition-colors font-medium">
                   {area.name}
                 </Badge>
               ))}
@@ -85,38 +85,38 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
           ) : certifications && certifications.length > 0 ? (
             <div className="flex flex-wrap gap-2 mt-3">
               {certifications.slice(0, 2).map(cert => (
-                <span key={cert.id} className="flex items-center text-sm text-teal-200 bg-teal-900 px-3 py-1.5 rounded-md border border-teal-800">
+                <span key={cert.id} className="flex items-center text-sm text-teal-200 bg-teal-900/80 px-3 py-1.5 rounded-md border border-teal-800/60">
                   <Verified className="text-teal-300 mr-1.5 h-4 w-4" />
                   {cert.name}
                 </span>
               ))}
               {certifications.length > 2 && (
-                <span className="text-xs text-blue-300 font-medium ml-1 bg-blue-900 px-2 py-1 rounded-md">+{certifications.length - 2} more</span>
+                <span className="text-xs text-emerald-200 font-medium ml-1 bg-emerald-900/80 px-2 py-1 rounded-md">+{certifications.length - 2} more</span>
               )}
             </div>
           ) : (
-            <p className="text-sm text-slate-400">No certifications listed</p>
+            <p className="text-sm text-slate-400">No expertise listed</p>
           )}
         </div>
-        <p className="text-blue-100 mb-6 bg-blue-950 p-4 rounded-lg italic border-l-4 border-blue-700 shadow-md">
+        <p className="text-slate-100 mb-6 bg-emerald-950/30 p-4 rounded-lg italic border-l-4 border-emerald-700/50 shadow-md">
           "{professional.bio.length > 120 
             ? professional.bio.substring(0, 120) + '...' 
             : professional.bio}"
         </p>
         
         {professional.ratePerHour && (
-          <div className="flex items-center mb-5 text-blue-300 font-bold bg-slate-900 px-4 py-2.5 rounded-lg shadow-md border border-blue-800">
-            <span className="text-md">Rate: <span className="text-blue-200">${professional.ratePerHour}/hour</span></span>
+          <div className="flex items-center mb-5 text-emerald-200 font-bold bg-slate-900 px-4 py-2.5 rounded-lg shadow-md border border-emerald-900/40">
+            <span className="text-md">Rate: <span className="text-emerald-300">${professional.ratePerHour}/hour</span></span>
           </div>
         )}
         
         <div className="flex space-x-3">
-          <Button className="flex-grow bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 transition-all duration-300 transform hover:-translate-y-1 shadow-md" asChild>
+          <Button className="flex-grow bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-700 hover:to-teal-600 transition-all duration-300 transform hover:-translate-y-1 shadow-md" asChild>
             <Link href={`/professional-profile/${professional.id}`}>
               View Profile
             </Link>
           </Button>
-          <Button variant="outline" size="icon" className="bg-slate-900/50 hover:bg-blue-900 border-blue-800 hover:border-blue-700 text-blue-300 transition-colors" asChild>
+          <Button variant="outline" size="icon" className="bg-slate-800/50 hover:bg-emerald-900/60 border-emerald-800/60 hover:border-emerald-700/60 text-emerald-300 transition-colors" asChild>
             <Link href={`/messages?professional=${professional.id}`}>
               <Calendar className="h-4 w-4" />
             </Link>

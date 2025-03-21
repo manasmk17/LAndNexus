@@ -95,10 +95,10 @@ export default function Professionals() {
   
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 bg-gradient-to-r from-black via-blue-950 to-black p-8 rounded-xl shadow-lg border border-blue-900">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 bg-gradient-to-r from-slate-900 via-slate-950 to-gray-900 p-8 rounded-xl shadow-lg border border-emerald-800/30">
         <div>
-          <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-blue-400 to-teal-400 inline-block text-transparent bg-clip-text">Find L&D Professionals</h1>
-          <p className="text-blue-300 text-lg">Connect with expert trainers and unlock your potential</p>
+          <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-emerald-400 to-teal-400 inline-block text-transparent bg-clip-text">Find L&D Professionals</h1>
+          <p className="text-emerald-300/90 text-lg">Connect with expert trainers and unlock your potential</p>
         </div>
       </div>
       

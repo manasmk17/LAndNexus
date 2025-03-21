@@ -116,6 +116,7 @@ export default function Professionals() {
                 </div>
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="any">Any Experience Level</SelectItem>
                 <SelectItem value="junior">Junior (0-2 years)</SelectItem>
                 <SelectItem value="mid-level">Mid Level (2-5 years)</SelectItem>
                 <SelectItem value="senior">Senior (5-8 years)</SelectItem>

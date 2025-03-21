@@ -1,0 +1,923 @@
+import type { Express, Request, Response } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { 
+  insertUserSchema, 
+  insertProfessionalProfileSchema,
+  insertExpertiseSchema,
+  insertProfessionalExpertiseSchema,
+  insertCertificationSchema,
+  insertCompanyProfileSchema,
+  insertJobPostingSchema,
+  insertJobApplicationSchema,
+  insertResourceSchema,
+  insertForumPostSchema,
+  insertForumCommentSchema,
+  insertMessageSchema,
+  insertConsultationSchema
+} from "@shared/schema";
+import { z } from "zod";
+import session from "express-session";
+import passport from "passport";
+import { Strategy as LocalStrategy } from "passport-local";
+
+const MemoryStore = require('memorystore')(session);
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Configure session
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || "L&D-nexus-secret",
+      resave: false,
+      saveUninitialized: false,
+      cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }, // 24 hours
+      store: new MemoryStore({
+        checkPeriod: 86400000 // prune expired entries every 24h
+      })
+    })
+  );
+
+  // Initialize Passport
+  app.use(passport.initialize());
+  app.use(passport.session());
+
+  // Configure Passport
+  passport.use(new LocalStrategy(async (username, password, done) => {
+    try {
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return done(null, false, { message: "Incorrect username" });
+      }
+      if (user.password !== password) { // In a real app, use bcrypt to compare hashed passwords
+        return done(null, false, { message: "Incorrect password" });
+      }
+      return done(null, user);
+    } catch (err) {
+      return done(err);
+    }
+  }));
+
+  passport.serializeUser((user: any, done) => {
+    done(null, user.id);
+  });
+
+  passport.deserializeUser(async (id: number, done) => {
+    try {
+      const user = await storage.getUser(id);
+      done(null, user);
+    } catch (err) {
+      done(err);
+    }
+  });
+
+  // Check if user is authenticated
+  const isAuthenticated = (req: Request, res: Response, next: Function) => {
+    if (req.isAuthenticated()) {
+      return next();
+    }
+    res.status(401).json({ message: "Unauthorized" });
+  };
+
+  // Auth Routes
+  app.post("/api/register", async (req, res) => {
+    try {
+      const userData = insertUserSchema.parse(req.body);
+      
+      // Check if username or email already exists
+      const existingUsername = await storage.getUserByUsername(userData.username);
+      if (existingUsername) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      
+      const existingEmail = await storage.getUserByEmail(userData.email);
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+      
+      const user = await storage.createUser(userData);
+      
+      // Log the user in
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Error logging in after registration" });
+        }
+        return res.status(201).json({ id: user.id, username: user.username, userType: user.userType });
+      });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        return res.status(401).json({ message: info.message });
+      }
+      req.login(user, (err) => {
+        if (err) {
+          return next(err);
+        }
+        return res.json({ id: user.id, username: user.username, userType: user.userType });
+      });
+    })(req, res, next);
+  });
+
+  app.post("/api/logout", (req, res) => {
+    req.logout(() => {
+      res.json({ message: "Logged out" });
+    });
+  });
+
+  app.get("/api/me", isAuthenticated, async (req, res) => {
+    res.json(req.user);
+  });
+
+  // Professional Profile Routes
+  app.post("/api/professional-profiles", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      if (user.userType !== "professional") {
+        return res.status(403).json({ message: "Only professionals can create profiles" });
+      }
+      
+      // Check if user already has a profile
+      const existingProfile = await storage.getProfessionalProfileByUserId(user.id);
+      if (existingProfile) {
+        return res.status(400).json({ message: "User already has a professional profile" });
+      }
+      
+      const profileData = insertProfessionalProfileSchema.parse({
+        ...req.body,
+        userId: user.id
+      });
+      
+      const profile = await storage.createProfessionalProfile(profileData);
+      res.status(201).json(profile);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/professional-profiles", async (req, res) => {
+    const profiles = await storage.getAllProfessionalProfiles();
+    res.json(profiles);
+  });
+
+  app.get("/api/professional-profiles/featured", async (req, res) => {
+    const limit = parseInt(req.query.limit as string) || 3;
+    const profiles = await storage.getFeaturedProfessionalProfiles(limit);
+    res.json(profiles);
+  });
+
+  app.get("/api/professional-profiles/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const profile = await storage.getProfessionalProfile(id);
+    
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+    
+    res.json(profile);
+  });
+
+  app.put("/api/professional-profiles/:id", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.user as any;
+      
+      // Check if profile exists and belongs to user
+      const profile = await storage.getProfessionalProfile(id);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+      
+      if (profile.userId !== user.id) {
+        return res.status(403).json({ message: "You can only update your own profile" });
+      }
+      
+      const updateData = req.body;
+      const updatedProfile = await storage.updateProfessionalProfile(id, updateData);
+      
+      res.json(updatedProfile);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Expertise Routes
+  app.get("/api/expertise", async (req, res) => {
+    const expertiseList = await storage.getAllExpertise();
+    res.json(expertiseList);
+  });
+
+  app.post("/api/expertise", isAuthenticated, async (req, res) => {
+    try {
+      const expertiseData = insertExpertiseSchema.parse(req.body);
+      const expertise = await storage.createExpertise(expertiseData);
+      res.status(201).json(expertise);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/professional-profiles/:id/expertise", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const expertise = await storage.getProfessionalExpertise(id);
+    res.json(expertise);
+  });
+
+  app.post("/api/professional-profiles/:id/expertise", isAuthenticated, async (req, res) => {
+    try {
+      const professionalId = parseInt(req.params.id);
+      const user = req.user as any;
+      
+      // Check if profile exists and belongs to user
+      const profile = await storage.getProfessionalProfile(professionalId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+      
+      if (profile.userId !== user.id) {
+        return res.status(403).json({ message: "You can only update your own profile" });
+      }
+      
+      const expertiseData = insertProfessionalExpertiseSchema.parse({
+        ...req.body,
+        professionalId
+      });
+      
+      const expertise = await storage.addProfessionalExpertise(expertiseData);
+      res.status(201).json(expertise);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Certification Routes
+  app.get("/api/professional-profiles/:id/certifications", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const certifications = await storage.getProfessionalCertifications(id);
+    res.json(certifications);
+  });
+
+  app.post("/api/professional-profiles/:id/certifications", isAuthenticated, async (req, res) => {
+    try {
+      const professionalId = parseInt(req.params.id);
+      const user = req.user as any;
+      
+      // Check if profile exists and belongs to user
+      const profile = await storage.getProfessionalProfile(professionalId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+      
+      if (profile.userId !== user.id) {
+        return res.status(403).json({ message: "You can only update your own profile" });
+      }
+      
+      const certificationData = insertCertificationSchema.parse({
+        ...req.body,
+        professionalId
+      });
+      
+      const certification = await storage.createCertification(certificationData);
+      res.status(201).json(certification);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/certifications/:id", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.user as any;
+      
+      // Get the certification to check ownership
+      const certification = await storage.getProfessionalCertifications(id);
+      if (!certification) {
+        return res.status(404).json({ message: "Certification not found" });
+      }
+      
+      // Get the profile to check if it belongs to the user
+      const profile = await storage.getProfessionalProfile(certification[0].professionalId);
+      if (profile?.userId !== user.id) {
+        return res.status(403).json({ message: "You can only delete your own certifications" });
+      }
+      
+      const success = await storage.deleteCertification(id);
+      
+      if (success) {
+        res.status(204).send();
+      } else {
+        res.status(404).json({ message: "Certification not found" });
+      }
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Company Profile Routes
+  app.post("/api/company-profiles", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      if (user.userType !== "company") {
+        return res.status(403).json({ message: "Only companies can create company profiles" });
+      }
+      
+      // Check if user already has a profile
+      const existingProfile = await storage.getCompanyProfileByUserId(user.id);
+      if (existingProfile) {
+        return res.status(400).json({ message: "User already has a company profile" });
+      }
+      
+      const profileData = insertCompanyProfileSchema.parse({
+        ...req.body,
+        userId: user.id
+      });
+      
+      const profile = await storage.createCompanyProfile(profileData);
+      res.status(201).json(profile);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/company-profiles", async (req, res) => {
+    const profiles = await storage.getAllCompanyProfiles();
+    res.json(profiles);
+  });
+
+  app.get("/api/company-profiles/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const profile = await storage.getCompanyProfile(id);
+    
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+    
+    res.json(profile);
+  });
+
+  app.put("/api/company-profiles/:id", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.user as any;
+      
+      // Check if profile exists and belongs to user
+      const profile = await storage.getCompanyProfile(id);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+      
+      if (profile.userId !== user.id) {
+        return res.status(403).json({ message: "You can only update your own profile" });
+      }
+      
+      const updateData = req.body;
+      const updatedProfile = await storage.updateCompanyProfile(id, updateData);
+      
+      res.json(updatedProfile);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Job Posting Routes
+  app.post("/api/job-postings", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      if (user.userType !== "company") {
+        return res.status(403).json({ message: "Only companies can post jobs" });
+      }
+      
+      // Get the company profile
+      const companyProfile = await storage.getCompanyProfileByUserId(user.id);
+      if (!companyProfile) {
+        return res.status(404).json({ message: "Company profile not found" });
+      }
+      
+      const jobData = insertJobPostingSchema.parse({
+        ...req.body,
+        companyId: companyProfile.id
+      });
+      
+      const job = await storage.createJobPosting(jobData);
+      res.status(201).json(job);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/job-postings", async (req, res) => {
+    const jobs = await storage.getAllJobPostings();
+    res.json(jobs);
+  });
+
+  app.get("/api/job-postings/latest", async (req, res) => {
+    const limit = parseInt(req.query.limit as string) || 2;
+    const jobs = await storage.getLatestJobPostings(limit);
+    res.json(jobs);
+  });
+
+  app.get("/api/companies/:id/job-postings", async (req, res) => {
+    const companyId = parseInt(req.params.id);
+    const jobs = await storage.getCompanyJobPostings(companyId);
+    res.json(jobs);
+  });
+
+  app.get("/api/job-postings/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const job = await storage.getJobPosting(id);
+    
+    if (!job) {
+      return res.status(404).json({ message: "Job posting not found" });
+    }
+    
+    res.json(job);
+  });
+
+  app.put("/api/job-postings/:id", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.user as any;
+      
+      // Check if job exists
+      const job = await storage.getJobPosting(id);
+      if (!job) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+      
+      // Check if the company profile belongs to the user
+      const companyProfile = await storage.getCompanyProfile(job.companyId);
+      if (companyProfile?.userId !== user.id) {
+        return res.status(403).json({ message: "You can only update your own job postings" });
+      }
+      
+      const updateData = req.body;
+      const updatedJob = await storage.updateJobPosting(id, updateData);
+      
+      res.json(updatedJob);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/job-postings/:id", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.user as any;
+      
+      // Check if job exists
+      const job = await storage.getJobPosting(id);
+      if (!job) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+      
+      // Check if the company profile belongs to the user
+      const companyProfile = await storage.getCompanyProfile(job.companyId);
+      if (companyProfile?.userId !== user.id) {
+        return res.status(403).json({ message: "You can only delete your own job postings" });
+      }
+      
+      const success = await storage.deleteJobPosting(id);
+      
+      if (success) {
+        res.status(204).send();
+      } else {
+        res.status(404).json({ message: "Job posting not found" });
+      }
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Job Application Routes
+  app.post("/api/job-postings/:id/applications", isAuthenticated, async (req, res) => {
+    try {
+      const jobId = parseInt(req.params.id);
+      const user = req.user as any;
+      
+      if (user.userType !== "professional") {
+        return res.status(403).json({ message: "Only professionals can apply to jobs" });
+      }
+      
+      // Check if job exists
+      const job = await storage.getJobPosting(jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+      
+      // Get professional profile
+      const professionalProfile = await storage.getProfessionalProfileByUserId(user.id);
+      if (!professionalProfile) {
+        return res.status(404).json({ message: "Professional profile not found" });
+      }
+      
+      const applicationData = insertJobApplicationSchema.parse({
+        ...req.body,
+        jobId,
+        professionalId: professionalProfile.id
+      });
+      
+      const application = await storage.createJobApplication(applicationData);
+      res.status(201).json(application);
+    } catch (err) {
+      if (err instanceof Error && err.message === "Professional has already applied to this job") {
+        return res.status(400).json({ message: err.message });
+      }
+      
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/job-postings/:id/applications", isAuthenticated, async (req, res) => {
+    try {
+      const jobId = parseInt(req.params.id);
+      const user = req.user as any;
+      
+      // Check if job exists
+      const job = await storage.getJobPosting(jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+      
+      // Check if user is the company that posted the job
+      const companyProfile = await storage.getCompanyProfile(job.companyId);
+      if (companyProfile?.userId !== user.id) {
+        return res.status(403).json({ message: "You can only view applications for your own job postings" });
+      }
+      
+      const applications = await storage.getJobApplicationsByJob(jobId);
+      res.json(applications);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/professionals/:id/applications", isAuthenticated, async (req, res) => {
+    try {
+      const professionalId = parseInt(req.params.id);
+      const user = req.user as any;
+      
+      // Check if user is the professional
+      const professionalProfile = await storage.getProfessionalProfile(professionalId);
+      if (!professionalProfile || professionalProfile.userId !== user.id) {
+        return res.status(403).json({ message: "You can only view your own applications" });
+      }
+      
+      const applications = await storage.getJobApplicationsByProfessional(professionalId);
+      res.json(applications);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.put("/api/applications/:id/status", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.user as any;
+      
+      // Get application
+      const application = await storage.getJobApplication(id);
+      if (!application) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+      
+      // Get job posting
+      const job = await storage.getJobPosting(application.jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+      
+      // Check if user is the company that posted the job
+      const companyProfile = await storage.getCompanyProfile(job.companyId);
+      if (companyProfile?.userId !== user.id) {
+        return res.status(403).json({ message: "You can only update status for applications to your own job postings" });
+      }
+      
+      const { status } = req.body;
+      if (!status || !["pending", "reviewed", "accepted", "rejected"].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      
+      const updatedApplication = await storage.updateJobApplicationStatus(id, status);
+      res.json(updatedApplication);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Resource Routes
+  app.post("/api/resources", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      const resourceData = insertResourceSchema.parse({
+        ...req.body,
+        authorId: user.id
+      });
+      
+      const resource = await storage.createResource(resourceData);
+      res.status(201).json(resource);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/resources", async (req, res) => {
+    const resources = await storage.getAllResources();
+    res.json(resources);
+  });
+
+  app.get("/api/resources/featured", async (req, res) => {
+    const limit = parseInt(req.query.limit as string) || 3;
+    const resources = await storage.getFeaturedResources(limit);
+    res.json(resources);
+  });
+
+  app.get("/api/resources/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const resource = await storage.getResource(id);
+    
+    if (!resource) {
+      return res.status(404).json({ message: "Resource not found" });
+    }
+    
+    res.json(resource);
+  });
+
+  // Forum Routes
+  app.post("/api/forum-posts", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      const postData = insertForumPostSchema.parse({
+        ...req.body,
+        authorId: user.id
+      });
+      
+      const post = await storage.createForumPost(postData);
+      res.status(201).json(post);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/forum-posts", async (req, res) => {
+    const posts = await storage.getAllForumPosts();
+    res.json(posts);
+  });
+
+  app.get("/api/forum-posts/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    const post = await storage.getForumPost(id);
+    
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+    
+    res.json(post);
+  });
+
+  app.get("/api/forum-posts/:id/comments", async (req, res) => {
+    const postId = parseInt(req.params.id);
+    const comments = await storage.getPostComments(postId);
+    res.json(comments);
+  });
+
+  app.post("/api/forum-posts/:id/comments", isAuthenticated, async (req, res) => {
+    try {
+      const postId = parseInt(req.params.id);
+      const user = req.user as any;
+      
+      // Check if post exists
+      const post = await storage.getForumPost(postId);
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+      
+      const commentData = insertForumCommentSchema.parse({
+        ...req.body,
+        postId,
+        authorId: user.id
+      });
+      
+      const comment = await storage.createForumComment(commentData);
+      res.status(201).json(comment);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Messaging Routes
+  app.get("/api/messages", isAuthenticated, async (req, res) => {
+    const user = req.user as any;
+    const messages = await storage.getUserMessages(user.id);
+    res.json(messages);
+  });
+
+  app.get("/api/messages/:userId", isAuthenticated, async (req, res) => {
+    const user = req.user as any;
+    const otherUserId = parseInt(req.params.userId);
+    
+    const conversation = await storage.getConversation(user.id, otherUserId);
+    res.json(conversation);
+  });
+
+  app.post("/api/messages", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      const messageData = insertMessageSchema.parse({
+        ...req.body,
+        senderId: user.id
+      });
+      
+      const message = await storage.createMessage(messageData);
+      res.status(201).json(message);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.put("/api/messages/:id/read", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.user as any;
+      
+      // Get message
+      const message = await storage.getMessage(id);
+      if (!message) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+      
+      // Check if user is the receiver
+      if (message.receiverId !== user.id) {
+        return res.status(403).json({ message: "You can only mark messages sent to you as read" });
+      }
+      
+      const success = await storage.markMessageAsRead(id);
+      
+      if (success) {
+        res.status(204).send();
+      } else {
+        res.status(404).json({ message: "Message not found" });
+      }
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Consultation Routes
+  app.post("/api/consultations", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      if (user.userType !== "company") {
+        return res.status(403).json({ message: "Only companies can book consultations" });
+      }
+      
+      // Get company profile
+      const companyProfile = await storage.getCompanyProfileByUserId(user.id);
+      if (!companyProfile) {
+        return res.status(404).json({ message: "Company profile not found" });
+      }
+      
+      const consultationData = insertConsultationSchema.parse({
+        ...req.body,
+        companyId: companyProfile.id
+      });
+      
+      const consultation = await storage.createConsultation(consultationData);
+      res.status(201).json(consultation);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/professionals/:id/consultations", isAuthenticated, async (req, res) => {
+    try {
+      const professionalId = parseInt(req.params.id);
+      const user = req.user as any;
+      
+      // Check if user is the professional
+      const professionalProfile = await storage.getProfessionalProfile(professionalId);
+      if (!professionalProfile || professionalProfile.userId !== user.id) {
+        return res.status(403).json({ message: "You can only view your own consultations" });
+      }
+      
+      const consultations = await storage.getProfessionalConsultations(professionalId);
+      res.json(consultations);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/companies/:id/consultations", isAuthenticated, async (req, res) => {
+    try {
+      const companyId = parseInt(req.params.id);
+      const user = req.user as any;
+      
+      // Check if user is the company
+      const companyProfile = await storage.getCompanyProfile(companyId);
+      if (!companyProfile || companyProfile.userId !== user.id) {
+        return res.status(403).json({ message: "You can only view your own consultations" });
+      }
+      
+      const consultations = await storage.getCompanyConsultations(companyId);
+      res.json(consultations);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.put("/api/consultations/:id/status", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.user as any;
+      
+      // Get consultation
+      const consultation = await storage.getConsultation(id);
+      if (!consultation) {
+        return res.status(404).json({ message: "Consultation not found" });
+      }
+      
+      // Check if user is involved in the consultation
+      const professionalProfile = await storage.getProfessionalProfile(consultation.professionalId);
+      const companyProfile = await storage.getCompanyProfile(consultation.companyId);
+      
+      if (professionalProfile?.userId !== user.id && companyProfile?.userId !== user.id) {
+        return res.status(403).json({ message: "You can only update status for your own consultations" });
+      }
+      
+      const { status } = req.body;
+      if (!status || !["scheduled", "completed", "cancelled"].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      
+      const updatedConsultation = await storage.updateConsultationStatus(id, status);
+      res.json(updatedConsultation);
+    } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  const httpServer = createServer(app);
+
+  return httpServer;
+}

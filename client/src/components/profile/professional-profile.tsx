@@ -1,0 +1,363 @@
+import { useQuery } from "@tanstack/react-query";
+import { Link, useLocation } from "wouter";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { 
+  User, 
+  MapPin, 
+  Star, 
+  Calendar, 
+  DollarSign, 
+  Video, 
+  MessageSquare, 
+  Briefcase, 
+  CheckCircle
+} from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import type { 
+  ProfessionalProfile, 
+  Expertise, 
+  Certification, 
+  Resource 
+} from "@shared/schema";
+
+interface ProfessionalProfileProps {
+  professionalId: number;
+}
+
+export default function ProfessionalProfileComponent({ professionalId }: ProfessionalProfileProps) {
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
+  
+  const { 
+    data: profile, 
+    isLoading: isLoadingProfile 
+  } = useQuery<ProfessionalProfile>({
+    queryKey: [`/api/professional-profiles/${professionalId}`],
+  });
+  
+  const { 
+    data: expertise, 
+    isLoading: isLoadingExpertise 
+  } = useQuery<Expertise[]>({
+    queryKey: [`/api/professional-profiles/${professionalId}/expertise`],
+    enabled: !!profile,
+  });
+  
+  const { 
+    data: certifications, 
+    isLoading: isLoadingCertifications 
+  } = useQuery<Certification[]>({
+    queryKey: [`/api/professional-profiles/${professionalId}/certifications`],
+    enabled: !!profile,
+  });
+  
+  const { 
+    data: resources 
+  } = useQuery<Resource[]>({
+    queryKey: [`/api/professional-profiles/${professionalId}/resources`],
+    enabled: !!profile,
+  });
+  
+  const handleMessageClick = () => {
+    if (!user) {
+      // Redirect to login if not authenticated
+      setLocation("/login?redirect=/professional-profile/" + professionalId);
+    } else {
+      setLocation(`/messages?professional=${professionalId}`);
+    }
+  };
+  
+  const handleBookConsultation = () => {
+    if (!user) {
+      // Redirect to login if not authenticated
+      setLocation("/login?redirect=/professional-profile/" + professionalId);
+    } else {
+      // Navigate to consultation booking page
+      setLocation(`/book-consultation/${professionalId}`);
+    }
+  };
+  
+  if (isLoadingProfile) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row md:items-center gap-6">
+                <Skeleton className="w-24 h-24 rounded-full" />
+                <div className="space-y-2 flex-1">
+                  <Skeleton className="h-8 w-64" />
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-5 w-32" />
+                  <div className="flex gap-2 mt-2">
+                    <Skeleton className="h-8 w-24 rounded-full" />
+                    <Skeleton className="h-8 w-24 rounded-full" />
+                    <Skeleton className="h-8 w-24 rounded-full" />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3 mt-4 md:mt-0">
+                  <Skeleton className="h-10 w-36" />
+                  <Skeleton className="h-10 w-36" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <div className="mt-8">
+            <Skeleton className="h-10 w-full mb-6" />
+            <div className="space-y-4">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!profile) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-2xl font-bold mb-4">Profile Not Found</h2>
+          <p className="text-gray-600 mb-6">The professional profile you're looking for doesn't exist or has been removed.</p>
+          <Link href="/professionals">
+            <Button>Browse All Professionals</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto">
+        {/* Profile Header Card */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row md:items-center gap-6">
+              <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center">
+                {profile.profileImageUrl ? (
+                  <img 
+                    src={profile.profileImageUrl} 
+                    alt={profile.title} 
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                ) : (
+                  <User className="w-12 h-12 text-gray-400" />
+                )}
+              </div>
+              
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold mb-1">{profile.title}</h1>
+                <div className="flex items-center text-gray-600 mb-1">
+                  <MapPin className="w-4 h-4 mr-1" />
+                  <span>{profile.location}</span>
+                </div>
+                <div className="flex items-center text-gray-600 mb-3">
+                  <Star className="w-4 h-4 text-yellow-400 mr-1" />
+                  <span>{(profile.rating / 20).toFixed(1)}</span>
+                  <span className="ml-1 text-gray-500">({profile.reviewCount} reviews)</span>
+                </div>
+                
+                <div className="flex flex-wrap gap-2">
+                  {profile.featured && (
+                    <Badge className="bg-amber-100 text-amber-800">Featured Professional</Badge>
+                  )}
+                  {profile.ratePerHour && (
+                    <Badge className="bg-green-100 text-green-800">
+                      ${profile.ratePerHour}/hour
+                    </Badge>
+                  )}
+                  {isLoadingExpertise ? (
+                    <>
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                      <Skeleton className="h-6 w-24 rounded-full" />
+                    </>
+                  ) : (
+                    expertise?.slice(0, 2).map(area => (
+                      <Badge key={area.id} variant="secondary" className="bg-blue-100 text-blue-800">
+                        {area.name}
+                      </Badge>
+                    ))
+                  )}
+                  {expertise && expertise.length > 2 && (
+                    <Badge variant="outline">+{expertise.length - 2} more</Badge>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex flex-col gap-3 mt-4 md:mt-0">
+                <Button onClick={handleMessageClick}>
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  Message
+                </Button>
+                <Button onClick={handleBookConsultation} variant="outline">
+                  <Calendar className="mr-2 h-4 w-4" />
+                  Book Consultation
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Profile Content Tabs */}
+        <div className="mt-8">
+          <Tabs defaultValue="about">
+            <TabsList className="w-full">
+              <TabsTrigger value="about">About</TabsTrigger>
+              <TabsTrigger value="expertise">Expertise & Certifications</TabsTrigger>
+              {profile.videoIntroUrl && <TabsTrigger value="video">Video Introduction</TabsTrigger>}
+              {resources && resources.length > 0 && <TabsTrigger value="resources">Resources</TabsTrigger>}
+            </TabsList>
+            
+            <TabsContent value="about" className="mt-6">
+              <h2 className="text-xl font-semibold mb-4">About {profile.title}</h2>
+              <div className="prose max-w-none">
+                <p className="whitespace-pre-line text-gray-700">{profile.bio}</p>
+              </div>
+              
+              {profile.ratePerHour && (
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-2 flex items-center">
+                    <DollarSign className="mr-2 h-5 w-5 text-green-600" />
+                    Consulting Rate
+                  </h3>
+                  <p className="text-gray-700">
+                    ${profile.ratePerHour} per hour
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="expertise" className="mt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">Areas of Expertise</h2>
+                  {isLoadingExpertise ? (
+                    <div className="space-y-2">
+                      <Skeleton className="h-8 w-full" />
+                      <Skeleton className="h-8 w-full" />
+                      <Skeleton className="h-8 w-full" />
+                    </div>
+                  ) : expertise && expertise.length > 0 ? (
+                    <div className="space-y-2">
+                      {expertise.map(area => (
+                        <div key={area.id} className="flex items-center p-2 bg-blue-50 rounded-md">
+                          <Badge className="bg-blue-100 text-blue-800 mr-2">{area.name}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500">No expertise areas listed</p>
+                  )}
+                </div>
+                
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">Certifications</h2>
+                  {isLoadingCertifications ? (
+                    <div className="space-y-3">
+                      <Skeleton className="h-16 w-full" />
+                      <Skeleton className="h-16 w-full" />
+                    </div>
+                  ) : certifications && certifications.length > 0 ? (
+                    <div className="space-y-3">
+                      {certifications.map(cert => (
+                        <div key={cert.id} className="p-3 border rounded-md">
+                          <div className="flex items-start">
+                            <CheckCircle className="text-green-500 mr-2 h-5 w-5 flex-shrink-0 mt-1" />
+                            <div>
+                              <h3 className="font-medium">{cert.name}</h3>
+                              <p className="text-gray-600 text-sm">
+                                {cert.issuer} • {cert.year}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500">No certifications listed</p>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+            
+            {profile.videoIntroUrl && (
+              <TabsContent value="video" className="mt-6">
+                <h2 className="text-xl font-semibold mb-4">Video Introduction</h2>
+                <div className="relative aspect-video">
+                  <div className="flex items-center justify-center bg-gray-100 rounded-md h-full">
+                    <Video className="h-12 w-12 text-gray-400" />
+                    <p className="ml-2 text-gray-500">Video introduction available</p>
+                  </div>
+                </div>
+              </TabsContent>
+            )}
+            
+            {resources && resources.length > 0 && (
+              <TabsContent value="resources" className="mt-6">
+                <h2 className="text-xl font-semibold mb-4">Resources & Articles</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {resources.map(resource => (
+                    <Card key={resource.id}>
+                      <CardHeader className="p-4">
+                        <CardTitle className="text-lg">{resource.title}</CardTitle>
+                        <CardDescription>
+                          {resource.resourceType.charAt(0).toUpperCase() + resource.resourceType.slice(1)}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="p-4 pt-0">
+                        <p className="text-gray-700 line-clamp-2 mb-3">{resource.description}</p>
+                        <Link href={`/resource/${resource.id}`}>
+                          <Button variant="outline" size="sm">View Resource</Button>
+                        </Link>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+            )}
+          </Tabs>
+        </div>
+        
+        {/* Related Professionals */}
+        <div className="mt-12">
+          <h2 className="text-xl font-semibold mb-6">Similar Professionals</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[...Array(3)].map((_, index) => (
+              <Link key={index} href="/professionals">
+                <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <User className="w-5 h-5 text-gray-400" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium">Similar Professional</h3>
+                        <p className="text-gray-500 text-sm">View profile</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

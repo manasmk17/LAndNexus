@@ -1086,6 +1086,43 @@ function ResourcesTab() {
       });
     }
   };
+  
+  const updateResource = async (resource: Resource) => {
+    if (!resource.title.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Resource title is required",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      await apiRequest("PUT", `/api/admin/resources/${resource.id}`, {
+        title: resource.title,
+        description: resource.description,
+        content: resource.content,
+        imageUrl: resource.imageUrl || null,
+        resourceType: resource.resourceType,
+        categoryId: resource.categoryId,
+        featured: resource.featured
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/resources'] });
+      setShowResourceDialog(false);
+      
+      toast({
+        title: "Resource Updated",
+        description: "The resource has been updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: error instanceof Error ? error.message : "Failed to update resource",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <>
@@ -1227,6 +1264,16 @@ function ResourcesTab() {
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setEditingResource({...resource});
+                              setShowResourceDialog(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
                             variant="destructive" 
                             size="sm"
                             onClick={() => deleteResource(resource.id)}
@@ -1290,6 +1337,143 @@ function ResourcesTab() {
               Cancel
             </Button>
             <Button onClick={createNewCategory}>Create Category</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showResourceDialog} onOpenChange={setShowResourceDialog}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Edit Resource</DialogTitle>
+            <DialogDescription>
+              Update resource details
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editingResource && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-title" className="text-right">
+                  Title
+                </Label>
+                <Input
+                  id="edit-title"
+                  value={editingResource.title}
+                  onChange={(e) => setEditingResource({...editingResource, title: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-description" className="text-right">
+                  Description
+                </Label>
+                <Textarea
+                  id="edit-description"
+                  value={editingResource.description}
+                  onChange={(e) => setEditingResource({...editingResource, description: e.target.value})}
+                  className="col-span-3"
+                  rows={3}
+                />
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-content" className="text-right">
+                  Content URL
+                </Label>
+                <Input
+                  id="edit-content"
+                  value={editingResource.content}
+                  onChange={(e) => setEditingResource({...editingResource, content: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-image" className="text-right">
+                  Image URL
+                </Label>
+                <Input
+                  id="edit-image"
+                  value={editingResource.imageUrl || ""}
+                  onChange={(e) => setEditingResource({...editingResource, imageUrl: e.target.value})}
+                  className="col-span-3"
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-type" className="text-right">
+                  Resource Type
+                </Label>
+                <Select 
+                  value={editingResource.resourceType}
+                  onValueChange={(value) => setEditingResource({...editingResource, resourceType: value})}
+                >
+                  <SelectTrigger id="edit-type" className="col-span-3">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="article">Article</SelectItem>
+                    <SelectItem value="video">Video</SelectItem>
+                    <SelectItem value="template">Template</SelectItem>
+                    <SelectItem value="webinar">Webinar</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-category" className="text-right">
+                  Category
+                </Label>
+                <Select 
+                  value={editingResource.categoryId?.toString() || ""}
+                  onValueChange={(value) => setEditingResource({
+                    ...editingResource, 
+                    categoryId: value ? parseInt(value) : null
+                  })}
+                >
+                  <SelectTrigger id="edit-category" className="col-span-3">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Uncategorized</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id.toString()}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-featured" className="text-right">
+                  Featured
+                </Label>
+                <div className="col-span-3 flex items-center">
+                  <Switch 
+                    id="edit-featured"
+                    checked={!!editingResource.featured} 
+                    onCheckedChange={(checked) => setEditingResource({...editingResource, featured: checked})}
+                  />
+                  <span className="ml-2">{editingResource.featured ? "Yes" : "No"}</span>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowResourceDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              if (editingResource) {
+                updateResource(editingResource);
+              }
+            }}>
+              Save Changes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

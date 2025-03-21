@@ -346,6 +346,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update subscription after payment confirmation
+  app.post("/api/update-subscription", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { tierId, status, paymentIntentId } = req.body;
+      
+      if (!tierId || !status) {
+        return res.status(400).json({ 
+          message: "Missing required parameters: tierId or status" 
+        });
+      }
+      
+      // Verify payment intent if provided
+      if (paymentIntentId) {
+        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        if (paymentIntent.status !== 'succeeded') {
+          return res.status(400).json({ message: "Payment has not been completed successfully" });
+        }
+      }
+      
+      // Update user's subscription status in our database
+      await storage.updateUserSubscription(user.id, tierId, status);
+      
+      // Create or update a customer in Stripe if needed
+      if (!user.stripeCustomerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: user.username,
+          metadata: {
+            userId: user.id.toString()
+          }
+        });
+        
+        await storage.updateStripeCustomerId(user.id, customer.id);
+      }
+
+      res.json({ 
+        success: true, 
+        message: "Subscription updated successfully" 
+      });
+    } catch (error: any) {
+      res.status(500).json({ 
+        message: "Error updating subscription: " + error.message 
+      });
+    }
+  });
+
   // Professional Profile Routes
   app.post("/api/professional-profiles", isAuthenticated, async (req, res) => {
     try {

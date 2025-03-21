@@ -70,11 +70,13 @@ const SubscriptionForm = ({ selectedTier }: { selectedTier: Tier }) => {
     setLoading(true);
 
     try {
-      const { error } = await stripe.confirmPayment({
+      // Confirm the payment with Stripe
+      const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: window.location.origin + '/subscription-success',
         },
+        redirect: 'if_required'
       });
 
       if (error) {
@@ -83,12 +85,36 @@ const SubscriptionForm = ({ selectedTier }: { selectedTier: Tier }) => {
           description: error.message,
           variant: "destructive",
         });
-      } else {
-        toast({
-          title: "Subscription Successful",
-          description: "You are now subscribed to the plan!",
-        });
-        navigate('/');
+      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+        // Once payment is successful, update the subscription status
+        try {
+          const response = await apiRequest("POST", "/api/update-subscription", {
+            tierId: selectedTier.id,
+            status: 'active',
+            paymentIntentId: paymentIntent.id
+          });
+          
+          if (response.ok) {
+            toast({
+              title: "Subscription Successful",
+              description: `You are now subscribed to the ${selectedTier.name} plan!`,
+            });
+            // Redirect to success page
+            navigate('/subscription-success');
+          } else {
+            toast({
+              title: "Warning",
+              description: "Payment processed but subscription update failed. Please contact support.",
+              variant: "destructive",
+            });
+          }
+        } catch (err: any) {
+          toast({
+            title: "Warning",
+            description: "Payment processed but subscription update failed. Please contact support.",
+            variant: "destructive",
+          });
+        }
       }
     } catch (err: any) {
       toast({
@@ -148,22 +174,29 @@ export default function Subscribe() {
     const createIntent = async () => {
       setLoading(true);
       try {
-        // In a real implementation, we'd first create a payment method
-        // That requires capturing credit card details with Stripe Elements
-        // For our demo, we'll simplify by just passing the tier ID
-        const response = await apiRequest("POST", "/api/create-subscription", { 
-          tierId: selectedTierId,
-          priceId: `price_${selectedTierId}`,  // This would be replaced with actual Stripe price IDs
-          paymentMethodId: 'pm_card_visa' // Test payment method ID
+        // For this demo, we'll use direct Stripe API creation
+        // In a production environment, we would use more secure methods
+        // of handling the payment information
+        
+        // Use hardcoded price IDs for demonstration purposes
+        // In production, these would come from your Stripe dashboard
+        const stripePriceIds = {
+          basic: 'price_1OzPWO2eZvKYlo2CVW2OGvzS', // Example ID, will be replaced by Stripe
+          premium: 'price_1OzPXX2eZvKYlo2CQgKgId4W' // Example ID, will be replaced by Stripe
+        };
+        
+        const response = await apiRequest("POST", "/api/create-payment-intent", { 
+          amount: selectedTier.price,
+          tier: selectedTierId
         });
         
         const data = await response.json();
-        if (response.status === 200 && data.clientSecret) {
+        if (data.clientSecret) {
           setClientSecret(data.clientSecret);
         } else {
           toast({
             title: "Error",
-            description: data.message || "Could not initialize subscription",
+            description: data.message || "Could not initialize payment",
             variant: "destructive",
           });
         }

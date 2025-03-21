@@ -102,7 +102,13 @@ export default function SubscriptionSuccess() {
                     {subscriptionDetails.nextBillingDate && (
                       <>
                         <div className="text-left text-gray-500">Next Billing Date:</div>
-                        <div className="text-right font-medium">{subscriptionDetails.nextBillingDate}</div>
+                        <div className="text-right font-medium">
+                          {new Date(subscriptionDetails.nextBillingDate).toLocaleDateString(undefined, {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}
+                        </div>
                       </>
                     )}
                   </div>

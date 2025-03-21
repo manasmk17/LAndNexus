@@ -6,7 +6,7 @@ export default function Hero() {
   const { user } = useAuth();
 
   return (
-    <section className="bg-gradient-to-r from-emerald-600 to-teal-500 text-white py-16">
+    <section className="bg-gradient-to-r from-slate-800 to-blue-900 text-white py-16">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row items-center">
           <div className="md:w-1/2 mb-8 md:mb-0">
@@ -20,19 +20,19 @@ export default function Hero() {
               {user ? (
                 user.isAdmin ? (
                   <Link href="/admin-dashboard">
-                    <Button size="lg" className="font-bold bg-teal-700 hover:bg-teal-800">
+                    <Button size="lg" className="font-bold bg-slate-700 hover:bg-slate-800">
                       Admin Dashboard
                     </Button>
                   </Link>
                 ) : user.userType === "professional" ? (
                   <Link href="/professional-dashboard">
-                    <Button size="lg" className="font-bold bg-teal-700 hover:bg-teal-800">
+                    <Button size="lg" className="font-bold bg-slate-700 hover:bg-slate-800">
                       My Dashboard
                     </Button>
                   </Link>
                 ) : (
                   <Link href="/company-dashboard">
-                    <Button size="lg" className="font-bold bg-teal-700 hover:bg-teal-800">
+                    <Button size="lg" className="font-bold bg-slate-700 hover:bg-slate-800">
                       My Dashboard
                     </Button>
                   </Link>
@@ -40,7 +40,7 @@ export default function Hero() {
               ) : (
                 <>
                   <Link href="/register?type=company">
-                    <Button size="lg" className="font-bold bg-teal-700 hover:bg-teal-800">
+                    <Button size="lg" className="font-bold bg-slate-700 hover:bg-slate-800">
                       I'm an Employer
                     </Button>
                   </Link>

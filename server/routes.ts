@@ -41,7 +41,38 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 
 const MemoryStore = memorystore(session);
 
+// Initialize default resource categories if they don't exist
+async function initializeResourceCategories() {
+  try {
+    const categories = await storage.getAllResourceCategories();
+    
+    // Only initialize if no categories exist
+    if (categories.length === 0) {
+      console.log("Initializing default resource categories...");
+      
+      const defaultCategories = [
+        { name: "Leadership", description: "Resources focused on leadership development and skills" },
+        { name: "Technical Skills", description: "Resources for technical skill development" },
+        { name: "Soft Skills", description: "Resources for communication and interpersonal skills" },
+        { name: "Compliance", description: "Resources related to compliance and regulatory training" },
+        { name: "Best Practices", description: "Best practices in Learning & Development" }
+      ];
+      
+      for (const category of defaultCategories) {
+        await storage.createResourceCategory(category);
+      }
+      
+      console.log("Default resource categories initialized successfully.");
+    }
+  } catch (error) {
+    console.error("Error initializing resource categories:", error);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Initialize resource categories
+  await initializeResourceCategories();
+  
   // Configure session
   app.use(
     session({

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { 
@@ -29,27 +29,42 @@ import {
   HeadphonesIcon,
   User,
   Calendar,
-  Eye
+  Eye,
+  Tag
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
-import type { Resource, User as UserType } from "@shared/schema";
+import type { Resource, User as UserType, ResourceCategory } from "@shared/schema";
 
 export default function Resources() {
   const [location] = useLocation();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [resourceType, setResourceType] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   
-  // Get type from query parameters if any
+  // Get type and category from query parameters if any
   const params = new URLSearchParams(window.location.search);
   const typeParam = params.get("type");
+  const categoryParam = params.get("category");
   
-  // Update resourceType if specified in URL
-  useState(() => {
+  // Update resourceType and selectedCategory if specified in URL
+  useEffect(() => {
     if (typeParam) {
       setResourceType(typeParam);
     }
+    
+    if (categoryParam) {
+      setSelectedCategory(parseInt(categoryParam));
+    }
+  }, [typeParam, categoryParam]);
+  
+  // Fetch resource categories
+  const {
+    data: categories,
+    isLoading: isLoadingCategories,
+  } = useQuery<ResourceCategory[]>({
+    queryKey: ["/api/resource-categories"],
   });
   
   // Fetch resources with search and filter
@@ -58,14 +73,23 @@ export default function Resources() {
     isLoading: isLoadingResources,
     error: resourcesError
   } = useQuery<Resource[]>({
-    queryKey: ["/api/resources", { query: searchTerm, type: resourceType }],
+    queryKey: ["/api/resources", { 
+      query: searchTerm, 
+      type: resourceType,
+      categoryId: selectedCategory 
+    }],
     queryFn: async ({ queryKey }) => {
       const [path, params] = queryKey;
-      const { query, type } = params as { query: string, type: string };
+      const { query, type, categoryId } = params as { 
+        query: string, 
+        type: string,
+        categoryId: number | null 
+      };
       
       const searchParams = new URLSearchParams();
       if (query) searchParams.append('query', query);
       if (type && type !== 'all') searchParams.append('type', type);
+      if (categoryId) searchParams.append('categoryId', categoryId.toString());
       
       const url = `${path}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
       const response = await fetch(url);

@@ -16,9 +16,11 @@ import {
   insertForumCommentSchema,
   insertMessageSchema,
   insertConsultationSchema,
+  users,
   type Resource,
   type User
 } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import { generateCareerRecommendations } from "./career-recommendations";
 import { 
   generateJobEmbedding, 
@@ -98,7 +100,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return done(null, false, { message: "Incorrect username" });
       }
-      if (user.password !== password) { // In a real app, use bcrypt to compare hashed passwords
+      // For regular users, passwords should be hashed, but for this demo, we'll do direct comparison
+      // In a production app, we would use bcrypt.compare() here
+      if (user.password !== password) {
         return done(null, false, { message: "Incorrect password" });
       }
       return done(null, user);
@@ -412,25 +416,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Debug endpoint to create a test admin user (only for development)
-  app.get("/api/debug/create-admin", async (req, res) => {
+  app.post("/api/create-admin", async (req, res) => {
     try {
-      // Check if admin user already exists
+      // Check if admin user already exists and delete it if it does
       const existingAdmin = await storage.getUserByUsername("admin");
       
       if (existingAdmin) {
-        return res.json({ 
-          message: "Admin user already exists",
-          user: {
-            id: existingAdmin.id,
-            username: existingAdmin.username,
-            isAdmin: existingAdmin.isAdmin
-          }
-        });
+        try {
+          // In a real app, we'd use a proper delete method. This is just for development.
+          // Delete the admin user manually from the database
+          await db.delete(users).where(eq(users.username, "admin"));
+          console.log("Deleted existing admin user");
+        } catch (error) {
+          console.error("Error deleting admin user:", error);
+        }
       }
       
       // Create admin user with plain text password so Passport can hash it
       const adminUser = await storage.createUser({
-        username: "admin",
+        username: "adminuser",
         password: "admin123", // plain text password - will be hashed by Passport
         userType: "admin",
         isAdmin: true,

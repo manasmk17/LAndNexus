@@ -461,6 +461,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Also support GET requests for token verification
+  app.get("/api/auth/verify-reset-token", async (req, res) => {
+    try {
+      const token = req.query.token as string;
+      
+      if (!token) {
+        return res.status(400).json({ message: "Token is required" });
+      }
+      
+      // Verify token
+      const user = await storage.getUserByResetToken(token);
+      
+      if (!user) {
+        return res.status(400).json({ valid: false, message: "Invalid or expired token" });
+      }
+      
+      res.json({ valid: true });
+    } catch (err) {
+      console.error("Token verification error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
   app.post("/api/auth/reset-password", async (req, res) => {
     try {
       const { token, newPassword } = req.body;

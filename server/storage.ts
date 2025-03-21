@@ -8,6 +8,7 @@ import {
   jobPostings, JobPosting, InsertJobPosting,
   jobApplications, JobApplication, InsertJobApplication,
   resources, Resource, InsertResource,
+  resourceCategories, ResourceCategory, InsertResourceCategory,
   forumPosts, ForumPost, InsertForumPost,
   forumComments, ForumComment, InsertForumComment,
   messages, Message, InsertMessage,
@@ -71,12 +72,20 @@ export interface IStorage {
   createJobApplication(application: InsertJobApplication): Promise<JobApplication>;
   updateJobApplicationStatus(id: number, status: string): Promise<JobApplication | undefined>;
   
+  // Resource Category operations
+  getResourceCategory(id: number): Promise<ResourceCategory | undefined>;
+  getAllResourceCategories(): Promise<ResourceCategory[]>;
+  createResourceCategory(category: InsertResourceCategory): Promise<ResourceCategory>;
+  
   // Resource operations
   getResource(id: number): Promise<Resource | undefined>;
   getAllResources(): Promise<Resource[]>;
+  getResourcesByCategory(categoryId: number): Promise<Resource[]>;
+  searchResources(query?: string, type?: string, categoryId?: number): Promise<Resource[]>;
   getFeaturedResources(limit: number): Promise<Resource[]>;
   createResource(resource: InsertResource): Promise<Resource>;
   updateResource(id: number, resource: Partial<Resource>): Promise<Resource | undefined>;
+  setResourceFeatured(id: number, featured: boolean): Promise<Resource | undefined>;
   
   // Forum operations
   getForumPost(id: number): Promise<ForumPost | undefined>;
@@ -987,6 +996,72 @@ export class DatabaseStorage implements IStorage {
       .where(eq(resources.featured, true))
       .orderBy(desc(resources.createdAt))
       .limit(limit);
+  }
+  
+  async getResourcesByCategory(categoryId: number): Promise<Resource[]> {
+    return db
+      .select()
+      .from(resources)
+      .where(eq(resources.categoryId, categoryId))
+      .orderBy(desc(resources.createdAt));
+  }
+  
+  async searchResources(query?: string, type?: string, categoryId?: number): Promise<Resource[]> {
+    let baseQuery = db
+      .select()
+      .from(resources);
+    
+    // Add search conditions if query provided
+    if (query) {
+      const searchTerm = `%${query.toLowerCase()}%`;
+      baseQuery = baseQuery.where(
+        or(
+          sql`LOWER(${resources.title}) LIKE ${searchTerm}`,
+          sql`LOWER(${resources.description}) LIKE ${searchTerm}`
+        )
+      );
+    }
+    
+    // Add type filter if provided
+    if (type) {
+      baseQuery = baseQuery.where(eq(resources.resourceType, type));
+    }
+    
+    // Add category filter if provided
+    if (categoryId) {
+      baseQuery = baseQuery.where(eq(resources.categoryId, categoryId));
+    }
+    
+    return baseQuery.orderBy(desc(resources.createdAt));
+  }
+  
+  async getResourceCategory(id: number): Promise<ResourceCategory | undefined> {
+    const [category] = await db
+      .select()
+      .from(resourceCategories)
+      .where(eq(resourceCategories.id, id));
+    return category;
+  }
+  
+  async getAllResourceCategories(): Promise<ResourceCategory[]> {
+    return db.select().from(resourceCategories);
+  }
+  
+  async createResourceCategory(category: InsertResourceCategory): Promise<ResourceCategory> {
+    const [newCategory] = await db
+      .insert(resourceCategories)
+      .values(category)
+      .returning();
+    return newCategory;
+  }
+  
+  async setResourceFeatured(id: number, featured: boolean): Promise<Resource | undefined> {
+    const [updatedResource] = await db
+      .update(resources)
+      .set({ featured })
+      .where(eq(resources.id, id))
+      .returning();
+    return updatedResource;
   }
 
   async createResource(resource: InsertResource): Promise<Resource> {

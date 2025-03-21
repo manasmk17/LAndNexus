@@ -1092,8 +1092,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/resources", async (req, res) => {
-    const resources = await storage.getAllResources();
-    res.json(resources);
+    const { query, type } = req.query;
+    
+    // Get all resources first
+    const allResources = await storage.getAllResources();
+    
+    // Filter resources if query or type parameters are provided
+    let filteredResources = allResources;
+    
+    if (query) {
+      const searchTerm = (query as string).toLowerCase();
+      filteredResources = filteredResources.filter(resource => 
+        resource.title.toLowerCase().includes(searchTerm) || 
+        resource.description.toLowerCase().includes(searchTerm)
+      );
+    }
+    
+    if (type) {
+      filteredResources = filteredResources.filter(resource => 
+        resource.resourceType.toLowerCase() === (type as string).toLowerCase()
+      );
+    }
+    
+    res.json(filteredResources);
   });
 
   app.get("/api/resources/featured", async (req, res) => {

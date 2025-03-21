@@ -141,6 +141,17 @@ export const insertJobApplicationSchema = createInsertSchema(jobApplications).om
   createdAt: true,
 });
 
+// Resource Categories
+export const resourceCategories = pgTable("resource_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+});
+
+export const insertResourceCategorySchema = createInsertSchema(resourceCategories).omit({
+  id: true,
+});
+
 // Resources
 export const resources = pgTable("resources", {
   id: serial("id").primaryKey(),
@@ -149,6 +160,7 @@ export const resources = pgTable("resources", {
   description: text("description").notNull(),
   content: text("content").notNull(),  // This field will store the URL for now
   resourceType: text("resource_type").notNull(), // "article", "template", "video", "webinar"
+  categoryId: integer("category_id").references(() => resourceCategories.id),
   imageUrl: text("image_url"),
   featured: boolean("featured").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -245,6 +257,9 @@ export type InsertJobPosting = z.infer<typeof insertJobPostingSchema>;
 
 export type JobApplication = typeof jobApplications.$inferSelect;
 export type InsertJobApplication = z.infer<typeof insertJobApplicationSchema>;
+
+export type ResourceCategory = typeof resourceCategories.$inferSelect;
+export type InsertResourceCategory = z.infer<typeof insertResourceCategorySchema>;
 
 export type Resource = typeof resources.$inferSelect;
 export type InsertResource = z.infer<typeof insertResourceSchema>;

@@ -52,13 +52,30 @@ export default function Resources() {
     }
   });
   
-  // Fetch all resources
+  // Fetch resources with search and filter
   const { 
     data: resources, 
     isLoading: isLoadingResources,
     error: resourcesError
   } = useQuery<Resource[]>({
-    queryKey: ["/api/resources"],
+    queryKey: ["/api/resources", { query: searchTerm, type: resourceType }],
+    queryFn: async ({ queryKey }) => {
+      const [path, params] = queryKey;
+      const { query, type } = params as { query: string, type: string };
+      
+      const searchParams = new URLSearchParams();
+      if (query) searchParams.append('query', query);
+      if (type && type !== 'all') searchParams.append('type', type);
+      
+      const url = `${path}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch resources');
+      }
+      
+      return response.json();
+    },
   });
   
   // Fetch user details for resources
@@ -67,23 +84,10 @@ export default function Resources() {
     enabled: !!resources && resources.length > 0,
   });
   
-  // Filter resources based on search and filters
-  const filteredResources = resources?.filter(resource => {
-    // Filter by search term
-    const matchesSearch = !searchTerm || 
-      resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      resource.description.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    // Filter by resource type
-    const matchesType = !resourceType || resource.resourceType === resourceType;
-    
-    return matchesSearch && matchesType;
-  }) || [];
-  
   // Sort resources by created date (newest first)
-  const sortedResources = [...filteredResources].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+  const sortedResources = resources 
+    ? [...resources].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    : [];
   
   // Helper to get resource type icon
   const getResourceTypeIcon = (type: string) => {

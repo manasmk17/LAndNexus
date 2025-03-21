@@ -471,7 +471,9 @@ export class MemStorage implements IStorage {
     const newResource: Resource = { 
       ...resource, 
       id, 
-      createdAt: new Date() 
+      createdAt: new Date(),
+      featured: resource.featured || false,
+      imageUrl: resource.imageUrl || null
     };
     this.resources.set(id, newResource);
     return newResource;
@@ -574,7 +576,9 @@ export class MemStorage implements IStorage {
     const newConsultation: Consultation = { 
       ...consultation, 
       id, 
-      createdAt: new Date() 
+      createdAt: new Date(),
+      status: consultation.status || "scheduled",
+      notes: consultation.notes || null
     };
     this.consultations.set(id, newConsultation);
     return newConsultation;

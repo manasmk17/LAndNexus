@@ -764,6 +764,42 @@ export class MemStorage implements IStorage {
       (user) => user.stripeCustomerId === customerId
     );
   }
+
+  // Skill Recommendation operations
+  async getSkillRecommendation(id: number): Promise<SkillRecommendation | undefined> {
+    return this.skillRecommendations.get(id);
+  }
+
+  async getSkillRecommendationsByProfessional(professionalId: number): Promise<SkillRecommendation | undefined> {
+    return Array.from(this.skillRecommendations.values()).find(
+      (rec) => rec.professionalId === professionalId
+    );
+  }
+
+  async createSkillRecommendation(recommendation: InsertSkillRecommendation): Promise<SkillRecommendation> {
+    const id = this.skillRecommendationId++;
+    const newRecommendation: SkillRecommendation = { 
+      ...recommendation, 
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.skillRecommendations.set(id, newRecommendation);
+    return newRecommendation;
+  }
+
+  async updateSkillRecommendation(id: number, recommendation: Partial<InsertSkillRecommendation>): Promise<SkillRecommendation | undefined> {
+    const existing = this.skillRecommendations.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { 
+      ...existing, 
+      ...recommendation,
+      updatedAt: new Date()
+    };
+    this.skillRecommendations.set(id, updated);
+    return updated;
+  }
 }
 
 export class DatabaseStorage implements IStorage {

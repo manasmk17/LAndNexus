@@ -341,12 +341,20 @@ export default function Resources() {
                   </div>
                 )}
                 <CardContent className="p-6">
-                  <div className="flex items-center mb-3">
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
                     <Badge className={`flex items-center ${getResourceTypeBadgeClass(resource.resourceType)}`}>
                       {getResourceTypeIcon(resource.resourceType)}
                       <span className="ml-1">{resource.resourceType.charAt(0).toUpperCase() + resource.resourceType.slice(1)}</span>
                     </Badge>
-                    <span className="text-gray-500 text-sm ml-3">
+                    
+                    {resource.categoryId && categories?.some(cat => cat.id === resource.categoryId) && (
+                      <Badge variant="outline" className="flex items-center">
+                        <Tag className="h-3 w-3 mr-1" />
+                        <span>{categories?.find(cat => cat.id === resource.categoryId)?.name || "Uncategorized"}</span>
+                      </Badge>
+                    )}
+                    
+                    <span className="text-gray-500 text-sm">
                       {format(new Date(resource.createdAt), "MMM d, yyyy")}
                     </span>
                   </div>
@@ -384,7 +392,8 @@ export default function Resources() {
               </p>
               <Button onClick={() => {
                 setSearchTerm("");
-                setResourceType("");
+                setResourceType("all");
+                setSelectedCategory(null);
               }}>
                 Clear Filters
               </Button>

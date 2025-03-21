@@ -5,7 +5,8 @@ import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { insertResourceSchema } from '@shared/schema';
+import { useQuery } from '@tanstack/react-query';
+import { insertResourceSchema, ResourceCategory } from '@shared/schema';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -27,6 +28,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 
 // Extend the insert schema to add validation rules
 const createResourceSchema = insertResourceSchema.extend({
@@ -41,6 +43,11 @@ export default function CreateResourceForm() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  
+  // Fetch resource categories
+  const { data: categories, isLoading: isLoadingCategories } = useQuery<ResourceCategory[]>({
+    queryKey: ['/api/resource-categories'],
+  });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(createResourceSchema),
@@ -51,6 +58,7 @@ export default function CreateResourceForm() {
       content: '', // Content field is used for URL
       featured: false,
       authorId: user?.id || 0,
+      categoryId: undefined,
     },
   });
 
@@ -178,6 +186,45 @@ export default function CreateResourceForm() {
                   </FormControl>
                   <FormDescription>
                     URL where users can access the resource
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="categoryId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <Select 
+                    onValueChange={(value) => field.onChange(value ? parseInt(value) : undefined)} 
+                    defaultValue={field.value?.toString() || ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        {isLoadingCategories ? (
+                          <div className="flex items-center">
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            <span>Loading categories...</span>
+                          </div>
+                        ) : (
+                          <SelectValue placeholder="Select a category" />
+                        )}
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">None</SelectItem>
+                      {categories?.map((category) => (
+                        <SelectItem key={category.id} value={category.id.toString()}>
+                          {category.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Categorize your resource to help users find it more easily
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

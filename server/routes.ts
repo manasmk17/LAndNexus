@@ -28,7 +28,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2023-10-16" as const,
+  apiVersion: "2023-10-16",
 });
 
 const MemoryStore = memorystore(session);
@@ -208,9 +208,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         if (user) {
           // Update the subscription status
+          const subscriptionTier = user.subscriptionTier || "basic";
           await storage.updateUserSubscription(
             user.id, 
-            user.subscriptionTier || null, 
+            subscriptionTier, 
             subscription.status
           );
         }
@@ -311,6 +312,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/me", isAuthenticated, async (req, res) => {
     res.json(req.user);
+  });
+  
+  app.get("/api/subscription-status", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      // If user doesn't have a subscription, return appropriate response
+      if (!user.stripeSubscriptionId) {
+        return res.status(404).json({ message: "No active subscription found" });
+      }
+      
+      // Get subscription details from Stripe
+      const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+      
+      // Format subscription details
+      const response = {
+        tier: user.subscriptionTier,
+        status: subscription.status,
+        // Convert timestamp to ISO string for frontend formatting
+        nextBillingDate: new Date(subscription.current_period_end * 1000).toISOString(),
+      };
+      
+      res.json(response);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error retrieving subscription status: " + error.message });
+    }
   });
 
   // Professional Profile Routes

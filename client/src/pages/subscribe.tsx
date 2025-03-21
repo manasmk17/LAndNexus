@@ -45,7 +45,15 @@ const tiers = [
   }
 ];
 
-const SubscriptionForm = ({ selectedTier }) => {
+type Tier = {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  features: string[];
+};
+
+const SubscriptionForm = ({ selectedTier }: { selectedTier: Tier }) => {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();

@@ -31,28 +31,28 @@ export default function Footer() {
             <h3 className="text-lg font-heading font-medium mb-4">Platform</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/professionals">
-                  <a className="text-white text-opacity-70 hover:text-opacity-100">For Professionals</a>
+                <Link href="/professionals" className="text-white text-opacity-70 hover:text-opacity-100">
+                  For Professionals
                 </Link>
               </li>
               <li>
-                <Link href="/jobs">
-                  <a className="text-white text-opacity-70 hover:text-opacity-100">For Companies</a>
+                <Link href="/jobs" className="text-white text-opacity-70 hover:text-opacity-100">
+                  For Companies
                 </Link>
               </li>
               <li>
-                <Link href="/#pricing">
-                  <a className="text-white text-opacity-70 hover:text-opacity-100">Pricing</a>
+                <Link href="/#pricing" className="text-white text-opacity-70 hover:text-opacity-100">
+                  Pricing
                 </Link>
               </li>
               <li>
-                <Link href="/#testimonials">
-                  <a className="text-white text-opacity-70 hover:text-opacity-100">Success Stories</a>
+                <Link href="/#testimonials" className="text-white text-opacity-70 hover:text-opacity-100">
+                  Success Stories
                 </Link>
               </li>
               <li>
-                <Link href="/resources">
-                  <a className="text-white text-opacity-70 hover:text-opacity-100">Resources</a>
+                <Link href="/resources" className="text-white text-opacity-70 hover:text-opacity-100">
+                  Resources
                 </Link>
               </li>
             </ul>

@@ -76,6 +76,7 @@ export interface IStorage {
   getAllResources(): Promise<Resource[]>;
   getFeaturedResources(limit: number): Promise<Resource[]>;
   createResource(resource: InsertResource): Promise<Resource>;
+  updateResource(id: number, resource: Partial<Resource>): Promise<Resource | undefined>;
   
   // Forum operations
   getForumPost(id: number): Promise<ForumPost | undefined>;

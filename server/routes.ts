@@ -1110,6 +1110,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(resource);
   });
 
+  // Feature/unfeature a resource
+  app.patch("/api/resources/:id/feature", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.user as any;
+      const { featured } = req.body;
+      
+      // Get resource to verify it exists
+      const resource = await storage.getResource(id);
+      if (!resource) {
+        return res.status(404).json({ message: "Resource not found" });
+      }
+      
+      // Check if the user is the author of the resource
+      if (resource.authorId !== user.id) {
+        return res.status(403).json({ message: "You can only feature your own resources" });
+      }
+      
+      // Update the featured flag
+      const updatedResource = await storage.updateResource(id, { featured });
+      res.json(updatedResource);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Forum Routes
   app.post("/api/forum-posts", isAuthenticated, async (req, res) => {
     try {

@@ -949,12 +949,13 @@ export default function EditProfileForm() {
                             onChange(file || null);
                           }} 
                         />
-                        {/* Show selected file name or existing profile image */}
+                        {/* Show selected file name or existing company logo */}
                         {(value && typeof value === 'object') && (
                           <p className="text-sm text-muted-foreground">
                             Selected: {(value as File).name}
                           </p>
                         )}
+                        {/* Check if logoImagePath exists in companyProfile */}
                         {companyProfile?.logoImagePath && (
                           <div className="mt-2">
                             <p className="text-sm text-muted-foreground mb-2">Current logo:</p>

@@ -1600,6 +1600,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     res.json(resource);
   });
+  
+  // Related resources by type endpoint
+  app.get("/api/resources/related/:type", async (req, res) => {
+    try {
+      const { type } = req.params;
+      const exclude = req.query.exclude ? parseInt(req.query.exclude as string) : undefined;
+      
+      // Get all resources of this type
+      const resources = await storage.searchResources(undefined, type);
+      
+      // Filter out the excluded resource
+      const relatedResources = exclude 
+        ? resources.filter(resource => resource.id !== exclude)
+        : resources;
+      
+      // Return a maximum of 3 related resources
+      res.json(relatedResources.slice(0, 3));
+    } catch (err) {
+      console.error("Error fetching related resources:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   // Feature/unfeature a resource
   app.patch("/api/resources/:id/feature", isAuthenticated, async (req, res) => {

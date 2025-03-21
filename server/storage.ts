@@ -1,3 +1,5 @@
+import { db } from "./db";
+import { and, asc, desc, eq, or, isNull, not, sql, SQL } from "drizzle-orm";
 import {
   users, User, InsertUser,
   professionalProfiles, ProfessionalProfile, InsertProfessionalProfile,
@@ -14,7 +16,6 @@ import {
   messages, Message, InsertMessage,
   consultations, Consultation, InsertConsultation
 } from "@shared/schema";
-import { and, asc, desc, eq, or, sql, SQL } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -743,7 +744,6 @@ export class MemStorage implements IStorage {
 }
 
 import { db } from "./db";
-import { eq, and, desc, asc, or, isNull, not, sql } from "drizzle-orm";
 
 export class DatabaseStorage implements IStorage {
   // User operations

@@ -11,6 +11,7 @@ import {
   insertJobPostingSchema,
   insertJobApplicationSchema,
   insertResourceSchema,
+  insertResourceCategorySchema,
   insertForumPostSchema,
   insertForumCommentSchema,
   insertMessageSchema,

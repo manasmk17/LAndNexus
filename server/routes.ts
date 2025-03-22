@@ -877,8 +877,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Debug endpoint to create a test admin user (only for development)
-  app.post("/api/create-admin", async (req, res) => {
+  // Debug endpoint to create a quick test admin user with default credentials
+  app.post("/api/create-test-admin", async (req, res) => {
     try {
       // Create a new admin user with a unique username and email
       const timestamp = Date.now();
@@ -893,15 +893,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       res.json({ 
-        message: "Admin user created successfully",
+        message: "Test admin user created successfully",
         user: {
           id: adminUser.id,
           username: adminUser.username,
+          password: "admin123", // Only returning for test admin convenience
           isAdmin: adminUser.isAdmin
         }
       });
     } catch (error: any) {
-      res.status(500).json({ message: "Error creating admin user: " + error.message });
+      res.status(500).json({ message: "Error creating test admin user: " + error.message });
     }
   });
 

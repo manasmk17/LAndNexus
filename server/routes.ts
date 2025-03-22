@@ -1036,13 +1036,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: user.id
       };
 
-      // Proper type conversion for numeric fields
+      // BUG KILLER: Proper type conversion for numeric fields with NaN protection
       if (profileData.ratePerHour) {
-        profileData.ratePerHour = Number(profileData.ratePerHour);
+        const parsedRate = Number(profileData.ratePerHour);
+        profileData.ratePerHour = isNaN(parsedRate) ? null : parsedRate;
+        console.log(`Rate per hour parsed: ${profileData.ratePerHour} (original: ${profileData.ratePerHour})`);
       }
       
       if (profileData.yearsExperience) {
-        profileData.yearsExperience = Number(profileData.yearsExperience);
+        const parsedYears = Number(profileData.yearsExperience);
+        profileData.yearsExperience = isNaN(parsedYears) ? null : parsedYears;
+        console.log(`Years experience parsed: ${profileData.yearsExperience} (original: ${profileData.yearsExperience})`);
       }
       
       // Convert availability string to boolean

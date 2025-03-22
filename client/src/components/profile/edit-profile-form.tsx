@@ -465,6 +465,19 @@ export default function EditProfileForm() {
     setTestimonials(testimonials.filter((_, i) => i !== index));
   };
 
+  // BUG KILLER: Helper function to sanitize numeric fields
+  const sanitizeNumericValue = (value: any) => {
+    // If it's already undefined/null, return empty string
+    if (value === undefined || value === null) return "";
+    
+    // If it's a number or valid string number, return as is
+    const numVal = Number(value);
+    if (!isNaN(numVal)) return numVal.toString();
+    
+    // Otherwise return empty string (sanitizing invalid values)
+    return "";
+  };
+
   const onSubmitProfessional = async (data: z.infer<typeof professionalProfileFormSchema>) => {
     console.log("Form submission started - professional profile", data);
     try {
@@ -486,15 +499,19 @@ export default function EditProfileForm() {
       const workExperienceJSON = JSON.stringify(workExperiences);
       const testimonialsJSON = JSON.stringify(testimonials);
       
-      // Add to profile data with explicit type conversions
+      // Sanitize numeric values before submission - BUG KILLER
+      console.log("BUG KILLER: Sanitizing numeric values for profile submission");
+      console.log("Before sanitization - ratePerHour:", profileData.ratePerHour, "yearsExperience:", profileData.yearsExperience);
+      
+      // Add to profile data with explicit type conversions and sanitization
       const enrichedProfileData = {
         ...profileData,
         workExperience: workExperienceJSON,
         testimonials: testimonialsJSON,
         userId: user.id, // Explicitly set userId to ensure it's included
-        // Convert undefined values to empty strings for FormData
-        ratePerHour: profileData.ratePerHour || "",
-        yearsExperience: profileData.yearsExperience || "",
+        // Sanitize and convert all values properly
+        ratePerHour: sanitizeNumericValue(profileData.ratePerHour),
+        yearsExperience: sanitizeNumericValue(profileData.yearsExperience),
         title: profileData.title || "",
         bio: profileData.bio || "",
         location: profileData.location || "",
@@ -634,11 +651,15 @@ export default function EditProfileForm() {
       // Create FormData for file upload
       const formData = new FormData();
       
+      // Sanitize values before submission - BUG KILLER
+      console.log("BUG KILLER: Sanitizing values for company profile submission");
+      console.log("Before sanitization - company data:", profileData);
+      
       // Add text fields to FormData with explicit userId and type conversions
       const enrichedProfileData = {
         ...profileData,
         userId: user.id, // Explicitly set userId to ensure it's included
-        // Convert undefined values to empty strings for FormData
+        // Apply sanitization to all values
         companyName: profileData.companyName || "",
         industry: profileData.industry || "",
         description: profileData.description || "",
@@ -854,7 +875,16 @@ export default function EditProfileForm() {
                         placeholder="e.g. 150" 
                         {...field}
                         value={field.value || ''}
-                        onChange={(e) => field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value))}
+                        onChange={(e) => {
+                          // BUG KILLER: Safe parseInt with NaN protection
+                          const value = e.target.value;
+                          if (value === "") {
+                            field.onChange(undefined);
+                          } else {
+                            const parsedValue = parseInt(value);
+                            field.onChange(isNaN(parsedValue) ? "" : parsedValue);
+                          }
+                        }}
                       />
                     </FormControl>
                     <FormDescription>
@@ -926,7 +956,16 @@ export default function EditProfileForm() {
                           placeholder="e.g. 5" 
                           {...field}
                           value={field.value || ''}
-                          onChange={(e) => field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value))}
+                          onChange={(e) => {
+                            // BUG KILLER: Safe parseInt with NaN protection
+                            const value = e.target.value;
+                            if (value === "") {
+                              field.onChange(undefined);
+                            } else {
+                              const parsedValue = parseInt(value);
+                              field.onChange(isNaN(parsedValue) ? "" : parsedValue);
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormDescription>
@@ -1114,7 +1153,16 @@ export default function EditProfileForm() {
                               type="number" 
                               placeholder="e.g. 2022" 
                               {...field}
-                              onChange={(e) => field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value))}
+                              onChange={(e) => {
+                                // BUG KILLER: Safe parseInt with NaN protection
+                                const value = e.target.value;
+                                if (value === "") {
+                                  field.onChange(undefined);
+                                } else {
+                                  const parsedValue = parseInt(value);
+                                  field.onChange(isNaN(parsedValue) ? "" : parsedValue);
+                                }
+                              }}
                             />
                           </FormControl>
                           <FormMessage />

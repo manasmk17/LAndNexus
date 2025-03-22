@@ -490,6 +490,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Auth Routes
+  // Special admin creation endpoint
+  app.post("/api/create-admin", async (req, res) => {
+    try {
+      const { secretKey, ...userData } = req.body;
+      
+      // Validate admin creation with a secret key
+      if (secretKey !== "ldn_admin_setup_2025") {
+        return res.status(403).json({ message: "Invalid secret key for admin creation" });
+      }
+      
+      // Parse and validate user data
+      const validUserData = insertUserSchema.parse(userData);
+      
+      // Check if username or email already exists
+      const existingUsername = await storage.getUserByUsername(validUserData.username);
+      if (existingUsername) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      const existingEmail = await storage.getUserByEmail(validUserData.email);
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+      
+      // Force admin user type and admin status
+      const adminUser = await storage.createUser({
+        ...validUserData,
+        userType: "admin",
+        isAdmin: true
+      });
+      
+      res.status(201).json({ 
+        message: "Admin user created successfully", 
+        admin: { ...adminUser, password: undefined } 
+      });
+    } catch (error) {
+      console.error("Admin creation error:", error);
+      res.status(400).json({ 
+        message: error instanceof Error ? error.message : "Failed to create admin user" 
+      });
+    }
+  });
+
   app.post("/api/register", async (req, res) => {
     try {
       const userData = insertUserSchema.parse(req.body);

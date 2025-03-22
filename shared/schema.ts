@@ -315,3 +315,23 @@ export const insertSkillRecommendationSchema = createInsertSchema(skillRecommend
 
 export type SkillRecommendation = typeof skillRecommendations.$inferSelect;
 export type InsertSkillRecommendation = z.infer<typeof insertSkillRecommendationSchema>;
+
+// Page Content Management
+export const pageContents = pgTable("page_contents", {
+  id: serial("id").primaryKey(),
+  slug: text("slug").notNull().unique(), // Identifies the page or content section
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  lastEditedBy: integer("last_edited_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertPageContentSchema = createInsertSchema(pageContents).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type PageContent = typeof pageContents.$inferSelect;
+export type InsertPageContent = z.infer<typeof insertPageContentSchema>;

@@ -127,6 +127,14 @@ export interface IStorage {
   getSkillRecommendationsByProfessional(professionalId: number): Promise<SkillRecommendation | undefined>;
   createSkillRecommendation(recommendation: InsertSkillRecommendation): Promise<SkillRecommendation>;
   updateSkillRecommendation(id: number, recommendation: Partial<InsertSkillRecommendation>): Promise<SkillRecommendation | undefined>;
+
+  // Page Content operations
+  getPageContent(id: number): Promise<PageContent | undefined>;
+  getPageContentBySlug(slug: string): Promise<PageContent | undefined>;
+  getAllPageContents(): Promise<PageContent[]>;
+  createPageContent(content: InsertPageContent): Promise<PageContent>;
+  updatePageContent(id: number, content: Partial<InsertPageContent>): Promise<PageContent | undefined>;
+  deletePageContent(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {

@@ -1491,6 +1491,177 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Internal server error" });
     }
   });
+  
+  // Gallery Image Routes
+  
+  // Upload a gallery image
+  app.post("/api/professionals/me/gallery", isAuthenticated, uploadGalleryImage.single('galleryImage'), async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      if (user.userType !== "professional") {
+        return res.status(403).json({ message: "Only professionals can upload gallery images" });
+      }
+      
+      if (!req.file) {
+        return res.status(400).json({ message: "No image uploaded" });
+      }
+      
+      // Get the professional profile
+      const profile = await storage.getProfessionalProfileByUserId(user.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Professional profile not found" });
+      }
+      
+      // Process uploaded file
+      const galleryImagePath = req.file.path;
+      console.log(`Gallery image uploaded: ${galleryImagePath}`);
+      
+      // Get current gallery images
+      let galleryImages = [];
+      if (profile.galleryImages) {
+        // If galleryImages is already an array, use it
+        if (Array.isArray(profile.galleryImages)) {
+          galleryImages = profile.galleryImages;
+        } else {
+          // Otherwise, try to parse it as JSON
+          try {
+            galleryImages = JSON.parse(profile.galleryImages as unknown as string);
+            if (!Array.isArray(galleryImages)) {
+              galleryImages = [];
+            }
+          } catch (e) {
+            galleryImages = [];
+          }
+        }
+      }
+      
+      // Add new image to gallery
+      galleryImages.push({
+        id: new Date().getTime(), // Use timestamp as unique ID
+        path: galleryImagePath,
+        caption: req.body.caption || '',
+        uploadedAt: new Date().toISOString()
+      });
+      
+      // Update the profile
+      const updatedProfile = await storage.updateProfessionalProfile(profile.id, {
+        galleryImages: galleryImages
+      });
+      
+      res.status(201).json({ 
+        message: "Gallery image uploaded successfully",
+        gallery: galleryImages
+      });
+    } catch (error) {
+      console.error("Error uploading gallery image:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Get all gallery images for a professional
+  app.get("/api/professionals/:id/gallery", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Get the professional profile
+      const profile = await storage.getProfessionalProfile(id);
+      if (!profile) {
+        return res.status(404).json({ message: "Professional profile not found" });
+      }
+      
+      // Return gallery images
+      let galleryImages = [];
+      if (profile.galleryImages) {
+        if (Array.isArray(profile.galleryImages)) {
+          galleryImages = profile.galleryImages;
+        } else {
+          try {
+            galleryImages = JSON.parse(profile.galleryImages as unknown as string);
+            if (!Array.isArray(galleryImages)) {
+              galleryImages = [];
+            }
+          } catch (e) {
+            galleryImages = [];
+          }
+        }
+      }
+      
+      res.json(galleryImages);
+    } catch (error) {
+      console.error("Error fetching gallery images:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Delete a gallery image
+  app.delete("/api/professionals/me/gallery/:imageId", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const imageId = parseInt(req.params.imageId);
+      
+      if (user.userType !== "professional") {
+        return res.status(403).json({ message: "Only professionals can delete gallery images" });
+      }
+      
+      // Get the professional profile
+      const profile = await storage.getProfessionalProfileByUserId(user.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Professional profile not found" });
+      }
+      
+      // Get current gallery images
+      let galleryImages = [];
+      if (profile.galleryImages) {
+        if (Array.isArray(profile.galleryImages)) {
+          galleryImages = profile.galleryImages;
+        } else {
+          try {
+            galleryImages = JSON.parse(profile.galleryImages as unknown as string);
+            if (!Array.isArray(galleryImages)) {
+              galleryImages = [];
+            }
+          } catch (e) {
+            galleryImages = [];
+          }
+        }
+      }
+      
+      // Find the image to delete
+      const imageIndex = galleryImages.findIndex(img => img.id === imageId);
+      if (imageIndex === -1) {
+        return res.status(404).json({ message: "Gallery image not found" });
+      }
+      
+      // Get the path of the image to delete
+      const imagePath = galleryImages[imageIndex].path;
+      
+      // Delete the file
+      try {
+        fs.unlinkSync(imagePath);
+        console.log(`Deleted gallery image: ${imagePath}`);
+      } catch (error) {
+        console.warn(`Failed to delete gallery image file: ${imagePath}`, error);
+        // Continue anyway to update the database
+      }
+      
+      // Remove the image from the array
+      galleryImages.splice(imageIndex, 1);
+      
+      // Update the profile
+      await storage.updateProfessionalProfile(profile.id, {
+        galleryImages: galleryImages
+      });
+      
+      res.json({ 
+        message: "Gallery image deleted successfully",
+        gallery: galleryImages
+      });
+    } catch (error) {
+      console.error("Error deleting gallery image:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   // Company Profile Routes
   app.post("/api/company-profiles", isAuthenticated, uploadProfileImage.single('profileImage'), async (req, res) => {

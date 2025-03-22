@@ -506,27 +506,15 @@ export default function EditProfileForm() {
       
       let response;
       
-      if (professionalProfile) {
-        // Update existing profile with FormData
-        response = await fetch(
-          `/api/professional-profiles/${professionalProfile.id}`, 
-          {
-            method: 'PUT',
-            body: formData,
-            credentials: 'include'
-          }
-        );
-      } else {
-        // Create new profile with FormData
-        response = await fetch(
-          "/api/professional-profiles", 
-          {
-            method: 'POST',
-            body: formData,
-            credentials: 'include'
-          }
-        );
-      }
+      // Always use the /api/professionals/me endpoint for updating the current user's profile
+      response = await fetch(
+        "/api/professionals/me", 
+        {
+          method: 'PUT',  // Use PUT to update existing or create new profile
+          body: formData,
+          credentials: 'include'
+        }
+      );
       
       if (!response.ok) {
         throw new Error(`Error: ${response.status} ${response.statusText}`);

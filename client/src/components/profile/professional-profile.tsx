@@ -15,7 +15,7 @@ function getYoutubeEmbedUrl(url: string): string {
     const videoId = url.split('youtu.be/')[1].split('?')[0];
     return `https://www.youtube.com/embed/${videoId}`;
   }
-  
+
   // Handle youtube.com format
   if (url.includes('youtube.com/watch')) {
     // Extract video ID from URL parameters
@@ -25,7 +25,7 @@ function getYoutubeEmbedUrl(url: string): string {
       return `https://www.youtube.com/embed/${videoId}`;
     }
   }
-  
+
   // If URL is already in embed format or cannot be parsed, return as is
   return url;
 }
@@ -35,11 +35,11 @@ function getVimeoEmbedUrl(url: string): string {
   // Regular Vimeo URLs: https://vimeo.com/123456789
   const vimeoRegex = /vimeo\.com\/(\d+)/;
   const match = url.match(vimeoRegex);
-  
+
   if (match && match[1]) {
     return `https://player.vimeo.com/video/${match[1]}`;
   }
-  
+
   // If URL is already in embed format or cannot be parsed, return as is
   return url;
 }
@@ -59,7 +59,7 @@ function isVideoEmbeddable(url: string): boolean {
     'vimeo.com', 
     'player.vimeo.com'
   ];
-  
+
   return supportedPlatforms.some(platform => url.includes(platform));
 }
 
@@ -113,14 +113,14 @@ interface ProfessionalProfileProps {
 export default function ProfessionalProfileComponent({ professionalId }: ProfessionalProfileProps) {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
-  
+
   const { 
     data: profile, 
     isLoading: isLoadingProfile 
   } = useQuery<ProfessionalProfile>({
     queryKey: [`/api/professional-profiles/${professionalId}`],
   });
-  
+
   const { 
     data: expertise, 
     isLoading: isLoadingExpertise 
@@ -128,7 +128,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
     queryKey: [`/api/professional-profiles/${professionalId}/expertise`],
     enabled: !!profile,
   });
-  
+
   const { 
     data: certifications, 
     isLoading: isLoadingCertifications 
@@ -136,7 +136,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
     queryKey: [`/api/professional-profiles/${professionalId}/certifications`],
     enabled: !!profile,
   });
-  
+
   // Type-safe resource query
   const { 
     data: resources = [] as Resource[],
@@ -149,7 +149,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
     // Use retry: false to prevent excessive retries on error
     retry: false,
   });
-  
+
   const handleMessageClick = () => {
     if (!user) {
       // Redirect to login if not authenticated
@@ -158,7 +158,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
       setLocation(`/messages?professional=${professionalId}`);
     }
   };
-  
+
   const handleBookConsultation = () => {
     if (!user) {
       // Redirect to login if not authenticated
@@ -168,7 +168,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
       setLocation(`/book-consultation/${professionalId}`);
     }
   };
-  
+
   if (isLoadingProfile) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -194,7 +194,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
               </div>
             </CardContent>
           </Card>
-          
+
           <div className="mt-8">
             <Skeleton className="h-10 w-full mb-6" />
             <div className="space-y-4">
@@ -209,7 +209,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
       </div>
     );
   }
-  
+
   if (!profile) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -223,7 +223,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
       </div>
     );
   }
-  
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
@@ -252,7 +252,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                   <User className="w-12 h-12 text-gray-400" />
                 )}
               </div>
-              
+
               <div className="flex-1">
                 <h1 className="text-2xl font-bold mb-1">{profile.title}</h1>
                 <div className="flex items-center text-gray-600 mb-1">
@@ -264,7 +264,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                   <span>{((profile.rating || 0) / 20).toFixed(1)}</span>
                   <span className="ml-1 text-gray-500">({profile.reviewCount || 0} reviews)</span>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-2">
                   {profile.featured && (
                     <Badge className="bg-amber-100 text-amber-800">Featured Professional</Badge>
@@ -291,7 +291,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                   )}
                 </div>
               </div>
-              
+
               <div className="flex flex-col gap-3 mt-4 md:mt-0">
                 <Button onClick={handleMessageClick}>
                   <MessageSquare className="mr-2 h-4 w-4" />
@@ -305,7 +305,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
             </div>
           </CardContent>
         </Card>
-        
+
         {/* Profile Content Tabs */}
         <div className="mt-8">
           <Tabs defaultValue="about">
@@ -318,21 +318,15 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                   Skill Recommendations
                 </span>
               </TabsTrigger>
-              <TabsTrigger value="gallery">
-                <span className="flex items-center">
-                  <ImageIcon className="mr-1 h-4 w-4" />
-                  Portfolio Gallery
-                </span>
-              </TabsTrigger>
               {profile.videoIntroUrl && <TabsTrigger value="video">Video Introduction</TabsTrigger>}
               {resources && resources.length > 0 && <TabsTrigger value="resources">Resources</TabsTrigger>}
             </TabsList>
-            
+
             <TabsContent value="about" className="mt-6">
               <h2 className="text-xl font-semibold mb-4">
                 About {profile.firstName} {profile.lastName}
               </h2>
-              
+
               {/* Name and title */}
               <div className="mb-4 p-4 bg-blue-50 rounded-lg">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -370,13 +364,13 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                   )}
                 </div>
               </div>
-              
+
               {/* Bio */}
               <div className="prose max-w-none mb-6">
                 <h3 className="text-lg font-semibold">Biography</h3>
                 <p className="whitespace-pre-line text-gray-700">{profile.bio || "No biography provided."}</p>
               </div>
-              
+
               {/* Services */}
               {profile.services && (
                 <div className="mb-6">
@@ -386,7 +380,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                   </div>
                 </div>
               )}
-              
+
               {/* Rate */}
               {profile.ratePerHour && (
                 <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
@@ -400,7 +394,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                 </div>
               )}
             </TabsContent>
-            
+
             <TabsContent value="expertise" className="mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -423,7 +417,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                     <p className="text-gray-500">No expertise areas listed</p>
                   )}
                 </div>
-                
+
                 <div>
                   <h2 className="text-xl font-semibold mb-4">Certifications</h2>
                   {isLoadingCertifications ? (
@@ -453,7 +447,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                 </div>
               </div>
             </TabsContent>
-            
+
             {profile.videoIntroUrl && (
               <TabsContent value="video" className="mt-6">
                 <h2 className="text-xl font-semibold mb-4">Video Introduction</h2>
@@ -531,21 +525,14 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                 </p>
               </TabsContent>
             )}
-            
+
             <TabsContent value="skill-recommendations" className="mt-6">
               <SkillRecommendations 
                 professionalId={professionalId} 
                 isCurrentUser={user?.id === profile.userId}
               />
             </TabsContent>
-            
-            <TabsContent value="gallery" className="mt-6">
-              <ImageGallery 
-                professionalId={professionalId} 
-                editable={user?.id === profile.userId}
-              />
-            </TabsContent>
-            
+
             {resources && resources.length > 0 && (
               <TabsContent value="resources" className="mt-6">
                 <h2 className="text-xl font-semibold mb-4">Resources & Articles</h2>
@@ -571,7 +558,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
             )}
           </Tabs>
         </div>
-        
+
         {/* Related Professionals */}
         <div className="mt-12">
           <h2 className="text-xl font-semibold mb-6">Similar Professionals</h2>

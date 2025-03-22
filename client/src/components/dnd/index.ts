@@ -1,6 +1,6 @@
-export * from './drag-and-drop-provider';
-export * from './draggable-item';
-export * from './drop-container';
-export * from './file-upload-zone';
-export * from './reorderable-list';
-export * from './utils';
+export { DragAndDropProvider } from './drag-and-drop-provider';
+export { DraggableItem } from './draggable-item';
+export { DropContainer } from './drop-container';
+export { FileUploadZone } from './file-upload-zone';
+export { ReorderableList } from './reorderable-list';
+export * from './reorder-utils';

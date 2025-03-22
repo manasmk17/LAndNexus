@@ -39,7 +39,7 @@ export function DraggableItem({
   });
 
   // Set up drop functionality
-  const [{ handlerId }, drop] = useDrop<DragItem, void, { handlerId: string | null }>({
+  const [{ handlerId }, drop] = useDrop<DragItem, void, { handlerId: any }>({
     accept: type,
     collect: (monitor) => ({
       handlerId: monitor.getHandlerId(),

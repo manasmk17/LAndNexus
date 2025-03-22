@@ -1,32 +1,26 @@
+import { ReactNode } from 'react';
 import { useDrop } from 'react-dnd';
 import { cn } from '@/lib/utils';
 
 interface DropContainerProps {
-  children: React.ReactNode;
-  type: string;
-  onDrop?: (item: any) => void;
+  accept: string | string[];
+  onDrop: (item: any) => void;
+  children: ReactNode;
   className?: string;
-  accept?: string[];
 }
 
 /**
- * A container that can accept dropped items
+ * A container that can receive dragged items
  */
 export function DropContainer({
-  children,
-  type,
+  accept,
   onDrop,
-  className,
-  accept = [type],
+  children,
+  className
 }: DropContainerProps) {
   const [{ isOver, canDrop }, drop] = useDrop({
     accept,
-    drop: (item, monitor) => {
-      if (onDrop) {
-        onDrop(item);
-      }
-      return { name: 'Container' };
-    },
+    drop: onDrop,
     collect: (monitor) => ({
       isOver: monitor.isOver(),
       canDrop: monitor.canDrop(),
@@ -39,9 +33,12 @@ export function DropContainer({
     <div
       ref={drop}
       className={cn(
-        'transition-colors rounded min-h-[100px]',
-        isActive ? 'bg-primary/10 border-2 border-dashed border-primary' : '',
-        canDrop ? 'bg-primary/5' : '',
+        'rounded border-2 transition-colors p-4',
+        isActive 
+          ? 'border-primary bg-primary/10 border-dashed' 
+          : canDrop 
+            ? 'border-gray-300 hover:border-primary/50 border-dashed' 
+            : 'border-gray-200',
         className
       )}
     >

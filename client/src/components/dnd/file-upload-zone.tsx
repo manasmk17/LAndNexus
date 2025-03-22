@@ -1,170 +1,174 @@
-import { useState, useRef } from 'react';
+import { ChangeEvent, useCallback, useState } from 'react';
 import { useDrop } from 'react-dnd';
-import { cn } from '@/lib/utils';
 import { UploadCloud, File, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
+const FILE_TYPE = 'file';
+
 interface FileUploadZoneProps {
-  onFileSelect: (file: File) => void;
+  onFilesAdded: (files: File[]) => void;
+  maxFiles?: number;
   acceptedFileTypes?: string[];
-  maxSize?: number; // in bytes
+  maxFileSizeMB?: number;
   className?: string;
-  label?: string;
-  value?: File | null;
+  supportedFileTypesText?: string;
 }
 
-const NativeFileUploadZone = ({ 
-  onFileSelect, 
-  acceptedFileTypes = ['image/*', 'application/pdf'], 
-  maxSize = 5 * 1024 * 1024, // 5MB default
+/**
+ * A component that allows users to upload files through drag and drop
+ * or by selecting them from the file system
+ */
+export function FileUploadZone({
+  onFilesAdded,
+  maxFiles = 1,
+  acceptedFileTypes = [],
+  maxFileSizeMB = 5,
   className,
-  label = 'Drag & drop a file here, or click to select a file',
-  value
-}: FileUploadZoneProps) => {
-  const [isDragging, setIsDragging] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  supportedFileTypesText = 'Supported formats: All files'
+}: FileUploadZoneProps) {
+  const [files, setFiles] = useState<File[]>([]);
+  const [error, setError] = useState<string>('');
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    handleFileSelection(file);
-  };
+  // Convert maxFileSizeMB to bytes
+  const maxFileSize = maxFileSizeMB * 1024 * 1024;
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
+  // Function to validate files
+  const validateFiles = useCallback((newFiles: File[]): boolean => {
+    setError('');
 
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
+    // Check if adding these files would exceed the maximum number of files
+    if (files.length + newFiles.length > maxFiles) {
+      setError(`You can only upload a maximum of ${maxFiles} file${maxFiles !== 1 ? 's' : ''}`);
+      return false;
+    }
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(false);
-    
-    const file = e.dataTransfer.files?.[0];
-    handleFileSelection(file);
-  };
-
-  const handleFileSelection = (file?: File) => {
-    if (!file) return;
-    
-    setError(null);
-    
-    // Check file type
-    const fileType = file.type;
-    const isValidType = acceptedFileTypes.some(type => {
-      if (type.includes('*')) {
-        const category = type.split('/')[0];
-        return fileType.startsWith(category + '/');
+    // Check file types if acceptedFileTypes is provided
+    if (acceptedFileTypes.length > 0) {
+      const invalidFiles = newFiles.filter(file => 
+        !acceptedFileTypes.some(type => file.type.includes(type))
+      );
+      if (invalidFiles.length > 0) {
+        setError(`Invalid file type. Supported formats: ${acceptedFileTypes.join(', ')}`);
+        return false;
       }
-      return type === fileType;
-    });
-    
-    if (!isValidType) {
-      setError(`Invalid file type. Accepted types: ${acceptedFileTypes.join(', ')}`);
-      return;
     }
-    
-    // Check file size
-    if (file.size > maxSize) {
-      setError(`File too large. Maximum size: ${Math.round(maxSize / 1024 / 1024)}MB`);
-      return;
+
+    // Check file sizes
+    const oversizedFiles = newFiles.filter(file => file.size > maxFileSize);
+    if (oversizedFiles.length > 0) {
+      setError(`File size exceeds the maximum allowed size of ${maxFileSizeMB}MB`);
+      return false;
     }
-    
-    onFileSelect(file);
-  };
 
-  const clearFile = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    onFileSelect(null as any);
-    if (inputRef.current) {
-      inputRef.current.value = '';
+    return true;
+  }, [files.length, maxFiles, acceptedFileTypes, maxFileSize, maxFileSizeMB]);
+
+  // Handle dropped files via react-dnd
+  const handleFileDrop = useCallback((item: any) => {
+    if (item && item.files && validateFiles(item.files)) {
+      const newFiles = [...files, ...item.files];
+      setFiles(newFiles);
+      onFilesAdded(newFiles);
     }
-  };
+  }, [files, onFilesAdded, validateFiles]);
 
-  const handleClick = () => {
-    inputRef.current?.click();
-  };
+  // Handle files selected via the file input
+  const handleFileSelect = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = e.target.files ? Array.from(e.target.files) : [];
+    if (validateFiles(selectedFiles)) {
+      const newFiles = [...files, ...selectedFiles];
+      setFiles(newFiles);
+      onFilesAdded(newFiles);
+    }
+    // Reset the input so the same file can be selected again
+    e.target.value = '';
+  }, [files, onFilesAdded, validateFiles]);
 
-  return (
-    <div className="w-full">
-      <div
-        className={cn(
-          'border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all',
-          isDragging ? 'border-primary bg-primary/10' : 'border-muted',
-          value ? 'bg-primary/5' : '',
-          className
-        )}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={handleClick}
-      >
-        <input
-          type="file"
-          className="hidden"
-          onChange={handleFileChange}
-          accept={acceptedFileTypes.join(',')}
-          ref={inputRef}
-        />
-        
-        {value ? (
-          <div className="flex items-center justify-center space-x-3">
-            <File className="h-6 w-6 text-primary" />
-            <span className="font-medium text-sm truncate max-w-[200px]">{value.name}</span>
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              className="h-6 w-6 p-0 rounded-full" 
-              onClick={clearFile}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <UploadCloud className="h-10 w-10 text-muted-foreground mx-auto" />
-            <p className="text-sm text-muted-foreground">{label}</p>
-          </div>
-        )}
-      </div>
-      
-      {error && (
-        <p className="text-destructive text-sm mt-2">{error}</p>
-      )}
-    </div>
-  );
-};
-
-// DnD Compatible File Upload Zone
-export function FileUploadZone(props: FileUploadZoneProps) {
-  const [{ canDrop, isOver }, drop] = useDrop({
-    accept: 'file',
-    drop: (item: any) => {
-      // This handles files from React DnD file dragging
-      if (item.files && item.files.length > 0) {
-        props.onFileSelect(item.files[0]);
-      }
-    },
+  // Set up drop functionality
+  const [{ isOver, canDrop }, drop] = useDrop({
+    accept: FILE_TYPE,
+    drop: handleFileDrop,
     collect: (monitor) => ({
       isOver: monitor.isOver(),
       canDrop: monitor.canDrop(),
     }),
   });
 
-  const isActive = canDrop && isOver;
+  // Remove a file from the list
+  const removeFile = (index: number) => {
+    const newFiles = [...files];
+    newFiles.splice(index, 1);
+    setFiles(newFiles);
+    onFilesAdded(newFiles);
+  };
+
+  const isActive = isOver && canDrop;
 
   return (
-    <div 
-      ref={drop}
-      className={cn(
-        isActive ? 'border-primary bg-primary/10' : '',
-        'transition-colors'
+    <div className={cn('flex flex-col space-y-4', className)}>
+      <div
+        ref={drop}
+        className={cn(
+          'border-2 border-dashed rounded-lg p-6 transition-colors cursor-pointer flex flex-col items-center justify-center text-center',
+          isActive 
+            ? 'border-primary bg-primary/10' 
+            : 'border-gray-300 hover:border-primary/50',
+          error ? 'border-red-500 bg-red-50' : ''
+        )}
+        onClick={() => document.getElementById('file-upload')?.click()}
+      >
+        <UploadCloud className="w-10 h-10 mb-3 text-gray-400" />
+        <p className="text-sm text-gray-600 mb-1">
+          {files.length === 0 
+            ? 'Drag & drop files here or click to browse'
+            : `${files.length} file${files.length !== 1 ? 's' : ''} selected. Click or drag to add more.`
+          }
+        </p>
+        <p className="text-xs text-gray-500">{supportedFileTypesText}</p>
+        {maxFiles > 1 && (
+          <p className="text-xs text-gray-500">{`You can upload up to ${maxFiles} files`}</p>
+        )}
+        <input
+          id="file-upload"
+          type="file"
+          className="hidden"
+          multiple={maxFiles > 1}
+          accept={acceptedFileTypes.join(',')}
+          onChange={handleFileSelect}
+        />
+      </div>
+
+      {error && (
+        <div className="text-red-500 text-sm">{error}</div>
       )}
-    >
-      <NativeFileUploadZone {...props} />
+
+      {files.length > 0 && (
+        <ul className="space-y-2">
+          {files.map((file, index) => (
+            <li 
+              key={`${file.name}_${index}`}
+              className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded border"
+            >
+              <div className="flex items-center">
+                <File className="text-blue-500 mr-2 h-5 w-5" />
+                <div>
+                  <p className="text-sm font-medium truncate max-w-[250px]">{file.name}</p>
+                  <p className="text-xs text-gray-500">{(file.size / 1024).toFixed(1)}KB</p>
+                </div>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => removeFile(index)}
+                className="h-8 w-8 p-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

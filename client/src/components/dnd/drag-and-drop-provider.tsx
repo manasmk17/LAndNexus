@@ -6,6 +6,10 @@ interface DragAndDropProviderProps {
   children: ReactNode;
 }
 
+/**
+ * Provider component that wraps the application with React DnD context
+ * This is required for drag and drop functionality to work
+ */
 export function DragAndDropProvider({ children }: DragAndDropProviderProps) {
   return (
     <DndProvider backend={HTML5Backend}>

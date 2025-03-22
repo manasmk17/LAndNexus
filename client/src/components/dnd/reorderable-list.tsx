@@ -1,53 +1,52 @@
 import { useState, useCallback } from 'react';
 import { DraggableItem } from './draggable-item';
-import { reorderItems } from './utils';
+import { reorderList } from './reorder-utils';
 
-export interface ReorderableListProps<T> {
+interface ReorderableListProps<T> {
   items: T[];
-  itemType: string;
-  onReorder?: (newOrder: T[]) => void;
+  keyExtractor: (item: T, index: number) => string | number;
   renderItem: (item: T, index: number) => React.ReactNode;
-  getItemId: (item: T) => string | number;
+  onReorder?: (reorderedItems: T[]) => void;
   className?: string;
   itemClassName?: string;
+  dragType?: string;
 }
 
+/**
+ * A reorderable list component that allows for drag and drop reordering of items
+ */
 export function ReorderableList<T>({
   items,
-  itemType,
-  onReorder,
+  keyExtractor,
   renderItem,
-  getItemId,
-  className,
-  itemClassName
+  onReorder,
+  className = '',
+  itemClassName = '',
+  dragType = 'list-item'
 }: ReorderableListProps<T>) {
-  const [localItems, setLocalItems] = useState<T[]>(items);
+  const [listItems, setListItems] = useState<T[]>(items);
 
-  // Update local items when props change
-  if (JSON.stringify(items) !== JSON.stringify(localItems)) {
-    setLocalItems(items);
+  // Update internal state when items prop changes
+  if (JSON.stringify(items) !== JSON.stringify(listItems)) {
+    setListItems(items);
   }
 
-  const handleMoveItem = useCallback(
-    (dragIndex: number, hoverIndex: number) => {
-      const newItems = reorderItems(localItems, dragIndex, hoverIndex);
-      setLocalItems(newItems);
-      
-      if (onReorder) {
-        onReorder(newItems);
-      }
-    },
-    [localItems, onReorder]
-  );
+  const handleMoveItem = useCallback((dragIndex: number, hoverIndex: number) => {
+    const reordered = reorderList(listItems, dragIndex, hoverIndex);
+    setListItems(reordered);
+    if (onReorder) {
+      onReorder(reordered);
+    }
+  }, [listItems, onReorder]);
 
   return (
     <div className={className}>
-      {localItems.map((item, index) => (
+      {listItems.map((item, index) => (
         <DraggableItem
-          key={getItemId(item)}
-          id={getItemId(item)}
+          key={keyExtractor(item, index)}
+          id={keyExtractor(item, index)}
           index={index}
-          type={itemType}
+          type={dragType}
           onMoveItem={handleMoveItem}
           className={itemClassName}
         >

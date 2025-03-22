@@ -2591,10 +2591,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/admin/users/:id", isAdmin, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
-      // This is a placeholder since our storage interface doesn't have deleteUser method
-      // In a real implementation, you would add this method to the storage interface
       
-      res.json({ success: true, message: "User deleted successfully" });
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Delete the user using our method
+      const deleted = await storage.deleteUser(userId);
+      
+      if (deleted) {
+        res.json({ success: true, message: "User deleted successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to delete user" });
+      }
     } catch (err) {
       console.error("Error deleting user:", err);
       res.status(500).json({ message: "Error deleting user" });
@@ -2657,12 +2671,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Professional profile not found" });
       }
       
-      // Delete the profile
-      // Since there's no dedicated method in storage interface for deletion,
-      // we'll return a success message
-      // In a real implementation, you would add a deleteProfessionalProfile method
+      // Delete the profile using our new method
+      const deleted = await storage.deleteProfessionalProfile(profileId);
       
-      res.json({ success: true, message: "Professional profile deleted successfully" });
+      if (deleted) {
+        res.json({ success: true, message: "Professional profile deleted successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to delete professional profile" });
+      }
     } catch (err) {
       console.error("Error deleting professional profile:", err);
       res.status(500).json({ message: "Error deleting professional profile" });

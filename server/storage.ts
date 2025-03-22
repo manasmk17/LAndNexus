@@ -1080,6 +1080,14 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedProfile;
   }
+  
+  async deleteProfessionalProfile(id: number): Promise<boolean> {
+    const result = await db
+      .delete(professionalProfiles)
+      .where(eq(professionalProfiles.id, id))
+      .returning({ id: professionalProfiles.id });
+    return result.length > 0;
+  }
 
   // Expertise operations
   async getAllExpertise(): Promise<Expertise[]> {

@@ -219,7 +219,14 @@ export default function EditProfileForm() {
   };
 
   const handleAddCertification = async () => {
-    if (!professionalProfile) return;
+    if (!professionalProfile) {
+      toast({
+        title: "Profile not found",
+        description: "Please save your basic profile information first",
+        variant: "destructive"
+      });
+      return;
+    }
     
     const certData = professionalForm.getValues("newCertification");
     
@@ -233,10 +240,24 @@ export default function EditProfileForm() {
     }
     
     try {
-      await apiRequest("POST", `/api/professional-profiles/${professionalProfile.id}/certifications`, {
-        ...certData,
-        professionalId: professionalProfile.id
+      console.log("Adding certification:", certData);
+      const response = await fetch(`/api/professional-profiles/${professionalProfile.id}/certifications`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          name: certData.name,
+          issuer: certData.issuer,
+          year: certData.year,
+          professionalId: professionalProfile.id
+        })
       });
+      
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status} ${response.statusText}`);
+      }
       
       // Reset form fields
       professionalForm.setValue("newCertification.name", "");
@@ -256,9 +277,10 @@ export default function EditProfileForm() {
         description: "Your certification has been added successfully"
       });
     } catch (error) {
+      console.error("Error adding certification:", error);
       toast({
         title: "Failed to add certification",
-        description: "Please try again later",
+        description: error instanceof Error ? error.message : "Please try again later",
         variant: "destructive"
       });
     }
@@ -742,8 +764,12 @@ export default function EditProfileForm() {
                       )}
                     />
                     
-                    <Button type="button" onClick={handleAddCertification}>
-                      Add Certification
+                    <Button 
+                      type="button" 
+                      onClick={handleAddCertification} 
+                      className="mt-3 w-full"
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> Add Certification
                     </Button>
                   </div>
                 )}

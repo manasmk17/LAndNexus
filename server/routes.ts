@@ -462,6 +462,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const user = await storage.createUser(userData);
 
+      // If the user is a professional, create a basic professional profile
+      if (user.userType === "professional") {
+        try {
+          // Check if a profile already exists (shouldn't, but let's be safe)
+          const existingProfile = await storage.getProfessionalProfileByUserId(user.id);
+          
+          if (!existingProfile) {
+            // Create a basic profile with just the userId
+            await storage.createProfessionalProfile({
+              userId: user.id,
+              title: `${user.username}'s Profile`, // Default title using username
+              bio: "Edit this profile to add your professional bio.",
+              yearsOfExperience: 0,
+              hourlyRate: 0,
+              availability: true
+            });
+            console.log(`Created basic professional profile for new user ${user.id}`);
+          }
+        } catch (profileErr) {
+          console.error("Error creating professional profile during registration:", profileErr);
+          // Continue with registration even if profile creation fails
+          // We'll handle this later in the profile editing flow
+        }
+      }
+
       // Log the user in
       req.login(user, (err) => {
         if (err) {

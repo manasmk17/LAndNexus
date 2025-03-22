@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,12 +43,12 @@ export default function ContentManagement() {
       await apiRequest('PUT', `/api/admin/content/${section}`, {
         content: sections[section].content
       });
-      
+
       setSections(prev => ({
         ...prev,
         [section]: { ...prev[section], isEditing: false }
       }));
-      
+
       toast({
         title: "Success",
         description: "Content updated successfully"
@@ -66,7 +65,7 @@ export default function ContentManagement() {
   return (
     <div className="space-y-8">
       <h2 className="text-2xl font-bold">Content Management</h2>
-      
+
       <Tabs defaultValue="main">
         <TabsList>
           <TabsTrigger value="main">Main Sections</TabsTrigger>
@@ -78,7 +77,9 @@ export default function ContentManagement() {
           {['header', 'hero', 'about', 'services'].map(section => (
             <ContentSection 
               key={section}
-              section={section}
+              id={section}
+              sectionLabel={section.replace(/([A-Z])/g, ' $1').trim()}
+              description="" // Add a description if needed
               data={sections[section]}
               onEdit={() => setSections(prev => ({
                 ...prev,
@@ -97,7 +98,9 @@ export default function ContentManagement() {
           {['privacyPolicy', 'termsOfService'].map(section => (
             <ContentSection 
               key={section}
-              section={section}
+              id={section}
+              sectionLabel={section.replace(/([A-Z])/g, ' $1').trim()}
+              description="" // Add a description if needed
               data={sections[section]}
               onEdit={() => setSections(prev => ({
                 ...prev,
@@ -116,7 +119,9 @@ export default function ContentManagement() {
           {['footer', 'testimonials', 'contact'].map(section => (
             <ContentSection 
               key={section}
-              section={section}
+              id={section}
+              sectionLabel={section.replace(/([A-Z])/g, ' $1').trim()}
+              description="" // Add a description if needed
               data={sections[section]}
               onEdit={() => setSections(prev => ({
                 ...prev,
@@ -136,25 +141,27 @@ export default function ContentManagement() {
 }
 
 interface ContentSectionProps {
-  section: string;
+  id: string;
+  sectionLabel: string;
+  description: string;
   data: { content: string; isEditing: boolean };
   onEdit: () => void;
   onChange: (content: string) => void;
   onSave: () => void;
 }
 
-function ContentSection({ section, data, onEdit, onChange, onSave }: ContentSectionProps) {
+function ContentSection({ id, sectionLabel, description, data, onEdit, onChange, onSave }: ContentSectionProps) {
   return (
     <Card className="p-4 mb-4">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-xl capitalize">
-          {section.replace(/([A-Z])/g, ' $1').trim()}
+          {sectionLabel}
         </h3>
         <Button onClick={onEdit}>
           {data.isEditing ? 'Cancel' : 'Edit'}
         </Button>
       </div>
-      
+
       {data.isEditing ? (
         <div className="space-y-4">
           <Textarea

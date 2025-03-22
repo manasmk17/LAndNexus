@@ -71,6 +71,45 @@ export default function ImageGallery({ professionalId, editable = false }: Image
       });
     },
   });
+  
+  // Set as profile picture mutation
+  const setAsProfilePictureMutation = useMutation({
+    mutationFn: async (imageId: number) => {
+      const res = await apiRequest(
+        "POST", 
+        `/api/professionals/me/set-profile-image-from-gallery/${imageId}`
+      );
+      
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to set profile picture");
+      }
+      
+      return imageId;
+    },
+    onSuccess: () => {
+      // Invalidate both gallery and profile data
+      queryClient.invalidateQueries({ queryKey: [`/api/professionals/${professionalId}/gallery`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/professionals/me"] });
+      
+      toast({
+        title: "Profile picture updated",
+        description: "Gallery image has been set as your profile picture",
+      });
+      
+      // Close fullscreen view if open
+      if (fullscreenImage) {
+        setFullscreenImage(null);
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to set profile picture: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleDeleteImage = (imageId: number) => {
     if (confirm("Are you sure you want to delete this image?")) {
@@ -224,19 +263,38 @@ export default function ImageGallery({ professionalId, editable = false }: Image
               
               {/* Delete button (only for editable) */}
               {editable && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-2 left-2 bg-black/30 text-white hover:bg-red-500"
-                  onClick={() => handleDeleteImage(images[currentIndex]?.id)}
-                  disabled={deleteMutation.isPending}
-                >
-                  {deleteMutation.isPending ? (
-                    <span className="animate-spin">⏳</span>
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                </Button>
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 left-2 bg-black/30 text-white hover:bg-red-500"
+                    onClick={() => handleDeleteImage(images[currentIndex]?.id)}
+                    disabled={deleteMutation.isPending}
+                  >
+                    {deleteMutation.isPending ? (
+                      <span className="animate-spin">⏳</span>
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                  
+                  {/* Set as profile picture button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute bottom-12 left-2 bg-black/30 text-white hover:bg-primary"
+                    onClick={() => setAsProfilePictureMutation.mutate(images[currentIndex]?.id)}
+                    disabled={setAsProfilePictureMutation.isPending}
+                  >
+                    {setAsProfilePictureMutation.isPending ? (
+                      <span className="flex items-center">
+                        <span className="animate-spin mr-1">⏳</span> Setting...
+                      </span>
+                    ) : (
+                      <span>📷 Set as Profile Picture</span>
+                    )}
+                  </Button>
+                </>
               )}
               
               {/* Caption if exists */}

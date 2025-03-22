@@ -108,6 +108,8 @@ export const companyProfiles = pgTable("company_profiles", {
   logoImagePath: text("logo_image_path"), // For uploaded files
   size: text("size").notNull(), // "small", "medium", "large", "enterprise"
   location: text("location").notNull(),
+  featured: boolean("featured").default(false),
+  verified: boolean("verified").default(false),
 });
 
 export const insertCompanyProfileSchema = createInsertSchema(companyProfiles).omit({

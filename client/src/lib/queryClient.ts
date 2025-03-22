@@ -38,47 +38,49 @@ export async function apiRequest(
   
   // Add CSRF token for non-GET methods
   if (method !== 'GET') {
-    const csrfToken = getCsrfToken();
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-      console.log(`Using CSRF token for ${method} request to ${url}`);
-    } else {
+    let csrfToken = getCsrfToken();
+    
+    // If the token is missing, immediately try to refresh it
+    if (!csrfToken) {
       console.warn('CSRF token not found for API request to:', url, 'method:', method);
       
-      // If the token is missing, try to refresh it by making a GET request
       try {
         console.log("Attempting to refresh CSRF token for API request...");
-        await fetch("/api/csrf-token", { 
+        const tokenResponse = await fetch("/api/csrf-token", { 
           method: "GET",
           credentials: "include"
         });
         
-        // Try again to get the token
-        const refreshedToken = getCsrfToken();
-        if (refreshedToken) {
-          console.log("Successfully refreshed CSRF token for API request");
-          headers['X-CSRF-Token'] = refreshedToken;
-        } else {
-          console.warn("Failed to refresh CSRF token for API request");
+        if (tokenResponse.ok) {
+          // Wait a moment for cookies to be set
+          await new Promise(resolve => setTimeout(resolve, 50));
+          csrfToken = getCsrfToken();
         }
       } catch (e) {
         console.error('Error refreshing CSRF token for API request:', e);
       }
-      
-      // Log request details for debugging
-      try {
-        console.log('Request details:', {
-          method,
-          url,
-          dataType: data ? typeof data : 'undefined',
-          isFormData,
-          cookies: document.cookie,
-          origin: window.location.origin,
-          path: window.location.pathname
-        });
-      } catch (e) {
-        console.error('Error logging request details:', e);
-      }
+    }
+    
+    // Set the token if we have it
+    if (csrfToken) {
+      headers['X-CSRF-Token'] = csrfToken;
+      console.log(`Using CSRF token for ${method} request to ${url}`);
+    } else {
+      console.warn("Failed to obtain CSRF token for API request after refresh attempt");
+    }
+    
+    // Log request details for debugging
+    try {
+      console.log('apiRequest details:', {
+        method,
+        url,
+        dataType: data ? typeof data : 'undefined',
+        isFormData,
+        hasCSRFToken: !!csrfToken,
+        cookies: document.cookie
+      });
+    } catch (e) {
+      console.error('Error logging request details:', e);
     }
   }
 
@@ -121,50 +123,52 @@ export async function secureFileUpload(
   const headers: Record<string, string> = {};
   
   // Add CSRF token
-  const csrfToken = getCsrfToken();
-  if (csrfToken) {
-    headers['X-CSRF-Token'] = csrfToken;
-    console.log(`Using CSRF token for ${method} request to ${url}`);
-  } else {
+  let csrfToken = getCsrfToken();
+  
+  // If the token is missing, immediately try to refresh it
+  if (!csrfToken) {
     console.warn('CSRF token not found when uploading to:', url);
     console.log('Current cookies:', document.cookie);
     
-    // If the token is missing, try to refresh it by making a GET request
     try {
       console.log("Attempting to refresh CSRF token...");
-      await fetch("/api/csrf-token", { 
+      const tokenResponse = await fetch("/api/csrf-token", { 
         method: "GET",
         credentials: "include"
       });
       
-      // Try again to get the token
-      const refreshedToken = getCsrfToken();
-      if (refreshedToken) {
-        console.log("Successfully refreshed CSRF token");
-        headers['X-CSRF-Token'] = refreshedToken;
-      } else {
-        console.warn("Failed to refresh CSRF token");
+      if (tokenResponse.ok) {
+        // Wait a moment for cookies to be set
+        await new Promise(resolve => setTimeout(resolve, 50));
+        csrfToken = getCsrfToken();
       }
-      
-      // Log request details for debugging regardless
-      console.log('Request details:', {
-        method,
-        url,
-        formDataEntries: Array.from(formData.entries()).map(([key, value]) => {
-          if (typeof value === 'string') {
-            return [key, value];
-          } else {
-            return [key, '(File or Blob object)'];
-          }
-        }),
-        cookies: document.cookie,
-        origin: window.location.origin,
-        path: window.location.pathname
-      });
     } catch (e) {
       console.error('Error refreshing CSRF token:', e);
     }
   }
+  
+  // Set the token if we have it
+  if (csrfToken) {
+    headers['X-CSRF-Token'] = csrfToken;
+    console.log(`Using CSRF token for ${method} request to ${url}`);
+  } else {
+    console.warn("Failed to obtain CSRF token after refresh attempt");
+  }
+  
+  // Log request details for debugging regardless
+  console.log('secureFileUpload request details:', {
+    method,
+    url,
+    formDataEntries: Array.from(formData.entries()).map(([key, value]) => {
+      if (typeof value === 'string') {
+        return [key, value];
+      } else {
+        return [key, '(File or Blob object)'];
+      }
+    }),
+    hasCSRFToken: !!csrfToken,
+    cookies: document.cookie
+  });
 
   try {
     console.log(`Sending ${method} request to ${url} with ${formData ? Array.from(formData.keys()).length : 0} form fields`);

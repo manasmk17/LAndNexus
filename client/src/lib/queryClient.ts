@@ -104,13 +104,29 @@ export async function secureFileUpload(
   const csrfToken = getCsrfToken();
   if (csrfToken) {
     headers['X-CSRF-Token'] = csrfToken;
+    console.log(`Using CSRF token for ${method} request to ${url}`);
   } else {
     console.warn('CSRF token not found when uploading to:', url);
     console.log('Current cookies:', document.cookie);
     
-    // If the token is missing, we'll attempt to log detailed info for debugging
+    // If the token is missing, try to refresh it by making a GET request
     try {
-      // Log all request details for debugging
+      console.log("Attempting to refresh CSRF token...");
+      await fetch("/api/csrf-token", { 
+        method: "GET",
+        credentials: "include"
+      });
+      
+      // Try again to get the token
+      const refreshedToken = getCsrfToken();
+      if (refreshedToken) {
+        console.log("Successfully refreshed CSRF token");
+        headers['X-CSRF-Token'] = refreshedToken;
+      } else {
+        console.warn("Failed to refresh CSRF token");
+      }
+      
+      // Log request details for debugging regardless
       console.log('Request details:', {
         method,
         url,
@@ -126,17 +142,21 @@ export async function secureFileUpload(
         path: window.location.pathname
       });
     } catch (e) {
-      console.error('Error logging request details:', e);
+      console.error('Error refreshing CSRF token:', e);
     }
   }
 
   try {
+    console.log(`Sending ${method} request to ${url} with ${formData ? Array.from(formData.keys()).length : 0} form fields`);
+    
     const res = await fetch(url, {
       method,
       headers,
       body: formData,
       credentials: "include",
     });
+
+    console.log(`Response received: ${res.status} ${res.statusText}`);
 
     // Enhanced error handling for CSRF-specific errors
     if (res.status === 403) {
@@ -147,8 +167,21 @@ export async function secureFileUpload(
       }
       throw new Error(`Forbidden (403): ${responseText}`);
     }
+    
+    // Handle authentication errors
+    if (res.status === 401) {
+      const responseText = await res.text();
+      console.error('Authentication error:', responseText);
+      throw new Error(`Authentication Error (401): You must be logged in to perform this action. Please log in and try again.`);
+    }
 
-    await throwIfResNotOk(res);
+    // Handle other errors with detailed information
+    if (!res.ok) {
+      const responseText = await res.text();
+      console.error(`Error ${res.status} from server:`, responseText);
+      throw new Error(`Server Error (${res.status}): ${responseText}`);
+    }
+    
     return res;
   } catch (error) {
     console.error('Error during file upload:', error);

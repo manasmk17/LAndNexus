@@ -519,12 +519,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (err) {
           return next(err);
         }
-        return res.json({ 
-          id: user.id, 
-          username: user.username, 
-          userType: user.userType,
-          isAdmin: user.isAdmin 
-        });
+        
+        // Send more complete user information
+        // Remove password field for security
+        const { password, resetToken, resetTokenExpiry, ...userWithoutSensitiveInfo } = user;
+        
+        console.log(`User ${user.username} logged in successfully. Session ID: ${req.sessionID}`);
+        
+        return res.json(userWithoutSensitiveInfo);
       });
     })(req, res, next);
   });
@@ -963,12 +965,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.user as any;
       
+      if (!user) {
+        console.error("Authentication issue: user object not available in request");
+        return res.status(401).json({ message: "User not authenticated" });
+      }
+      
       if (user.userType !== "professional") {
+        console.warn(`User type mismatch: ${user.username} (ID: ${user.id}) with type ${user.userType} tried to access professional endpoint`);
         return res.status(403).json({ message: "Only professionals can access this endpoint" });
       }
       
+      // Log the request details for debugging
+      console.log(`Profile update request from user ${user.username} (ID: ${user.id})`);
+      console.log(`Request body fields: ${Object.keys(req.body).join(', ')}`);
+      console.log(`File upload: ${req.file ? 'Yes' : 'No'}`);
+      
       // Check if profile exists
       const existingProfile = await storage.getProfessionalProfileByUserId(user.id);
+      console.log(`Existing profile found: ${existingProfile ? 'Yes (ID: ' + existingProfile.id + ')' : 'No'}`);
       
       // Prepare profile data
       const profileData = {
@@ -979,21 +993,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Handle file upload if provided
       if (req.file) {
         profileData.profileImagePath = req.file.path.replace(/^public\//, '');
+        console.log(`New profile image path: ${profileData.profileImagePath}`);
       }
       
       let profile;
       if (existingProfile) {
         // Update existing profile
+        console.log(`Updating profile ID: ${existingProfile.id}`);
         profile = await storage.updateProfessionalProfile(existingProfile.id, profileData);
       } else {
         // Create new profile
+        console.log(`Creating new profile for user ID: ${user.id}`);
         profile = await storage.createProfessionalProfile(profileData);
       }
       
+      console.log(`Profile ${existingProfile ? 'updated' : 'created'} successfully: ${profile.id}`);
       res.json(profile);
     } catch (err) {
       console.error("Error updating professional profile:", err);
-      res.status(500).json({ message: "Internal server error" });
+      
+      // Provide more details in error response
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Invalid profile data provided", 
+          errors: err.errors 
+        });
+      }
+      
+      // More detailed error message for debugging client-side issues
+      res.status(500).json({ 
+        message: "Failed to update profile",
+        error: err instanceof Error ? err.message : "Unknown error"
+      });
     }
   });
 

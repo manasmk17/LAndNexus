@@ -1592,16 +1592,12 @@ export default function EditProfileForm() {
             <Button 
               type="submit" 
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-md cursor-pointer z-10 relative !important"
-              disabled={false}
+              disabled={isSubmitting}
               onClick={(e) => {
-                // Use event.preventDefault() to prevent automatic form submission
-                // If the form is already submitting, don't do anything
-                if (isSubmitting) {
-                  e.preventDefault();
-                  return;
-                }
+                // Just log the click, don't prevent default or stop propagation
                 console.log("Professional Save button clicked");
-                console.log("Form state:", professionalForm.formState);
+                console.log("Form data:", professionalForm.getValues());
+                // Let the native form submission happen naturally
               }}
             >
               {isSubmitting ? (
@@ -1856,16 +1852,12 @@ export default function EditProfileForm() {
             <Button 
               type="submit" 
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-md cursor-pointer z-10 relative !important"
-              disabled={false}
+              disabled={isSubmitting}
               onClick={(e) => {
-                // Use event.preventDefault() to prevent automatic form submission
-                // If the form is already submitting, don't do anything
-                if (isSubmitting) {
-                  e.preventDefault();
-                  return;
-                }
+                // Just log the click, don't prevent default or stop propagation
                 console.log("Company Save button clicked");
-                console.log("Form state:", companyForm.formState);
+                console.log("Form data:", companyForm.getValues());
+                // Let the native form submission happen naturally
               }}
             >
               {isSubmitting ? (

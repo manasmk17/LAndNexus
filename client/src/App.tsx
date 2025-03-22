@@ -30,6 +30,7 @@ import Messages from "@/pages/messages";
 import Checkout from "@/pages/checkout";
 import Subscribe from "@/pages/subscribe";
 import SubscriptionSuccess from "@/pages/subscription-success";
+import BookConsultation from "@/pages/book-consultation";
 import NotFound from "@/pages/not-found";
 import { AuthProvider } from "@/lib/auth";
 
@@ -105,6 +106,10 @@ function Router() {
       <ProtectedRoute 
         path="/subscription-success" 
         component={SubscriptionSuccess} 
+      />
+      <ProtectedRoute 
+        path="/book-consultation/:id" 
+        component={BookConsultation} 
       />
 
       {/* 404 route */}

@@ -1020,15 +1020,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const user = req.user as any;
 
-      // Get the certification to check ownership
-      const certification = await storage.getProfessionalCertifications(id);
+      // Get the certification directly
+      const certification = await storage.getCertification(id);
       if (!certification) {
         return res.status(404).json({ message: "Certification not found" });
       }
 
       // Get the profile to check if it belongs to the user
-      const profile = await storage.getProfessionalProfile(certification[0].professionalId);
-      if (profile?.userId !== user.id) {
+      const profile = await storage.getProfessionalProfile(certification.professionalId);
+      if (profile?.userId !== user.id && !user.isAdmin) {
         return res.status(403).json({ message: "You can only delete your own certifications" });
       }
 

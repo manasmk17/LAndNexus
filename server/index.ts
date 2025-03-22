@@ -33,6 +33,7 @@ app.use((req, res, next) => {
     '/api/register',
     '/api/logout',
     '/api/me',
+    '/api/csrf-token',
     '/api/job-postings/latest',
     '/api/professional-profiles/featured',
     '/api/professionals/me',
@@ -41,6 +42,11 @@ app.use((req, res, next) => {
     '/api/company-profiles',
     '/api/company-profiles/by-user',
     '/api/resources/featured'
+  ];
+  
+  // Special exempt routes handling for specific HTTP methods
+  const methodSpecificExemptions = [
+    { path: '/api/professionals/me', method: 'PUT' }
   ];
   
   // Function to check if a path matches a route pattern

@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
@@ -244,6 +244,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     res.status(403).json({ message: "Forbidden: Admin access required" });
   };
+
+  // CSRF token refresh endpoint
+  app.get('/api/csrf-token', (req: any, res) => {
+    if (req.csrfToken) {
+      console.log('Refreshing CSRF token for client');
+      // Set token in cookie for forms
+      res.cookie('XSRF-TOKEN', req.csrfToken(), {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+      });
+      // Also return in response body
+      res.json({ csrfToken: req.csrfToken() });
+    } else {
+      console.warn('CSRF token function not available in request');
+      res.status(500).json({ message: 'CSRF protection not properly initialized' });
+    }
+  });
 
   // Stripe payment route for one-time payments (used for subscription initialization)
   app.post("/api/create-payment-intent", isAuthenticated, async (req, res) => {

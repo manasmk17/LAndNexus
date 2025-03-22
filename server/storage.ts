@@ -55,6 +55,7 @@ export interface IStorage {
   addProfessionalExpertise(professionalExpertise: InsertProfessionalExpertise): Promise<ProfessionalExpertise>;
   
   // Certification operations
+  getCertification(id: number): Promise<Certification | undefined>;
   getProfessionalCertifications(professionalId: number): Promise<Certification[]>;
   createCertification(certification: InsertCertification): Promise<Certification>;
   deleteCertification(id: number): Promise<boolean>;
@@ -478,6 +479,10 @@ export class MemStorage implements IStorage {
   }
   
   // Certification operations
+  async getCertification(id: number): Promise<Certification | undefined> {
+    return this.certifications.get(id);
+  }
+  
   async getProfessionalCertifications(professionalId: number): Promise<Certification[]> {
     return Array.from(this.certifications.values())
       .filter(cert => cert.professionalId === professionalId);

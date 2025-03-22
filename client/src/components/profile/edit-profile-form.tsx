@@ -472,6 +472,7 @@ export default function EditProfileForm() {
       
       // Check if user is authenticated
       if (!user || !user.id) {
+        console.error("Authentication error: User is not logged in");
         throw new Error("You must be logged in to save your profile. Please log in and try again.");
       }
       
@@ -485,21 +486,37 @@ export default function EditProfileForm() {
       const workExperienceJSON = JSON.stringify(workExperiences);
       const testimonialsJSON = JSON.stringify(testimonials);
       
-      // Add to profile data
+      // Add to profile data with explicit type conversions
       const enrichedProfileData = {
         ...profileData,
         workExperience: workExperienceJSON,
         testimonials: testimonialsJSON,
-        userId: user.id // Explicitly set userId to ensure it's included
+        userId: user.id, // Explicitly set userId to ensure it's included
+        // Convert undefined values to empty strings for FormData
+        ratePerHour: profileData.ratePerHour || "",
+        yearsExperience: profileData.yearsExperience || "",
+        title: profileData.title || "",
+        bio: profileData.bio || "",
+        location: profileData.location || "",
+        availability: profileData.availability ? "true" : "false" // Ensure boolean is properly converted
       };
       
-      console.log("Prepared profile data:", enrichedProfileData);
+      console.log("Prepared professional profile data with explicit conversions:", enrichedProfileData);
       
-      // Add text fields to FormData
+      // Add text fields to FormData with proper type handling
       Object.entries(enrichedProfileData).forEach(([key, value]) => {
+        // Handle different types of values appropriately
         if (value !== undefined && value !== null) {
-          formData.append(key, String(value));
-          console.log(`Added form field: ${key} = ${value !== null && typeof value === 'object' ? JSON.stringify(value) : value}`);
+          if (typeof value === 'boolean') {
+            formData.append(key, value ? "true" : "false");
+          } else if (typeof value === 'number') {
+            formData.append(key, value.toString());
+          } else if (typeof value === 'object') {
+            formData.append(key, JSON.stringify(value));
+          } else {
+            formData.append(key, String(value));
+          }
+          console.log(`Added form field: ${key} = ${typeof value === 'object' ? JSON.stringify(value) : value}`);
         }
       });
       
@@ -509,24 +526,16 @@ export default function EditProfileForm() {
         console.log(`Added file: profileImage (${profileImage.name}, ${profileImage.size} bytes)`);
       }
       
-      // Check for CSRF token before submission
-      const csrfToken = getCsrfToken();
-      if (!csrfToken) {
-        console.warn("No CSRF token found, attempting to refresh before submission");
-        try {
-          // Try to get a fresh token
-          await fetch("/api/csrf-token", { credentials: "include" });
-          console.log("CSRF token refresh attempt completed");
-        } catch (e) {
-          console.error("Failed to refresh CSRF token:", e);
-        }
-      }
-      
-      console.log("Saving professional profile...", {
-        formEntries: Array.from(formData.entries()).map(([key, value]) => 
+      // Verify the FormData before submission
+      console.log("About to save professional profile with form data:", {
+        entries: Array.from(formData.entries()).map(([key, value]) => 
           [key, typeof value === 'string' ? value : `(${typeof value})`]
         ),
-        hasCSRFToken: !!getCsrfToken()
+        userInfo: {
+          id: user.id,
+          userType: user.userType,
+          loggedIn: !!user
+        }
       });
       
       // Use secureFileUpload which handles CSRF tokens and file uploads
@@ -613,8 +622,9 @@ export default function EditProfileForm() {
     try {
       setIsSubmitting(true);
       
-      // Check if user is authenticated
+      // Check if user is authenticated with more detailed logging
       if (!user || !user.id) {
+        console.error("Authentication error: User is not logged in");
         throw new Error("You must be logged in to save your profile. Please log in and try again.");
       }
       
@@ -624,19 +634,35 @@ export default function EditProfileForm() {
       // Create FormData for file upload
       const formData = new FormData();
       
-      // Add text fields to FormData with explicit userId
+      // Add text fields to FormData with explicit userId and type conversions
       const enrichedProfileData = {
         ...profileData,
-        userId: user.id // Explicitly set userId to ensure it's included
+        userId: user.id, // Explicitly set userId to ensure it's included
+        // Convert undefined values to empty strings for FormData
+        companyName: profileData.companyName || "",
+        industry: profileData.industry || "",
+        description: profileData.description || "",
+        website: profileData.website || "",
+        size: profileData.size || "",
+        location: profileData.location || ""
       };
       
-      console.log("Prepared company profile data:", enrichedProfileData);
+      console.log("Prepared company profile data with explicit conversions:", enrichedProfileData);
       
-      // Add fields to FormData
+      // Add fields to FormData with proper type handling
       Object.entries(enrichedProfileData).forEach(([key, value]) => {
+        // Handle different types of values appropriately
         if (value !== undefined && value !== null) {
-          formData.append(key, String(value));
-          console.log(`Added form field: ${key} = ${value !== null && typeof value === 'object' ? JSON.stringify(value) : value}`);
+          if (typeof value === 'boolean') {
+            formData.append(key, value ? "true" : "false");
+          } else if (typeof value === 'number') {
+            formData.append(key, value.toString());
+          } else if (typeof value === 'object') {
+            formData.append(key, JSON.stringify(value));
+          } else {
+            formData.append(key, String(value));
+          }
+          console.log(`Added form field: ${key} = ${typeof value === 'object' ? JSON.stringify(value) : value}`);
         }
       });
       
@@ -646,24 +672,16 @@ export default function EditProfileForm() {
         console.log(`Added file: profileImage (${profileImage.name}, ${profileImage.size} bytes)`);
       }
       
-      // Check for CSRF token before submission
-      const csrfToken = getCsrfToken();
-      if (!csrfToken) {
-        console.warn("No CSRF token found, attempting to refresh before submission");
-        try {
-          // Try to get a fresh token
-          await fetch("/api/csrf-token", { credentials: "include" });
-          console.log("CSRF token refresh attempt completed");
-        } catch (e) {
-          console.error("Failed to refresh CSRF token:", e);
-        }
-      }
-      
-      console.log("Saving company profile...", {
-        formEntries: Array.from(formData.entries()).map(([key, value]) => 
+      // Verify the FormData before submission
+      console.log("About to save company profile with form data:", {
+        entries: Array.from(formData.entries()).map(([key, value]) => 
           [key, typeof value === 'string' ? value : `(${typeof value})`]
         ),
-        hasCSRFToken: !!getCsrfToken()
+        userInfo: {
+          id: user.id,
+          userType: user.userType,
+          loggedIn: !!user
+        }
       });
       
       let response;

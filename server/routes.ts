@@ -1023,23 +1023,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log the request details for debugging
       console.log(`Profile update request from user ${user.username} (ID: ${user.id})`);
       console.log(`Request body fields: ${Object.keys(req.body).join(', ')}`);
-      console.log(`File upload: ${req.file ? 'Yes' : 'No'}`);
+      console.log(`Request body values:`, req.body);
+      console.log(`File upload: ${req.file ? `Yes (${req.file.filename})` : 'No'}`);
       
       // Check if profile exists
       const existingProfile = await storage.getProfessionalProfileByUserId(user.id);
       console.log(`Existing profile found: ${existingProfile ? 'Yes (ID: ' + existingProfile.id + ')' : 'No'}`);
       
-      // Prepare profile data
-      const profileData = {
+      // Prepare profile data with type handling
+      const profileData: any = {
         ...req.body,
         userId: user.id
       };
+
+      // Proper type conversion for numeric fields
+      if (profileData.ratePerHour) {
+        profileData.ratePerHour = Number(profileData.ratePerHour);
+      }
+      
+      if (profileData.yearsExperience) {
+        profileData.yearsExperience = Number(profileData.yearsExperience);
+      }
+      
+      // Convert availability string to boolean
+      if (typeof profileData.availability === 'string') {
+        profileData.availability = profileData.availability.toLowerCase() === 'true';
+      }
       
       // Handle file upload if provided
       if (req.file) {
         profileData.profileImagePath = req.file.path.replace(/^public\//, '');
         console.log(`New profile image path: ${profileData.profileImagePath}`);
       }
+      
+      console.log("Processed profile data for save:", profileData);
       
       let profile;
       if (existingProfile) {
@@ -1343,15 +1360,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only companies can create company profiles" });
       }
 
+      // Log the request details for debugging
+      console.log(`Company profile creation request from user ${user.username} (ID: ${user.id})`);
+      console.log(`Request body fields: ${Object.keys(req.body).join(', ')}`);
+      console.log(`Request body values:`, req.body);
+      console.log(`File upload: ${req.file ? `Yes (${req.file.filename})` : 'No'}`);
+
       // Check if user already has a profile
       const existingProfile = await storage.getCompanyProfileByUserId(user.id);
-      
+      console.log(`Existing profile found: ${existingProfile ? 'Yes (ID: ' + existingProfile.id + ')' : 'No'}`);
+
       // Process uploaded file if present
       let profileImagePath = undefined;
       if (req.file) {
-        profileImagePath = req.file.path;
+        profileImagePath = req.file.path.replace(/^public\//, '');
         console.log(`Company profile image uploaded: ${profileImagePath}`);
       }
+
+      // Prepare profile data with type handling
+      const profileData: any = {
+        ...req.body,
+        userId: user.id
+      };
+
+      // Handle file upload if provided
+      if (profileImagePath) {
+        profileData.logoImagePath = profileImagePath;
+      }
+
+      console.log("Processed company profile data for save:", profileData);
 
       let profile;
       
@@ -1359,30 +1396,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Updating existing company profile for user ${user.id}, profile ID: ${existingProfile.id}`);
         
         // Update existing profile
-        profile = await storage.updateCompanyProfile(existingProfile.id, {
-          ...req.body,
-          logoImagePath: profileImagePath || existingProfile.logoImagePath
-        });
+        profile = await storage.updateCompanyProfile(existingProfile.id, profileData);
       } else {
         console.log(`Creating new company profile for user ${user.id}`);
         
-        // Create new profile
-        const profileData = insertCompanyProfileSchema.parse({
-          ...req.body,
-          userId: user.id,
-          logoImagePath: profileImagePath
-        });
-
+        // Create new profile with validation
         profile = await storage.createCompanyProfile(profileData);
       }
       
+      console.log(`Company profile ${existingProfile ? 'updated' : 'created'} successfully: ${profile?.id}`);
       res.status(existingProfile ? 200 : 201).json(profile);
     } catch (err) {
+      console.error("Error creating/updating company profile:", err);
+      
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid input", errors: err.errors });
       }
-      console.error("Error creating/updating company profile:", err);
-      res.status(500).json({ message: "Internal server error" });
+
+      // More detailed error message for debugging client-side issues
+      res.status(500).json({ 
+        message: "Failed to create or update company profile",
+        error: err instanceof Error ? err.message : "Unknown error"
+      });
     }
   });
 
@@ -1483,31 +1518,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You can only update your own profile" });
       }
 
+      // Log the request details for debugging
+      console.log(`Company profile update request from user ${user.username} (ID: ${user.id})`);
+      console.log(`Request body fields: ${Object.keys(req.body).join(', ')}`);
+      console.log(`Request body values:`, req.body);
+      console.log(`File upload: ${req.file ? `Yes (${req.file.filename})` : 'No'}`);
+
+      // Create and prepare update data with proper type handling
+      const updateData: any = {...req.body};
+      
+      // Ensure userId is set correctly
+      updateData.userId = user.id;
+      
       // Process uploaded file if present
-      const updateData = {...req.body};
       if (req.file) {
-        // If there's an existing image, we could delete it here
-        // if (profile.profileImagePath) {
-        //   try {
-        //     fs.unlinkSync(profile.profileImagePath);
-        //   } catch (err) {
-        //     console.warn(`Failed to delete previous company profile image: ${profile.profileImagePath}`);
-        //   }
-        // }
-        
-        updateData.logoImagePath = req.file.path;
+        updateData.logoImagePath = req.file.path.replace(/^public\//, '');
         console.log(`Updated company profile image: ${updateData.logoImagePath}`);
       }
 
+      console.log("Processed company profile data for save:", updateData);
+      
       const updatedProfile = await storage.updateCompanyProfile(id, updateData);
+      console.log(`Company profile updated successfully: ${id}`);
 
       res.json(updatedProfile);
     } catch (err) {
+      console.error("Error updating company profile:", err);
+      
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid input", errors: err.errors });
       }
-      console.error("Error updating company profile:", err);
-      res.status(500).json({ message: "Internal server error" });
+      
+      // More detailed error message for debugging client-side issues
+      res.status(500).json({ 
+        message: "Failed to update profile",
+        error: err instanceof Error ? err.message : "Unknown error"
+      });
     }
   });
 

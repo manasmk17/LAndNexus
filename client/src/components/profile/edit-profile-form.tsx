@@ -502,10 +502,19 @@ export default function EditProfileForm() {
       
       // Always use the /api/professionals/me endpoint for updating the current user's profile
       // Use secureFileUpload for file uploads which handles CSRF tokens automatically
+      console.log("Saving professional profile...", {
+        formData: Array.from(formData.entries()),
+        csrfToken: getCsrfToken()
+      });
+      
       response = await secureFileUpload('PUT', "/api/professionals/me", formData);
       
+      console.log("Response from profile save:", response.status, response.statusText);
+      
       if (!response.ok) {
-        throw new Error(`Error: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error("Error saving profile:", errorText);
+        throw new Error(`Error: ${response.status} ${response.statusText} - ${errorText}`);
       }
       
       const savedProfile = await response.json();

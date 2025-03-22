@@ -51,6 +51,48 @@ export function ResourceManager({
           variant: 'destructive',
         });
       }
+    } else {
+      // Default implementation if no onFileUpload provided
+      try {
+        const formData = new FormData();
+        
+        // Append each file to the FormData object
+        files.forEach(file => {
+          formData.append('files', file);
+        });
+        
+        // Make the API request to upload files
+        const response = await fetch('/api/resources/upload', {
+          method: 'POST',
+          body: formData,
+          // No need to set Content-Type header, it will be set automatically with the boundary
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Upload failed: ${response.statusText}`);
+        }
+        
+        const uploadedResources = await response.json();
+        
+        // Add uploaded resources to the list
+        const newItems = [...items, ...uploadedResources];
+        setItems(newItems);
+        
+        if (onResourcesReordered) {
+          onResourcesReordered(newItems);
+        }
+        
+        toast({
+          title: 'Files uploaded successfully',
+          description: `${files.length} file${files.length !== 1 ? 's' : ''} uploaded.`,
+        });
+      } catch (error) {
+        toast({
+          title: 'Upload failed',
+          description: error instanceof Error ? error.message : 'An unknown error occurred',
+          variant: 'destructive',
+        });
+      }
     }
   };
 
@@ -91,7 +133,7 @@ export function ResourceManager({
                       <GripVertical className="h-5 w-5 text-gray-400 mr-2" />
                       <div>
                         <div className="font-medium">{item.title}</div>
-                        <div className="text-sm text-gray-500">{item.type}</div>
+                        <div className="text-sm text-gray-500">{item.resourceType}</div>
                       </div>
                     </div>
                     <Button

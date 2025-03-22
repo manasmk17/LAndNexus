@@ -1,9 +1,13 @@
 /**
- * Reorders an array by moving an item from one position to another
+ * Utility functions for reordering items in a draggable list
+ */
+
+/**
+ * Moves an item from one position to another in an array
  * @param list The array to reorder
- * @param startIndex The initial position of the item
- * @param endIndex The final position of the item
- * @returns A new array with the item moved to the new position
+ * @param startIndex Source index
+ * @param endIndex Destination index
+ * @returns The reordered array
  */
 export function reorderList<T>(list: T[], startIndex: number, endIndex: number): T[] {
   const result = Array.from(list);
@@ -13,24 +17,28 @@ export function reorderList<T>(list: T[], startIndex: number, endIndex: number):
 }
 
 /**
- * Move an item from one list to another
+ * Moves an item from one list to another list
  * @param source The source list
  * @param destination The destination list
- * @param droppableSource The source droppable info
- * @param droppableDestination The destination droppable info
- * @returns The new source and destination lists
+ * @param droppableSource The source object with index
+ * @param droppableDestination The destination object with index
+ * @returns An object with the updated source and destination lists
  */
-export function moveItemBetweenLists<T>(
+export function moveItem<T>(
   source: T[],
   destination: T[],
-  sourceIndex: number,
-  destinationIndex: number
-): { source: T[]; destination: T[] } {
+  droppableSource: { index: number },
+  droppableDestination: { index: number }
+): { [key: string]: T[] } {
   const sourceClone = Array.from(source);
   const destClone = Array.from(destination);
-  const [removed] = sourceClone.splice(sourceIndex, 1);
+  const [removed] = sourceClone.splice(droppableSource.index, 1);
 
-  destClone.splice(destinationIndex, 0, removed);
+  destClone.splice(droppableDestination.index, 0, removed);
 
-  return { source: sourceClone, destination: destClone };
+  const result: { [key: string]: T[] } = {};
+  result['source'] = sourceClone;
+  result['destination'] = destClone;
+
+  return result;
 }

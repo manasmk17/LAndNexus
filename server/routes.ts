@@ -1897,6 +1897,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
     fileFilter: fileFilterResources
   });
+  
+  // Add file upload endpoint to handle multiple files
+  app.post('/api/resources/upload', isAuthenticated, uploadResourceFile.array('files', 5), async (req, res) => {
+    try {
+      const user = req.user as any;
+      const files = req.files as Express.Multer.File[];
+      
+      if (!files || files.length === 0) {
+        return res.status(400).json({ message: 'No files uploaded' });
+      }
+      
+      const resourcePromises = files.map(async (file) => {
+        // Extract file extension and determine resource type
+        const ext = path.extname(file.originalname).toLowerCase();
+        let resourceType = 'document';
+        
+        // Set resource type based on extension
+        if (ext.match(/\.(pdf)$/)) {
+          resourceType = 'PDF Document';
+        } else if (ext.match(/\.(doc|docx)$/)) {
+          resourceType = 'Word Document';
+        } else if (ext.match(/\.(xls|xlsx)$/)) {
+          resourceType = 'Excel Spreadsheet';
+        } else if (ext.match(/\.(ppt|pptx)$/)) {
+          resourceType = 'Presentation';
+        } else if (ext.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+          resourceType = 'Image';
+        } else if (ext.match(/\.(txt)$/)) {
+          resourceType = 'Text Document';
+        } else if (ext.match(/\.(zip)$/)) {
+          resourceType = 'Archive';
+        }
+        
+        // Create a new resource for each file
+        const resource = await storage.createResource({
+          title: file.originalname,
+          description: `Uploaded file: ${file.originalname}`,
+          content: '',
+          authorId: user.id,
+          resourceType,
+          filePath: file.path,
+          contentUrl: `/api/resources/download/${path.basename(file.path)}`,
+          categoryId: null,
+          imageUrl: null,
+          featured: false
+        });
+        
+        return resource;
+      });
+      
+      const createdResources = await Promise.all(resourcePromises);
+      res.status(201).json(createdResources);
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      res.status(500).json({ 
+        message: 'Error uploading files',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
 
   app.post("/api/resources", isAuthenticated, uploadResourceFile.single('file'), async (req, res) => {
     try {
@@ -2349,6 +2409,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     res.json(resource);
+  });
+  
+  // Get current user's resources
+  app.get("/api/me/resources", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      // Find all resources authored by the current user
+      const resources = await storage.getAllResources();
+      const userResources = resources.filter(resource => resource.authorId === user.id);
+      
+      res.json(userResources);
+    } catch (error) {
+      console.error("Error fetching user resources:", error);
+      res.status(500).json({ message: "Error fetching resources" });
+    }
+  });
+  
+  // Remove a resource (if owned by the user)
+  app.delete("/api/resources/:id", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const resourceId = parseInt(req.params.id);
+      
+      // Get the resource to check ownership
+      const resource = await storage.getResource(resourceId);
+      
+      if (!resource) {
+        return res.status(404).json({ message: "Resource not found" });
+      }
+      
+      // Make sure user owns the resource or is an admin
+      if (resource.authorId !== user.id && user.userType !== "admin") {
+        return res.status(403).json({ message: "You can only delete your own resources" });
+      }
+      
+      const success = await storage.deleteResource(resourceId);
+      
+      if (success) {
+        res.json({ success: true, message: "Resource deleted successfully" });
+      } else {
+        res.status(404).json({ success: false, message: "Resource not found" });
+      }
+    } catch (error) {
+      console.error("Error deleting resource:", error);
+      res.status(500).json({ message: "Error deleting resource" });
+    }
   });
   
   // Resource file download endpoint

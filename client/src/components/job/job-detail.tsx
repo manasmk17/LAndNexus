@@ -68,7 +68,7 @@ export default function JobDetail({ jobId }: JobDetailProps) {
   const { 
     data: professionalProfile 
   } = useQuery<ProfessionalProfile>({
-    queryKey: ["/api/professional-profiles/by-user"],
+    queryKey: ["/api/professionals/me"],
     enabled: !!user && user.userType === "professional",
   });
 

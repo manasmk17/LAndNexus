@@ -134,7 +134,7 @@ export default function ProfessionalDashboard() {
                       {profile.profileImageUrl ? (
                         <img
                           src={profile.profileImageUrl}
-                          alt={profile.title}
+                          alt={profile.title || 'Profile'}
                           className="w-full h-full object-cover rounded-full"
                         />
                       ) : (
@@ -153,8 +153,8 @@ export default function ProfessionalDashboard() {
                   </div>
                   
                   <p className="text-gray-700 mb-4">
-                    {profile.bio.substring(0, 200)}
-                    {profile.bio.length > 200 ? '...' : ''}
+                    {profile.bio ? profile.bio.substring(0, 200) : 'No bio provided'}
+                    {profile.bio && profile.bio.length > 200 ? '...' : ''}
                   </p>
                   
                   <div className="flex flex-wrap gap-2">

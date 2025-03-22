@@ -29,7 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Plus, X } from "lucide-react";
+import { Loader2, Plus, Trash, X } from "lucide-react";
 import { 
   insertProfessionalProfileSchema, 
   insertCompanyProfileSchema,

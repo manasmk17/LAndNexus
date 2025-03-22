@@ -164,10 +164,14 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                     alt={`${profile.firstName} ${profile.lastName}`} 
                     className="w-full h-full object-cover rounded-full"
                     onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.onerror = null;
-                      target.src = '/placeholder-profile.jpg';
                       console.log("Image load error, using placeholder");
+                      // Set default avatar on error using UI Avatars service with the user's name
+                      const target = e.target as HTMLImageElement;
+                      target.onerror = null; // Prevent infinite error loops
+                      // Create a placeholder with user's initials
+                      target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                        (profile.firstName || '') + ' ' + (profile.lastName || '')
+                      )}&size=150&background=6366f1&color=ffffff`;
                     }}
                   />
                 ) : (

@@ -43,15 +43,20 @@ import {
 } from "lucide-react";
 import { ProfessionalProfile } from "@shared/schema";
 
+// Extended type for admin API response which includes verification status
+interface AdminProfessionalProfile extends ProfessionalProfile {
+  verified?: boolean;
+}
+
 export default function ProfessionalsManagement() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
-  const [confirmVerify, setConfirmVerify] = useState<ProfessionalProfile | null>(null);
-  const [confirmUnverify, setConfirmUnverify] = useState<ProfessionalProfile | null>(null);
+  const [confirmVerify, setConfirmVerify] = useState<AdminProfessionalProfile | null>(null);
+  const [confirmUnverify, setConfirmUnverify] = useState<AdminProfessionalProfile | null>(null);
 
   // Fetch all professional profiles
-  const { data: profiles, isLoading, error } = useQuery<ProfessionalProfile[]>({
+  const { data: profiles, isLoading, error } = useQuery<AdminProfessionalProfile[]>({
     queryKey: ["/api/admin/professional-profiles"],
     retry: 1,
   });
@@ -59,9 +64,9 @@ export default function ProfessionalsManagement() {
   // Filter professionals based on search query
   const filteredProfiles = profiles?.filter(
     (profile) =>
-      profile.headline?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      profile.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       profile.bio?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      profile.specialization?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      profile.services?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       profile.location?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -206,7 +211,7 @@ export default function ProfessionalsManagement() {
               <TableRow>
                 <TableHead>ID</TableHead>
                 <TableHead>User ID</TableHead>
-                <TableHead>Headline</TableHead>
+                <TableHead>Title</TableHead>
                 <TableHead>Location</TableHead>
                 <TableHead>Featured</TableHead>
                 <TableHead>Verified</TableHead>
@@ -225,8 +230,8 @@ export default function ProfessionalsManagement() {
                   <TableRow key={profile.id}>
                     <TableCell>{profile.id}</TableCell>
                     <TableCell>{profile.userId}</TableCell>
-                    <TableCell className="max-w-[200px] truncate" title={profile.headline || ""}>
-                      {profile.headline || "No headline"}
+                    <TableCell className="max-w-[200px] truncate" title={profile.title || ""}>
+                      {profile.title || "No title"}
                     </TableCell>
                     <TableCell>{profile.location || "Not specified"}</TableCell>
                     <TableCell>
@@ -241,8 +246,8 @@ export default function ProfessionalsManagement() {
                       />
                     </TableCell>
                     <TableCell>
-                      {profile.verified ? (
-                        <Badge variant="success" className="bg-green-500">
+                      {(profile as AdminProfessionalProfile).verified ? (
+                        <Badge className="bg-green-500 text-white">
                           <Check className="h-3 w-3 mr-1" /> Verified
                         </Badge>
                       ) : (
@@ -275,7 +280,7 @@ export default function ProfessionalsManagement() {
                             {profile.featured ? "Unfeature Profile" : "Feature Profile"}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          {profile.verified ? (
+                          {(profile as AdminProfessionalProfile).verified ? (
                             <DropdownMenuItem onClick={() => setConfirmUnverify(profile)}>
                               <X className="mr-2 h-4 w-4" />
                               Remove Verification

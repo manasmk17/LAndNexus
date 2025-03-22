@@ -126,6 +126,8 @@ export default function EditProfileForm() {
   const professionalForm = useForm<z.infer<typeof professionalProfileFormSchema>>({
     resolver: zodResolver(professionalProfileFormSchema),
     defaultValues: {
+      firstName: "",
+      lastName: "",  
       title: "",
       bio: "",
       location: "",
@@ -205,6 +207,8 @@ export default function EditProfileForm() {
       }
       
       professionalForm.reset({
+        firstName: professionalProfile.firstName || "",
+        lastName: professionalProfile.lastName || "",
         title: professionalProfile.title,
         bio: professionalProfile.bio,
         location: professionalProfile.location,
@@ -667,6 +671,36 @@ export default function EditProfileForm() {
           <div className="space-y-6">
             <div className="border p-6 rounded-md shadow-sm">
               <h2 className="text-xl font-semibold mb-4">Basic Information</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <FormField
+                  control={professionalForm.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. John" {...field} value={field.value || ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={professionalForm.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Smith" {...field} value={field.value || ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               
               <FormField
                 control={professionalForm.control}

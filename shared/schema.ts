@@ -30,6 +30,8 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export const professionalProfiles = pgTable("professional_profiles", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
+  firstName: text("first_name"), // Added first name field
+  lastName: text("last_name"), // Added last name field
   title: text("title"),
   bio: text("bio"),
   location: text("location"),

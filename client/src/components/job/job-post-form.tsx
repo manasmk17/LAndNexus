@@ -210,7 +210,7 @@ export default function JobPostForm() {
                     <FormLabel>Job Type</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value || ''}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -380,7 +380,7 @@ export default function JobPostForm() {
                     <FormLabel>Unit</FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value || ''}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -434,7 +434,7 @@ export default function JobPostForm() {
                   <FormItem className="flex flex-row items-start space-x-3 space-y-0 mt-8">
                     <FormControl>
                       <Checkbox
-                        checked={field.value}
+                        checked={field.value || false}
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>

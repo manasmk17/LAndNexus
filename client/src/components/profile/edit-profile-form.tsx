@@ -336,18 +336,11 @@ export default function EditProfileForm() {
     
     try {
       console.log("Adding certification:", certData);
-      const response = await fetch(`/api/professionals/me/certifications`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          name: certData.name,
-          issuer: certData.issuer,
-          year: certData.year,
-          professionalId: professionalProfile.id
-        })
+      const response = await apiRequest('POST', `/api/professionals/me/certifications`, {
+        name: certData.name,
+        issuer: certData.issuer,
+        year: certData.year,
+        professionalId: professionalProfile.id
       });
       
       if (!response.ok) {
@@ -507,12 +500,16 @@ export default function EditProfileForm() {
       let response;
       
       // Always use the /api/professionals/me endpoint for updating the current user's profile
+      // Note: apiRequest doesn't support FormData directly, so we still use fetch for file uploads
       response = await fetch(
         "/api/professionals/me", 
         {
           method: 'PUT',  // Use PUT to update existing or create new profile
           body: formData,
-          credentials: 'include'
+          credentials: 'include',
+          headers: {
+            'X-CSRF-Token': getCsrfToken() || ''
+          }
         }
       );
       
@@ -593,7 +590,10 @@ export default function EditProfileForm() {
           {
             method: 'PUT',
             body: formData,
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+              'X-CSRF-Token': getCsrfToken() || ''
+            }
           }
         );
       } else {
@@ -603,7 +603,10 @@ export default function EditProfileForm() {
           {
             method: 'POST',
             body: formData,
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+              'X-CSRF-Token': getCsrfToken() || ''
+            }
           }
         );
       }

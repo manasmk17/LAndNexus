@@ -2016,6 +2016,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(resource);
   });
   
+  // Resource file download endpoint
+  app.get("/api/resources/download/:filename", async (req, res) => {
+    try {
+      const { filename } = req.params;
+      
+      // Security check to prevent directory traversal
+      if (filename.includes('..') || filename.includes('/')) {
+        return res.status(400).json({ message: "Invalid filename" });
+      }
+      
+      // Construct file path (ensure it's relative to uploads/resources directory)
+      const filePath = path.join('uploads/resources', filename);
+      
+      // Check if file exists
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: "File not found" });
+      }
+      
+      // Get content type based on file extension
+      const ext = path.extname(filename).toLowerCase();
+      let contentType = 'application/octet-stream'; // Default binary
+      
+      // Set content type based on extension
+      switch (ext) {
+        case '.pdf':
+          contentType = 'application/pdf';
+          break;
+        case '.doc':
+        case '.docx':
+          contentType = 'application/msword';
+          break;
+        case '.xls':
+        case '.xlsx':
+          contentType = 'application/vnd.ms-excel';
+          break;
+        case '.ppt':
+        case '.pptx':
+          contentType = 'application/vnd.ms-powerpoint';
+          break;
+        case '.jpg':
+        case '.jpeg':
+          contentType = 'image/jpeg';
+          break;
+        case '.png':
+          contentType = 'image/png';
+          break;
+        case '.gif':
+          contentType = 'image/gif';
+          break;
+        case '.zip':
+          contentType = 'application/zip';
+          break;
+        case '.txt':
+          contentType = 'text/plain';
+          break;
+      }
+      
+      // Set headers for file download
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      
+      // Stream file to response
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+    } catch (err) {
+      console.error("Error downloading file:", err);
+      res.status(500).json({ message: "Error downloading file" });
+    }
+  });
+  
   // Related resources by type endpoint
   app.get("/api/resources/related/:type", async (req, res) => {
     try {

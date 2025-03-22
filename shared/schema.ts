@@ -167,6 +167,8 @@ export const resources = pgTable("resources", {
   title: text("title").notNull(),
   description: text("description").notNull(),
   content: text("content").notNull(),  // This field will store the URL for now
+  contentUrl: text("content_url"),     // URL for external content
+  filePath: text("file_path"),         // Path to the uploaded file
   resourceType: text("resource_type").notNull(), // "article", "template", "video", "webinar"
   categoryId: integer("category_id").references(() => resourceCategories.id),
   imageUrl: text("image_url"),

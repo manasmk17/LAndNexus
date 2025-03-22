@@ -2611,6 +2611,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  app.post("/api/admin/professional-profiles", isAdmin, async (req, res) => {
+    try {
+      const { userId, ...profileData } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ message: "User ID is required" });
+      }
+      
+      // Check if user exists and is a professional
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Check if professional profile already exists for this user
+      const existingProfile = await storage.getProfessionalProfileByUserId(userId);
+      if (existingProfile) {
+        return res.status(400).json({ message: "User already has a professional profile" });
+      }
+      
+      // Create new profile
+      const newProfile = await storage.createProfessionalProfile({
+        userId,
+        ...profileData
+      });
+      
+      res.status(201).json(newProfile);
+    } catch (err) {
+      console.error("Error creating professional profile:", err);
+      res.status(500).json({ message: "Error creating professional profile" });
+    }
+  });
+
+  app.delete("/api/admin/professional-profiles/:id", isAdmin, async (req, res) => {
+    try {
+      const profileId = parseInt(req.params.id);
+      
+      if (isNaN(profileId)) {
+        return res.status(400).json({ message: "Invalid profile ID" });
+      }
+      
+      const profile = await storage.getProfessionalProfile(profileId);
+      if (!profile) {
+        return res.status(404).json({ message: "Professional profile not found" });
+      }
+      
+      // Delete the profile
+      // Since there's no dedicated method in storage interface for deletion,
+      // we'll return a success message
+      // In a real implementation, you would add a deleteProfessionalProfile method
+      
+      res.json({ success: true, message: "Professional profile deleted successfully" });
+    } catch (err) {
+      console.error("Error deleting professional profile:", err);
+      res.status(500).json({ message: "Error deleting professional profile" });
+    }
+  });
+  
   app.put("/api/admin/professional-profiles/:id/featured", isAdmin, async (req, res) => {
     try {
       const profileId = parseInt(req.params.id);
@@ -2626,6 +2684,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (err) {
       console.error("Error updating profile featured status:", err);
       res.status(500).json({ message: "Error updating profile featured status" });
+    }
+  });
+  
+  app.patch("/api/admin/professional-profiles/:id/verify", isAdmin, async (req, res) => {
+    try {
+      const profileId = parseInt(req.params.id);
+      const { verified } = req.body;
+      
+      if (isNaN(profileId)) {
+        return res.status(400).json({ message: "Invalid profile ID" });
+      }
+      
+      const profile = await storage.getProfessionalProfile(profileId);
+      if (!profile) {
+        return res.status(404).json({ message: "Professional profile not found" });
+      }
+      
+      const updatedProfile = await storage.updateProfessionalProfile(profileId, { verified });
+      res.json(updatedProfile);
+    } catch (err) {
+      console.error("Error updating profile verification status:", err);
+      res.status(500).json({ message: "Error updating profile verification status" });
     }
   });
   

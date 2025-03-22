@@ -417,9 +417,9 @@ export class MemStorage implements IStorage {
     const newProfile: ProfessionalProfile = { 
       id,
       userId: profile.userId,
-      title: profile.title,
-      bio: profile.bio,
-      location: profile.location,
+      title: profile.title || null,
+      bio: profile.bio || null,
+      location: profile.location || null,
       videoIntroUrl: profile.videoIntroUrl || null,
       ratePerHour: profile.ratePerHour || null,
       profileImageUrl: profile.profileImageUrl || null,

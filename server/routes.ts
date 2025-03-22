@@ -2531,23 +2531,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/resources", async (req, res) => {
-    try {
-      const { query, type, categoryId } = req.query;
-      
-      // Use the new search function with all possible filters
-      const filteredResources = await storage.searchResources(
-        query as string | undefined,
-        type as string | undefined,
-        categoryId ? parseInt(categoryId as string) : undefined
-      );
-      
-      res.json(filteredResources);
-    } catch (err) {
-      console.error("Error fetching resources:", err);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+  // Removed duplicate endpoint - another GET /api/resources endpoint exists below
   
   // Resource Categories endpoints
   app.get("/api/resource-categories", async (req, res) => {
@@ -2980,6 +2964,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Main resources endpoint with search and filtering
+  app.get("/api/resources", async (req, res) => {
+    try {
+      const query = req.query.query as string | undefined;
+      const type = req.query.type as string | undefined;
+      const categoryId = req.query.categoryId ? parseInt(req.query.categoryId as string) : undefined;
+      
+      // Use the searchResources method which can handle all filtering criteria
+      const resources = await storage.searchResources(query, type, categoryId);
+      res.json(resources);
+    } catch (err) {
+      console.error("Error fetching resources:", err);
+      res.status(500).json({ message: "Error fetching resources" });
+    }
+  });
+  
   app.get("/api/resources/featured", async (req, res) => {
     const limit = parseInt(req.query.limit as string) || 3;
     const resources = await storage.getFeaturedResources(limit);

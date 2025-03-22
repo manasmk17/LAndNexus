@@ -39,6 +39,7 @@ export const professionalProfiles = pgTable("professional_profiles", {
   ratePerHour: integer("rate_per_hour"),
   profileImageUrl: text("profile_image_url"),
   profileImagePath: text("profile_image_path"), // For uploaded files
+  galleryImages: jsonb("gallery_images"), // Array of image paths for portfolio/gallery
   featured: boolean("featured").default(false),
   rating: integer("rating").default(0),
   reviewCount: integer("review_count").default(0),

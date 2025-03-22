@@ -117,6 +117,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fileFilter: fileFilterImages
   });
   
+  // Configure gallery storage
+  const galleryStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      // Create uploads/gallery directory if it doesn't exist
+      const uploadDir = 'uploads/gallery';
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+      // Generate unique filename with original extension
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const ext = path.extname(file.originalname);
+      cb(null, 'gallery-' + uniqueSuffix + ext);
+    }
+  });
+  
+  // Create gallery upload middleware
+  const uploadGalleryImage = multer({ 
+    storage: galleryStorage,
+    limits: { 
+      fileSize: 5 * 1024 * 1024 // 5MB in bytes
+    },
+    fileFilter: fileFilterImages
+  });
+  
   // Configure session
   app.use(
     session({

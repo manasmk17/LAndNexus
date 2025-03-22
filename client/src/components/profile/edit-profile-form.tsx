@@ -963,11 +963,55 @@ export default function EditProfileForm() {
                         {professionalProfile?.profileImagePath && (
                           <div className="mt-2">
                             <p className="text-sm text-muted-foreground mb-2">Current image:</p>
-                            <img 
-                              src={`/${professionalProfile.profileImagePath}`} 
-                              alt="Current profile" 
-                              className="w-32 h-32 object-cover rounded-md border"
-                            />
+                            <div className="relative group">
+                              <img 
+                                src={`/${professionalProfile.profileImagePath}`} 
+                                alt="Current profile" 
+                                className="w-32 h-32 object-cover rounded-md border"
+                                onError={(e) => {
+                                  console.log("Image load error, using placeholder");
+                                  // Set default avatar on error
+                                  (e.target as HTMLImageElement).src = 'https://ui-avatars.com/api/?name=' + encodeURIComponent((professionalProfile.firstName || '') + ' ' + (professionalProfile.lastName || ''));
+                                }}
+                              />
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                size="sm"
+                                className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={async (e) => {
+                                  e.preventDefault();
+                                  if (confirm("Are you sure you want to delete your profile image?")) {
+                                    try {
+                                      const res = await apiRequest(
+                                        "DELETE", 
+                                        `/api/professional-profiles/${professionalProfile.id}/profile-image`
+                                      );
+                                      
+                                      if (res.ok) {
+                                        // Refresh profile data
+                                        queryClient.invalidateQueries({ queryKey: ["/api/professionals/me"] });
+                                        toast({
+                                          title: "Profile image deleted",
+                                          description: "Your profile image has been removed",
+                                        });
+                                      } else {
+                                        const error = await res.json();
+                                        throw new Error(error.message || "Failed to delete image");
+                                      }
+                                    } catch (error) {
+                                      toast({
+                                        title: "Error",
+                                        description: error instanceof Error ? error.message : "Failed to delete profile image",
+                                        variant: "destructive"
+                                      });
+                                    }
+                                  }
+                                }}
+                              >
+                                <Trash className="h-4 w-4 mr-1" /> Delete
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </div>

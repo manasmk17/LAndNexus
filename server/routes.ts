@@ -998,6 +998,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(profile);
   });
 
+  // Delete profile image
+  app.delete("/api/professional-profiles/:id/profile-image", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.user as any;
+
+      // Check if profile exists and belongs to user
+      const profile = await storage.getProfessionalProfile(id);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      if (profile.userId !== user.id && !user.isAdmin) {
+        return res.status(403).json({ message: "You can only update your own profile" });
+      }
+
+      // Check if there's an image to delete
+      if (!profile.profileImagePath) {
+        return res.status(400).json({ message: "No profile image to delete" });
+      }
+
+      // Delete the file from filesystem
+      try {
+        fs.unlinkSync(profile.profileImagePath);
+        console.log(`Deleted profile image: ${profile.profileImagePath}`);
+      } catch (error) {
+        console.warn(`Failed to delete profile image file: ${profile.profileImagePath}`, error);
+        // Continue anyway to update the database
+      }
+
+      // Update the database to remove the image reference
+      const updatedProfile = await storage.updateProfessionalProfile(id, {
+        profileImagePath: null
+      });
+
+      res.json({ message: "Profile image deleted successfully", profile: updatedProfile });
+    } catch (err) {
+      console.error("Error deleting profile image:", err);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
   app.put("/api/professional-profiles/:id", isAuthenticated, uploadProfileImage.single('profileImage'), async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -1009,21 +1051,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Profile not found" });
       }
 
-      if (profile.userId !== user.id) {
+      if (profile.userId !== user.id && !user.isAdmin) {
         return res.status(403).json({ message: "You can only update your own profile" });
       }
 
       // Process uploaded file if present
       const updateData = {...req.body};
       if (req.file) {
-        // If there's an existing image, we could delete it here
-        // if (profile.profileImagePath) {
-        //   try {
-        //     fs.unlinkSync(profile.profileImagePath);
-        //   } catch (err) {
-        //     console.warn(`Failed to delete previous profile image: ${profile.profileImagePath}`);
-        //   }
-        // }
+        // Delete existing image if present
+        if (profile.profileImagePath) {
+          try {
+            fs.unlinkSync(profile.profileImagePath);
+            console.log(`Deleted previous profile image: ${profile.profileImagePath}`);
+          } catch (err) {
+            console.warn(`Failed to delete previous profile image: ${profile.profileImagePath}`);
+          }
+        }
         
         updateData.profileImagePath = req.file.path;
         console.log(`Updated profile image: ${updateData.profileImagePath}`);

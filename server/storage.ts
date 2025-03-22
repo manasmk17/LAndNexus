@@ -657,7 +657,9 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       featured: resource.featured || false,
       imageUrl: resource.imageUrl || null,
-      categoryId: resource.categoryId || null
+      categoryId: resource.categoryId || null,
+      contentUrl: resource.contentUrl || null,
+      filePath: resource.filePath || null
     };
     this.resources.set(id, newResource);
     return newResource;

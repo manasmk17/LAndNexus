@@ -1312,6 +1312,14 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(resources.createdAt));
   }
   
+  async getResourcesByAuthor(authorId: number): Promise<Resource[]> {
+    return db
+      .select()
+      .from(resources)
+      .where(eq(resources.authorId, authorId))
+      .orderBy(desc(resources.createdAt));
+  }
+  
   async searchResources(query?: string, type?: string, categoryId?: number): Promise<Resource[]> {
     // Start with base query conditions
     const conditions: SQL<unknown>[] = [];

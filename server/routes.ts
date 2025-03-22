@@ -2613,13 +2613,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Related resources by type endpoint
-  app.get("/api/resources/related/:type", async (req, res) => {
+  app.get("/api/resources/related/:type/:excludeId?", async (req, res) => {
     try {
-      const { type } = req.params;
-      const excludeParam = req.query.exclude ? parseInt(req.query.exclude as string) : undefined;
+      const { type, excludeId } = req.params;
       
-      // Add NaN check for exclude parameter
-      const exclude = excludeParam !== undefined && !isNaN(excludeParam) ? excludeParam : undefined;
+      // Check if type is valid
+      if (!type || type === 'undefined' || type === 'null') {
+        return res.status(400).json({ message: "Invalid resource type" });
+      }
+      
+      // Parse exclude ID if provided
+      let exclude: number | undefined = undefined;
+      if (excludeId && excludeId !== 'undefined') {
+        const parsedId = parseInt(excludeId);
+        exclude = !isNaN(parsedId) ? parsedId : undefined;
+      }
       
       // Get all resources of this type
       const resources = await storage.searchResources(undefined, type);

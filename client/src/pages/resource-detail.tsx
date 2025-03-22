@@ -47,8 +47,14 @@ export default function ResourceDetail() {
     data: author, 
     isLoading: isLoadingAuthor 
   } = useQuery<UserType>({
-    queryKey: [`/api/users/${resource?.authorId}`],
-    enabled: !!resource,
+    queryKey: ['/api/users', resource?.authorId],
+    queryFn: () => 
+      fetch(`/api/users/${resource?.authorId}`)
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to fetch author');
+          return res.json();
+        }),
+    enabled: !!resource?.authorId, // Only enable if authorId exists
   });
 
   // Fetch related resources based on type
@@ -56,8 +62,15 @@ export default function ResourceDetail() {
     data: relatedResources, 
     isLoading: isLoadingRelated 
   } = useQuery<Resource[]>({
-    queryKey: [`/api/resources/related/${resource?.resourceType}?exclude=${resourceId}`],
-    enabled: !!resource,
+    queryKey: ['/api/resources/related', resource?.resourceType, resourceId],
+    // Use a proper URL for the query based on the array query key
+    queryFn: () => 
+      fetch(`/api/resources/related/${resource?.resourceType}/${resourceId}`)
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to fetch related resources');
+          return res.json();
+        }),
+    enabled: !!resource?.resourceType, // Only enable if resourceType exists
   });
   
   // Fetch resource categories

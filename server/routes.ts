@@ -716,6 +716,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get multiple users in batch
+  app.get("/api/users/batch", async (req, res) => {
+    try {
+      // Get userIds from query parameter
+      const userIdsParam = req.query.userIds;
+      
+      // If no userIds provided, return all users
+      if (!userIdsParam) {
+        const users = await storage.getAllUsers();
+        // Remove sensitive information from each user
+        const safeUsers = users.map(user => {
+          const { password, ...userInfo } = user;
+          return userInfo;
+        });
+        return res.json(safeUsers);
+      }
+      
+      // Parse userIds from query parameter
+      let userIds: number[] = [];
+      try {
+        if (typeof userIdsParam === 'string') {
+          userIds = JSON.parse(userIdsParam);
+        } else if (Array.isArray(userIdsParam)) {
+          userIds = userIdsParam.map(id => parseInt(id.toString()));
+        }
+      } catch (error) {
+        return res.status(400).json({ message: "Invalid user IDs format" });
+      }
+      
+      // Validate all IDs are numbers
+      if (userIds.some(id => isNaN(id))) {
+        return res.status(400).json({ message: "Invalid user ID format" });
+      }
+      
+      // Fetch each user
+      const users = [];
+      for (const id of userIds) {
+        const user = await storage.getUser(id);
+        if (user) {
+          const { password, ...userInfo } = user;
+          users.push(userInfo);
+        }
+      }
+      
+      res.json(users);
+    } catch (err) {
+      console.error("Error fetching users in batch:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
   // Get a specific user by ID
   app.get("/api/users/:id", async (req, res) => {
     try {

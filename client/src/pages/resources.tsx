@@ -106,6 +106,26 @@ export default function Resources() {
   const { data: users } = useQuery<UserType[]>({
     queryKey: ["/api/users/batch"],
     enabled: !!resources && resources.length > 0,
+    queryFn: async () => {
+      // Extract unique author IDs from resources
+      const authorIds = resources
+        ? Array.from(new Set(resources.map(resource => resource.authorId)))
+        : [];
+      
+      if (authorIds.length === 0) return [];
+      
+      // Fetch user details for all authors
+      const response = await fetch(`/api/users/batch?userIds=${JSON.stringify(authorIds)}`, {
+        credentials: "include"
+      });
+      
+      if (!response.ok) {
+        console.error("Error fetching resource authors:", await response.text());
+        return [];
+      }
+      
+      return await response.json();
+    }
   });
   
   // Sort resources by created date (newest first)

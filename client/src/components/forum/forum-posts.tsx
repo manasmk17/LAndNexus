@@ -92,19 +92,26 @@ export default function ForumPosts() {
         });
       }
       
-      // Fetch user details for all the unique IDs
-      for (const userId of Array.from(userIds)) {
-        try {
-          const response = await fetch(`/api/users/${userId}`, {
-            credentials: "include",
-          });
-          
-          if (response.ok) {
-            results[userId] = await response.json();
-          }
-        } catch (error) {
-          console.error(`Error fetching user ${userId}:`, error);
+      // Use the batch endpoint to get all users at once
+      try {
+        const userIdsArray = Array.from(userIds);
+        const response = await fetch(`/api/users/batch?userIds=${JSON.stringify(userIdsArray)}`, {
+          credentials: "include"
+        });
+        
+        if (!response.ok) {
+          console.error("Error fetching forum users:", await response.text());
+          return results;
         }
+        
+        const users = await response.json();
+        
+        // Index users by ID for easy lookup
+        users.forEach((user: UserType) => {
+          results[user.id] = user;
+        });
+      } catch (error) {
+        console.error("Error fetching forum users:", error);
       }
       
       return results;

@@ -45,6 +45,26 @@ export default function Messages() {
   } = useQuery<UserType[]>({
     queryKey: ["/api/users/batch"],
     enabled: !!messages && messages.length > 0,
+    queryFn: async () => {
+      // Extract unique user IDs from messages
+      const userIds = messages ? 
+        Array.from(new Set([
+          ...messages.map(msg => msg.senderId),
+          ...messages.map(msg => msg.receiverId)
+        ])) : [];
+      
+      // Fetch user details based on the IDs
+      const response = await fetch(`/api/users/batch?userIds=${JSON.stringify(userIds)}`, {
+        credentials: "include"
+      });
+      
+      if (!response.ok) {
+        console.error("Error fetching users:", await response.text());
+        return [];
+      }
+      
+      return await response.json();
+    }
   });
   
   // Set selected user from URL params if provided

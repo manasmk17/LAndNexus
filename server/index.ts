@@ -44,7 +44,11 @@ app.use((req, res, next) => {
     '/api/resources/featured',
     '/api/create-test-admin',
     '/api/create-admin',
-    '/api/admin/make-admin'
+    '/api/admin/make-admin',
+    '/api/admin/company-profiles',
+    '/api/admin/professional-profiles',
+    '/api/admin/job-postings',
+    '/api/admin/resources'
   ];
   
   // We should treat all API routes that start with '/api/me/' as exempt for GET requests
@@ -91,7 +95,14 @@ app.use((req, res, next) => {
     '/api/company-profiles/:id',
     '/api/professionals/:id',
     '/api/job-postings/:id',
-    '/api/resources/:id'
+    '/api/resources/:id',
+    '/api/admin/company-profiles/:id/verify',
+    '/api/admin/company-profiles/:id/featured',
+    '/api/admin/professional-profiles/:id/featured',
+    '/api/admin/job-postings/:id/featured',
+    '/api/admin/job-postings/:id/status',
+    '/api/admin/resources/:id/featured',
+    '/api/admin/resources/:id'
   ];
   
   // Check if the current request path is in the exempt list, matches an ID-based pattern,

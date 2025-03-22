@@ -2641,6 +2641,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  app.patch("/api/admin/company-profiles/:id/verify", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { verified } = req.body;
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid company profile ID" });
+      }
+      
+      const profile = await storage.getCompanyProfile(id);
+      if (!profile) {
+        return res.status(404).json({ message: "Company profile not found" });
+      }
+      
+      const updatedProfile = await storage.updateCompanyProfile(id, { verified });
+      res.json(updatedProfile);
+    } catch (err) {
+      console.error("Error updating company verification status:", err);
+      res.status(500).json({ message: "Error updating company verification status" });
+    }
+  });
+  
+  app.patch("/api/admin/company-profiles/:id/featured", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { featured } = req.body;
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid company profile ID" });
+      }
+      
+      const profile = await storage.getCompanyProfile(id);
+      if (!profile) {
+        return res.status(404).json({ message: "Company profile not found" });
+      }
+      
+      const updatedProfile = await storage.updateCompanyProfile(id, { featured });
+      res.json(updatedProfile);
+    } catch (err) {
+      console.error("Error updating company featured status:", err);
+      res.status(500).json({ message: "Error updating company featured status" });
+    }
+  });
+  
   app.get("/api/admin/job-postings", isAdmin, async (req, res) => {
     try {
       const jobs = await storage.getAllJobPostings();

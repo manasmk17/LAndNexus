@@ -23,6 +23,7 @@ import PostJob from "@/pages/post-job";
 import JobDetail from "@/pages/job-detail";
 import Resources from "@/pages/resources";
 import ManageResources from "@/pages/manage-resources";
+import CreateResource from "@/pages/create-resource";
 import CareerRecommendations from "@/pages/career-recommendations";
 import ResourceDetail from "@/pages/resource-detail";
 import Forum from "@/pages/forum";
@@ -80,6 +81,11 @@ function Router() {
       <ProtectedRoute 
         path="/manage-resources" 
         component={ManageResources} 
+        userTypes={["professional", "admin"]} 
+      />
+      <ProtectedRoute 
+        path="/create-resource" 
+        component={CreateResource} 
         userTypes={["professional", "admin"]} 
       />
       <ProtectedRoute 

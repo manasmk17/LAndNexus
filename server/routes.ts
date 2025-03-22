@@ -1527,12 +1527,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Resource Routes
-  app.post("/api/resources", isAuthenticated, async (req, res) => {
+  // Configure multer storage for resource files and documents
+  const resourceFileStorage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      // Create directory if it doesn't exist
+      const uploadDir = 'uploads/resources';
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+      cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+      // Generate unique filename with original extension
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const ext = path.extname(file.originalname);
+      cb(null, uniqueSuffix + ext);
+    }
+  });
+
+  // File filter for resource files - allows PDF, office documents, etc.
+  const fileFilterResources = (req: any, file: any, cb: any) => {
+    // Accept common document types and images
+    if (!file.originalname.match(/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|zip|jpg|jpeg|png|gif|webp)$/)) {
+      return cb(new Error('Only document and image files are allowed!'), false);
+    }
+    cb(null, true);
+  };
+
+  // Create upload middleware for resources
+  const uploadResourceFile = multer({ 
+    storage: resourceFileStorage,
+    limits: { 
+      fileSize: 25 * 1024 * 1024 // 25MB in bytes
+    },
+    fileFilter: fileFilterResources
+  });
+
+  app.post("/api/resources", isAuthenticated, uploadResourceFile.single('file'), async (req, res) => {
     try {
       const user = req.user as any;
 
-      // Prepare resource data
+      // Prepare resource data from body
       let resourceData = { ...req.body, authorId: user.id };
+      
+      // Add file path if uploaded
+      if (req.file) {
+        // Store the file path relative to the uploads directory
+        resourceData.filePath = req.file.path;
+        
+        // If no content URL was provided but we have a file, set the content URL to access the file
+        if (!resourceData.contentUrl || resourceData.contentUrl === '') {
+          resourceData.contentUrl = `/api/resources/download/${path.basename(req.file.path)}`;
+        }
+      }
       
       // Validate with schema
       resourceData = insertResourceSchema.parse(resourceData);
@@ -1540,6 +1587,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const resource = await storage.createResource(resourceData);
       res.status(201).json(resource);
     } catch (err) {
+      // If there was an uploaded file and we encounter an error, clean it up
+      if (req.file) {
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch (unlinkErr) {
+          console.error("Error cleaning up file after failed resource creation:", unlinkErr);
+        }
+      }
+
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid input", errors: err.errors });
       }

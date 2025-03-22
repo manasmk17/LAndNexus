@@ -64,10 +64,12 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
   });
   
   const { 
-    data: resources 
+    data: resources = [] 
   } = useQuery<Resource[]>({
     queryKey: [`/api/professional-profiles/${professionalId}/resources`],
     enabled: !!profile,
+    // Add default empty array to prevent JSON parsing error when empty response is returned
+    select: (data) => data || []
   });
   
   const handleMessageClick = () => {
@@ -233,19 +235,73 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
             </TabsList>
             
             <TabsContent value="about" className="mt-6">
-              <h2 className="text-xl font-semibold mb-4">About {profile.title}</h2>
-              <div className="prose max-w-none">
-                <p className="whitespace-pre-line text-gray-700">{profile.bio}</p>
+              <h2 className="text-xl font-semibold mb-4">
+                About {profile.firstName} {profile.lastName}
+              </h2>
+              
+              {/* Name and title */}
+              <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h3 className="text-md font-medium text-gray-500">Full Name</h3>
+                    <p className="text-lg font-semibold">{profile.firstName} {profile.lastName}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-md font-medium text-gray-500">Professional Title</h3>
+                    <p className="text-lg font-semibold">{profile.title}</p>
+                  </div>
+                  {profile.yearsExperience > 0 && (
+                    <div>
+                      <h3 className="text-md font-medium text-gray-500">Years of Experience</h3>
+                      <p className="text-lg font-semibold">{profile.yearsExperience} years</p>
+                    </div>
+                  )}
+                  {profile.availability && profile.availability !== "false" && (
+                    <div>
+                      <h3 className="text-md font-medium text-gray-500">Availability</h3>
+                      <p className="text-lg font-semibold">{profile.availability}</p>
+                    </div>
+                  )}
+                  {profile.email && (
+                    <div>
+                      <h3 className="text-md font-medium text-gray-500">Email</h3>
+                      <p className="text-lg font-semibold">{profile.email}</p>
+                    </div>
+                  )}
+                  {profile.phone && (
+                    <div>
+                      <h3 className="text-md font-medium text-gray-500">Phone</h3>
+                      <p className="text-lg font-semibold">{profile.phone}</p>
+                    </div>
+                  )}
+                </div>
               </div>
               
+              {/* Bio */}
+              <div className="prose max-w-none mb-6">
+                <h3 className="text-lg font-semibold">Biography</h3>
+                <p className="whitespace-pre-line text-gray-700">{profile.bio || "No biography provided."}</p>
+              </div>
+              
+              {/* Services */}
+              {profile.services && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-2">Services Offered</h3>
+                  <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                    <p className="whitespace-pre-line text-gray-700">{profile.services}</p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Rate */}
               {profile.ratePerHour && (
-                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200 shadow-sm">
                   <h3 className="text-lg font-semibold mb-2 flex items-center">
                     <DollarSign className="mr-2 h-5 w-5 text-green-600" />
                     Consulting Rate
                   </h3>
-                  <p className="text-gray-700">
-                    ${profile.ratePerHour} per hour
+                  <p className="text-gray-700 text-lg">
+                    <span className="font-bold text-green-700">${profile.ratePerHour}</span> per hour
                   </p>
                 </div>
               )}

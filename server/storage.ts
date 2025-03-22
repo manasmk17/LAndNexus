@@ -1097,6 +1097,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Certification operations
+  async getCertification(id: number): Promise<Certification | undefined> {
+    const [certification] = await db
+      .select()
+      .from(certifications)
+      .where(eq(certifications.id, id));
+    return certification;
+  }
+  
   async getProfessionalCertifications(professionalId: number): Promise<Certification[]> {
     return db
       .select()

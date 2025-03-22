@@ -144,11 +144,16 @@ export async function secureFileUpload(
   url: string,
   formData: FormData
 ): Promise<Response> {
+  // Enhanced debug - log form data keys
+  console.log("DEBUG secureFileUpload - Preparing for upload to:", url);
+  console.log("FormData keys:", Array.from(formData.keys()));
+  
   // Build headers with CSRF token only
   const headers: Record<string, string> = {};
   
   // Add CSRF token
   let csrfToken = getCsrfToken();
+  console.log("Initial CSRF token found:", csrfToken ? "Yes ("+csrfToken.substring(0,5)+"...)" : "No");
   
   // If the token is missing, immediately try to refresh it
   if (!csrfToken) {
@@ -163,9 +168,10 @@ export async function secureFileUpload(
       });
       
       if (tokenResponse.ok) {
-        // Wait a moment for cookies to be set
-        await new Promise(resolve => setTimeout(resolve, 50));
+        // Wait longer for cookies to be set
+        await new Promise(resolve => setTimeout(resolve, 150));
         csrfToken = getCsrfToken();
+        console.log("After refresh, CSRF token found:", csrfToken ? "Yes ("+csrfToken.substring(0,5)+"...)" : "No");
       }
     } catch (e) {
       console.error('Error refreshing CSRF token:', e);
@@ -176,8 +182,33 @@ export async function secureFileUpload(
   if (csrfToken) {
     headers['X-CSRF-Token'] = csrfToken;
     console.log(`Using CSRF token for ${method} request to ${url}`);
+    
+    // Also add token to formData as a fallback
+    formData.append("_csrf", csrfToken);
+    console.log("Added CSRF token to formData as fallback");
   } else {
     console.warn("Failed to obtain CSRF token after refresh attempt");
+    
+    // Create an additional fallback mechanism by trying to get token from another source
+    try {
+      console.log("Attempting direct CSRF token fetch...");
+      const tokenResponse = await fetch("/api/csrf-token", { 
+        method: "GET", 
+        headers: { "Accept": "application/json" },
+        credentials: "include" 
+      });
+      
+      if (tokenResponse.ok) {
+        const tokenData = await tokenResponse.json();
+        if (tokenData && tokenData.csrfToken) {
+          headers['X-CSRF-Token'] = tokenData.csrfToken;
+          formData.append("_csrf", tokenData.csrfToken);
+          console.log("Using directly fetched CSRF token");
+        }
+      }
+    } catch (err) {
+      console.error("Error during direct token fetch:", err);
+    }
   }
   
   // Log request details for debugging regardless

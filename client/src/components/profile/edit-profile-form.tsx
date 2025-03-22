@@ -1579,8 +1579,31 @@ export default function EditProfileForm() {
           </div>
           
           <div className="flex flex-col gap-4 items-end">
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-md" 
-                    disabled={isSubmitting}>
+            {/* Debug info for professional profile form */}
+            <div className="text-xs text-red-500 mb-2">
+              <div>isSubmitting: {isSubmitting ? "true" : "false"}</div>
+              {Object.keys(professionalForm.formState.errors).length > 0 && (
+                <div>
+                  Form has errors: {JSON.stringify(professionalForm.formState.errors)}
+                </div>
+              )}
+            </div>
+            
+            <Button 
+              type="submit" 
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-md cursor-pointer z-10 relative !important"
+              disabled={false}
+              onClick={(e) => {
+                // Use event.preventDefault() to prevent automatic form submission
+                // If the form is already submitting, don't do anything
+                if (isSubmitting) {
+                  e.preventDefault();
+                  return;
+                }
+                console.log("Professional Save button clicked");
+                console.log("Form state:", professionalForm.formState);
+              }}
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
@@ -1820,8 +1843,31 @@ export default function EditProfileForm() {
           </div>
           
           <div className="flex flex-col gap-4 items-end">
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-md" 
-                    disabled={isSubmitting}>
+            {/* Debug info for company profile form */}
+            <div className="text-xs text-red-500 mb-2">
+              <div>isSubmitting: {isSubmitting ? "true" : "false"}</div>
+              {Object.keys(companyForm.formState.errors).length > 0 && (
+                <div>
+                  Form has errors: {JSON.stringify(companyForm.formState.errors)}
+                </div>
+              )}
+            </div>
+            
+            <Button 
+              type="submit" 
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-md cursor-pointer z-10 relative !important"
+              disabled={false}
+              onClick={(e) => {
+                // Use event.preventDefault() to prevent automatic form submission
+                // If the form is already submitting, don't do anything
+                if (isSubmitting) {
+                  e.preventDefault();
+                  return;
+                }
+                console.log("Company Save button clicked");
+                console.log("Form state:", companyForm.formState);
+              }}
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...

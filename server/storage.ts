@@ -416,6 +416,7 @@ export class MemStorage implements IStorage {
       videoIntroUrl: profile.videoIntroUrl || null,
       ratePerHour: profile.ratePerHour || null,
       profileImageUrl: profile.profileImageUrl || null,
+      profileImagePath: profile.profileImagePath || null,
       featured: profile.featured || false,
       rating: profile.rating || 0,
       reviewCount: profile.reviewCount || 0,
@@ -520,7 +521,8 @@ export class MemStorage implements IStorage {
       ...profile, 
       id,
       website: profile.website || null,
-      logoUrl: profile.logoUrl || null
+      logoUrl: profile.logoUrl || null,
+      logoImagePath: profile.logoImagePath || null
     };
     this.companyProfiles.set(id, newProfile);
     return newProfile;

@@ -57,7 +57,7 @@ const testimonialSchema = z.object({
   date: z.string().optional()
 });
 
-// Extended professional profile schema for form validation
+// Extended professional profile schema with ALL fields optional for validation
 const professionalProfileFormSchema = insertProfessionalProfileSchema.extend({
   profileImage: z.instanceof(File).optional(),
   newExpertise: z.string().optional(),
@@ -69,13 +69,39 @@ const professionalProfileFormSchema = insertProfessionalProfileSchema.extend({
   newWorkExperience: workExperienceSchema.optional(),
   newTestimonial: testimonialSchema.optional(),
   firstName: z.string().optional(),
-  lastName: z.string().optional()
-});
+  lastName: z.string().optional(),
+  // Make sure ALL fields are optional
+  title: z.string().optional(),
+  bio: z.string().optional(),
+  location: z.string().optional(),
+  videoIntroUrl: z.string().optional(),
+  profileImageUrl: z.string().optional(),
+  ratePerHour: z.coerce.number().optional(),
+  services: z.string().optional(),
+  availability: z.boolean().optional(),
+  email: z.string().optional(),
+  phone: z.string().optional(),
+  yearsExperience: z.coerce.number().optional(),
+  workExperience: z.string().optional(),
+  testimonials: z.string().optional(),
+  // Ensure userId is always there but can be passed in
+  userId: z.number().optional()
+}).partial(); // This makes all fields optional, even those not explicitly defined above
 
-// Extended company profile schema for form validation
+// Extended company profile schema with ALL fields optional for validation
 const companyProfileFormSchema = insertCompanyProfileSchema.extend({
-  profileImage: z.instanceof(File).optional()
-});
+  profileImage: z.instanceof(File).optional(),
+  // Make sure ALL fields are optional
+  companyName: z.string().optional(),
+  industry: z.string().optional(), 
+  description: z.string().optional(),
+  website: z.string().optional(),
+  logoUrl: z.string().optional(),
+  logoImagePath: z.string().optional(),
+  size: z.string().optional(),
+  location: z.string().optional(),
+  userId: z.number().optional()
+}).partial(); // This makes all fields optional, even those not explicitly defined above
 
 export default function EditProfileForm() {
   const [, setLocation] = useLocation();
@@ -326,10 +352,11 @@ export default function EditProfileForm() {
     
     const certData = professionalForm.getValues("newCertification");
     
-    if (!certData || !certData.name || !certData.issuer || !certData.year) {
+    // Make certification fields optional - only require name at minimum
+    if (!certData || !certData.name) {
       toast({
-        title: "Incomplete information",
-        description: "Please fill in all certification fields",
+        title: "Name required",
+        description: "Please enter at least the certification name",
         variant: "destructive"
       });
       return;
@@ -399,10 +426,11 @@ export default function EditProfileForm() {
   
   const handleAddWorkExperience = () => {
     const workExp = professionalForm.getValues("newWorkExperience");
-    if (!workExp || !workExp.company || !workExp.position || !workExp.startDate) {
+    // Make work experience more flexible - require at least company name
+    if (!workExp || !workExp.company) {
       toast({
-        title: "Incomplete information",
-        description: "Please fill in all required work experience fields",
+        title: "Company name required",
+        description: "Please enter at least the company name",
         variant: "destructive"
       });
       return;
@@ -434,10 +462,11 @@ export default function EditProfileForm() {
   
   const handleAddTestimonial = () => {
     const testimonial = professionalForm.getValues("newTestimonial");
-    if (!testimonial || !testimonial.clientName || !testimonial.text) {
+    // Make testimonials more flexible - only require client name at minimum
+    if (!testimonial || !testimonial.clientName) {
       toast({
-        title: "Incomplete information",
-        description: "Please fill in all required testimonial fields",
+        title: "Client name required",
+        description: "Please enter at least the client name",
         variant: "destructive"
       });
       return;

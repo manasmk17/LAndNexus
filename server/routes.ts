@@ -915,6 +915,147 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update or create a professional profile for the current user
+  app.put("/api/professionals/me", isAuthenticated, uploadProfileImage.single('profileImage'), async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      if (user.userType !== "professional") {
+        return res.status(403).json({ message: "Only professionals can access this endpoint" });
+      }
+      
+      // Check if profile exists
+      const existingProfile = await storage.getProfessionalProfileByUserId(user.id);
+      
+      // Prepare profile data
+      const profileData = {
+        ...req.body,
+        userId: user.id
+      };
+      
+      // Handle file upload if provided
+      if (req.file) {
+        profileData.profileImagePath = req.file.path.replace(/^public\//, '');
+      }
+      
+      let profile;
+      if (existingProfile) {
+        // Update existing profile
+        profile = await storage.updateProfessionalProfile(existingProfile.id, profileData);
+      } else {
+        // Create new profile
+        profile = await storage.createProfessionalProfile(profileData);
+      }
+      
+      res.json(profile);
+    } catch (err) {
+      console.error("Error updating professional profile:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get certifications for the current professional user
+  app.get("/api/professionals/me/certifications", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      if (user.userType !== "professional") {
+        return res.status(403).json({ message: "Only professionals can access this endpoint" });
+      }
+      
+      const profile = await storage.getProfessionalProfileByUserId(user.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Professional profile not found for current user" });
+      }
+      
+      const certifications = await storage.getProfessionalCertifications(profile.id);
+      res.json(certifications);
+    } catch (err) {
+      console.error("Error fetching certifications:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Add a certification for the current professional user
+  app.post("/api/professionals/me/certifications", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      if (user.userType !== "professional") {
+        return res.status(403).json({ message: "Only professionals can access this endpoint" });
+      }
+      
+      const profile = await storage.getProfessionalProfileByUserId(user.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Professional profile not found for current user" });
+      }
+      
+      const certData = {
+        ...req.body,
+        professionalId: profile.id
+      };
+      
+      const certification = await storage.createCertification(certData);
+      res.status(201).json(certification);
+    } catch (err) {
+      console.error("Error adding certification:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get expertise for the current professional user
+  app.get("/api/professionals/me/expertise", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      if (user.userType !== "professional") {
+        return res.status(403).json({ message: "Only professionals can access this endpoint" });
+      }
+      
+      const profile = await storage.getProfessionalProfileByUserId(user.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Professional profile not found for current user" });
+      }
+      
+      const expertise = await storage.getProfessionalExpertise(profile.id);
+      res.json(expertise);
+    } catch (err) {
+      console.error("Error fetching expertise:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Add expertise for the current professional user
+  app.post("/api/professionals/me/expertise", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      if (user.userType !== "professional") {
+        return res.status(403).json({ message: "Only professionals can access this endpoint" });
+      }
+      
+      const profile = await storage.getProfessionalProfileByUserId(user.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Professional profile not found for current user" });
+      }
+      
+      const { expertiseId } = req.body;
+      if (!expertiseId) {
+        return res.status(400).json({ message: "Expertise ID is required" });
+      }
+      
+      const profExpertise = await storage.addProfessionalExpertise({
+        professionalId: profile.id,
+        expertiseId: expertiseId
+      });
+      
+      res.status(201).json(profExpertise);
+    } catch (err) {
+      console.error("Error adding expertise:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Get professional profile by user ID (used by several components)
   app.get("/api/professional-profiles/by-user", isAuthenticated, async (req, res) => {
     try {

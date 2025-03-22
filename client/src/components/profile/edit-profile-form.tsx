@@ -106,14 +106,14 @@ export default function EditProfileForm() {
 
   // Fetch user's expertise if professional profile exists
   const { data: userExpertise } = useQuery<Expertise[]>({
-    queryKey: [`/api/professional-profiles/${professionalProfile?.id}/expertise`],
-    enabled: !!professionalProfile,
+    queryKey: [`/api/professionals/me/expertise`],
+    enabled: !!professionalProfile && user?.userType === "professional",
   });
 
   // Fetch user's certifications if professional profile exists
   const { data: certifications } = useQuery<any[]>({
-    queryKey: [`/api/professional-profiles/${professionalProfile?.id}/certifications`],
-    enabled: !!professionalProfile,
+    queryKey: [`/api/professionals/me/certifications`],
+    enabled: !!professionalProfile && user?.userType === "professional",
   });
 
   // State for work experiences and testimonials
@@ -336,7 +336,7 @@ export default function EditProfileForm() {
     
     try {
       console.log("Adding certification:", certData);
-      const response = await fetch(`/api/professional-profiles/${professionalProfile.id}/certifications`, {
+      const response = await fetch(`/api/professionals/me/certifications`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -364,7 +364,7 @@ export default function EditProfileForm() {
       
       // Refresh certifications list
       queryClient.invalidateQueries({ 
-        queryKey: [`/api/professional-profiles/${professionalProfile.id}/certifications`] 
+        queryKey: [`/api/professionals/me/certifications`] 
       });
       
       toast({
@@ -387,7 +387,7 @@ export default function EditProfileForm() {
       
       // Refresh certifications list
       queryClient.invalidateQueries({ 
-        queryKey: [`/api/professional-profiles/${professionalProfile?.id}/certifications`] 
+        queryKey: [`/api/professionals/me/certifications`] 
       });
       
       toast({
@@ -529,7 +529,7 @@ export default function EditProfileForm() {
           if (!userExpertise || !userExpertise.some(e => e.id === expertise.id)) {
             await apiRequest(
               "POST", 
-              `/api/professional-profiles/${savedProfile.id}/expertise`, 
+              `/api/professionals/me/expertise`, 
               { expertiseId: expertise.id }
             );
           }

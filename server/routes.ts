@@ -5,6 +5,7 @@ import { db } from "./db";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
+import * as crypto from "crypto";
 import { 
   insertUserSchema, 
   insertProfessionalProfileSchema,
@@ -154,7 +155,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!user.password.includes('.')) {
           console.warn("Warning: User password is not properly hashed. This is insecure for production.");
           // Hash the plaintext password for security
-          const crypto = require('crypto');
           const salt = crypto.randomBytes(16).toString('hex');
           const keyLen = 64;
           
@@ -183,8 +183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const [storedHash, salt] = user.password.split('.');
         const keyLen = Buffer.from(storedHash, 'hex').length;
         
-        // Use crypto scrypt to compare passwords
-        const crypto = require('crypto');
+        // Use crypto scrypt to compare passwords 
         crypto.scrypt(password, salt, keyLen, (err: any, derivedKey: Buffer) => {
           if (err) {
             return done(err);

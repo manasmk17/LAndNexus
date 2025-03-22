@@ -85,6 +85,7 @@ export default function EditProfileForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedExpertise, setSelectedExpertise] = useState<Expertise[]>([]);
   const [showCertForm, setShowCertForm] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Fetch all available expertise areas
   const { data: expertiseAreas } = useQuery<Expertise[]>({
@@ -530,13 +531,21 @@ export default function EditProfileForm() {
         description: "Your professional profile has been updated successfully",
       });
       
+      // Set success state to show message
+      setSaveSuccess(true);
+      
+      // Hide success message after 5 seconds
+      setTimeout(() => {
+        setSaveSuccess(false);
+      }, 5000);
+      
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({
         queryKey: ["/api/professionals/me"]
       });
       
-      // Redirect to dashboard
-      setLocation("/professional-dashboard");
+      // Stay on the page instead of redirecting to allow user to see success message
+      // and continue editing if desired
     } catch (error) {
       console.error("Profile update error:", error);
       toast({
@@ -598,13 +607,21 @@ export default function EditProfileForm() {
         description: "Your company profile has been updated successfully",
       });
       
+      // Set success state to show message
+      setSaveSuccess(true);
+      
+      // Hide success message after 5 seconds
+      setTimeout(() => {
+        setSaveSuccess(false);
+      }, 5000);
+      
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({
         queryKey: ["/api/company-profiles/by-user"]
       });
       
-      // Redirect to dashboard
-      setLocation("/company-dashboard");
+      // Stay on the page instead of redirecting to allow user to see success message
+      // and continue editing if desired
     } catch (error) {
       console.error("Profile update error:", error);
       toast({
@@ -1381,7 +1398,7 @@ export default function EditProfileForm() {
             </div>
           </div>
           
-          <div className="flex justify-end">
+          <div className="flex flex-col gap-4 items-end">
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
@@ -1391,6 +1408,15 @@ export default function EditProfileForm() {
                 "Save Profile"
               )}
             </Button>
+            
+            {saveSuccess && (
+              <div className="w-full flex items-center p-3 bg-green-50 border border-green-200 text-green-700 rounded-md">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span>Profile saved successfully! Your changes have been applied.</span>
+              </div>
+            )}
           </div>
         </form>
       </Form>

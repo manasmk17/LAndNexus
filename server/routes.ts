@@ -3847,7 +3847,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         slug,
         title,
         content,
-        lastEditedBy: req.user?.id || null
+        lastEditedBy: (req.user && typeof req.user === 'object' && 'id' in req.user && typeof req.user.id === 'number') ? req.user.id : null
       });
 
       res.status(201).json(newPageContent);
@@ -3885,7 +3885,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         title: title || pageContent.title,
         content: content || pageContent.content,
         slug: slug || pageContent.slug,
-        lastEditedBy: req.user?.id
+        lastEditedBy: (req.user && typeof req.user === 'object' && 'id' in req.user && typeof req.user.id === 'number') ? req.user.id : null
       });
 
       res.json(updatedPageContent);

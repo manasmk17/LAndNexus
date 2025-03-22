@@ -170,7 +170,7 @@ export default function ResourceDetail() {
         <div className="mb-6">
           <div className="flex flex-wrap gap-3 mb-4">
             <Badge className="bg-primary text-primary-foreground">
-              {getResourceTypeIcon(resource.resourceType)}
+              {getResourceTypeIcon(resource.resourceType || "")}
               <span className="ml-1">
                 {resource.resourceType 
                   ? resource.resourceType.charAt(0).toUpperCase() + resource.resourceType.slice(1)
@@ -207,7 +207,7 @@ export default function ResourceDetail() {
             </div>
             <div className="ml-3">
               <p className="font-medium">
-                {author ? `${author.firstName} ${author.lastName}` : "Unknown Author"}
+                {author ? `${author.firstName || ""} ${author.lastName || ""}`.trim() || "Unknown Author" : "Unknown Author"}
               </p>
               <p className="text-sm text-gray-500">
                 {author?.userType === "professional" ? "L&D Professional" : "Company"}
@@ -249,7 +249,7 @@ export default function ResourceDetail() {
               )}
             </div>
             
-            {getResourceActionButton(resource.resourceType) && (
+            {resource.resourceType && getResourceActionButton(resource.resourceType) && (
               <div className="mt-8 flex justify-center">
                 {getResourceActionButton(resource.resourceType)}
               </div>
@@ -311,7 +311,7 @@ export default function ResourceDetail() {
                   <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
                     <CardContent className="p-4">
                       <div className="flex items-center mb-2">
-                        {getResourceTypeIcon(relatedResource.resourceType)}
+                        {getResourceTypeIcon(relatedResource.resourceType || "")}
                         <h3 className="ml-2 font-medium line-clamp-1">{relatedResource.title}</h3>
                       </div>
                       <div className="flex gap-2 mb-2">

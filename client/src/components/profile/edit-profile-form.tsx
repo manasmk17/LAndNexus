@@ -39,23 +39,23 @@ import {
   insertCertificationSchema
 } from "@shared/schema";
 
-// Type for work experience entries
+// Type for work experience entries with all fields optional
 const workExperienceSchema = z.object({
-  company: z.string().min(1, "Company name is required"),
-  position: z.string().min(1, "Position is required"), 
-  startDate: z.string().min(1, "Start date is required"),
+  company: z.string().optional(),
+  position: z.string().optional(), 
+  startDate: z.string().optional(),
   endDate: z.string().optional(),
   description: z.string().optional(),
-  current: z.boolean().default(false)
-});
+  current: z.boolean().optional().default(false)
+}).partial(); // Make all fields optional
 
-// Type for testimonial entries
+// Type for testimonial entries with all fields optional
 const testimonialSchema = z.object({
-  clientName: z.string().min(1, "Client name is required"),
+  clientName: z.string().optional(),
   company: z.string().optional(),
-  text: z.string().min(1, "Testimonial text is required"),
+  text: z.string().optional(),
   date: z.string().optional()
-});
+}).partial(); // Make all fields optional
 
 // Extended professional profile schema with ALL fields optional for validation
 const professionalProfileFormSchema = insertProfessionalProfileSchema.extend({
@@ -78,7 +78,7 @@ const professionalProfileFormSchema = insertProfessionalProfileSchema.extend({
   profileImageUrl: z.string().optional(),
   ratePerHour: z.coerce.number().optional(),
   services: z.string().optional(),
-  availability: z.boolean().optional(),
+  availability: z.string().optional(),
   email: z.string().optional(),
   phone: z.string().optional(),
   yearsExperience: z.coerce.number().optional(),
@@ -245,7 +245,7 @@ export default function EditProfileForm() {
         userId: user.id,
         newExpertise: "",
         services: professionalProfile.services || "",
-        availability: professionalProfile.availability || "",
+        availability: typeof professionalProfile.availability === 'string' ? professionalProfile.availability : '',
         email: professionalProfile.email || "",
         phone: professionalProfile.phone || "",
         yearsExperience: professionalProfile.yearsExperience,
@@ -544,7 +544,7 @@ export default function EditProfileForm() {
         title: profileData.title || "",
         bio: profileData.bio || "",
         location: profileData.location || "",
-        availability: profileData.availability ? "true" : "false" // Ensure boolean is properly converted
+        availability: profileData.availability || "" // Treat as string
       };
       
       console.log("Prepared professional profile data with explicit conversions:", enrichedProfileData);

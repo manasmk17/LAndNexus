@@ -9,12 +9,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
-// Configure CSRF protection
+// Configure CSRF protection with detailed error logging
 const csrfProtection = csurf({
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict'
+  },
+  ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],
+  // Custom error handler
+  value: (req) => {
+    const token = req.headers['x-csrf-token'] as string;
+    console.log('CSRF Token from request:', token);
+    return token;
   }
 });
 
@@ -123,7 +130,22 @@ app.use((req, res, next) => {
 (async () => {
   const server = await registerRoutes(app);
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
+    // Special handling for CSRF errors
+    if (err.code === 'EBADCSRFTOKEN') {
+      console.error('CSRF error details:', {
+        path: req.path,
+        method: req.method,
+        headers: req.headers,
+        cookies: req.cookies,
+        body: req.body
+      });
+      return res.status(403).json({
+        message: "CSRF token validation failed",
+        details: "The form submission security token is invalid or expired. Please refresh the page and try again."
+      });
+    }
+    
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 

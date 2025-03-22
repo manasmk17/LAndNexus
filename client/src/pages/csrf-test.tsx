@@ -1,14 +1,38 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { apiRequest, secureFileUpload, getCsrfToken } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
+import { Textarea } from "@/components/ui/textarea";
+import { RefreshCw } from "lucide-react";
 
 export default function CsrfTest() {
   const { toast } = useToast();
   const [testResults, setTestResults] = useState<{[key: string]: {success: boolean, message: string}}>({}); 
   const [isLoading, setIsLoading] = useState<{[key: string]: boolean}>({});
+  const [requestHeaders, setRequestHeaders] = useState<string>("");
+  const [cookies, setCookies] = useState<string>("");
+  
+  // Refresh browser information
+  const refreshBrowserInfo = () => {
+    // Get cookies
+    setCookies(document.cookie || "No cookies found");
+    
+    // Simulate getting headers (for demonstration only - we can't directly read headers)
+    setRequestHeaders(JSON.stringify({
+      "User-Agent": navigator.userAgent,
+      "CSRF-Token": getCsrfToken() || "Not found",
+      "Content-Type": "application/json",
+      "Accept": "application/json",
+      "Cookie": document.cookie || "No cookies found",
+    }, null, 2));
+  };
+  
+  // Initialize when component mounts
+  useEffect(() => {
+    refreshBrowserInfo();
+  }, []);
 
   // Test getting CSRF token
   const testGetCsrfToken = () => {
@@ -123,6 +147,8 @@ export default function CsrfTest() {
         <TabsList className="mb-4">
           <TabsTrigger value="tests">Run Tests</TabsTrigger>
           <TabsTrigger value="results">Test Results</TabsTrigger>
+          <TabsTrigger value="headers">Request Headers</TabsTrigger>
+          <TabsTrigger value="cookies">Cookies</TabsTrigger>
         </TabsList>
         
         <TabsContent value="tests">
@@ -208,6 +234,69 @@ export default function CsrfTest() {
                   ))}
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="headers">
+          <Card>
+            <CardHeader>
+              <CardTitle>Request Headers</CardTitle>
+              <CardDescription>
+                Headers that would be sent with requests (simulated)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2"
+                  onClick={refreshBrowserInfo}
+                >
+                  <RefreshCw className="h-4 w-4" /> Refresh
+                </Button>
+              </div>
+              <Textarea 
+                className="font-mono h-64 bg-muted" 
+                readOnly 
+                value={requestHeaders} 
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="cookies">
+          <Card>
+            <CardHeader>
+              <CardTitle>Browser Cookies</CardTitle>
+              <CardDescription>
+                Current cookies stored in the browser
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-2"
+                  onClick={refreshBrowserInfo}
+                >
+                  <RefreshCw className="h-4 w-4" /> Refresh
+                </Button>
+              </div>
+              <div className="border p-4 rounded-md bg-muted font-mono break-all whitespace-pre-wrap">
+                {cookies || "No cookies found"}
+              </div>
+              
+              <div className="mt-6">
+                <h3 className="font-semibold mb-2 text-sm">Security Notes:</h3>
+                <ul className="list-disc list-inside text-sm space-y-1 text-muted-foreground">
+                  <li>CSRF tokens should be present in the XSRF-TOKEN cookie.</li>
+                  <li>The CSRF cookie works with the X-CSRF-Token header on form submissions.</li>
+                  <li>If tokens are missing, try visiting a protected page or reloading.</li>
+                </ul>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

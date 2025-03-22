@@ -41,7 +41,7 @@ export default function JobApplicationForm({ jobId, onCancel, onSuccess }: JobAp
 
   // Fetch professional profile
   const { data: profile } = useQuery<ProfessionalProfile>({
-    queryKey: ["/api/professional-profiles/by-user"],
+    queryKey: ["/api/professionals/me"],
   });
 
   const form = useForm<z.infer<typeof applicationSchema>>({

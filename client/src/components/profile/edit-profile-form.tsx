@@ -94,7 +94,7 @@ export default function EditProfileForm() {
 
   // Fetch user's professional profile if it exists
   const { data: professionalProfile } = useQuery<ProfessionalProfile>({
-    queryKey: ["/api/professional-profiles/by-user"],
+    queryKey: ["/api/professionals/me"],
     enabled: user?.userType === "professional",
   });
 
@@ -557,7 +557,7 @@ export default function EditProfileForm() {
       
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({
-        queryKey: ["/api/professional-profiles/by-user"]
+        queryKey: ["/api/professionals/me"]
       });
       
       // Redirect to dashboard

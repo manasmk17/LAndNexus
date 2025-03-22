@@ -269,14 +269,17 @@ export default function CreateResource() {
                                 Loading categories...
                               </SelectItem>
                             ) : (
-                              categories?.map((category) => (
-                                <SelectItem
-                                  key={category.id}
-                                  value={category.id.toString()}
-                                >
-                                  {category.name}
-                                </SelectItem>
-                              ))
+                              <>
+                                <SelectItem value="0">None</SelectItem>
+                                {categories?.map((category) => (
+                                  <SelectItem
+                                    key={category.id}
+                                    value={category.id.toString()}
+                                  >
+                                    {category.name}
+                                  </SelectItem>
+                                ))}
+                              </>
                             )}
                           </SelectContent>
                         </Select>

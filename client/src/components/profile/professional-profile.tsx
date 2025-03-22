@@ -8,7 +8,7 @@ import {
   CardTitle 
 } from "@/components/ui/card";
 
-// Helper function to convert YouTube URLs to embed format
+// Helper functions to convert various video URLs to embed format
 function getYoutubeEmbedUrl(url: string): string {
   // Handle youtu.be format
   if (url.includes('youtu.be/')) {
@@ -28,6 +28,56 @@ function getYoutubeEmbedUrl(url: string): string {
   
   // If URL is already in embed format or cannot be parsed, return as is
   return url;
+}
+
+// Convert Vimeo URLs to embed format
+function getVimeoEmbedUrl(url: string): string {
+  // Regular Vimeo URLs: https://vimeo.com/123456789
+  const vimeoRegex = /vimeo\.com\/(\d+)/;
+  const match = url.match(vimeoRegex);
+  
+  if (match && match[1]) {
+    return `https://player.vimeo.com/video/${match[1]}`;
+  }
+  
+  // If URL is already in embed format or cannot be parsed, return as is
+  return url;
+}
+
+// Handle LinkedIn video URLs
+function getLinkedInEmbedUrl(url: string): string {
+  // LinkedIn doesn't offer a direct embed code through URL transformation
+  // Instead, we return the original URL and will provide a link to view it
+  return url;
+}
+
+// Check if URL is a supported video platform
+function isVideoEmbeddable(url: string): boolean {
+  const supportedPlatforms = [
+    'youtube.com', 
+    'youtu.be', 
+    'vimeo.com', 
+    'player.vimeo.com'
+  ];
+  
+  return supportedPlatforms.some(platform => url.includes(platform));
+}
+
+// Get video platform name from URL
+function getVideoPlatform(url: string): string {
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    return 'YouTube';
+  } else if (url.includes('vimeo.com')) {
+    return 'Vimeo';
+  } else if (url.includes('linkedin.com')) {
+    return 'LinkedIn';
+  } else if (url.includes('instagram.com')) {
+    return 'Instagram';
+  } else if (url.includes('facebook.com')) {
+    return 'Facebook';
+  } else {
+    return 'Video';
+  }
 }
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -400,14 +450,25 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
               <TabsContent value="video" className="mt-6">
                 <h2 className="text-xl font-semibold mb-4">Video Introduction</h2>
                 <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+                  {/* Handle different video platforms */}
                   {profile.videoIntroUrl.includes('youtube.com') || profile.videoIntroUrl.includes('youtu.be') ? (
+                    /* YouTube embedding */
                     <iframe 
                       src={getYoutubeEmbedUrl(profile.videoIntroUrl)} 
                       className="w-full h-full" 
                       allowFullScreen 
                       title={`${profile.firstName} ${profile.lastName} introduction video`}
                     />
+                  ) : profile.videoIntroUrl.includes('vimeo.com') ? (
+                    /* Vimeo embedding */
+                    <iframe 
+                      src={getVimeoEmbedUrl(profile.videoIntroUrl)} 
+                      className="w-full h-full" 
+                      allowFullScreen 
+                      title={`${profile.firstName} ${profile.lastName} introduction video`}
+                    />
                   ) : profile.videoIntroUrl.includes('instagram.com') ? (
+                    /* Instagram link (no embedding available) */
                     <div className="flex flex-col items-center justify-center h-full">
                       <p className="text-white mb-3">Instagram video available at:</p>
                       <a 
@@ -419,7 +480,34 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                         Open Instagram Video
                       </a>
                     </div>
+                  ) : profile.videoIntroUrl.includes('linkedin.com') ? (
+                    /* LinkedIn link (no embedding available) */
+                    <div className="flex flex-col items-center justify-center h-full">
+                      <p className="text-white mb-3">LinkedIn video available at:</p>
+                      <a 
+                        href={profile.videoIntroUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-gradient-to-r from-blue-700 to-blue-500 text-white rounded-lg hover:opacity-90"
+                      >
+                        Open LinkedIn Video
+                      </a>
+                    </div>
+                  ) : profile.videoIntroUrl.includes('facebook.com') ? (
+                    /* Facebook link */
+                    <div className="flex flex-col items-center justify-center h-full">
+                      <p className="text-white mb-3">Facebook video available at:</p>
+                      <a 
+                        href={profile.videoIntroUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg hover:opacity-90"
+                      >
+                        Open Facebook Video
+                      </a>
+                    </div>
                   ) : (
+                    /* Direct video file */
                     <video 
                       src={profile.videoIntroUrl} 
                       controls 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ReactNode } from 'react';
 import { ImageIcon } from 'lucide-react';
 
 interface ImageWithFallbackProps {
@@ -8,6 +8,7 @@ interface ImageWithFallbackProps {
   fallbackClassName?: string;
   width?: number | string;
   height?: number | string;
+  fallbackContent?: ReactNode;
 }
 
 /**
@@ -21,6 +22,7 @@ export function ImageWithFallback({
   fallbackClassName = "flex items-center justify-center bg-gray-100 rounded-md",
   width,
   height,
+  fallbackContent,
 }: ImageWithFallbackProps) {
   const [error, setError] = useState<boolean>(false);
   const [imgSrc, setImgSrc] = useState<string | null | undefined>(src);
@@ -43,7 +45,7 @@ export function ImageWithFallback({
         className={`${fallbackClassName} ${className}`}
         style={{ width: width || "100%", height: height || "200px" }}
       >
-        <ImageIcon className="h-10 w-10 text-gray-400" />
+        {fallbackContent || <ImageIcon className="h-10 w-10 text-gray-400" />}
       </div>
     );
   }

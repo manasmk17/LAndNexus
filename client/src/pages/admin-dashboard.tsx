@@ -109,13 +109,13 @@ export default function AdminDashboard() {
   });
   
   const { data: companies = [] } = useQuery({
-    queryKey: ['/api/admin/companies'],
+    queryKey: ['/api/admin/company-profiles'],
     queryFn: getQueryFn<CompanyProfile[]>({ on401: "throw" }),
     enabled: !!user?.isAdmin,
   });
   
   const { data: jobs = [] } = useQuery({
-    queryKey: ['/api/admin/jobs'],
+    queryKey: ['/api/admin/job-postings'],
     queryFn: getQueryFn<JobPosting[]>({ on401: "throw" }),
     enabled: !!user?.isAdmin,
   });

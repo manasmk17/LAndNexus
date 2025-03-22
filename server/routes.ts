@@ -1662,6 +1662,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Internal server error" });
     }
   });
+  
+  // Set gallery image as profile picture
+  app.post("/api/professionals/me/set-profile-image-from-gallery/:imageId", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const imageId = parseInt(req.params.imageId);
+      
+      if (user.userType !== "professional") {
+        return res.status(403).json({ message: "Only professionals can update profile pictures" });
+      }
+      
+      // Get the professional profile
+      const profile = await storage.getProfessionalProfileByUserId(user.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Professional profile not found" });
+      }
+      
+      // Get current gallery images
+      let galleryImages = [];
+      if (profile.galleryImages) {
+        if (Array.isArray(profile.galleryImages)) {
+          galleryImages = profile.galleryImages;
+        } else {
+          try {
+            galleryImages = JSON.parse(profile.galleryImages as unknown as string);
+            if (!Array.isArray(galleryImages)) {
+              galleryImages = [];
+            }
+          } catch (e) {
+            galleryImages = [];
+          }
+        }
+      }
+      
+      // Find the image to use as profile picture
+      const image = galleryImages.find(img => img.id === imageId);
+      if (!image) {
+        return res.status(404).json({ message: "Gallery image not found" });
+      }
+      
+      // Update profile with new profile image
+      const updatedProfile = await storage.updateProfessionalProfile(profile.id, {
+        profileImagePath: image.path
+      });
+      
+      res.json({ 
+        message: "Profile picture updated successfully",
+        profileImage: image.path
+      });
+    } catch (error) {
+      console.error("Error setting gallery image as profile picture:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   // Company Profile Routes
   app.post("/api/company-profiles", isAuthenticated, uploadProfileImage.single('profileImage'), async (req, res) => {

@@ -30,9 +30,9 @@ export const insertUserSchema = createInsertSchema(users).omit({
 export const professionalProfiles = pgTable("professional_profiles", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
-  title: text("title").notNull(),
-  bio: text("bio").notNull(),
-  location: text("location").notNull(),
+  title: text("title"),
+  bio: text("bio"),
+  location: text("location"),
   videoIntroUrl: text("video_intro_url"),
   ratePerHour: integer("rate_per_hour"),
   profileImageUrl: text("profile_image_url"),

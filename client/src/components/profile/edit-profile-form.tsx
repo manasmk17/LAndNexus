@@ -675,7 +675,7 @@ export default function EditProfileForm() {
                   <FormItem>
                     <FormLabel>Professional Title</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. Leadership Development Specialist" {...field} />
+                      <Input placeholder="e.g. Leadership Development Specialist" {...field} value={field.value || ''} />
                     </FormControl>
                     <FormDescription>
                       Your professional title will be displayed on your profile

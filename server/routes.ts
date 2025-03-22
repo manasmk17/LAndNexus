@@ -720,6 +720,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // Add NaN check
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid user ID format" });
+      }
+      
       const user = await storage.getUser(id);
       
       if (!user) {
@@ -2474,6 +2480,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/resources/:id", async (req, res) => {
     const id = parseInt(req.params.id);
+    
+    // Add NaN check
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid resource ID format" });
+    }
+    
     const resource = await storage.getResource(id);
 
     if (!resource) {
@@ -2604,7 +2616,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/resources/related/:type", async (req, res) => {
     try {
       const { type } = req.params;
-      const exclude = req.query.exclude ? parseInt(req.query.exclude as string) : undefined;
+      const excludeParam = req.query.exclude ? parseInt(req.query.exclude as string) : undefined;
+      
+      // Add NaN check for exclude parameter
+      const exclude = excludeParam !== undefined && !isNaN(excludeParam) ? excludeParam : undefined;
       
       // Get all resources of this type
       const resources = await storage.searchResources(undefined, type);
@@ -2715,6 +2730,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/forum-posts/:id", async (req, res) => {
     const id = parseInt(req.params.id);
+    
+    // Add NaN check
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid post ID format" });
+    }
+    
     const post = await storage.getForumPost(id);
 
     if (!post) {

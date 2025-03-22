@@ -29,7 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Plus, Trash, X } from "lucide-react";
+import { Loader2, Plus, Trash, Upload, X } from "lucide-react";
 import { 
   insertProfessionalProfileSchema, 
   insertCompanyProfileSchema,
@@ -944,22 +944,42 @@ export default function EditProfileForm() {
                     <FormLabel>Profile Image</FormLabel>
                     <FormControl>
                       <div className="flex flex-col space-y-2">
-                        <Input 
-                          type="file" 
-                          accept="image/*" 
-                          {...fieldProps}
-                          onChange={(e) => {
-                            // Handle file selection for the form
-                            const file = e.target.files?.[0];
-                            onChange(file || null);
-                          }} 
-                        />
-                        {/* Show selected file name or existing profile image */}
-                        {(value && typeof value === 'object') && (
-                          <p className="text-sm text-muted-foreground">
-                            Selected: {(value as File).name}
-                          </p>
-                        )}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-3">
+                            <Button 
+                              type="button" 
+                              variant="outline"
+                              onClick={() => {
+                                // Use hidden file input
+                                const fileInput = document.getElementById('profile-image-upload') as HTMLInputElement;
+                                fileInput?.click();
+                              }}
+                            >
+                              <Upload className="h-4 w-4 mr-2" />
+                              Upload Image
+                            </Button>
+                            
+                            {(value && typeof value === 'object') && (
+                              <Badge variant="outline" className="bg-blue-50">
+                                Selected: {(value as File).name}
+                              </Badge>
+                            )}
+                          </div>
+                          
+                          <Input 
+                            id="profile-image-upload"
+                            type="file" 
+                            accept="image/*" 
+                            className="hidden"
+                            {...fieldProps}
+                            onChange={(e) => {
+                              // Handle file selection for the form
+                              const file = e.target.files?.[0];
+                              onChange(file || null);
+                            }} 
+                          />
+                        </div>
+                        
                         {professionalProfile?.profileImagePath && (
                           <div className="mt-2">
                             <p className="text-sm text-muted-foreground mb-2">Current image:</p>

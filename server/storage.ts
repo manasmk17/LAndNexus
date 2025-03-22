@@ -92,6 +92,7 @@ export interface IStorage {
   getResource(id: number): Promise<Resource | undefined>;
   getAllResources(): Promise<Resource[]>;
   getResourcesByCategory(categoryId: number): Promise<Resource[]>;
+  getResourcesByAuthor(authorId: number): Promise<Resource[]>;
   searchResources(query?: string, type?: string, categoryId?: number): Promise<Resource[]>;
   getFeaturedResources(limit: number): Promise<Resource[]>;
   createResource(resource: InsertResource): Promise<Resource>;
@@ -265,6 +266,12 @@ export class MemStorage implements IStorage {
   async getResourcesByCategory(categoryId: number): Promise<Resource[]> {
     return Array.from(this.resources.values())
       .filter(resource => resource.categoryId === categoryId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+  
+  async getResourcesByAuthor(authorId: number): Promise<Resource[]> {
+    return Array.from(this.resources.values())
+      .filter(resource => resource.authorId === authorId)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
   

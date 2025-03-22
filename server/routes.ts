@@ -3149,5 +3149,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
 
+  // Get resources by professional ID (fix JSON parsing errors)
+  app.get("/api/professional-profiles/:professionalId/resources", async (req, res) => {
+    try {
+      const professionalId = parseInt(req.params.professionalId);
+      if (isNaN(professionalId)) {
+        return res.status(400).json({ message: "Invalid professional ID" });
+      }
+      
+      // Get the professional profile
+      const profile = await storage.getProfessionalProfile(professionalId);
+      if (!profile) {
+        return res.status(404).json({ message: "Professional profile not found" });
+      }
+      
+      // Get resources by the user ID associated with the professional profile
+      const resources = await storage.getResourcesByAuthor(profile.userId);
+      
+      // Return empty array instead of null to prevent JSON parsing errors
+      return res.json(resources || []);
+    } catch (err) {
+      console.error("Error fetching professional resources:", err);
+      // Return empty array on error to prevent client-side JSON parsing errors
+      return res.json([]);
+    }
+  });
+
   return httpServer;
 }

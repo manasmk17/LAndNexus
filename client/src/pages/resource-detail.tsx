@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import type { Resource, User as UserType, ResourceCategory } from "@shared/schema";
+import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 
 export default function ResourceDetail() {
   // Get the resource ID from URL parameters
@@ -247,15 +248,14 @@ return (
         {/* Resource content */}
         <Card className="mb-8">
           <CardContent className="p-6">
-            {resource.imageUrl && (
-              <div className="mb-6">
-                <img 
-                  src={resource.imageUrl} 
-                  alt={resource.title} 
-                  className="w-full rounded-lg max-h-80 object-cover"
-                />
-              </div>
-            )}
+            <div className="mb-6">
+              <ImageWithFallback
+                src={resource.imageUrl}
+                alt={resource.title}
+                className="w-full rounded-lg max-h-80 object-cover"
+                fallbackClassName="w-full h-64 rounded-lg flex items-center justify-center bg-gray-100"
+              />
+            </div>
             
             <div className="prose max-w-none">
               <p className="text-gray-700 mb-4">{resource.description}</p>
@@ -361,6 +361,14 @@ return (
                 <Link key={relatedResource.id} href={`/resource/${relatedResource.id}`}>
                   <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
                     <CardContent className="p-4">
+                      <div className="h-24 mb-3 overflow-hidden rounded-md">
+                        <ImageWithFallback
+                          src={relatedResource.imageUrl}
+                          alt={relatedResource.title}
+                          className="w-full h-24 object-cover"
+                          fallbackClassName="w-full h-24 flex items-center justify-center bg-gray-100"
+                        />
+                      </div>
                       <div className="flex items-center mb-2">
                         {getResourceTypeIcon(relatedResource.resourceType || "")}
                         <h3 className="ml-2 font-medium line-clamp-1">{relatedResource.title}</h3>

@@ -35,6 +35,7 @@ import {
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import type { Resource, User as UserType, ResourceCategory } from "@shared/schema";
+import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 
 export default function Resources() {
   const [location] = useLocation();
@@ -347,19 +348,15 @@ export default function Resources() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {sortedResources.map((resource) => (
               <Card key={resource.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                {resource.imageUrl ? (
-                  <div className="w-full h-48 overflow-hidden">
-                    <img 
-                      src={resource.imageUrl} 
-                      alt={resource.title} 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
-                    {getResourceTypeIcon(resource.resourceType)}
-                  </div>
-                )}
+                <div className="w-full h-48 overflow-hidden">
+                  <ImageWithFallback
+                    src={resource.imageUrl}
+                    alt={resource.title}
+                    className="w-full h-full object-cover"
+                    fallbackClassName="w-full h-48 flex items-center justify-center bg-gray-100"
+                    fallbackContent={getResourceTypeIcon(resource.resourceType)}
+                  />
+                </div>
                 <CardContent className="p-6">
                   <div className="flex flex-wrap items-center gap-2 mb-3">
                     <Badge className={`flex items-center ${getResourceTypeBadgeClass(resource.resourceType)}`}>

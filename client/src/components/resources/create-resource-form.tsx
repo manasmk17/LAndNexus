@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, getCsrfToken } from '@/lib/queryClient';
 import { useQuery } from '@tanstack/react-query';
 import { insertResourceSchema, ResourceCategory } from '@shared/schema';
 

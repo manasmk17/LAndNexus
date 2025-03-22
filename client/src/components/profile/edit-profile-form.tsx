@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { apiRequest, getCsrfToken } from "@/lib/queryClient";
+import { apiRequest, getCsrfToken, secureFileUpload } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -500,18 +500,8 @@ export default function EditProfileForm() {
       let response;
       
       // Always use the /api/professionals/me endpoint for updating the current user's profile
-      // Note: apiRequest doesn't support FormData directly, so we still use fetch for file uploads
-      response = await fetch(
-        "/api/professionals/me", 
-        {
-          method: 'PUT',  // Use PUT to update existing or create new profile
-          body: formData,
-          credentials: 'include',
-          headers: {
-            'X-CSRF-Token': getCsrfToken() || ''
-          }
-        }
-      );
+      // Use secureFileUpload for file uploads which handles CSRF tokens automatically
+      response = await secureFileUpload('PUT', "/api/professionals/me", formData);
       
       if (!response.ok) {
         throw new Error(`Error: ${response.status} ${response.statusText}`);

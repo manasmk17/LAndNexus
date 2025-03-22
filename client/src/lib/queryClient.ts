@@ -55,6 +55,35 @@ export async function apiRequest(
   return res;
 }
 
+/**
+ * Upload a file with FormData while preserving CSRF protection
+ * Use this for file uploads instead of regular apiRequest
+ */
+export async function secureFileUpload(
+  method: string,
+  url: string,
+  formData: FormData
+): Promise<Response> {
+  // Build headers with CSRF token only
+  const headers: Record<string, string> = {};
+  
+  // Add CSRF token
+  const csrfToken = getCsrfToken();
+  if (csrfToken) {
+    headers['X-CSRF-Token'] = csrfToken;
+  }
+
+  const res = await fetch(url, {
+    method,
+    headers,
+    body: formData,
+    credentials: "include",
+  });
+
+  await throwIfResNotOk(res);
+  return res;
+}
+
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;

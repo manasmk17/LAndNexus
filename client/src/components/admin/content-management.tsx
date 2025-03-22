@@ -172,9 +172,14 @@ function ContentSection({ id, sectionLabel, description, data, onEdit, onChange,
           <Button onClick={onSave}>Save Changes</Button>
         </div>
       ) : (
-        <div className="prose max-w-none" 
-          dangerouslySetInnerHTML={{ __html: data.content || 'No content yet' }} 
-        />
+        <div className="space-y-4">
+          <div className="bg-slate-50 p-4 rounded-lg border">
+            <h4 className="text-sm font-medium text-slate-500 mb-2">Current Live Content:</h4>
+            <div className="prose max-w-none" 
+              dangerouslySetInnerHTML={{ __html: data.content || 'No content yet' }} 
+            />
+          </div>
+        </div>
       )}
     </Card>
   );

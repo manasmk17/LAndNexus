@@ -53,6 +53,7 @@ import ProfessionalsManagement from "@/components/admin/professionals-management
 import CompaniesManagement from "@/components/admin/companies-management";
 import JobsManagement from "@/components/admin/jobs-management";
 import ResourcesManagement from "@/components/admin/resources-management";
+import { ContentManagement } from "@/components/admin/content-management";
 import CreateAdminForm from "@/components/admin/create-admin-form";
 
 import { 
@@ -159,7 +160,7 @@ export default function AdminDashboard() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-8 md:w-auto w-full">
+        <TabsList className="grid grid-cols-9 md:w-auto w-full">
           <TabsTrigger value="overview" className="flex items-center">
             <BarChart4 className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Overview</span>

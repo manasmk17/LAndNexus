@@ -52,6 +52,7 @@ export const professionalProfiles = pgTable("professional_profiles", {
   phone: text("contact_phone"), // Professional contact phone
   workExperience: jsonb("work_experience"), // Work experience as JSON array
   testimonials: jsonb("testimonials"), // Client testimonials as JSON array
+  verified: boolean("verified").default(false), // Whether profile has been verified by admin
 });
 
 export const insertProfessionalProfileSchema = createInsertSchema(professionalProfiles).omit({

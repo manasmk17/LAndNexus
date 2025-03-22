@@ -43,20 +43,15 @@ import {
 } from "lucide-react";
 import { ProfessionalProfile } from "@shared/schema";
 
-// Extended type for admin API response which includes verification status
-interface AdminProfessionalProfile extends ProfessionalProfile {
-  verified?: boolean;
-}
-
 export default function ProfessionalsManagement() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
-  const [confirmVerify, setConfirmVerify] = useState<AdminProfessionalProfile | null>(null);
-  const [confirmUnverify, setConfirmUnverify] = useState<AdminProfessionalProfile | null>(null);
+  const [confirmVerify, setConfirmVerify] = useState<ProfessionalProfile | null>(null);
+  const [confirmUnverify, setConfirmUnverify] = useState<ProfessionalProfile | null>(null);
 
   // Fetch all professional profiles
-  const { data: profiles, isLoading, error } = useQuery<AdminProfessionalProfile[]>({
+  const { data: profiles, isLoading, error } = useQuery<ProfessionalProfile[]>({
     queryKey: ["/api/admin/professional-profiles"],
     retry: 1,
   });
@@ -246,7 +241,7 @@ export default function ProfessionalsManagement() {
                       />
                     </TableCell>
                     <TableCell>
-                      {(profile as AdminProfessionalProfile).verified ? (
+                      {profile.verified ? (
                         <Badge className="bg-green-500 text-white">
                           <Check className="h-3 w-3 mr-1" /> Verified
                         </Badge>

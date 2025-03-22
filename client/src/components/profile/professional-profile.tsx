@@ -7,6 +7,28 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
+
+// Helper function to convert YouTube URLs to embed format
+function getYoutubeEmbedUrl(url: string): string {
+  // Handle youtu.be format
+  if (url.includes('youtu.be/')) {
+    const videoId = url.split('youtu.be/')[1].split('?')[0];
+    return `https://www.youtube.com/embed/${videoId}`;
+  }
+  
+  // Handle youtube.com format
+  if (url.includes('youtube.com/watch')) {
+    // Extract video ID from URL parameters
+    const urlObj = new URL(url);
+    const videoId = urlObj.searchParams.get('v');
+    if (videoId) {
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+  }
+  
+  // If URL is already in embed format or cannot be parsed, return as is
+  return url;
+}
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -380,11 +402,23 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                 <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
                   {profile.videoIntroUrl.includes('youtube.com') || profile.videoIntroUrl.includes('youtu.be') ? (
                     <iframe 
-                      src={profile.videoIntroUrl.replace('watch?v=', 'embed/')} 
+                      src={getYoutubeEmbedUrl(profile.videoIntroUrl)} 
                       className="w-full h-full" 
                       allowFullScreen 
                       title={`${profile.firstName} ${profile.lastName} introduction video`}
                     />
+                  ) : profile.videoIntroUrl.includes('instagram.com') ? (
+                    <div className="flex flex-col items-center justify-center h-full">
+                      <p className="text-white mb-3">Instagram video available at:</p>
+                      <a 
+                        href={profile.videoIntroUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:opacity-90"
+                      >
+                        Open Instagram Video
+                      </a>
+                    </div>
                   ) : (
                     <video 
                       src={profile.videoIntroUrl} 

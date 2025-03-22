@@ -52,7 +52,7 @@ export default function ProfessionalsManagement() {
 
   // Fetch all professional profiles
   const { data: profiles, isLoading, error } = useQuery<ProfessionalProfile[]>({
-    queryKey: ["/api/admin/professionals"],
+    queryKey: ["/api/admin/professional-profiles"],
     retry: 1,
   });
 
@@ -76,13 +76,13 @@ export default function ProfessionalsManagement() {
     }) => {
       const response = await apiRequest(
         "PATCH",
-        `/api/admin/professionals/${profileId}/featured`,
+        `/api/admin/professional-profiles/${profileId}/featured`,
         { featured }
       );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/professionals"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/professional-profiles"] });
       toast({
         title: "Profile Updated",
         description: "Featured status has been updated successfully",
@@ -102,13 +102,13 @@ export default function ProfessionalsManagement() {
     mutationFn: async (profileId: number) => {
       const response = await apiRequest(
         "PATCH",
-        `/api/admin/professionals/${profileId}/verify`,
+        `/api/admin/professional-profiles/${profileId}/verify`,
         { verified: true }
       );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/professionals"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/professional-profiles"] });
       setConfirmVerify(null);
       toast({
         title: "Profile Verified",
@@ -129,13 +129,13 @@ export default function ProfessionalsManagement() {
     mutationFn: async (profileId: number) => {
       const response = await apiRequest(
         "PATCH",
-        `/api/admin/professionals/${profileId}/verify`,
+        `/api/admin/professional-profiles/${profileId}/verify`,
         { verified: false }
       );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/professionals"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/professional-profiles"] });
       setConfirmUnverify(null);
       toast({
         title: "Profile Unverified",
@@ -161,7 +161,7 @@ export default function ProfessionalsManagement() {
         </p>
         <Button
           className="mt-4"
-          onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/admin/professionals"] })}
+          onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/admin/professional-profiles"] })}
         >
           Retry
         </Button>

@@ -56,7 +56,11 @@ app.use((req, res, next) => {
   
   // Special exempt routes handling for specific HTTP methods
   const methodSpecificExemptions = [
-    { path: '/api/professionals/me', method: 'PUT' }
+    { path: '/api/professionals/me', method: 'PUT' },
+    { path: '/api/professionals/me/expertise', method: 'POST' },
+    { path: '/api/professionals/me/certifications', method: 'POST' },
+    { path: '/api/company-profiles', method: 'POST' },
+    { path: '/api/company-profiles/:id', method: 'PUT' }
   ];
   
   // Function to check if a path matches a route pattern

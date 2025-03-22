@@ -558,7 +558,13 @@ export default function EditProfileForm() {
       // Use secureFileUpload which handles CSRF tokens and file uploads
       const response = await secureFileUpload('PUT', "/api/professionals/me", formData);
       
-      console.log("Response from profile save:", response.status, response.statusText);
+      console.log("DEBUG: Response from profile save:", response.status, response.statusText, {
+        url: "/api/professionals/me",
+        userId: user.id,
+        method: 'PUT',
+        cookies: document.cookie,
+        headers: Array.from(response.headers.entries())
+      });
       
       // Read the response body for debugging
       const responseText = await response.text();
@@ -725,7 +731,13 @@ export default function EditProfileForm() {
         );
       }
       
-      console.log("Response from company profile save:", response.status, response.statusText);
+      console.log("DEBUG: Response from company profile save:", response.status, response.statusText, {
+        url: companyProfile ? `/api/company-profiles/${companyProfile.id}` : "/api/company-profiles",
+        userId: user.id,
+        method: companyProfile ? 'PUT' : 'POST',
+        cookies: document.cookie,
+        headers: Array.from(response.headers.entries())
+      });
       
       // Read the response body for debugging
       const responseText = await response.text();

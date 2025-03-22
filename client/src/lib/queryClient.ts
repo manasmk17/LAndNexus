@@ -41,9 +41,29 @@ export async function apiRequest(
     const csrfToken = getCsrfToken();
     if (csrfToken) {
       headers['X-CSRF-Token'] = csrfToken;
+      console.log(`Using CSRF token for ${method} request to ${url}`);
     } else {
       console.warn('CSRF token not found for API request to:', url, 'method:', method);
-      console.log('Current cookies:', document.cookie);
+      
+      // If the token is missing, try to refresh it by making a GET request
+      try {
+        console.log("Attempting to refresh CSRF token for API request...");
+        await fetch("/api/csrf-token", { 
+          method: "GET",
+          credentials: "include"
+        });
+        
+        // Try again to get the token
+        const refreshedToken = getCsrfToken();
+        if (refreshedToken) {
+          console.log("Successfully refreshed CSRF token for API request");
+          headers['X-CSRF-Token'] = refreshedToken;
+        } else {
+          console.warn("Failed to refresh CSRF token for API request");
+        }
+      } catch (e) {
+        console.error('Error refreshing CSRF token for API request:', e);
+      }
       
       // Log request details for debugging
       try {
@@ -207,9 +227,30 @@ export const getQueryFn: <T>(options: {
       const csrfToken = getCsrfToken();
       if (csrfToken) {
         headers['X-CSRF-Token'] = csrfToken;
+        console.log(`Using CSRF token for query function ${method} request to ${url}`);
       } else {
         console.warn(`CSRF token not found for query ${url} with method ${method}`);
-        console.log('Current cookies:', document.cookie);
+        
+        // If the token is missing, try to refresh it by making a GET request
+        try {
+          console.log("Attempting to refresh CSRF token for query function...");
+          await fetch("/api/csrf-token", { 
+            method: "GET",
+            credentials: "include"
+          });
+          
+          // Try again to get the token
+          const refreshedToken = getCsrfToken();
+          if (refreshedToken) {
+            console.log("Successfully refreshed CSRF token for query function");
+            headers['X-CSRF-Token'] = refreshedToken;
+          } else {
+            console.warn("Failed to refresh CSRF token for query function");
+            console.log('Current cookies:', document.cookie);
+          }
+        } catch (e) {
+          console.error('Error refreshing CSRF token for query function:', e);
+        }
       }
     }
     

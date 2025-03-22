@@ -77,11 +77,14 @@ app.use((req, res, next) => {
     '/api/resources/:id'
   ];
   
-  // Check if the current request path is in the exempt list or matches an ID-based pattern
+  // Check if the current request path is in the exempt list, matches an ID-based pattern,
+  // or matches a specific method+path combination
   if (
     csrfExemptRoutes.some(path => req.path === path) ||
-    idBasedPatterns.some(pattern => matchesPattern(req.path, pattern))
+    idBasedPatterns.some(pattern => matchesPattern(req.path, pattern)) ||
+    methodSpecificExemptions.some(item => req.path === item.path && req.method === item.method)
   ) {
+    console.log(`CSRF protection bypassed for ${req.method} ${req.path}`);
     next();
     return;
   }

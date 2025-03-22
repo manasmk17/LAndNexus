@@ -494,7 +494,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               bio: "Edit this profile to add your professional bio.",
               yearsOfExperience: 0,
               hourlyRate: 0,
-              availability: true
+              availability: "true"
             });
             console.log(`Created basic professional profile for new user ${user.id}`);
           }

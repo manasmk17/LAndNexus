@@ -27,6 +27,7 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, userData: Partial<User>): Promise<User | undefined>;
+  deleteUser(id: number): Promise<boolean>;
   
   // Password and account recovery operations
   createResetToken(email: string): Promise<string | null>;
@@ -46,6 +47,7 @@ export interface IStorage {
   getFeaturedProfessionalProfiles(limit: number): Promise<ProfessionalProfile[]>;
   createProfessionalProfile(profile: InsertProfessionalProfile): Promise<ProfessionalProfile>;
   updateProfessionalProfile(id: number, profile: Partial<InsertProfessionalProfile>): Promise<ProfessionalProfile | undefined>;
+  deleteProfessionalProfile(id: number): Promise<boolean>;
   
   // Expertise operations
   getAllExpertise(): Promise<Expertise[]>;
@@ -445,6 +447,10 @@ export class MemStorage implements IStorage {
     return updated;
   }
   
+  async deleteProfessionalProfile(id: number): Promise<boolean> {
+    return this.professionalProfiles.delete(id);
+  }
+  
   // Expertise operations
   async getAllExpertise(): Promise<Expertise[]> {
     return Array.from(this.expertises.values());
@@ -808,6 +814,10 @@ export class MemStorage implements IStorage {
     this.users.set(id, updated);
     return updated;
   }
+  
+  async deleteUser(id: number): Promise<boolean> {
+    return this.users.delete(id);
+  }
 
   // Stripe methods
   async updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined> {
@@ -991,6 +1001,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return updatedUser;
+  }
+  
+  async deleteUser(id: number): Promise<boolean> {
+    const result = await db
+      .delete(users)
+      .where(eq(users.id, id))
+      .returning({ id: users.id });
+    return result.length > 0;
   }
 
   // Stripe operations

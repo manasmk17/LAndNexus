@@ -905,6 +905,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error creating test admin user: " + error.message });
     }
   });
+  
+  // Endpoint to create admin user with a secret key for security
+  app.post("/api/create-admin", async (req, res) => {
+    try {
+      const { username, password, email, firstName, lastName, secretKey } = req.body;
+      
+      // Validate required fields
+      if (!username || !password || !email || !firstName || !lastName || !secretKey) {
+        return res.status(400).json({ message: "All fields are required" });
+      }
+      
+      // Verify secret key to prevent unauthorized admin creation
+      const ADMIN_SECRET_KEY = "ldn_admin_setup_2025"; // This should be an environment variable in production
+      if (secretKey !== ADMIN_SECRET_KEY) {
+        return res.status(403).json({ message: "Invalid secret key" });
+      }
+      
+      // Check if username or email already exists
+      const existingUserByUsername = await storage.getUserByUsername(username);
+      if (existingUserByUsername) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      
+      const existingUserByEmail = await storage.getUserByEmail(email);
+      if (existingUserByEmail) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+      
+      // Create admin user
+      const adminUser = await storage.createUser({
+        username,
+        password, // Will be hashed by storage layer
+        userType: "admin",
+        isAdmin: true,
+        email,
+        firstName,
+        lastName
+      });
+      
+      // Remove sensitive info before sending response
+      const { password: _, ...adminInfo } = adminUser;
+      
+      res.status(201).json({ 
+        message: "Admin user created successfully",
+        admin: adminInfo
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: "Error creating admin user: " + error.message });
+    }
+  });
 
   app.get("/api/subscription-status", isAuthenticated, async (req, res) => {
     try {

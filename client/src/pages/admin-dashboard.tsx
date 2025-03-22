@@ -46,6 +46,15 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
+
+// Import admin management components
+import UsersManagement from "@/components/admin/users-management";
+import ProfessionalsManagement from "@/components/admin/professionals-management";
+import CompaniesManagement from "@/components/admin/companies-management";
+import JobsManagement from "@/components/admin/jobs-management";
+import ResourcesManagement from "@/components/admin/resources-management";
+import CreateAdminForm from "@/components/admin/create-admin-form";
+
 import { 
   User,
   ProfessionalProfile,
@@ -75,6 +84,14 @@ import {
   Upload,
   Settings,
   MoreHorizontal,
+  Users,
+  Briefcase,
+  Building,
+  FileText,
+  Tags,
+  MessageSquare,
+  Shield,
+  BarChart4
 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 
@@ -82,7 +99,32 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState("users");
+  const [activeTab, setActiveTab] = useState("overview");
+  
+  // Fetch data for dashboard stats
+  const { data: profiles = [] } = useQuery({
+    queryKey: ['/api/admin/professional-profiles'],
+    queryFn: getQueryFn<ProfessionalProfile[]>({ on401: "throw" }),
+    enabled: !!user?.isAdmin,
+  });
+  
+  const { data: companies = [] } = useQuery({
+    queryKey: ['/api/admin/companies'],
+    queryFn: getQueryFn<CompanyProfile[]>({ on401: "throw" }),
+    enabled: !!user?.isAdmin,
+  });
+  
+  const { data: jobs = [] } = useQuery({
+    queryKey: ['/api/admin/jobs'],
+    queryFn: getQueryFn<JobPosting[]>({ on401: "throw" }),
+    enabled: !!user?.isAdmin,
+  });
+  
+  const { data: resources = [] } = useQuery({
+    queryKey: ['/api/admin/resources'],
+    queryFn: getQueryFn<Resource[]>({ on401: "throw" }),
+    enabled: !!user?.isAdmin,
+  });
 
   // Redirect if not admin
   useEffect(() => {
@@ -109,39 +151,116 @@ export default function AdminDashboard() {
   return (
     <div className="container mx-auto py-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <h1 className="text-3xl font-bold flex items-center">
+          <Shield className="h-8 w-8 mr-2 text-primary" />
+          Admin Dashboard
+        </h1>
         <p className="text-gray-500">Manage all aspects of the L&D Nexus platform</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-7 md:w-auto w-full">
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="professionals">Professionals</TabsTrigger>
-          <TabsTrigger value="companies">Companies</TabsTrigger>
-          <TabsTrigger value="jobs">Jobs</TabsTrigger>
-          <TabsTrigger value="resources">Resources</TabsTrigger>
-          <TabsTrigger value="expertise">Expertise</TabsTrigger>
-          <TabsTrigger value="forum">Forum</TabsTrigger>
+        <TabsList className="grid grid-cols-8 md:w-auto w-full">
+          <TabsTrigger value="overview" className="flex items-center">
+            <BarChart4 className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Overview</span>
+          </TabsTrigger>
+          <TabsTrigger value="users" className="flex items-center">
+            <Users className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Users</span>
+          </TabsTrigger>
+          <TabsTrigger value="professionals" className="flex items-center">
+            <Briefcase className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Professionals</span>
+          </TabsTrigger>
+          <TabsTrigger value="companies" className="flex items-center">
+            <Building className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Companies</span>
+          </TabsTrigger>
+          <TabsTrigger value="jobs" className="flex items-center">
+            <Briefcase className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Jobs</span>
+          </TabsTrigger>
+          <TabsTrigger value="resources" className="flex items-center">
+            <FileText className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Resources</span>
+          </TabsTrigger>
+          <TabsTrigger value="expertise" className="flex items-center">
+            <Tags className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Expertise</span>
+          </TabsTrigger>
+          <TabsTrigger value="forum" className="flex items-center">
+            <MessageSquare className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Forum</span>
+          </TabsTrigger>
         </TabsList>
 
+        <TabsContent value="overview" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Admin User Creation</CardTitle>
+                <CardDescription>Create new administrator accounts</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <CreateAdminForm />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Platform Statistics</CardTitle>
+                <CardDescription>Overview of platform activity and usage metrics</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-muted p-4 rounded-lg text-center">
+                    <h3 className="text-3xl font-bold text-primary">
+                      {profiles?.length || 0}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">Active Professionals</p>
+                  </div>
+                  <div className="bg-muted p-4 rounded-lg text-center">
+                    <h3 className="text-3xl font-bold text-primary">
+                      {companies?.length || 0}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">Registered Companies</p>
+                  </div>
+                  <div className="bg-muted p-4 rounded-lg text-center">
+                    <h3 className="text-3xl font-bold text-primary">
+                      {jobs?.length || 0}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">Active Jobs</p>
+                  </div>
+                  <div className="bg-muted p-4 rounded-lg text-center">
+                    <h3 className="text-3xl font-bold text-primary">
+                      {resources?.length || 0}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">Published Resources</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
         <TabsContent value="users" className="mt-6">
-          <UsersTab />
+          <UsersManagement />
         </TabsContent>
 
         <TabsContent value="professionals" className="mt-6">
-          <ProfessionalsTab />
+          <ProfessionalsManagement />
         </TabsContent>
 
         <TabsContent value="companies" className="mt-6">
-          <CompaniesTab />
+          <CompaniesManagement />
         </TabsContent>
 
         <TabsContent value="jobs" className="mt-6">
-          <JobsTab />
+          <JobsManagement />
         </TabsContent>
 
         <TabsContent value="resources" className="mt-6">
-          <ResourcesTab />
+          <ResourcesManagement />
         </TabsContent>
 
         <TabsContent value="expertise" className="mt-6">

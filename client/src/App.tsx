@@ -32,6 +32,7 @@ import Checkout from "@/pages/checkout";
 import Subscribe from "@/pages/subscribe";
 import SubscriptionSuccess from "@/pages/subscription-success";
 import BookConsultation from "@/pages/book-consultation";
+import TestSecurity from "@/pages/test-security";
 import NotFound from "@/pages/not-found";
 import { AuthProvider } from "@/lib/auth";
 
@@ -116,6 +117,12 @@ function Router() {
       <ProtectedRoute 
         path="/book-consultation/:id" 
         component={BookConsultation} 
+      />
+      
+      {/* Test page for security features */}
+      <ProtectedRoute 
+        path="/test-security" 
+        component={TestSecurity} 
       />
 
       {/* 404 route */}

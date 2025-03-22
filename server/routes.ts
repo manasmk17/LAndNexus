@@ -150,14 +150,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Use scrypt for password comparison - assuming passwords are stored as hash.salt
       try {
-        // For development purposes, also support plain text passwords
+        // Production code should only use hashed passwords
         if (!user.password.includes('.')) {
-          // Direct comparison for non-hashed passwords (dev only)
-          if (user.password !== password) {
-            return done(null, false, { message: "Incorrect password" });
-          } else {
-            return done(null, user);
-          }
+          console.warn("Warning: User password is not properly hashed. This is insecure for production.");
+          // Hash the plaintext password for security
+          const crypto = require('crypto');
+          const salt = crypto.randomBytes(16).toString('hex');
+          const keyLen = 64;
+          
+          crypto.scrypt(password, salt, keyLen, (err: any, derivedKey: Buffer) => {
+            if (err) {
+              return done(err);
+            }
+            
+            // Update the user with a properly hashed password
+            const hashedPassword = `${derivedKey.toString('hex')}.${salt}`;
+            storage.updateUser(user.id, { password: hashedPassword }).catch(error => {
+              console.error("Failed to update user with hashed password:", error);
+            });
+            
+            // For this login attempt, compare directly
+            if (user.password !== password) {
+              return done(null, false, { message: "Incorrect password" });
+            } else {
+              return done(null, user);
+            }
+          });
+          return; // Important: don't continue execution
         }
         
         // If password is in hash.salt format, use secure comparison

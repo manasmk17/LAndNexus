@@ -1,11 +1,48 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import csurf from "csurf";
+import cookieParser from "cookie-parser";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
 
+// Configure CSRF protection
+const csrfProtection = csurf({
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  }
+});
+
+// Apply CSRF protection to routes except API methods that need to be accessed by external services
+app.use((req, res, next) => {
+  // Skip CSRF for webhook endpoints and login/register endpoints
+  const skipCsrfPaths = ['/api/webhook', '/api/login', '/api/register', '/api/auth/forgot-password'];
+  
+  if (skipCsrfPaths.some(path => req.path.startsWith(path))) {
+    next();
+  } else {
+    csrfProtection(req, res, next);
+  }
+});
+
+// Add CSRF token to response for client-side use
+app.use((req: any, res: any, next) => {
+  if (req.csrfToken) {
+    res.cookie('XSRF-TOKEN', req.csrfToken(), {
+      httpOnly: false, // Client-side JavaScript needs to access it
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict'
+    });
+  }
+  next();
+});
+
+// Request logging middleware
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;

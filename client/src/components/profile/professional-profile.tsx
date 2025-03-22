@@ -163,6 +163,12 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                     src={`/${profile.profileImagePath}`} 
                     alt={`${profile.firstName} ${profile.lastName}`} 
                     className="w-full h-full object-cover rounded-full"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.onerror = null;
+                      target.src = '/placeholder-profile.jpg';
+                      console.log("Image load error, using placeholder");
+                    }}
                   />
                 ) : (
                   <User className="w-12 h-12 text-gray-400" />

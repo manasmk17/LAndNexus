@@ -591,6 +591,11 @@ export default function EditProfileForm() {
       
       let response;
       
+      console.log("Saving company profile...", {
+        formData: Array.from(formData.entries()),
+        csrfToken: getCsrfToken()
+      });
+      
       if (companyProfile) {
         // Update existing profile with FormData using secureFileUpload
         response = await secureFileUpload(
@@ -607,8 +612,12 @@ export default function EditProfileForm() {
         );
       }
       
+      console.log("Response from company profile save:", response.status, response.statusText);
+      
       if (!response.ok) {
-        throw new Error(`Error: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error("Error saving company profile:", errorText);
+        throw new Error(`Error: ${response.status} ${response.statusText} - ${errorText}`);
       }
       
       toast({

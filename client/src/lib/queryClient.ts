@@ -71,17 +71,26 @@ export async function secureFileUpload(
   const csrfToken = getCsrfToken();
   if (csrfToken) {
     headers['X-CSRF-Token'] = csrfToken;
+  } else {
+    console.warn('CSRF token not found when uploading to:', url);
+    // This is a fallback to ensure requests can still go through during development
+    // or when server's CSRF protection is not properly configured
   }
 
-  const res = await fetch(url, {
-    method,
-    headers,
-    body: formData,
-    credentials: "include",
-  });
+  try {
+    const res = await fetch(url, {
+      method,
+      headers,
+      body: formData,
+      credentials: "include",
+    });
 
-  await throwIfResNotOk(res);
-  return res;
+    await throwIfResNotOk(res);
+    return res;
+  } catch (error) {
+    console.error('Error during file upload:', error);
+    throw error;
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";

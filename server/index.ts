@@ -18,22 +18,63 @@ const csrfProtection = csurf({
   }
 });
 
-// Apply CSRF protection to routes except API methods that need to be accessed by external services
+// Apply CSRF protection to all routes except specific API endpoints that need to be exempt
 app.use((req, res, next) => {
-  // Example 1: Skip CSRF for all API routes
-  if (req.path.startsWith('/api')) {
+  // These endpoints are specifically exempt from CSRF protection
+  const csrfExemptRoutes = [
+    '/api/login',
+    '/api/register',
+    '/api/logout',
+    '/api/me',
+    '/api/job-postings/latest',
+    '/api/professional-profiles/featured',
+    '/api/professionals/me',
+    '/api/professionals/me/expertise',
+    '/api/professionals/me/certifications',
+    '/api/company-profiles',
+    '/api/company-profiles/by-user',
+    '/api/resources/featured'
+  ];
+  
+  // Function to check if a path matches a route pattern
+  const matchesPattern = (path: string, pattern: string): boolean => {
+    // Exact match
+    if (path === pattern) return true;
+    
+    // Check for pattern with ID params like '/api/company-profiles/:id'
+    const patternParts = pattern.split('/');
+    const pathParts = path.split('/');
+    
+    if (patternParts.length !== pathParts.length) return false;
+    
+    for (let i = 0; i < patternParts.length; i++) {
+      // Skip parameter parts (starting with ':')
+      if (patternParts[i].startsWith(':')) continue;
+      if (patternParts[i] !== pathParts[i]) return false;
+    }
+    
+    return true;
+  };
+
+  // Add ID-based patterns for exempt routes
+  const idBasedPatterns = [
+    '/api/company-profiles/:id',
+    '/api/professionals/:id',
+    '/api/job-postings/:id',
+    '/api/resources/:id'
+  ];
+  
+  // Check if the current request path is in the exempt list or matches an ID-based pattern
+  if (
+    csrfExemptRoutes.some(path => req.path === path) ||
+    idBasedPatterns.some(pattern => matchesPattern(req.path, pattern))
+  ) {
     next();
     return;
   }
   
-  // Example 2: Apply CSRF protection only to specific routes that need it
-  const protectedPaths = ['/private', '/admin'];
-  
-  if (protectedPaths.some(path => req.path.startsWith(path))) {
-    csrfProtection(req, res, next);
-  } else {
-    next();
-  }
+  // For all other requests, apply CSRF protection
+  csrfProtection(req, res, next);
 });
 
 // Add CSRF token to response for client-side use

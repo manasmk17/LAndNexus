@@ -39,6 +39,12 @@ export default function ResourceDetail() {
     error: resourceError
   } = useQuery<Resource>({
     queryKey: ['/api/resources', resourceId],
+    queryFn: () => 
+      fetch(`/api/resources/${resourceId}`)
+        .then(res => {
+          if (!res.ok) throw new Error('Failed to fetch resource');
+          return res.json();
+        }),
     enabled: !!resourceId,
   });
 
@@ -273,10 +279,10 @@ return (
                 Download Resource
               </Button>
             )}
-            {resource.externalUrl ? (
+            {resource.contentUrl ? (
               <div className="mt-4">
                 <a 
-                  href={resource.externalUrl} 
+                  href={resource.contentUrl} 
                   target="_blank"
                   rel="noopener noreferrer" 
                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"

@@ -2915,6 +2915,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  app.get("/api/resource-categories", async (req, res) => {
+    try {
+      const categories = await storage.getAllResourceCategories();
+      res.json(categories);
+    } catch (err) {
+      console.error("Error fetching resource categories:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.get("/api/resource-categories/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);

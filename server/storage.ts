@@ -16,7 +16,8 @@ import {
   forumComments, ForumComment, InsertForumComment,
   messages, Message, InsertMessage,
   consultations, Consultation, InsertConsultation,
-  skillRecommendations, SkillRecommendation, InsertSkillRecommendation
+  skillRecommendations, SkillRecommendation, InsertSkillRecommendation,
+  pageContents, PageContent, InsertPageContent
 } from "@shared/schema";
 
 export interface IStorage {
@@ -153,6 +154,7 @@ export class MemStorage implements IStorage {
   private messages: Map<number, Message>;
   private consultations: Map<number, Consultation>;
   private skillRecommendations: Map<number, SkillRecommendation>;
+  private pageContents: Map<number, PageContent>;
   
   private userId: number;
   private profProfileId: number;
@@ -169,6 +171,7 @@ export class MemStorage implements IStorage {
   private messageId: number;
   private consultationId: number;
   private skillRecommendationId: number;
+  private pageContentId: number;
 
   constructor() {
     this.users = new Map();
@@ -186,6 +189,7 @@ export class MemStorage implements IStorage {
     this.messages = new Map();
     this.consultations = new Map();
     this.skillRecommendations = new Map();
+    this.pageContents = new Map();
     
     this.userId = 1;
     this.profProfileId = 1;
@@ -202,6 +206,7 @@ export class MemStorage implements IStorage {
     this.messageId = 1;
     this.consultationId = 1;
     this.skillRecommendationId = 1;
+    this.pageContentId = 1;
     
     // Initialize with some expertise areas
     this.initExpertise();
@@ -899,6 +904,50 @@ export class MemStorage implements IStorage {
     };
     this.skillRecommendations.set(id, updated);
     return updated;
+  }
+
+  // Page Content operations
+  async getPageContent(id: number): Promise<PageContent | undefined> {
+    return this.pageContents.get(id);
+  }
+  
+  async getPageContentBySlug(slug: string): Promise<PageContent | undefined> {
+    return Array.from(this.pageContents.values()).find(
+      (content) => content.slug === slug
+    );
+  }
+  
+  async getAllPageContents(): Promise<PageContent[]> {
+    return Array.from(this.pageContents.values());
+  }
+  
+  async createPageContent(content: InsertPageContent): Promise<PageContent> {
+    const id = this.pageContentId++;
+    const newContent: PageContent = {
+      ...content,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.pageContents.set(id, newContent);
+    return newContent;
+  }
+  
+  async updatePageContent(id: number, content: Partial<InsertPageContent>): Promise<PageContent | undefined> {
+    const existing = this.pageContents.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { 
+      ...existing, 
+      ...content,
+      updatedAt: new Date() 
+    };
+    this.pageContents.set(id, updated);
+    return updated;
+  }
+  
+  async deletePageContent(id: number): Promise<boolean> {
+    return this.pageContents.delete(id);
   }
 }
 

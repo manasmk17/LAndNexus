@@ -253,7 +253,7 @@ export default function JobPostForm() {
                   <FormLabel>Remote Work</FormLabel>
                   <FormControl>
                     <Switch
-                      checked={field.value || false}
+                      checked={field.value === true}
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
@@ -416,6 +416,7 @@ export default function JobPostForm() {
                       <Input 
                         type="number" 
                         {...field}
+                        value={field.value || 30}
                         onChange={(e) => field.onChange(e.target.value === "" ? 30 : parseInt(e.target.value))}
                       />
                     </FormControl>
@@ -434,7 +435,7 @@ export default function JobPostForm() {
                   <FormItem className="flex flex-row items-start space-x-3 space-y-0 mt-8">
                     <FormControl>
                       <Checkbox
-                        checked={field.value || false}
+                        checked={field.value === true}
                         onCheckedChange={field.onChange}
                       />
                     </FormControl>

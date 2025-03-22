@@ -12,7 +12,7 @@ import {
   ImagePlus
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import GalleryUpload from "./gallery-upload";
 import { Badge } from "@/components/ui/badge";
 
@@ -197,7 +197,12 @@ export default function ImageGallery({ professionalId, editable = false }: Image
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
-              <DialogTitle>Upload Gallery Image</DialogTitle>
+              <DialogHeader>
+                <DialogTitle>Upload Gallery Image</DialogTitle>
+                <DialogDescription>
+                  Add a new image to your professional portfolio gallery.
+                </DialogDescription>
+              </DialogHeader>
               <GalleryUpload 
                 professionalId={professionalId} 
                 onUploadSuccess={handleUploadSuccess} 

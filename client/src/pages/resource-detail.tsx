@@ -171,7 +171,11 @@ export default function ResourceDetail() {
           <div className="flex flex-wrap gap-3 mb-4">
             <Badge className="bg-primary text-primary-foreground">
               {getResourceTypeIcon(resource.resourceType)}
-              <span className="ml-1">{resource.resourceType.charAt(0).toUpperCase() + resource.resourceType.slice(1)}</span>
+              <span className="ml-1">
+                {resource.resourceType 
+                  ? resource.resourceType.charAt(0).toUpperCase() + resource.resourceType.slice(1)
+                  : "Resource"}
+              </span>
             </Badge>
             
             {resource.categoryId && categories?.some(cat => cat.id === resource.categoryId) && (
@@ -183,7 +187,9 @@ export default function ResourceDetail() {
             
             <Badge variant="outline" className="text-gray-500">
               <Calendar className="mr-1 h-4 w-4" />
-              {format(new Date(resource.createdAt), "MMMM d, yyyy")}
+              {resource.createdAt 
+                ? format(new Date(resource.createdAt), "MMMM d, yyyy") 
+                : "Date not available"}
             </Badge>
           </div>
           
@@ -193,7 +199,7 @@ export default function ResourceDetail() {
             <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
               {author?.firstName ? (
                 <span className="font-medium">
-                  {author.firstName.charAt(0)}{author.lastName.charAt(0)}
+                  {author.firstName?.charAt(0) || ""}{author.lastName?.charAt(0) || ""}
                 </span>
               ) : (
                 <User className="h-5 w-5 text-gray-500" />
@@ -227,7 +233,7 @@ export default function ResourceDetail() {
               <p className="text-gray-700 mb-4">{resource.description}</p>
               
               {/* Display content as a link if it's a URL */}
-              {resource.content.startsWith('http') ? (
+              {resource.content && resource.content.startsWith('http') ? (
                 <div className="mt-4">
                   <a 
                     href={resource.content} 
@@ -239,7 +245,7 @@ export default function ResourceDetail() {
                   </a>
                 </div>
               ) : (
-                <div className="whitespace-pre-line">{resource.content}</div>
+                <div className="whitespace-pre-line">{resource.content || "No content available"}</div>
               )}
             </div>
             
@@ -270,14 +276,14 @@ export default function ResourceDetail() {
                 <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
                   {author.firstName ? (
                     <span className="font-medium text-lg">
-                      {author.firstName.charAt(0)}{author.lastName.charAt(0)}
+                      {author.firstName?.charAt(0) || ""}{author.lastName?.charAt(0) || ""}
                     </span>
                   ) : (
                     <User className="h-6 w-6 text-gray-500" />
                   )}
                 </div>
                 <div className="ml-4">
-                  <h3 className="font-medium text-lg">{author.firstName} {author.lastName}</h3>
+                  <h3 className="font-medium text-lg">{author.firstName || ""} {author.lastName || ""}</h3>
                   <p className="text-gray-500">
                     {author.userType === "professional" ? "L&D Professional" : "Company"}
                   </p>

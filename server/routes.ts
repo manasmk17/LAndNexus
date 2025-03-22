@@ -1159,10 +1159,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Years experience processed: ${profileData.yearsExperience} (original: ${req.body.yearsExperience})`);
       }
       
-      // Convert availability string to boolean
-      if (typeof profileData.availability === 'string') {
-        profileData.availability = profileData.availability.toLowerCase() === 'true';
+      // Keep availability as string
+      if (profileData.availability === '') {
+        profileData.availability = null;
       }
+      // Don't convert to boolean, keep as string
       
       // Handle file upload if provided
       if (req.file) {

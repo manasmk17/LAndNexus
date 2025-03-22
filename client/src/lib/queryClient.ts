@@ -2,6 +2,17 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
+    // List of special case endpoints where 404 responses are expected and not errors
+    const expectedNotFoundEndpoints = [
+      '/api/subscription-status' // No subscription is a valid state, not an error
+    ];
+    
+    // Don't throw for expected 404s
+    if (res.status === 404 && expectedNotFoundEndpoints.some(endpoint => res.url.includes(endpoint))) {
+      // Just return the response without throwing, caller will handle it appropriately
+      return;
+    }
+    
     const text = (await res.text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }
@@ -104,8 +115,22 @@ export async function apiRequest(
 
     await throwIfResNotOk(res);
     return res;
-  } catch (error) {
-    console.error('Error during API request:', error);
+  } catch (error: any) {
+    // Better error logging with more details
+    console.error('Error during API request:', {
+      url,
+      method,
+      errorMessage: error.message || 'Unknown error',
+      errorStack: error.stack,
+      errorName: error.name,
+      errorObject: error
+    });
+    
+    // For network errors, provide more helpful message
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      throw new Error(`Network error when connecting to ${url}. Please check your internet connection.`);
+    }
+    
     throw error;
   }
 }
@@ -207,8 +232,22 @@ export async function secureFileUpload(
     }
     
     return res;
-  } catch (error) {
-    console.error('Error during file upload:', error);
+  } catch (error: any) {
+    // Better error logging with more details
+    console.error('Error during file upload:', {
+      url,
+      method,
+      errorMessage: error.message || 'Unknown error',
+      errorStack: error.stack,
+      errorName: error.name,
+      errorObject: error
+    });
+    
+    // For network errors, provide more helpful message
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      throw new Error(`Network error when uploading to ${url}. Please check your internet connection.`);
+    }
+    
     throw error;
   }
 }

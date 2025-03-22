@@ -28,22 +28,42 @@ export default function SubscriptionSuccess() {
       try {
         const response = await apiRequest('GET', '/api/subscription-status');
         
+        // Check specifically for 404 which means no subscription (not an error)
+        if (response.status === 404) {
+          console.log("No subscription found on subscription success page");
+          setSubscriptionDetails(null);
+          return;
+        }
+        
         if (response.ok) {
           const data = await response.json();
           setSubscriptionDetails(data);
         } else {
+          // For other error types
+          let errorMessage = "Could not verify subscription status.";
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorMessage;
+          } catch (e) {
+            // If we can't parse JSON, use the status text
+            errorMessage = response.statusText || errorMessage;
+          }
+          
           toast({
             title: 'Error',
-            description: 'Could not verify subscription status.',
+            description: errorMessage,
             variant: 'destructive',
           });
         }
-      } catch (error) {
-        toast({
-          title: 'Error',
-          description: 'An unexpected error occurred.',
-          variant: 'destructive',
-        });
+      } catch (error: any) {
+        // Don't show toast for network issues that will auto-retry
+        if (!error.message?.includes("Network connection issue")) {
+          toast({
+            title: 'Error',
+            description: error.message || 'An unexpected error occurred.',
+            variant: 'destructive',
+          });
+        }
       } finally {
         setLoading(false);
       }

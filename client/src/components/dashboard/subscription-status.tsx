@@ -24,34 +24,55 @@ export default function SubscriptionStatus() {
     const fetchSubscriptionStatus = async () => {
       try {
         setLoading(true);
+        
+        // The 404 response for this endpoint is now handled in throwIfResNotOk
+        // and won't throw an error since it's an expected condition
         const response = await apiRequest("GET", "/api/subscription-status");
+        
+        // If it's a 404, the response won't be ok but we also won't have thrown an error
+        if (response.status === 404) {
+          // No subscription found - this is a normal state
+          console.log("No subscription found");
+          setSubscription(null);
+          setError(null);
+          return;
+        }
         
         if (response.ok) {
           const data = await response.json();
           setSubscription(data);
           setError(null);
         } else {
-          if (response.status === 404) {
-            // No subscription found
-            setSubscription(null);
-          } else {
-            // Other error
+          // Handle other non-404 errors
+          let errorMessage = "Failed to fetch subscription status";
+          try {
             const errorData = await response.json();
-            setError(errorData.message || "Failed to fetch subscription status");
-            toast({
-              title: "Error",
-              description: errorData.message || "Failed to fetch subscription status",
-              variant: "destructive",
-            });
+            errorMessage = errorData.message || errorMessage;
+          } catch (e) {
+            // If we can't parse JSON, use the status text
+            errorMessage = response.statusText || errorMessage;
           }
+          
+          setError(errorMessage);
+          toast({
+            title: "Error",
+            description: errorMessage,
+            variant: "destructive",
+          });
         }
       } catch (err: any) {
-        setError(err.message || "An unexpected error occurred");
-        toast({
-          title: "Error",
-          description: err.message || "An unexpected error occurred",
-          variant: "destructive",
-        });
+        console.error("Error fetching subscription:", err);
+        const errorMessage = err.message || "An unexpected error occurred";
+        setError(errorMessage);
+        
+        // Don't show toast for known network issues that will auto-retry
+        if (!errorMessage.includes("Network connection issue")) {
+          toast({
+            title: "Error",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        }
       } finally {
         setLoading(false);
       }

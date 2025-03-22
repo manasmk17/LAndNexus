@@ -63,10 +63,11 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
     enabled: !!profile,
   });
   
+  // Type-safe resource query
   const { 
-    data: resources = [],
+    data: resources = [] as Resource[],
     isError: isResourcesError 
-  } = useQuery<Resource[]>({
+  } = useQuery<Resource[], Error, Resource[]>({
     queryKey: [`/api/professional-profiles/${professionalId}/resources`],
     enabled: !!profile,
     // Add default empty array to prevent JSON parsing error when empty response is returned
@@ -253,7 +254,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                     <h3 className="text-md font-medium text-gray-500">Professional Title</h3>
                     <p className="text-lg font-semibold">{profile.title}</p>
                   </div>
-                  {profile.yearsExperience > 0 && (
+                  {profile.yearsExperience && profile.yearsExperience > 0 && (
                     <div>
                       <h3 className="text-md font-medium text-gray-500">Years of Experience</h3>
                       <p className="text-lg font-semibold">{profile.yearsExperience} years</p>

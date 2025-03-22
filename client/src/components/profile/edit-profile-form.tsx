@@ -499,7 +499,7 @@ export default function EditProfileForm() {
       Object.entries(enrichedProfileData).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           formData.append(key, String(value));
-          console.log(`Added form field: ${key} = ${value instanceof Object ? JSON.stringify(value) : value}`);
+          console.log(`Added form field: ${key} = ${value !== null && typeof value === 'object' ? JSON.stringify(value) : value}`);
         }
       });
       

@@ -616,17 +616,17 @@ export default function EditProfileForm() {
       // Set success state to show message
       setSaveSuccess(true);
       
-      // Hide success message after 5 seconds
-      setTimeout(() => {
-        setSaveSuccess(false);
-      }, 5000);
-      
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({
         queryKey: ["/api/professionals/me"]
       });
       
       console.log("Profile save completed successfully");
+      
+      // Navigate to success page after a short delay
+      setTimeout(() => {
+        setLocation("/profile-success");
+      }, 1500);
       
     } catch (error) {
       console.error("Profile update error:", error);
@@ -763,17 +763,17 @@ export default function EditProfileForm() {
       // Set success state to show message
       setSaveSuccess(true);
       
-      // Hide success message after 5 seconds
-      setTimeout(() => {
-        setSaveSuccess(false);
-      }, 5000);
-      
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({
         queryKey: ["/api/company-profiles/by-user"]
       });
       
       console.log("Company profile save completed successfully");
+      
+      // Navigate to success page after a short delay
+      setTimeout(() => {
+        setLocation("/profile-success");
+      }, 1500);
       
     } catch (error) {
       console.error("Profile update error:", error);

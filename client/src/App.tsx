@@ -32,6 +32,7 @@ import Messages from "@/pages/messages";
 import Checkout from "@/pages/checkout";
 import Subscribe from "@/pages/subscribe";
 import SubscriptionSuccess from "@/pages/subscription-success";
+import ProfileSuccess from "@/pages/profile-success";
 import BookConsultation from "@/pages/book-consultation";
 import TestSecurity from "@/pages/test-security";
 import CsrfTest from "@/pages/csrf-test";
@@ -115,6 +116,10 @@ function Router() {
       <ProtectedRoute 
         path="/subscription-success" 
         component={SubscriptionSuccess} 
+      />
+      <ProtectedRoute 
+        path="/profile-success" 
+        component={ProfileSuccess} 
       />
       <ProtectedRoute 
         path="/book-consultation/:id" 

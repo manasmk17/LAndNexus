@@ -148,9 +148,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(
     session({
       secret: process.env.SESSION_SECRET || "L&D-nexus-secret",
-      resave: false,
-      saveUninitialized: false,
-      cookie: { secure: false, maxAge: 24 * 60 * 60 * 1000 }, // 24 hours
+      resave: true,
+      saveUninitialized: true,
+      cookie: { 
+        secure: false,
+        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days by default
+      },
       store: new MemoryStore({
         checkPeriod: 86400000 // prune expired entries every 24h
       })

@@ -1579,7 +1579,8 @@ export default function EditProfileForm() {
           </div>
           
           <div className="flex flex-col gap-4 items-end">
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-md" 
+                    disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
@@ -1818,16 +1819,26 @@ export default function EditProfileForm() {
             </div>
           </div>
           
-          <div className="flex justify-end">
-            <Button type="submit" disabled={isSubmitting}>
+          <div className="flex flex-col gap-4 items-end">
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-md" 
+                    disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
                 </>
               ) : (
-                "Save Company Profile"
+                "Save Profile"
               )}
             </Button>
+            
+            {saveSuccess && (
+              <div className="w-full flex items-center p-3 bg-green-50 border border-green-200 text-green-700 rounded-md">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span>Company profile saved successfully! Your changes have been applied.</span>
+              </div>
+            )}
           </div>
         </form>
       </Form>

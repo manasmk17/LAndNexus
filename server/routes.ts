@@ -1544,6 +1544,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Ensure userId is set correctly
       updateData.userId = user.id;
       
+      // BUG KILLER: Enhanced type conversion for numeric fields with NaN protection
+      // Handle employee count (if needed in the future)
+      if (updateData.employeeCount !== undefined) {
+        if (updateData.employeeCount === '' || updateData.employeeCount === null) {
+          updateData.employeeCount = null;
+        } else {
+          const parsedCount = Number(updateData.employeeCount);
+          updateData.employeeCount = isNaN(parsedCount) ? null : parsedCount;
+        }
+        console.log(`Employee count processed: ${updateData.employeeCount} (original: ${req.body.employeeCount})`);
+      }
+      
       // Process uploaded file if present
       if (req.file) {
         updateData.logoImagePath = req.file.path.replace(/^public\//, '');

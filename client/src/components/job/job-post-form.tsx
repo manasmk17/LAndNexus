@@ -253,7 +253,7 @@ export default function JobPostForm() {
                   <FormLabel>Remote Work</FormLabel>
                   <FormControl>
                     <Switch
-                      checked={field.value}
+                      checked={field.value || false}
                       onCheckedChange={field.onChange}
                     />
                   </FormControl>
@@ -270,7 +270,7 @@ export default function JobPostForm() {
                   <FormItem className="mt-4">
                     <FormLabel>Duration</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. 3 months, 6 weeks, etc." {...field} />
+                      <Input placeholder="e.g. 3 months, 6 weeks, etc." {...field} value={field.value || ''} />
                     </FormControl>
                     <FormDescription>
                       Specify the estimated duration of the contract or project
@@ -343,6 +343,7 @@ export default function JobPostForm() {
                         type="number" 
                         placeholder="e.g. 70000" 
                         {...field}
+                        value={field.value || ''}
                         onChange={(e) => field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value))}
                       />
                     </FormControl>
@@ -362,6 +363,7 @@ export default function JobPostForm() {
                         type="number" 
                         placeholder="e.g. 90000" 
                         {...field}
+                        value={field.value || ''}
                         onChange={(e) => field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value))}
                       />
                     </FormControl>

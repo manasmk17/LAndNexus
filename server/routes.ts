@@ -1052,8 +1052,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         profile = await storage.createProfessionalProfile(profileData);
       }
       
-      console.log(`Profile ${existingProfile ? 'updated' : 'created'} successfully: ${profile.id}`);
-      res.json(profile);
+      // Ensure profile exists before trying to access its properties
+      if (profile) {
+        console.log(`Profile ${existingProfile ? 'updated' : 'created'} successfully: ${profile.id}`);
+        res.json(profile);
+      } else {
+        console.log(`Warning: Profile operation completed but profile object is undefined`);
+        throw new Error("Failed to create or update profile");
+      }
     } catch (err) {
       console.error("Error updating professional profile:", err);
       

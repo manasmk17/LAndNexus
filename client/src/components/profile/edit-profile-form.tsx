@@ -179,6 +179,31 @@ export default function EditProfileForm() {
   // Update form values when profiles are loaded
   useEffect(() => {
     if (professionalProfile && user?.userType === "professional") {
+      // Load work experience and testimonials if present
+      if (professionalProfile.workExperience) {
+        try {
+          const workExpData = typeof professionalProfile.workExperience === 'string' 
+            ? JSON.parse(professionalProfile.workExperience)
+            : professionalProfile.workExperience;
+          setWorkExperiences(Array.isArray(workExpData) ? workExpData : []);
+        } catch (e) {
+          console.error("Error parsing work experience data:", e);
+          setWorkExperiences([]);
+        }
+      }
+      
+      if (professionalProfile.testimonials) {
+        try {
+          const testimonialData = typeof professionalProfile.testimonials === 'string'
+            ? JSON.parse(professionalProfile.testimonials)
+            : professionalProfile.testimonials;
+          setTestimonials(Array.isArray(testimonialData) ? testimonialData : []);
+        } catch (e) {
+          console.error("Error parsing testimonial data:", e);
+          setTestimonials([]);
+        }
+      }
+      
       professionalForm.reset({
         title: professionalProfile.title,
         bio: professionalProfile.bio,
@@ -188,10 +213,29 @@ export default function EditProfileForm() {
         profileImageUrl: professionalProfile.profileImageUrl || "",
         userId: user.id,
         newExpertise: "",
+        services: professionalProfile.services || "",
+        availability: professionalProfile.availability || "",
+        email: professionalProfile.email || "",
+        phone: professionalProfile.phone || "",
+        yearsExperience: professionalProfile.yearsExperience,
         newCertification: {
           name: "",
           issuer: "",
           year: undefined
+        },
+        newWorkExperience: {
+          company: "",
+          position: "",
+          startDate: "",
+          endDate: "",
+          description: "",
+          current: false
+        },
+        newTestimonial: {
+          clientName: "",
+          company: "",
+          text: "",
+          date: ""
         }
       });
     }
@@ -354,19 +398,98 @@ export default function EditProfileForm() {
       });
     }
   };
+  
+  const handleAddWorkExperience = () => {
+    const workExp = professionalForm.getValues("newWorkExperience");
+    if (!workExp || !workExp.company || !workExp.position || !workExp.startDate) {
+      toast({
+        title: "Incomplete information",
+        description: "Please fill in all required work experience fields",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Add to work experiences array
+    setWorkExperiences([...workExperiences, workExp]);
+    
+    // Reset form
+    professionalForm.setValue("newWorkExperience.company", "");
+    professionalForm.setValue("newWorkExperience.position", "");
+    professionalForm.setValue("newWorkExperience.startDate", "");
+    professionalForm.setValue("newWorkExperience.endDate", "");
+    professionalForm.setValue("newWorkExperience.description", "");
+    professionalForm.setValue("newWorkExperience.current", false);
+    
+    // Hide form
+    setShowWorkExpForm(false);
+    
+    toast({
+      title: "Work experience added",
+      description: "Your work experience has been added to your profile"
+    });
+  };
+  
+  const handleRemoveWorkExperience = (index: number) => {
+    setWorkExperiences(workExperiences.filter((_, i) => i !== index));
+  };
+  
+  const handleAddTestimonial = () => {
+    const testimonial = professionalForm.getValues("newTestimonial");
+    if (!testimonial || !testimonial.clientName || !testimonial.text) {
+      toast({
+        title: "Incomplete information",
+        description: "Please fill in all required testimonial fields",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Add to testimonials array
+    setTestimonials([...testimonials, testimonial]);
+    
+    // Reset form
+    professionalForm.setValue("newTestimonial.clientName", "");
+    professionalForm.setValue("newTestimonial.company", "");
+    professionalForm.setValue("newTestimonial.text", "");
+    professionalForm.setValue("newTestimonial.date", "");
+    
+    // Hide form
+    setShowTestimonialForm(false);
+    
+    toast({
+      title: "Testimonial added",
+      description: "The client testimonial has been added to your profile"
+    });
+  };
+  
+  const handleRemoveTestimonial = (index: number) => {
+    setTestimonials(testimonials.filter((_, i) => i !== index));
+  };
 
   const onSubmitProfessional = async (data: z.infer<typeof professionalProfileFormSchema>) => {
     try {
       setIsSubmitting(true);
       
       // Remove additional form fields
-      const { newExpertise, newCertification, profileImage, ...profileData } = data;
+      const { newExpertise, newCertification, newWorkExperience, newTestimonial, profileImage, ...profileData } = data;
       
       // Create FormData for file upload
       const formData = new FormData();
       
+      // Prepare work experience and testimonials as JSON
+      const workExperienceJSON = JSON.stringify(workExperiences);
+      const testimonialsJSON = JSON.stringify(testimonials);
+      
+      // Add to profile data
+      const enrichedProfileData = {
+        ...profileData,
+        workExperience: workExperienceJSON,
+        testimonials: testimonialsJSON
+      };
+      
       // Add text fields to FormData
-      Object.entries(profileData).forEach(([key, value]) => {
+      Object.entries(enrichedProfileData).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           formData.append(key, String(value));
         }
@@ -650,6 +773,31 @@ export default function EditProfileForm() {
             <div className="border p-6 rounded-md shadow-sm">
               <h2 className="text-xl font-semibold mb-4">Professional Details</h2>
               
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <FormField
+                  control={professionalForm.control}
+                  name="yearsExperience"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Years of Experience</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          placeholder="e.g. 5" 
+                          {...field}
+                          value={field.value || ''}
+                          onChange={(e) => field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Your total professional experience in years
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
               <FormField
                 control={professionalForm.control}
                 name="bio"
@@ -665,6 +813,28 @@ export default function EditProfileForm() {
                     </FormControl>
                     <FormDescription>
                       A detailed description of your experience and expertise
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={professionalForm.control}
+                name="services"
+                render={({ field }) => (
+                  <FormItem className="mt-6">
+                    <FormLabel>Services Offered</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="List the services you provide, e.g.: 'Leadership Training, Team Building Workshops, Executive Coaching...'" 
+                        className="min-h-24"
+                        {...field}
+                        value={field.value || ''} 
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Detail the specific L&D services you provide to clients
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -837,6 +1007,368 @@ export default function EditProfileForm() {
                     </FormControl>
                     <FormDescription>
                       Link to a short video introducing yourself and your services
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            {/* Work Experience Section */}
+            <div className="border p-6 rounded-md shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Work Experience</h2>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowWorkExpForm(!showWorkExpForm)}
+                >
+                  {showWorkExpForm ? "Cancel" : "Add Work Experience"}
+                </Button>
+              </div>
+              
+              {workExperiences && workExperiences.length > 0 ? (
+                <div className="space-y-4 mb-4">
+                  {workExperiences.map((exp, index) => (
+                    <div key={index} className="p-4 border rounded-md bg-card">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-semibold text-lg">{exp.position}</h3>
+                          <p className="text-muted-foreground">{exp.company}</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {exp.startDate} {exp.current ? "- Present" : exp.endDate ? `- ${exp.endDate}` : ""}
+                          </p>
+                          {exp.description && (
+                            <p className="mt-2 text-sm">{exp.description}</p>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveWorkExperience(index)}
+                          className="text-destructive hover:text-destructive/90"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground mb-4">No work experience added yet</div>
+              )}
+              
+              {showWorkExpForm && (
+                <div className="p-4 border rounded-md bg-muted/50 mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={professionalForm.control}
+                      name="newWorkExperience.company"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Company Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. Acme Corporation" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={professionalForm.control}
+                      name="newWorkExperience.position"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Position</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. Learning Development Manager" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <FormField
+                      control={professionalForm.control}
+                      name="newWorkExperience.startDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Start Date</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. July 2020" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={professionalForm.control}
+                      name="newWorkExperience.endDate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>End Date</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="e.g. June 2023 (leave empty if current)" 
+                              {...field}
+                              value={field.value || ''} 
+                              disabled={professionalForm.watch("newWorkExperience.current")}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={professionalForm.control}
+                    name="newWorkExperience.current"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 mt-4">
+                        <FormControl>
+                          <input
+                            type="checkbox"
+                            checked={field.value}
+                            onChange={field.onChange}
+                            className="h-4 w-4 mt-1"
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>This is my current position</FormLabel>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={professionalForm.control}
+                    name="newWorkExperience.description"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Describe your responsibilities and achievements..." 
+                            {...field} 
+                            value={field.value || ''}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <Button 
+                    type="button" 
+                    onClick={handleAddWorkExperience} 
+                    className="mt-4 w-full"
+                  >
+                    <Plus className="mr-2 h-4 w-4" /> Add Work Experience
+                  </Button>
+                </div>
+              )}
+            </div>
+            
+            {/* Testimonials Section */}
+            <div className="border p-6 rounded-md shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Client Testimonials</h2>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowTestimonialForm(!showTestimonialForm)}
+                >
+                  {showTestimonialForm ? "Cancel" : "Add Testimonial"}
+                </Button>
+              </div>
+              
+              {testimonials && testimonials.length > 0 ? (
+                <div className="space-y-4 mb-4">
+                  {testimonials.map((testimonial, index) => (
+                    <div key={index} className="p-4 border rounded-md bg-card">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="italic text-sm">"{testimonial.text}"</p>
+                          <p className="font-semibold mt-2">{testimonial.clientName}</p>
+                          {testimonial.company && (
+                            <p className="text-sm text-muted-foreground">{testimonial.company}</p>
+                          )}
+                          {testimonial.date && (
+                            <p className="text-xs text-muted-foreground mt-1">{testimonial.date}</p>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveTestimonial(index)}
+                          className="text-destructive hover:text-destructive/90"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground mb-4">No testimonials added yet</div>
+              )}
+              
+              {showTestimonialForm && (
+                <div className="p-4 border rounded-md bg-muted/50 mb-4">
+                  <FormField
+                    control={professionalForm.control}
+                    name="newTestimonial.text"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Testimonial</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Enter the client's feedback..." 
+                            {...field} 
+                            className="min-h-24"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <FormField
+                      control={professionalForm.control}
+                      name="newTestimonial.clientName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Client Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. John Smith" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={professionalForm.control}
+                      name="newTestimonial.company"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Company (Optional)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              placeholder="e.g. Acme Corporation" 
+                              {...field}
+                              value={field.value || ''} 
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <FormField
+                    control={professionalForm.control}
+                    name="newTestimonial.date"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <FormLabel>Date (Optional)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="e.g. January 2023" 
+                            {...field}
+                            value={field.value || ''}  
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <Button 
+                    type="button" 
+                    onClick={handleAddTestimonial} 
+                    className="mt-4 w-full"
+                  >
+                    <Plus className="mr-2 h-4 w-4" /> Add Testimonial
+                  </Button>
+                </div>
+              )}
+            </div>
+            
+            {/* Contact Information Section */}
+            <div className="border p-6 rounded-md shadow-sm">
+              <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={professionalForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contact Email</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="e.g. contact@example.com" 
+                          type="email"
+                          {...field} 
+                          value={field.value || ''} 
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Email where clients can reach you
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={professionalForm.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contact Phone</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="e.g. +1 (555) 123-4567" 
+                          {...field} 
+                          value={field.value || ''} 
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Phone number for client inquiries
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={professionalForm.control}
+                name="availability"
+                render={({ field }) => (
+                  <FormItem className="mt-6">
+                    <FormLabel>Availability</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Describe your availability, e.g. 'Available for consultations Monday-Friday, 9am-5pm EST'" 
+                        {...field} 
+                        value={field.value || ''} 
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Let clients know when and how they can reach you
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

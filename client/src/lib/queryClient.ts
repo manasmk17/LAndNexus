@@ -320,20 +320,5 @@ export const queryClient = new QueryClient({
       retry: 2,
       retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000),
     },
-  },
-  // Global error handlers
-  queryCache: {
-    onError: (error: unknown) => {
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        console.warn('Network connection issue detected in query. Will retry automatically.');
-      } else {
-        console.error('Query cache error:', error);
-      }
-    }
-  },
-  mutationCache: {
-    onError: (error: unknown) => {
-      console.error('Mutation cache error:', error);
-    }
   }
 });

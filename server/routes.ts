@@ -1036,17 +1036,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: user.id
       };
 
-      // BUG KILLER: Proper type conversion for numeric fields with NaN protection
-      if (profileData.ratePerHour) {
-        const parsedRate = Number(profileData.ratePerHour);
-        profileData.ratePerHour = isNaN(parsedRate) ? null : parsedRate;
-        console.log(`Rate per hour parsed: ${profileData.ratePerHour} (original: ${profileData.ratePerHour})`);
+      // BUG KILLER: Enhanced type conversion for numeric fields with NaN protection
+      // Handle rate per hour (can be empty string, undefined, or a valid number)
+      if (profileData.ratePerHour !== undefined) {
+        if (profileData.ratePerHour === '' || profileData.ratePerHour === null) {
+          profileData.ratePerHour = null;
+        } else {
+          const parsedRate = Number(profileData.ratePerHour);
+          profileData.ratePerHour = isNaN(parsedRate) ? null : parsedRate;
+        }
+        console.log(`Rate per hour processed: ${profileData.ratePerHour} (original: ${req.body.ratePerHour})`);
       }
       
-      if (profileData.yearsExperience) {
-        const parsedYears = Number(profileData.yearsExperience);
-        profileData.yearsExperience = isNaN(parsedYears) ? null : parsedYears;
-        console.log(`Years experience parsed: ${profileData.yearsExperience} (original: ${profileData.yearsExperience})`);
+      // Handle years experience (can be empty string, undefined, or a valid number)
+      if (profileData.yearsExperience !== undefined) {
+        if (profileData.yearsExperience === '' || profileData.yearsExperience === null) {
+          profileData.yearsExperience = null;
+        } else {
+          const parsedYears = Number(profileData.yearsExperience);
+          profileData.yearsExperience = isNaN(parsedYears) ? null : parsedYears;
+        }
+        console.log(`Years experience processed: ${profileData.yearsExperience} (original: ${req.body.yearsExperience})`);
       }
       
       // Convert availability string to boolean

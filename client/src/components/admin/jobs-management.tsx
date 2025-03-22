@@ -58,7 +58,7 @@ export default function JobsManagement() {
 
   // Fetch all job postings
   const { data: jobs, isLoading, error } = useQuery<JobPosting[]>({
-    queryKey: ["/api/admin/jobs"],
+    queryKey: ["/api/admin/job-postings"],
     retry: 1,
   });
 
@@ -81,14 +81,14 @@ export default function JobsManagement() {
       featured: boolean;
     }) => {
       const response = await apiRequest(
-        "PATCH",
-        `/api/admin/jobs/${jobId}/featured`,
+        "PUT",
+        `/api/admin/job-postings/${jobId}/featured`,
         { featured }
       );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/job-postings"] });
       toast({
         title: "Job Updated",
         description: "Featured status has been updated successfully",
@@ -113,14 +113,14 @@ export default function JobsManagement() {
       status: string;
     }) => {
       const response = await apiRequest(
-        "PATCH",
-        `/api/admin/jobs/${jobId}/status`,
+        "PUT",
+        `/api/admin/job-postings/${jobId}/status`,
         { status }
       );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/job-postings"] });
       setConfirmApprove(null);
       setConfirmReject(null);
       toast({
@@ -173,7 +173,7 @@ export default function JobsManagement() {
         </p>
         <Button
           className="mt-4"
-          onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/admin/jobs"] })}
+          onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/admin/job-postings"] })}
         >
           Retry
         </Button>

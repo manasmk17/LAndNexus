@@ -44,13 +44,13 @@ export default function CompanyDashboard() {
     enabled: !!user,
   });
   
-  // Fetch company job postings if profile exists
+  // Fetch company job postings - using "me" endpoint that doesn't require profile ID
   const { 
     data: jobPostings, 
     isLoading: isLoadingJobs 
   } = useQuery<JobPosting[]>({
-    queryKey: [`/api/companies/${profile?.id}/job-postings`],
-    enabled: !!profile,
+    queryKey: ["/api/companies/me/job-postings"],
+    enabled: !!user,
   });
   
   // Fetch applications for all jobs
@@ -59,7 +59,7 @@ export default function CompanyDashboard() {
     isLoading: isLoadingApplications 
   } = useQuery<{ jobId: number, applications: JobApplication[] }[]>({
     queryKey: ["/api/job-applications/company"],
-    enabled: !!jobPostings && jobPostings.length > 0,
+    enabled: !!user,
   });
   
   // Fetch messages
@@ -71,13 +71,13 @@ export default function CompanyDashboard() {
     enabled: !!user,
   });
   
-  // Fetch consultations if profile exists
+  // Fetch consultations - using "me" endpoint that doesn't require profile ID
   const { 
     data: consultations, 
     isLoading: isLoadingConsultations 
   } = useQuery<Consultation[]>({
-    queryKey: [`/api/companies/${profile?.id}/consultations`],
-    enabled: !!profile,
+    queryKey: ["/api/companies/me/consultations"],
+    enabled: !!user,
   });
   
   // Fetch professional profiles for applications

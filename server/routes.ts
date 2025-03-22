@@ -1341,9 +1341,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/companies/:id/job-postings", async (req, res) => {
-    const companyId = parseInt(req.params.id);
-    const jobs = await storage.getCompanyJobPostings(companyId);
-    res.json(jobs);
+    try {
+      // Special case for "me" endpoint
+      if (req.params.id === "me") {
+        if (!req.isAuthenticated()) {
+          return res.status(401).json({ message: "Unauthorized" });
+        }
+        
+        const user = req.user as any;
+        
+        if (user.userType !== "company") {
+          return res.status(403).json({ message: "Not a company user" });
+        }
+        
+        const companyProfile = await storage.getCompanyProfileByUserId(user.id);
+        
+        if (!companyProfile) {
+          return res.json([]);
+        }
+        
+        const jobs = await storage.getCompanyJobPostings(companyProfile.id);
+        return res.json(jobs);
+      }
+      
+      // Regular case with numeric ID
+      const companyId = parseInt(req.params.id);
+      if (isNaN(companyId)) {
+        return res.status(400).json({ message: "Invalid company ID" });
+      }
+      
+      const jobs = await storage.getCompanyJobPostings(companyId);
+      res.json(jobs);
+    } catch (err) {
+      console.error("Error fetching company job postings:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   app.get("/api/job-postings/:id", async (req, res) => {

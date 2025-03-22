@@ -41,13 +41,13 @@ export default function ProfessionalDashboard() {
     enabled: !!user,
   });
   
-  // Fetch job applications if profile exists
+  // Fetch job applications - using "me" endpoint that doesn't require profile ID
   const { 
     data: applications, 
     isLoading: isLoadingApplications 
   } = useQuery<JobApplication[]>({
-    queryKey: [`/api/professionals/${profile?.id}/applications`],
-    enabled: !!profile,
+    queryKey: ["/api/professionals/me/applications"],
+    enabled: !!user,
   });
   
   // Fetch messages
@@ -59,13 +59,13 @@ export default function ProfessionalDashboard() {
     enabled: !!user,
   });
   
-  // Fetch consultations if profile exists
+  // Fetch consultations - using "me" endpoint that doesn't require profile ID
   const { 
     data: consultations, 
     isLoading: isLoadingConsultations 
   } = useQuery<Consultation[]>({
-    queryKey: [`/api/professionals/${profile?.id}/consultations`],
-    enabled: !!profile,
+    queryKey: ["/api/professionals/me/consultations"],
+    enabled: !!user,
   });
   
   // Additional query for job details

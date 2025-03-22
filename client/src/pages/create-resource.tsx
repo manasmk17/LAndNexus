@@ -89,60 +89,60 @@ export default function CreateResource() {
 
     try {
       setIsSubmitting(true);
-      
+
       // Extract file from form data if present
       const { fileUpload, ...resourceData } = data;
-      
+
       // Create FormData if file is included
       if (fileUpload) {
         const formData = new FormData();
-        
+
         // Add resource data
         Object.entries(resourceData).forEach(([key, value]) => {
           if (value !== undefined && value !== null && value !== '') {
             formData.append(key, String(value));
           }
         });
-        
+
         // Add file
         formData.append('file', fileUpload);
-        
+
         // Submit using fetch with FormData
         const response = await fetch("/api/resources", {
           method: "POST",
           body: formData,
           credentials: 'include'
         });
-        
+
         if (!response.ok) {
           throw new Error(`Error: ${response.status} ${response.statusText}`);
         }
-        
+
         // Handle success
         toast({
           title: "Resource created",
           description: "Your resource has been published successfully",
         });
-        
-        // Redirect to resources page
-        setLocation("/resources");
+
+        // Redirect to professional dashboard after resource creation
+        setLocation("/professional-dashboard");
       } else {
         // If no file, use regular JSON API request
         await apiRequest("POST", "/api/resources", resourceData);
-        
+
         // Handle success
         toast({
           title: "Resource created",
           description: "Your resource has been published successfully",
         });
-        
+
         // Invalidate resources query to refresh list
         queryClient.invalidateQueries({
           queryKey: ["/api/resources"]
         });
-        
-        // Redirect to resources page
-        setLocation("/resources");
+
+        // Redirect to professional dashboard after resource creation
+        setLocation("/professional-dashboard");
       }
     } catch (error) {
       console.error("Error creating resource:", error);
@@ -186,13 +186,13 @@ export default function CreateResource() {
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Resources
       </Button>
-      
+
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-2">Create a New Resource</h1>
         <p className="text-gray-500 mb-6">
           Share your knowledge with the L&D community
         </p>
-        
+
         <Card>
           <CardContent className="pt-6">
             <Form {...form}>
@@ -216,7 +216,7 @@ export default function CreateResource() {
                     </FormItem>
                   )}
                 />
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
@@ -247,7 +247,7 @@ export default function CreateResource() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="categoryId"
@@ -291,7 +291,7 @@ export default function CreateResource() {
                     )}
                   />
                 </div>
-                
+
                 <FormField
                   control={form.control}
                   name="description"
@@ -312,7 +312,7 @@ export default function CreateResource() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="contentUrl"
@@ -333,7 +333,7 @@ export default function CreateResource() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="imageUrl"
@@ -354,7 +354,7 @@ export default function CreateResource() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="fileUpload"
@@ -379,7 +379,7 @@ export default function CreateResource() {
                     </FormItem>
                   )}
                 />
-                
+
                 <div className="flex justify-end pt-4">
                   <Button type="submit" disabled={isSubmitting || isLoadingCategories}>
                     {isSubmitting ? (

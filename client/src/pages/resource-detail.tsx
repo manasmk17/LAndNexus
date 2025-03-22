@@ -51,7 +51,8 @@ export default function ResourceDetail() {
   // Fetch author details
   const { 
     data: author, 
-    isLoading: isLoadingAuthor 
+    isLoading: isLoadingAuthor,
+    error: authorError 
   } = useQuery<UserType>({
     queryKey: ['/api/users', resource?.authorId],
     queryFn: () => 
@@ -66,7 +67,8 @@ export default function ResourceDetail() {
   // Fetch related resources based on type
   const { 
     data: relatedResources, 
-    isLoading: isLoadingRelated 
+    isLoading: isLoadingRelated,
+    error: relatedResourcesError
   } = useQuery<Resource[]>({
     queryKey: ['/api/resources/related', resource?.resourceType, resourceId],
     // Use a proper URL for the query based on the array query key
@@ -339,20 +341,23 @@ return (
               <Separator className="my-4" />
               
               <div className="flex justify-end">
-                <Link href={author.userType === "professional" ? `/professional-profile/${author.id}` : `/company/${author.id}`}>
-                  <Button variant="outline">View Profile</Button>
-                </Link>
+                {/* Check if author exists and has a userType before rendering the profile link */}
+                {author && (
+                  <Link href={author.userType === "professional" ? `/professional-profile/${author.id}` : `/company/${author.id}`}>
+                    <Button variant="outline">View Profile</Button>
+                  </Link>
+                )}
               </div>
             </CardContent>
           </Card>
         )}
         
         {/* Related resources */}
-        {relatedResources && relatedResources.length > 0 && (
+        {Array.isArray(relatedResources) && relatedResources.length > 0 && (
           <div className="mt-10">
             <h2 className="text-2xl font-bold mb-6">Related Resources</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {relatedResources.slice(0, 3).map((relatedResource) => (
+              {relatedResources.slice(0, 3).map((relatedResource: Resource) => (
                 <Link key={relatedResource.id} href={`/resource/${relatedResource.id}`}>
                   <Card className="cursor-pointer hover:shadow-md transition-shadow h-full">
                     <CardContent className="p-4">

@@ -692,7 +692,7 @@ export default function EditProfileForm() {
                   <FormItem className="mt-4">
                     <FormLabel>Location</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g. New York, NY" {...field} />
+                      <Input placeholder="e.g. New York, NY" {...field} value={field.value || ''} />
                     </FormControl>
                     <FormDescription>
                       Your primary location for work
@@ -808,7 +808,8 @@ export default function EditProfileForm() {
                       <Textarea 
                         placeholder="Describe your experience, skills, and what you offer to clients..." 
                         className="min-h-32"
-                        {...field} 
+                        {...field}
+                        value={field.value || ''} 
                       />
                     </FormControl>
                     <FormDescription>

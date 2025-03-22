@@ -1095,7 +1095,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Update existing profile
         profile = await storage.updateCompanyProfile(existingProfile.id, {
           ...req.body,
-          profileImagePath: profileImagePath || existingProfile.profileImagePath
+          logoImagePath: profileImagePath || existingProfile.logoImagePath
         });
       } else {
         console.log(`Creating new company profile for user ${user.id}`);
@@ -1104,7 +1104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const profileData = insertCompanyProfileSchema.parse({
           ...req.body,
           userId: user.id,
-          profileImagePath
+          logoImagePath: profileImagePath
         });
 
         profile = await storage.createCompanyProfile(profileData);
@@ -1229,8 +1229,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         //   }
         // }
         
-        updateData.profileImagePath = req.file.path;
-        console.log(`Updated company profile image: ${updateData.profileImagePath}`);
+        updateData.logoImagePath = req.file.path;
+        console.log(`Updated company profile image: ${updateData.logoImagePath}`);
       }
 
       const updatedProfile = await storage.updateCompanyProfile(id, updateData);

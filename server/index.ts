@@ -20,13 +20,19 @@ const csrfProtection = csurf({
 
 // Apply CSRF protection to routes except API methods that need to be accessed by external services
 app.use((req, res, next) => {
-  // Skip CSRF for webhook endpoints and login/register endpoints
-  const skipCsrfPaths = ['/api/webhook', '/api/login', '/api/register', '/api/auth/forgot-password'];
-  
-  if (skipCsrfPaths.some(path => req.path.startsWith(path))) {
+  // Example 1: Skip CSRF for all API routes
+  if (req.path.startsWith('/api')) {
     next();
-  } else {
+    return;
+  }
+  
+  // Example 2: Apply CSRF protection only to specific routes that need it
+  const protectedPaths = ['/private', '/admin'];
+  
+  if (protectedPaths.some(path => req.path.startsWith(path))) {
     csrfProtection(req, res, next);
+  } else {
+    next();
   }
 });
 

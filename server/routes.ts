@@ -2134,30 +2134,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid input", errors: err.errors });
       }
-
-  // Content Management Routes
-  app.get("/api/admin/content/:section", isAdmin, async (req, res) => {
-    try {
-      const { section } = req.params;
-      const content = await storage.getSiteContent(section);
-      res.json(content);
-    } catch (err) {
-      res.status(500).json({ message: "Error fetching content" });
-    }
-  });
-
-  app.put("/api/admin/content/:section", isAdmin, async (req, res) => {
-    try {
-      const { section } = req.params;
-      const { content } = req.body;
-      
-      const updated = await storage.updateSiteContent(section, content);
-      res.json(updated);
-    } catch (err) {
-      res.status(500).json({ message: "Error updating content" });
-    }
-  });
-
       res.status(500).json({ message: "Internal server error" });
     }
   });

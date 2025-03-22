@@ -41,7 +41,10 @@ app.use((req, res, next) => {
     '/api/professionals/me/certifications',
     '/api/company-profiles',
     '/api/company-profiles/by-user',
-    '/api/resources/featured'
+    '/api/resources/featured',
+    '/api/create-test-admin',
+    '/api/create-admin',
+    '/api/admin/make-admin'
   ];
   
   // We should treat all API routes that start with '/api/me/' as exempt for GET requests

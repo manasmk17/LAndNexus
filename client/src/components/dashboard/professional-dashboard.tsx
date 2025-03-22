@@ -37,7 +37,7 @@ export default function ProfessionalDashboard() {
     data: profile, 
     isLoading: isLoadingProfile 
   } = useQuery<ProfessionalProfile>({
-    queryKey: ["/api/professional-profiles/by-user"],
+    queryKey: ["/api/professionals/me"],
     enabled: !!user,
   });
   

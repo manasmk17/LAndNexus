@@ -556,9 +556,9 @@ function ProfessionalsTab() {
 
   const filteredProfiles = searchQuery 
     ? profiles.filter(profile => 
-        profile.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        profile.bio.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        profile.location.toLowerCase().includes(searchQuery.toLowerCase())
+        (profile.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (profile.bio || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (profile.location || '').toLowerCase().includes(searchQuery.toLowerCase())
       )
     : profiles;
 
@@ -749,9 +749,9 @@ function CompaniesTab() {
 
   const filteredProfiles = searchQuery 
     ? profiles.filter(profile => 
-        profile.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        profile.industry.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        profile.location.toLowerCase().includes(searchQuery.toLowerCase())
+        (profile.companyName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (profile.industry || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (profile.location || '').toLowerCase().includes(searchQuery.toLowerCase())
       )
     : profiles;
 
@@ -911,9 +911,9 @@ function JobsTab() {
   // Apply search filter
   if (searchQuery) {
     filteredJobs = filteredJobs.filter(job => 
-      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.location.toLowerCase().includes(searchQuery.toLowerCase())
+      (job.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (job.description || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (job.location || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
   }
 
@@ -1133,8 +1133,8 @@ function ResourcesTab() {
   // Apply search filter
   if (searchQuery) {
     filteredResources = filteredResources.filter(resource => 
-      resource.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      resource.description.toLowerCase().includes(searchQuery.toLowerCase())
+      (resource.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (resource.description || '').toLowerCase().includes(searchQuery.toLowerCase())
     );
   }
 

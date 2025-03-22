@@ -193,6 +193,10 @@ export default function AdminDashboard() {
             <MessageSquare className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Forum</span>
           </TabsTrigger>
+          <TabsTrigger value="content" className="flex items-center">
+            <FileText className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Pages</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
@@ -270,6 +274,10 @@ export default function AdminDashboard() {
 
         <TabsContent value="forum" className="mt-6">
           <ForumTab />
+        </TabsContent>
+        
+        <TabsContent value="content" className="mt-6">
+          <ContentManagement />
         </TabsContent>
       </Tabs>
     </div>

@@ -21,11 +21,11 @@ import {
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { PageContent } from "../../../shared/schema";
+import { PageContent } from "@shared/schema";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import { Trash2, Edit, Plus, Eye } from "lucide-react";
-import { ConfirmDialog } from "@/components/confirm-dialog";
+import { ConfirmDialog } from "../../components/confirm-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Card,

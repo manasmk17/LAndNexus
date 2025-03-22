@@ -36,6 +36,7 @@ import ProfileSuccess from "@/pages/profile-success";
 import BookConsultation from "@/pages/book-consultation";
 import TestSecurity from "@/pages/test-security";
 import CsrfTest from "@/pages/csrf-test";
+import PageView from "@/pages/page";
 import NotFound from "@/pages/not-found";
 import { AuthProvider } from "@/lib/auth";
 
@@ -56,6 +57,7 @@ function Router() {
       <Route path="/resources" component={Resources} />
       <Route path="/resource/:id" component={ResourceDetail} />
       <Route path="/forum" component={Forum} />
+      <Route path="/pages/:slug" component={PageView} />
 
       {/* Protected routes with user type restrictions */}
       <ProtectedRoute 

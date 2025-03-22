@@ -43,6 +43,12 @@ export const professionalProfiles = pgTable("professional_profiles", {
   yearsExperience: integer("years_experience").default(0),
   interests: text("interests"),
   industryFocus: text("industry_focus"),
+  services: text("services"), // Services offered 
+  availability: text("availability"), // Contact availability information
+  email: text("contact_email"), // Professional contact email
+  phone: text("contact_phone"), // Professional contact phone
+  workExperience: jsonb("work_experience"), // Work experience as JSON array
+  testimonials: jsonb("testimonials"), // Client testimonials as JSON array
 });
 
 export const insertProfessionalProfileSchema = createInsertSchema(professionalProfiles).omit({

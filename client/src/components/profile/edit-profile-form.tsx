@@ -39,6 +39,24 @@ import {
   insertCertificationSchema
 } from "@shared/schema";
 
+// Type for work experience entries
+const workExperienceSchema = z.object({
+  company: z.string().min(1, "Company name is required"),
+  position: z.string().min(1, "Position is required"), 
+  startDate: z.string().min(1, "Start date is required"),
+  endDate: z.string().optional(),
+  description: z.string().optional(),
+  current: z.boolean().default(false)
+});
+
+// Type for testimonial entries
+const testimonialSchema = z.object({
+  clientName: z.string().min(1, "Client name is required"),
+  company: z.string().optional(),
+  text: z.string().min(1, "Testimonial text is required"),
+  date: z.string().optional()
+});
+
 // Extended professional profile schema for form validation
 const professionalProfileFormSchema = insertProfessionalProfileSchema.extend({
   profileImage: z.instanceof(File).optional(),
@@ -47,7 +65,11 @@ const professionalProfileFormSchema = insertProfessionalProfileSchema.extend({
     name: z.string().optional(),
     issuer: z.string().optional(),
     year: z.coerce.number().optional()
-  }).optional()
+  }).optional(),
+  newWorkExperience: workExperienceSchema.optional(),
+  newTestimonial: testimonialSchema.optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional()
 });
 
 // Extended company profile schema for form validation
@@ -94,6 +116,12 @@ export default function EditProfileForm() {
     enabled: !!professionalProfile,
   });
 
+  // State for work experiences and testimonials
+  const [workExperiences, setWorkExperiences] = useState<any[]>([]);
+  const [testimonials, setTestimonials] = useState<any[]>([]);
+  const [showWorkExpForm, setShowWorkExpForm] = useState(false);
+  const [showTestimonialForm, setShowTestimonialForm] = useState(false);
+
   // Set up form for professional profile
   const professionalForm = useForm<z.infer<typeof professionalProfileFormSchema>>({
     resolver: zodResolver(professionalProfileFormSchema),
@@ -106,10 +134,29 @@ export default function EditProfileForm() {
       profileImageUrl: "",
       userId: user?.id,
       newExpertise: "",
+      services: "",
+      availability: "",
+      email: "",
+      phone: "",
+      yearsExperience: undefined,
       newCertification: {
         name: "",
         issuer: "",
         year: undefined
+      },
+      newWorkExperience: {
+        company: "",
+        position: "",
+        startDate: "",
+        endDate: "",
+        description: "",
+        current: false
+      },
+      newTestimonial: {
+        clientName: "",
+        company: "",
+        text: "",
+        date: ""
       }
     },
   });

@@ -164,7 +164,27 @@ export default function ResourceDetail() {
     );
   }
 
-  return (
+  const handleDownload = async () => {
+  if (!resource?.filePath) return;
+  
+  try {
+    const filename = resource.filePath.split('/').pop();
+    const response = await fetch(`/api/resources/download/${filename}`);
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename || 'resource';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  } catch (error) {
+    console.error('Error downloading file:', error);
+  }
+};
+
+return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
@@ -233,9 +253,26 @@ export default function ResourceDetail() {
               <p className="text-gray-700 mb-4">{resource.description}</p>
               
               {/* Display content as a link if it's a URL */}
-              {resource.content && resource.content.startsWith('http') ? (
-                <div className="mt-4">
-                  <a 
+              {resource.content && (
+              <div className="mt-4">
+                {resource.content.startsWith('http') ? (
+                  <a href={resource.content} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary-dark">
+                    View External Content
+                  </a>
+                ) : (
+                  <div className="prose max-w-none mt-4">
+                    {resource.content}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {resource.filePath && (
+              <Button onClick={handleDownload} className="mt-4">
+                <Download className="mr-2 h-4 w-4" />
+                Download Resource
+              </Button>
+            )} 
                     href={resource.content} 
                     target="_blank"
                     rel="noopener noreferrer" 

@@ -275,7 +275,7 @@ export default function ProfessionalsManagement() {
                             {profile.featured ? "Unfeature Profile" : "Feature Profile"}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          {(profile as AdminProfessionalProfile).verified ? (
+                          {profile.verified ? (
                             <DropdownMenuItem onClick={() => setConfirmUnverify(profile)}>
                               <X className="mr-2 h-4 w-4" />
                               Remove Verification

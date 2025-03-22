@@ -97,6 +97,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import SkillRecommendations from "@/components/profile/skill-recommendations";
+import ImageGallery from "@/components/profile/image-gallery";
 import type { 
   ProfessionalProfile, 
   Expertise, 
@@ -314,6 +315,12 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                 <span className="flex items-center">
                   <Lightbulb className="mr-1 h-4 w-4" />
                   Skill Recommendations
+                </span>
+              </TabsTrigger>
+              <TabsTrigger value="gallery">
+                <span className="flex items-center">
+                  <Image className="mr-1 h-4 w-4" />
+                  Portfolio Gallery
                 </span>
               </TabsTrigger>
               {profile.videoIntroUrl && <TabsTrigger value="video">Video Introduction</TabsTrigger>}

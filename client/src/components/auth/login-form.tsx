@@ -18,10 +18,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const loginSchema = z.object({
   identifier: z.string().min(1, { message: "Username or email is required" }),
   password: z.string().min(1, { message: "Password is required" }),
+  rememberMe: z.boolean().default(false),
 });
 
 export default function LoginForm() {
@@ -35,6 +37,7 @@ export default function LoginForm() {
     defaultValues: {
       identifier: "",
       password: "",
+      rememberMe: false,
     },
   });
 
@@ -44,6 +47,7 @@ export default function LoginForm() {
       const user = await login({
         username: data.identifier, // The backend will handle if this is email or username
         password: data.password,
+        rememberMe: data.rememberMe,
       });
       
       toast({
@@ -110,6 +114,29 @@ export default function LoginForm() {
                 <Input type="password" placeholder="********" {...field} />
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="rememberMe"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0 mt-4">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel className="cursor-pointer">
+                  Remember me
+                </FormLabel>
+                <FormDescription className="text-xs">
+                  Keep me signed in on this device
+                </FormDescription>
+              </div>
             </FormItem>
           )}
         />

@@ -14,6 +14,7 @@ export interface AuthUser {
 interface LoginCredentials {
   username: string; // This can be either username or email
   password: string;
+  rememberMe?: boolean; // Optional flag to keep the user logged in
 }
 
 interface AuthContextType {

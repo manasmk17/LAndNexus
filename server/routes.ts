@@ -603,6 +603,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(401).json({ message: info.message });
       }
+      
+      // Check if rememberMe is requested
+      const rememberMe = req.body.rememberMe === true;
+      
+      // Configure session based on rememberMe
+      if (rememberMe && req.session) {
+        // Extend session to 30 days if "Remember Me" is checked
+        req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+        console.log(`Extended session for user ${user.username} to 30 days`);
+      }
+      
       req.login(user, (err) => {
         if (err) {
           return next(err);

@@ -281,9 +281,28 @@ export const getQueryFn: <T>(options: {
 
       await throwIfResNotOk(res);
       return await res.json();
-    } catch (error) {
-      console.error(`Error in query function for ${url}:`, error);
-      throw error;
+    } catch (error: any) {
+      // Create more descriptive error messages for common network issues
+      if (
+        error instanceof TypeError && 
+        (error.message.includes('Failed to fetch') || 
+         error.message.includes('NetworkError') ||
+         error.message.includes('Network request failed'))
+      ) {
+        console.warn(`Network error in query function for ${url}. Will retry automatically.`);
+        // Create a more specific error for network issues to help with retry logic
+        const networkError = new Error(`Network connection issue: ${error.message}. The application will automatically retry when connectivity is restored.`);
+        networkError.name = 'NetworkError';
+        throw networkError;
+      } else if (error instanceof SyntaxError && error.message.includes('JSON')) {
+        // Handle JSON parsing errors
+        console.error(`JSON parsing error in query function for ${url}:`, error);
+        throw new Error(`Invalid response format from server. Please try again later.`);
+      } else {
+        // General error handling
+        console.error(`Error in query function for ${url}:`, error);
+        throw error;
+      }
     }
   };
 
@@ -294,10 +313,27 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: Infinity,
-      retry: false,
+      retry: 3,
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
     },
     mutations: {
-      retry: false,
+      retry: 2,
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000),
     },
   },
+  // Global error handlers
+  queryCache: {
+    onError: (error: unknown) => {
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        console.warn('Network connection issue detected in query. Will retry automatically.');
+      } else {
+        console.error('Query cache error:', error);
+      }
+    }
+  },
+  mutationCache: {
+    onError: (error: unknown) => {
+      console.error('Mutation cache error:', error);
+    }
+  }
 });

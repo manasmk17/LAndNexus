@@ -67,6 +67,7 @@ import {
   InsertResourceCategory,
   InsertExpertise,
 } from "@shared/schema";
+import ContentManagement from "@/components/admin/content-management";
 import { 
   ChevronDown, 
   ChevronUp, 
@@ -157,6 +158,34 @@ export default function AdminDashboard() {
         </h1>
         <p className="text-gray-500">Manage all aspects of the L&D Nexus platform</p>
       </div>
+
+      <Tabs defaultValue="content" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="content">Content</TabsTrigger>
+          <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="resources">Resources</TabsTrigger>
+          <TabsTrigger value="settings">Settings</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="content">
+          <ContentManagement />
+        </TabsContent>
+        
+        <TabsContent value="users">
+          <UsersManagement />
+        </TabsContent>
+        
+        <TabsContent value="resources">
+          <ResourcesManagement />
+        </TabsContent>
+        
+        <TabsContent value="settings">
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold">Site Settings</h2>
+            {/* Add site settings here */}
+          </div>
+        </TabsContent>
+      </Tabs>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-8 md:w-auto w-full">

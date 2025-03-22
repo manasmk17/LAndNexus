@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { FileText, BookOpen, Video, HeadphonesIcon, User as UserIcon } from "lucide-react";
 import type { Resource, User as UserType } from "@shared/schema";
+import { ImageWithFallback } from "@/components/ui/image-with-fallback";
 
 interface ResourceCardProps {
   resource: Resource;
@@ -60,17 +61,14 @@ export default function ResourceCard({ resource }: ResourceCardProps) {
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-      {resource.imageUrl ? (
-        <img 
-          src={resource.imageUrl} 
-          alt={resource.title} 
+      <div className="w-full h-48 overflow-hidden">
+        <ImageWithFallback
+          src={resource.imageUrl}
+          alt={resource.title}
           className="w-full h-48 object-cover"
+          fallbackClassName="w-full h-48 flex items-center justify-center bg-gray-100"
         />
-      ) : (
-        <div className="w-full h-48 bg-gray-100 flex items-center justify-center">
-          {getResourceTypeIcon()}
-        </div>
-      )}
+      </div>
       <div className="p-6">
         <div className="flex items-center mb-3">
           <Badge className={`flex items-center space-x-1 ${getResourceTypeColor()}`}>

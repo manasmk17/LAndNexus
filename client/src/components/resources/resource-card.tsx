@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { Resource } from '@shared/schema';
 import { Link } from 'wouter';
 import { Eye, ExternalLink, BookOpen, FileText, Video, HeadphonesIcon } from 'lucide-react';
+import { ImageWithFallback } from '@/components/ui/image-with-fallback';
 
 interface ResourceCardProps {
   resource: Resource;
@@ -107,15 +108,14 @@ export default function ResourceCard({ resource }: ResourceCardProps) {
             </DialogDescription>
           </DialogHeader>
           
-          {resource.imageUrl && (
-            <div className="my-4">
-              <img 
-                src={resource.imageUrl} 
-                alt={resource.title} 
-                className="w-full rounded-lg object-cover max-h-60"
-              />
-            </div>
-          )}
+          <div className="my-4">
+            <ImageWithFallback
+              src={resource.imageUrl}
+              alt={resource.title}
+              className="w-full rounded-lg object-cover max-h-60"
+              fallbackClassName="w-full h-40 rounded-lg flex items-center justify-center bg-gray-100"
+            />
+          </div>
           
           <div className="mt-2">
             <h3 className="font-medium text-lg mb-2">Description</h3>

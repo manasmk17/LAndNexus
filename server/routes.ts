@@ -772,10 +772,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if user already has a profile
       const existingProfile = await storage.getProfessionalProfileByUserId(user.id);
-      if (existingProfile) {
-        return res.status(400).json({ message: "User already has a professional profile" });
-      }
-
+      
       // Process uploaded file if present
       let profileImagePath = undefined;
       if (req.file) {
@@ -783,19 +780,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Profile image uploaded: ${profileImagePath}`);
       }
 
-      const profileData = insertProfessionalProfileSchema.parse({
-        ...req.body,
-        userId: user.id,
-        profileImagePath
-      });
+      let profile;
+      
+      if (existingProfile) {
+        console.log(`Updating existing profile for user ${user.id}, profile ID: ${existingProfile.id}`);
+        
+        // Update existing profile
+        profile = await storage.updateProfessionalProfile(existingProfile.id, {
+          ...req.body,
+          profileImagePath: profileImagePath || existingProfile.profileImagePath
+        });
+      } else {
+        console.log(`Creating new profile for user ${user.id}`);
+        
+        // Create new profile
+        const profileData = insertProfessionalProfileSchema.parse({
+          ...req.body,
+          userId: user.id,
+          profileImagePath
+        });
 
-      const profile = await storage.createProfessionalProfile(profileData);
-      res.status(201).json(profile);
+        profile = await storage.createProfessionalProfile(profileData);
+      }
+      
+      res.status(existingProfile ? 200 : 201).json(profile);
     } catch (err) {
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid input", errors: err.errors });
       }
-      console.error("Error creating professional profile:", err);
+      console.error("Error creating/updating professional profile:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });
@@ -1055,10 +1068,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if user already has a profile
       const existingProfile = await storage.getCompanyProfileByUserId(user.id);
-      if (existingProfile) {
-        return res.status(400).json({ message: "User already has a company profile" });
-      }
-
+      
       // Process uploaded file if present
       let profileImagePath = undefined;
       if (req.file) {
@@ -1066,19 +1076,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Company profile image uploaded: ${profileImagePath}`);
       }
 
-      const profileData = insertCompanyProfileSchema.parse({
-        ...req.body,
-        userId: user.id,
-        profileImagePath
-      });
+      let profile;
+      
+      if (existingProfile) {
+        console.log(`Updating existing company profile for user ${user.id}, profile ID: ${existingProfile.id}`);
+        
+        // Update existing profile
+        profile = await storage.updateCompanyProfile(existingProfile.id, {
+          ...req.body,
+          profileImagePath: profileImagePath || existingProfile.profileImagePath
+        });
+      } else {
+        console.log(`Creating new company profile for user ${user.id}`);
+        
+        // Create new profile
+        const profileData = insertCompanyProfileSchema.parse({
+          ...req.body,
+          userId: user.id,
+          profileImagePath
+        });
 
-      const profile = await storage.createCompanyProfile(profileData);
-      res.status(201).json(profile);
+        profile = await storage.createCompanyProfile(profileData);
+      }
+      
+      res.status(existingProfile ? 200 : 201).json(profile);
     } catch (err) {
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid input", errors: err.errors });
       }
-      console.error("Error creating company profile:", err);
+      console.error("Error creating/updating company profile:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });

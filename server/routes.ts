@@ -896,6 +896,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.user as any;
       
+      if (user.userType !== "professional") {
+        return res.status(400).json({ message: "User is not a professional" });
+      }
+      
       const profile = await storage.getProfessionalProfileByUserId(user.id);
       if (!profile) {
         // Instead of 404, return null to handle case of newly registered users without profiles yet
@@ -2181,6 +2185,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/consultations", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
+      const { professionalId, startTime, endTime, rate, notes } = req.body;
 
       if (user.userType !== "company") {
         return res.status(403).json({ message: "Only companies can book consultations" });
@@ -2192,9 +2197,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company profile not found" });
       }
 
+      // Verify professional exists
+      const professional = await storage.getProfessionalProfile(professionalId);
+      if (!professional) {
+        return res.status(404).json({ message: "Professional not found" });
+      }
+
       const consultationData = insertConsultationSchema.parse({
-        ...req.body,
-        companyId: companyProfile.id
+        professionalId,
+        companyId: companyProfile.id,
+        startTime,
+        endTime,
+        rate,
+        notes,
+        status: "scheduled"
       });
 
       const consultation = await storage.createConsultation(consultationData);
@@ -2203,6 +2219,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid input", errors: err.errors });
       }
+      console.error("Error creating consultation:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });

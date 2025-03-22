@@ -689,6 +689,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(req.user);
   });
   
+  // Get user by ID (for resource cards and other components)
+  app.get("/api/me/:id", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID format" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Return only safe public user info
+      res.json({
+        id: user.id,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        userType: user.userType
+      });
+    } catch (err) {
+      console.error("Error fetching user by ID:", err);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+  
   // Get a specific user by ID
   app.get("/api/users/:id", async (req, res) => {
     try {

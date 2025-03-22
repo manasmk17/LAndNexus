@@ -44,6 +44,16 @@ app.use((req, res, next) => {
     '/api/resources/featured'
   ];
   
+  // We should treat all API routes that start with '/api/me/' as exempt for GET requests
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && req.path.startsWith('/api/me/')) {
+      console.log(`CSRF protection bypassed for ${req.method} ${req.path}`);
+      next();
+      return;
+    }
+    next();
+  });
+  
   // Special exempt routes handling for specific HTTP methods
   const methodSpecificExemptions = [
     { path: '/api/professionals/me', method: 'PUT' }

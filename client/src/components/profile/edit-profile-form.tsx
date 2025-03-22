@@ -466,8 +466,14 @@ export default function EditProfileForm() {
   };
 
   const onSubmitProfessional = async (data: z.infer<typeof professionalProfileFormSchema>) => {
+    console.log("Form submission started - professional profile", data);
     try {
       setIsSubmitting(true);
+      
+      // Check if user is authenticated
+      if (!user || !user.id) {
+        throw new Error("You must be logged in to save your profile. Please log in and try again.");
+      }
       
       // Remove additional form fields
       const { newExpertise, newCertification, newWorkExperience, newTestimonial, profileImage, ...profileData } = data;
@@ -483,56 +489,91 @@ export default function EditProfileForm() {
       const enrichedProfileData = {
         ...profileData,
         workExperience: workExperienceJSON,
-        testimonials: testimonialsJSON
+        testimonials: testimonialsJSON,
+        userId: user.id // Explicitly set userId to ensure it's included
       };
+      
+      console.log("Prepared profile data:", enrichedProfileData);
       
       // Add text fields to FormData
       Object.entries(enrichedProfileData).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           formData.append(key, String(value));
+          console.log(`Added form field: ${key} = ${value instanceof Object ? JSON.stringify(value) : value}`);
         }
       });
       
       // Add file if provided
       if (profileImage instanceof File) {
         formData.append('profileImage', profileImage);
+        console.log(`Added file: profileImage (${profileImage.name}, ${profileImage.size} bytes)`);
       }
       
-      let response;
+      // Check for CSRF token before submission
+      const csrfToken = getCsrfToken();
+      if (!csrfToken) {
+        console.warn("No CSRF token found, attempting to refresh before submission");
+        try {
+          // Try to get a fresh token
+          await fetch("/api/csrf-token", { credentials: "include" });
+          console.log("CSRF token refresh attempt completed");
+        } catch (e) {
+          console.error("Failed to refresh CSRF token:", e);
+        }
+      }
       
-      // Always use the /api/professionals/me endpoint for updating the current user's profile
-      // Use secureFileUpload for file uploads which handles CSRF tokens automatically
       console.log("Saving professional profile...", {
-        formData: Array.from(formData.entries()),
-        csrfToken: getCsrfToken()
+        formEntries: Array.from(formData.entries()).map(([key, value]) => 
+          [key, typeof value === 'string' ? value : `(${typeof value})`]
+        ),
+        hasCSRFToken: !!getCsrfToken()
       });
       
-      response = await secureFileUpload('PUT', "/api/professionals/me", formData);
+      // Use secureFileUpload which handles CSRF tokens and file uploads
+      const response = await secureFileUpload('PUT', "/api/professionals/me", formData);
       
       console.log("Response from profile save:", response.status, response.statusText);
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Error saving profile:", errorText);
-        throw new Error(`Error: ${response.status} ${response.statusText} - ${errorText}`);
+      // Read the response body for debugging
+      const responseText = await response.text();
+      let savedProfile;
+      
+      try {
+        // Try to parse the response as JSON
+        savedProfile = JSON.parse(responseText);
+        console.log("Saved profile data:", savedProfile);
+      } catch (e) {
+        console.warn("Could not parse response as JSON:", responseText);
+        // If not JSON, check if the response was ok
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status} ${response.statusText} - ${responseText}`);
+        }
       }
       
-      const savedProfile = await response.json();
-      
-      // Add all selected expertise to the profile
-      for (const expertise of selectedExpertise) {
-        try {
-          // Check if this expertise is already linked to the profile
-          if (!userExpertise || !userExpertise.some(e => e.id === expertise.id)) {
-            await apiRequest(
-              "POST", 
-              `/api/professionals/me/expertise`, 
-              { expertiseId: expertise.id }
-            );
+      // Add all selected expertise to the profile (only if we have a profile ID)
+      if (savedProfile && savedProfile.id) {
+        console.log("Adding selected expertise to profile...");
+        for (const expertise of selectedExpertise) {
+          try {
+            // Check if this expertise is already linked to the profile
+            if (!userExpertise || !userExpertise.some(e => e.id === expertise.id)) {
+              console.log(`Adding expertise ${expertise.name} (ID: ${expertise.id}) to profile`);
+              const expertiseResponse = await apiRequest(
+                "POST", 
+                `/api/professionals/me/expertise`, 
+                { expertiseId: expertise.id }
+              );
+              
+              if (!expertiseResponse.ok) {
+                console.warn(`Failed to add expertise ${expertise.id}: ${expertiseResponse.status} ${expertiseResponse.statusText}`);
+              }
+            }
+          } catch (error) {
+            console.error(`Failed to link expertise ${expertise.id}:`, error);
           }
-        } catch (error) {
-          console.error("Failed to link expertise:", error);
         }
+      } else {
+        console.warn("Skipping expertise addition: No valid profile ID found in response");
       }
       
       toast({
@@ -553,8 +594,8 @@ export default function EditProfileForm() {
         queryKey: ["/api/professionals/me"]
       });
       
-      // Stay on the page instead of redirecting to allow user to see success message
-      // and continue editing if desired
+      console.log("Profile save completed successfully");
+      
     } catch (error) {
       console.error("Profile update error:", error);
       toast({
@@ -568,8 +609,14 @@ export default function EditProfileForm() {
   };
 
   const onSubmitCompany = async (data: z.infer<typeof companyProfileFormSchema>) => {
+    console.log("Form submission started - company profile", data);
     try {
       setIsSubmitting(true);
+      
+      // Check if user is authenticated
+      if (!user || !user.id) {
+        throw new Error("You must be logged in to save your profile. Please log in and try again.");
+      }
       
       // Extract file from form data
       const { profileImage, ...profileData } = data;
@@ -577,27 +624,53 @@ export default function EditProfileForm() {
       // Create FormData for file upload
       const formData = new FormData();
       
-      // Add text fields to FormData
-      Object.entries(profileData).forEach(([key, value]) => {
+      // Add text fields to FormData with explicit userId
+      const enrichedProfileData = {
+        ...profileData,
+        userId: user.id // Explicitly set userId to ensure it's included
+      };
+      
+      console.log("Prepared company profile data:", enrichedProfileData);
+      
+      // Add fields to FormData
+      Object.entries(enrichedProfileData).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {
           formData.append(key, String(value));
+          console.log(`Added form field: ${key} = ${value instanceof Object ? JSON.stringify(value) : value}`);
         }
       });
       
       // Add file if provided
       if (profileImage instanceof File) {
         formData.append('profileImage', profileImage);
+        console.log(`Added file: profileImage (${profileImage.name}, ${profileImage.size} bytes)`);
       }
+      
+      // Check for CSRF token before submission
+      const csrfToken = getCsrfToken();
+      if (!csrfToken) {
+        console.warn("No CSRF token found, attempting to refresh before submission");
+        try {
+          // Try to get a fresh token
+          await fetch("/api/csrf-token", { credentials: "include" });
+          console.log("CSRF token refresh attempt completed");
+        } catch (e) {
+          console.error("Failed to refresh CSRF token:", e);
+        }
+      }
+      
+      console.log("Saving company profile...", {
+        formEntries: Array.from(formData.entries()).map(([key, value]) => 
+          [key, typeof value === 'string' ? value : `(${typeof value})`]
+        ),
+        hasCSRFToken: !!getCsrfToken()
+      });
       
       let response;
       
-      console.log("Saving company profile...", {
-        formData: Array.from(formData.entries()),
-        csrfToken: getCsrfToken()
-      });
-      
       if (companyProfile) {
         // Update existing profile with FormData using secureFileUpload
+        console.log(`Updating existing company profile ID: ${companyProfile.id}`);
         response = await secureFileUpload(
           'PUT',
           `/api/company-profiles/${companyProfile.id}`, 
@@ -605,6 +678,7 @@ export default function EditProfileForm() {
         );
       } else {
         // Create new profile with FormData using secureFileUpload
+        console.log("Creating new company profile");
         response = await secureFileUpload(
           'POST',
           "/api/company-profiles", 
@@ -614,10 +688,20 @@ export default function EditProfileForm() {
       
       console.log("Response from company profile save:", response.status, response.statusText);
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Error saving company profile:", errorText);
-        throw new Error(`Error: ${response.status} ${response.statusText} - ${errorText}`);
+      // Read the response body for debugging
+      const responseText = await response.text();
+      let savedProfile;
+      
+      try {
+        // Try to parse the response as JSON
+        savedProfile = JSON.parse(responseText);
+        console.log("Saved company profile data:", savedProfile);
+      } catch (e) {
+        console.warn("Could not parse response as JSON:", responseText);
+        // If not JSON, check if the response was ok
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status} ${response.statusText} - ${responseText}`);
+        }
       }
       
       toast({
@@ -638,8 +722,8 @@ export default function EditProfileForm() {
         queryKey: ["/api/company-profiles/by-user"]
       });
       
-      // Stay on the page instead of redirecting to allow user to see success message
-      // and continue editing if desired
+      console.log("Company profile save completed successfully");
+      
     } catch (error) {
       console.error("Profile update error:", error);
       toast({

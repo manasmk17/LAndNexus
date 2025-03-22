@@ -1951,7 +1951,3 @@ function ForumTab() {
     </Card>
   );
 }
-// In the tabs section:
-<TabsContent value="content">
-  <ContentManagement />
-</TabsContent>

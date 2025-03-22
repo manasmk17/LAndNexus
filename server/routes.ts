@@ -2929,35 +2929,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Content Management Routes
-app.get("/api/admin/content-sections", isAdmin, async (req, res) => {
-  try {
-    const sections = await storage.getAllContentSections();
-    res.json(sections);
-  } catch (err) {
-    console.error("Error fetching content sections:", err);
-    res.status(500).json({ message: "Error fetching content sections" });
-  }
-});
-
-app.put("/api/admin/content-sections/:id", isAdmin, async (req, res) => {
-  try {
-    const id = req.params.id;
-    const { content } = req.body;
-    
-    const updatedSection = await storage.updateContentSection(id, content);
-    if (!updatedSection) {
-      return res.status(404).json({ message: "Content section not found" });
-    }
-    
-    res.json(updatedSection);
-  } catch (err) {
-    console.error("Error updating content section:", err);
-    res.status(500).json({ message: "Error updating content section" });
-  }
-});
-
-app.post("/api/admin/expertise", isAdmin, async (req, res) => {
+  app.post("/api/admin/expertise", isAdmin, async (req, res) => {
     try {
       const expertiseData = insertExpertiseSchema.parse(req.body);
       const expertise = await storage.createExpertise(expertiseData);

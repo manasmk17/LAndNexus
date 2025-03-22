@@ -12,6 +12,18 @@
     @apply font-sans antialiased bg-background text-foreground leading-relaxed;
   }
 
+  .section-heading {
+    @apply text-3xl font-bold mb-6 text-custom-primary;
+  }
+
+  .card-container {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+  }
+
+  .custom-button {
+    @apply px-4 py-2 bg-custom-primary text-white rounded hover:bg-custom-accent transition-colors;
+  }
+
   h1 {
     @apply text-4xl font-bold tracking-tight md:text-5xl;
   }

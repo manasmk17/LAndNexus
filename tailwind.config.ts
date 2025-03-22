@@ -11,6 +11,11 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       colors: {
+        custom: {
+          primary: '#2563eb',
+          secondary: '#475569',
+          accent: '#0ea5e9'
+        },
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         card: {

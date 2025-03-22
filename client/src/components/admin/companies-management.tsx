@@ -52,7 +52,7 @@ export default function CompaniesManagement() {
 
   // Fetch all company profiles
   const { data: companies, isLoading, error } = useQuery<CompanyProfile[]>({
-    queryKey: ["/api/admin/companies"],
+    queryKey: ["/api/admin/company-profiles"],
     retry: 1,
   });
 
@@ -76,13 +76,13 @@ export default function CompaniesManagement() {
     }) => {
       const response = await apiRequest(
         "PATCH",
-        `/api/admin/companies/${companyId}/verify`,
+        `/api/admin/company-profiles/${companyId}/verify`,
         { verified }
       );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/company-profiles"] });
       setConfirmVerify(null);
       setConfirmUnverify(null);
       toast({
@@ -110,13 +110,13 @@ export default function CompaniesManagement() {
     }) => {
       const response = await apiRequest(
         "PATCH",
-        `/api/admin/companies/${companyId}/featured`,
+        `/api/admin/company-profiles/${companyId}/featured`,
         { featured }
       );
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/company-profiles"] });
       toast({
         title: "Company Updated",
         description: "Featured status has been updated successfully",
@@ -141,7 +141,7 @@ export default function CompaniesManagement() {
         </p>
         <Button
           className="mt-4"
-          onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/admin/companies"] })}
+          onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/admin/company-profiles"] })}
         >
           Retry
         </Button>

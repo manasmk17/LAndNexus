@@ -3779,5 +3779,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Page Content Management API Routes
+  // Get all page contents
+  app.get("/api/page-contents", async (req, res) => {
+    try {
+      const contents = await storage.getAllPageContents();
+      res.json(contents);
+    } catch (err) {
+      console.error("Error fetching page contents:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get page content by id
+  app.get("/api/page-contents/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid page content ID" });
+      }
+
+      const pageContent = await storage.getPageContent(id);
+      if (!pageContent) {
+        return res.status(404).json({ message: "Page content not found" });
+      }
+
+      res.json(pageContent);
+    } catch (err) {
+      console.error("Error fetching page content:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get page content by slug
+  app.get("/api/pages/:slug", async (req, res) => {
+    try {
+      const slug = req.params.slug;
+      const pageContent = await storage.getPageContentBySlug(slug);
+      
+      if (!pageContent) {
+        return res.status(404).json({ message: "Page content not found" });
+      }
+
+      res.json(pageContent);
+    } catch (err) {
+      console.error("Error fetching page by slug:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Create page content (admin only)
+  app.post("/api/page-contents", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const { slug, title, content } = req.body;
+      
+      if (!slug || !title || !content) {
+        return res.status(400).json({ message: "Slug, title, and content are required" });
+      }
+
+      // Check if slug already exists
+      const existing = await storage.getPageContentBySlug(slug);
+      if (existing) {
+        return res.status(409).json({ message: "A page with this slug already exists" });
+      }
+
+      const newPageContent = await storage.createPageContent({
+        slug,
+        title,
+        content,
+        lastEditedBy: req.user?.id || null
+      });
+
+      res.status(201).json(newPageContent);
+    } catch (err) {
+      console.error("Error creating page content:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update page content (admin only)
+  app.put("/api/page-contents/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid page content ID" });
+      }
+
+      const { title, content, slug } = req.body;
+      
+      // Check if the page content exists
+      const pageContent = await storage.getPageContent(id);
+      if (!pageContent) {
+        return res.status(404).json({ message: "Page content not found" });
+      }
+
+      // If changing slug, check if it conflicts with another page
+      if (slug && slug !== pageContent.slug) {
+        const existing = await storage.getPageContentBySlug(slug);
+        if (existing && existing.id !== id) {
+          return res.status(409).json({ message: "A page with this slug already exists" });
+        }
+      }
+
+      const updatedPageContent = await storage.updatePageContent(id, {
+        title: title || pageContent.title,
+        content: content || pageContent.content,
+        slug: slug || pageContent.slug,
+        lastEditedBy: req.user?.id
+      });
+
+      res.json(updatedPageContent);
+    } catch (err) {
+      console.error("Error updating page content:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Delete page content (admin only)
+  app.delete("/api/page-contents/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid page content ID" });
+      }
+
+      const success = await storage.deletePageContent(id);
+      if (success) {
+        res.status(204).send();
+      } else {
+        res.status(404).json({ message: "Page content not found" });
+      }
+    } catch (err) {
+      console.error("Error deleting page content:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   return httpServer;
 }

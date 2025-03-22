@@ -927,7 +927,8 @@ export class MemStorage implements IStorage {
       ...content,
       id,
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      lastEditedBy: content.lastEditedBy || null
     };
     this.pageContents.set(id, newContent);
     return newContent;
@@ -940,7 +941,8 @@ export class MemStorage implements IStorage {
     const updated = { 
       ...existing, 
       ...content,
-      updatedAt: new Date() 
+      updatedAt: new Date(),
+      lastEditedBy: content.lastEditedBy !== undefined ? content.lastEditedBy : existing.lastEditedBy 
     };
     this.pageContents.set(id, updated);
     return updated;
@@ -1663,6 +1665,59 @@ export class DatabaseStorage implements IStorage {
       .where(eq(skillRecommendations.id, id))
       .returning();
     return updatedRecommendation;
+  }
+
+  // Page Content operations
+  async getPageContent(id: number): Promise<PageContent | undefined> {
+    const [content] = await db
+      .select()
+      .from(pageContents)
+      .where(eq(pageContents.id, id));
+    return content;
+  }
+
+  async getPageContentBySlug(slug: string): Promise<PageContent | undefined> {
+    const [content] = await db
+      .select()
+      .from(pageContents)
+      .where(eq(pageContents.slug, slug));
+    return content;
+  }
+
+  async getAllPageContents(): Promise<PageContent[]> {
+    return db.select().from(pageContents).orderBy(desc(pageContents.updatedAt));
+  }
+
+  async createPageContent(content: InsertPageContent): Promise<PageContent> {
+    const [created] = await db
+      .insert(pageContents)
+      .values({
+        ...content,
+        lastEditedBy: content.lastEditedBy || null
+      })
+      .returning();
+    return created;
+  }
+
+  async updatePageContent(id: number, content: Partial<InsertPageContent>): Promise<PageContent | undefined> {
+    const [updated] = await db
+      .update(pageContents)
+      .set({
+        ...content,
+        updatedAt: new Date(),
+        lastEditedBy: content.lastEditedBy !== undefined ? content.lastEditedBy : null
+      })
+      .where(eq(pageContents.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deletePageContent(id: number): Promise<boolean> {
+    const result = await db
+      .delete(pageContents)
+      .where(eq(pageContents.id, id))
+      .returning({ id: pageContents.id });
+    return result.length > 0;
   }
 }
 

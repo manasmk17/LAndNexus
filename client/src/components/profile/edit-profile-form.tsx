@@ -574,30 +574,18 @@ export default function EditProfileForm() {
       let response;
       
       if (companyProfile) {
-        // Update existing profile with FormData
-        response = await fetch(
+        // Update existing profile with FormData using secureFileUpload
+        response = await secureFileUpload(
+          'PUT',
           `/api/company-profiles/${companyProfile.id}`, 
-          {
-            method: 'PUT',
-            body: formData,
-            credentials: 'include',
-            headers: {
-              'X-CSRF-Token': getCsrfToken() || ''
-            }
-          }
+          formData
         );
       } else {
-        // Create new profile with FormData
-        response = await fetch(
+        // Create new profile with FormData using secureFileUpload
+        response = await secureFileUpload(
+          'POST',
           "/api/company-profiles", 
-          {
-            method: 'POST',
-            body: formData,
-            credentials: 'include',
-            headers: {
-              'X-CSRF-Token': getCsrfToken() || ''
-            }
-          }
+          formData
         );
       }
       

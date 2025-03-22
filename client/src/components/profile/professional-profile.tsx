@@ -64,12 +64,15 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
   });
   
   const { 
-    data: resources = [] 
+    data: resources = [],
+    isError: isResourcesError 
   } = useQuery<Resource[]>({
     queryKey: [`/api/professional-profiles/${professionalId}/resources`],
     enabled: !!profile,
     // Add default empty array to prevent JSON parsing error when empty response is returned
-    select: (data) => data || []
+    select: (data) => data || [],
+    // Use retry: false to prevent excessive retries on error
+    retry: false,
   });
   
   const handleMessageClick = () => {
@@ -153,11 +156,11 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
         <Card>
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row md:items-center gap-6">
-              <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center">
-                {profile.profileImageUrl ? (
+              <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                {profile.profileImagePath ? (
                   <img 
-                    src={profile.profileImageUrl} 
-                    alt={profile.title} 
+                    src={`/${profile.profileImagePath}`} 
+                    alt={`${profile.firstName} ${profile.lastName}`} 
                     className="w-full h-full object-cover rounded-full"
                   />
                 ) : (
@@ -363,12 +366,28 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
             {profile.videoIntroUrl && (
               <TabsContent value="video" className="mt-6">
                 <h2 className="text-xl font-semibold mb-4">Video Introduction</h2>
-                <div className="relative aspect-video">
-                  <div className="flex items-center justify-center bg-gray-100 rounded-md h-full">
-                    <Video className="h-12 w-12 text-gray-400" />
-                    <p className="ml-2 text-gray-500">Video introduction available</p>
-                  </div>
+                <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+                  {profile.videoIntroUrl.includes('youtube.com') || profile.videoIntroUrl.includes('youtu.be') ? (
+                    <iframe 
+                      src={profile.videoIntroUrl.replace('watch?v=', 'embed/')} 
+                      className="w-full h-full" 
+                      allowFullScreen 
+                      title={`${profile.firstName} ${profile.lastName} introduction video`}
+                    />
+                  ) : (
+                    <video 
+                      src={profile.videoIntroUrl} 
+                      controls 
+                      className="w-full h-full"
+                      poster="/images/video-poster.jpg"
+                    >
+                      Your browser does not support video playback.
+                    </video>
+                  )}
                 </div>
+                <p className="mt-2 text-sm text-gray-500">
+                  Watch {profile.firstName}'s introduction video to learn more about their expertise and services.
+                </p>
               </TabsContent>
             )}
             

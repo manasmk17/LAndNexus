@@ -10,7 +10,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface GalleryUploadProps {
   professionalId: number;
-  onUploadSuccess?: (gallery: any[]) => void;
+  onUploadSuccess?: (uploadedImage: {id: number, path: string, caption?: string}) => void;
 }
 
 export default function GalleryUpload({ professionalId, onUploadSuccess }: GalleryUploadProps) {
@@ -71,17 +71,23 @@ export default function GalleryUpload({ professionalId, onUploadSuccess }: Galle
         title: "Success",
         description: "Image uploaded to gallery",
       });
-      // Clear form
-      setSelectedFile(null);
-      setPreview(null);
-      setCaption("");
       
       // Invalidate gallery images query
       queryClient.invalidateQueries({ queryKey: [`/api/professionals/${professionalId}/gallery`] });
       
-      // Call success callback if provided
-      if (onUploadSuccess && data.gallery) {
-        onUploadSuccess(data.gallery);
+      // Call success callback with the newly uploaded image
+      if (onUploadSuccess && data.image) {
+        onUploadSuccess(data.image);
+        
+        // Clear form after passing the data
+        setSelectedFile(null);
+        setPreview(null);
+        setCaption("");
+      } else {
+        // Still clear the form if no callback/data
+        setSelectedFile(null);
+        setPreview(null);
+        setCaption("");
       }
     },
     onError: (error: Error) => {

@@ -93,7 +93,8 @@ import {
   MessageSquare, 
   Briefcase, 
   CheckCircle,
-  Lightbulb
+  Lightbulb,
+  ImageIcon
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import SkillRecommendations from "@/components/profile/skill-recommendations";
@@ -319,7 +320,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
               </TabsTrigger>
               <TabsTrigger value="gallery">
                 <span className="flex items-center">
-                  <Image className="mr-1 h-4 w-4" />
+                  <ImageIcon className="mr-1 h-4 w-4" />
                   Portfolio Gallery
                 </span>
               </TabsTrigger>
@@ -535,6 +536,13 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
               <SkillRecommendations 
                 professionalId={professionalId} 
                 isCurrentUser={user?.id === profile.userId}
+              />
+            </TabsContent>
+            
+            <TabsContent value="gallery" className="mt-6">
+              <ImageGallery 
+                professionalId={professionalId} 
+                editable={user?.id === profile.userId}
               />
             </TabsContent>
             

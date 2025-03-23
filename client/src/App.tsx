@@ -62,6 +62,7 @@ function Router() {
       <Route path="/forum" component={Forum} />
       <Route path="/pages/:slug" component={PageView} />
       <Route path="/admin-test" component={AdminTest} />
+      <Route path="/admin-page" component={AdminPage} />
 
       {/* Protected routes with user type restrictions */}
       <ProtectedRoute 

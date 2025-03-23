@@ -1713,11 +1713,34 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deletePageContent(id: number): Promise<boolean> {
-    const result = await db
-      .delete(pageContents)
-      .where(eq(pageContents.id, id))
-      .returning({ id: pageContents.id });
-    return result.length > 0;
+    try {
+      console.log(`Storage: Attempting to delete page content with ID: ${id}`);
+      
+      // First verify the record exists to avoid unnecessary delete operations
+      const existing = await db
+        .select({ id: pageContents.id })
+        .from(pageContents)
+        .where(eq(pageContents.id, id));
+        
+      if (existing.length === 0) {
+        console.log(`Storage: Page content with ID ${id} not found, nothing to delete`);
+        return false;
+      }
+      
+      // If it exists, proceed with deletion
+      const result = await db
+        .delete(pageContents)
+        .where(eq(pageContents.id, id))
+        .returning({ id: pageContents.id });
+        
+      const success = result.length > 0;
+      console.log(`Storage: Delete operation for page content ID ${id} result:`, success ? 'Success' : 'Failed');
+      
+      return success;
+    } catch (error) {
+      console.error(`Storage: Error deleting page content with ID ${id}:`, error);
+      throw error; // Re-throw to allow proper error handling
+    }
   }
 }
 

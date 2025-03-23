@@ -129,18 +129,27 @@ export function ContentManagement() {
   // Delete page content
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/page-contents/${id}`);
+      console.log(`Attempting to delete page content with ID: ${id}`);
+      const response = await apiRequest("DELETE", `/api/page-contents/${id}`);
+      console.log(`Delete response status: ${response.status}`);
+      return response;
     },
     onSuccess: () => {
       toast({
         title: "Page deleted",
         description: "The page has been deleted successfully",
       });
+      
+      // Force refetch the data instead of just invalidating the query
       queryClient.invalidateQueries({ queryKey: ["/api/page-contents"] });
+      queryClient.refetchQueries({ queryKey: ["/api/page-contents"] });
+      
       setIsDeleteDialogOpen(false);
       setDeleteContentId(null);
     },
     onError: (err: any) => {
+      console.error("Delete mutation error:", err);
+      
       toast({
         title: "Failed to delete page",
         description: err.message || "An error occurred while deleting the page",

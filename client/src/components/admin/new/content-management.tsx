@@ -3,6 +3,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -35,7 +36,8 @@ import {
   Book,
   CalendarDays,
   ExternalLink,
-  Images
+  Images,
+  CheckSquare
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -48,6 +50,17 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Sample resources data
 const sampleResources = [
@@ -236,6 +249,11 @@ export default function ContentManagement() {
   const [pages, setPages] = useState(samplePages);
   const [categories, setCategories] = useState(sampleCategories);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedResources, setSelectedResources] = useState<number[]>([]);
+  const [selectedPages, setSelectedPages] = useState<number[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [bulkDeleteType, setBulkDeleteType] = useState<"resources" | "pages" | "categories">("resources");
   const { toast } = useToast();
 
   // Filter resources based on search term
@@ -314,6 +332,84 @@ export default function ContentManagement() {
       default:
         return 'bg-gray-100 text-gray-800';
     }
+  };
+  
+  // Selection and bulk delete handlers
+  const toggleSelectResource = (id: number) => {
+    setSelectedResources(prev => 
+      prev.includes(id) 
+        ? prev.filter(resourceId => resourceId !== id)
+        : [...prev, id]
+    );
+  };
+  
+  const toggleSelectPage = (id: number) => {
+    setSelectedPages(prev => 
+      prev.includes(id) 
+        ? prev.filter(pageId => pageId !== id)
+        : [...prev, id]
+    );
+  };
+  
+  const toggleSelectCategory = (id: number) => {
+    setSelectedCategories(prev => 
+      prev.includes(id) 
+        ? prev.filter(categoryId => categoryId !== id)
+        : [...prev, id]
+    );
+  };
+  
+  const toggleSelectAll = () => {
+    if (activeTab === "resources") {
+      if (selectedResources.length === filteredResources.length) {
+        setSelectedResources([]);
+      } else {
+        setSelectedResources(filteredResources.map(r => r.id));
+      }
+    } else if (activeTab === "pages") {
+      if (selectedPages.length === filteredPages.length) {
+        setSelectedPages([]);
+      } else {
+        setSelectedPages(filteredPages.map(p => p.id));
+      }
+    } else if (activeTab === "categories") {
+      if (selectedCategories.length === filteredCategories.length) {
+        setSelectedCategories([]);
+      } else {
+        setSelectedCategories(filteredCategories.map(c => c.id));
+      }
+    }
+  };
+  
+  const handleBulkDelete = () => {
+    setBulkDeleteType(activeTab as any);
+    setConfirmDialogOpen(true);
+  };
+  
+  const confirmBulkDelete = () => {
+    if (bulkDeleteType === "resources" && selectedResources.length > 0) {
+      setResources(resources.filter(r => !selectedResources.includes(r.id)));
+      setSelectedResources([]);
+      toast({
+        title: "Resources deleted",
+        description: `Successfully deleted ${selectedResources.length} resources.`,
+      });
+    } else if (bulkDeleteType === "pages" && selectedPages.length > 0) {
+      setPages(pages.filter(p => !selectedPages.includes(p.id)));
+      setSelectedPages([]);
+      toast({
+        title: "Pages deleted",
+        description: `Successfully deleted ${selectedPages.length} pages.`,
+      });
+    } else if (bulkDeleteType === "categories" && selectedCategories.length > 0) {
+      setCategories(categories.filter(c => !selectedCategories.includes(c.id)));
+      setSelectedCategories([]);
+      toast({
+        title: "Categories deleted",
+        description: `Successfully deleted ${selectedCategories.length} categories.`,
+      });
+    }
+    setConfirmDialogOpen(false);
   };
 
   return (

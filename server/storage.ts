@@ -1081,24 +1081,24 @@ export class DatabaseStorage implements IStorage {
       // Start a transaction to handle related records
       return await db.transaction(async (tx) => {
         // Check for company profiles associated with this user
-        const companyProfiles = await tx
+        const companyProfileResults = await tx
           .select({ id: companyProfiles.id })
           .from(companyProfiles)
           .where(eq(companyProfiles.userId, id));
           
-        if (companyProfiles.length > 0) {
-          console.log(`Cannot delete user ${id}: Found ${companyProfiles.length} associated company profiles`);
+        if (companyProfileResults.length > 0) {
+          console.log(`Cannot delete user ${id}: Found ${companyProfileResults.length} associated company profiles`);
           throw new Error(`User is associated with company profiles. Please delete those first.`);
         }
         
         // Check for professional profiles associated with this user
-        const professionalProfiles = await tx
+        const professionalProfileResults = await tx
           .select({ id: professionalProfiles.id })
           .from(professionalProfiles)
           .where(eq(professionalProfiles.userId, id));
           
-        if (professionalProfiles.length > 0) {
-          console.log(`Cannot delete user ${id}: Found ${professionalProfiles.length} associated professional profiles`);
+        if (professionalProfileResults.length > 0) {
+          console.log(`Cannot delete user ${id}: Found ${professionalProfileResults.length} associated professional profiles`);
           throw new Error(`User is associated with professional profiles. Please delete those first.`);
         }
         

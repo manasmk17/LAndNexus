@@ -28,7 +28,10 @@ import {
   Download,
   Eye,
   Link as LinkIcon,
-  FileText
+  FileText,
+  Trash2,
+  AlertTriangle,
+  Edit
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -40,6 +43,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Sample company data
 const sampleCompanies = [
@@ -132,6 +145,8 @@ const sampleCompanies = [
 export default function CompanyManagement() {
   const [companies, setCompanies] = useState(sampleCompanies);
   const [searchTerm, setSearchTerm] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [companyToDelete, setCompanyToDelete] = useState<number | null>(null);
   const { toast } = useToast();
 
   // Filter companies based on search term
@@ -179,6 +194,28 @@ export default function CompanyManagement() {
       title: `Verification status updated`,
       description: `${company?.companyName} has been ${action}.`,
     });
+  };
+
+  const handleDeleteClick = (id: number) => {
+    setCompanyToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (companyToDelete === null) return;
+    
+    const companyName = companies.find(c => c.id === companyToDelete)?.companyName;
+    setCompanies(companies.filter(company => company.id !== companyToDelete));
+    
+    toast({
+      title: "Company deleted",
+      description: `${companyName} has been deleted successfully.`,
+      variant: "default",
+    });
+
+    // Close the dialog
+    setDeleteDialogOpen(false);
+    setCompanyToDelete(null);
   };
 
   const getCompanySizeColor = (size: string) => {
@@ -364,6 +401,14 @@ export default function CompanyManagement() {
                             </>
                           )}
                         </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteClick(company.id)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Company
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -380,6 +425,31 @@ export default function CompanyManagement() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Delete Company
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the company profile
+              and remove all associated data including job listings from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

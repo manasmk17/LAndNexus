@@ -31,6 +31,7 @@ import {
   Briefcase,
   Edit,
   Trash2,
+  AlertTriangle
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -43,6 +44,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Sample jobs data
 const sampleJobs = [
@@ -147,6 +158,8 @@ const sampleJobs = [
 export default function JobManagement() {
   const [jobs, setJobs] = useState(sampleJobs);
   const [searchTerm, setSearchTerm] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState<number | null>(null);
   const { toast } = useToast();
 
   // Filter jobs based on search term
@@ -193,6 +206,28 @@ export default function JobManagement() {
       title: `Job status updated`,
       description: `Job "${job?.title}" is now ${status}.`,
     });
+  };
+  
+  const handleDeleteClick = (id: number) => {
+    setJobToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (jobToDelete === null) return;
+    
+    const jobTitle = jobs.find(j => j.id === jobToDelete)?.title;
+    setJobs(jobs.filter(job => job.id !== jobToDelete));
+    
+    toast({
+      title: "Job deleted",
+      description: `Job "${jobTitle}" has been deleted successfully.`,
+      variant: "default",
+    });
+
+    // Close the dialog
+    setDeleteDialogOpen(false);
+    setJobToDelete(null);
   };
 
   const getJobStatusColor = (status: string) => {
@@ -387,7 +422,10 @@ export default function JobManagement() {
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-red-600">
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteClick(job.id)}
+                          className="text-destructive focus:text-destructive"
+                        >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Delete Job
                         </DropdownMenuItem>
@@ -407,6 +445,31 @@ export default function JobManagement() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Delete Job Posting
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the job posting
+              and remove all associated applications from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

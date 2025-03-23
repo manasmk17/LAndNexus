@@ -247,7 +247,7 @@ export function CompaniesPanel() {
                 </div>
                 <div className="grid grid-cols-3">
                   <div className="font-semibold">Size:</div>
-                  <div className="col-span-2">{selectedCompany.companySize}</div>
+                  <div className="col-span-2">{selectedCompany.size}</div>
                 </div>
                 <div className="grid grid-cols-3">
                   <div className="font-semibold">Website:</div>

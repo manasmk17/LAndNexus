@@ -290,7 +290,7 @@ export function ProfessionalsPanel() {
                 </div>
                 <div className="grid grid-cols-3">
                   <div className="font-semibold">Experience:</div>
-                  <div className="col-span-2">{selectedProfile.yearsOfExperience ? `${selectedProfile.yearsOfExperience} years` : 'N/A'}</div>
+                  <div className="col-span-2">{selectedProfile.yearsExperience ? `${selectedProfile.yearsExperience} years` : 'N/A'}</div>
                 </div>
                 <div className="grid grid-cols-3">
                   <div className="font-semibold">Status:</div>

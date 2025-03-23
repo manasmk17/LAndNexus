@@ -66,6 +66,13 @@ export default function Hero() {
                       <Award className="ml-2 h-5 w-5" />
                     </Link>
                   </Button>
+                  <div className="mt-4 w-full text-center sm:text-left">
+                    <Button variant="ghost" size="sm" className="text-blue-300 hover:text-blue-100 hover:bg-blue-900/40" asChild>
+                      <Link href="/admin-login">
+                        Admin Login
+                      </Link>
+                    </Button>
+                  </div>
                 </>
               )}
             </div>

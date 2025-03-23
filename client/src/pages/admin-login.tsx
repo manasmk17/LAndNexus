@@ -81,6 +81,11 @@ export default function AdminLogin() {
             <CardDescription>
               Enter your credentials to access the admin dashboard
             </CardDescription>
+            <CardDescription className="mt-2 text-sm text-muted-foreground">
+              Test admin credentials available:<br/>
+              Username: admin1742708297528<br/>
+              Password: admin123
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {loginError && (

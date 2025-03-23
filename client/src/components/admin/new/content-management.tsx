@@ -496,16 +496,35 @@ export default function ContentManagement() {
         {/* Resources Tab Content */}
         <TabsContent value="resources" className="mt-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Resources</CardTitle>
-              <CardDescription>
-                Manage learning resources, articles, templates, videos, and webinars.
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Resources</CardTitle>
+                <CardDescription>
+                  Manage learning resources, articles, templates, videos, and webinars.
+                </CardDescription>
+              </div>
+              {selectedResources.length > 0 && (
+                <Button 
+                  variant="destructive" 
+                  className="flex items-center gap-2"
+                  onClick={handleBulkDelete}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Selected ({selectedResources.length})
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">
+                      <Checkbox 
+                        checked={selectedResources.length === filteredResources.length && filteredResources.length > 0}
+                        onCheckedChange={toggleSelectAll}
+                        aria-label="Select all resources"
+                      />
+                    </TableHead>
                     <TableHead>Title</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Category</TableHead>
@@ -518,7 +537,14 @@ export default function ContentManagement() {
                 </TableHeader>
                 <TableBody>
                   {filteredResources.map((resource) => (
-                    <TableRow key={resource.id}>
+                    <TableRow key={resource.id} className={selectedResources.includes(resource.id) ? "bg-muted/30" : ""}>
+                      <TableCell>
+                        <Checkbox 
+                          checked={selectedResources.includes(resource.id)}
+                          onCheckedChange={() => toggleSelectResource(resource.id)}
+                          aria-label={`Select ${resource.title}`}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">
                         {resource.title}
                       </TableCell>
@@ -597,7 +623,7 @@ export default function ContentManagement() {
                   ))}
                   {filteredResources.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                      <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
                         No resources found matching your search criteria.
                       </TableCell>
                     </TableRow>
@@ -605,22 +631,57 @@ export default function ContentManagement() {
                 </TableBody>
               </Table>
             </CardContent>
+            {selectedResources.length > 0 && (
+              <CardFooter className="border-t bg-muted/30 justify-between py-2">
+                <div className="text-sm text-muted-foreground">
+                  {selectedResources.length} resources selected
+                </div>
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  className="flex items-center gap-2"
+                  onClick={handleBulkDelete}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Selected
+                </Button>
+              </CardFooter>
+            )}
           </Card>
         </TabsContent>
         
         {/* Pages Tab Content */}
         <TabsContent value="pages" className="mt-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Pages</CardTitle>
-              <CardDescription>
-                Manage static pages and content for the platform.
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Pages</CardTitle>
+                <CardDescription>
+                  Manage static pages and content for the platform.
+                </CardDescription>
+              </div>
+              {selectedPages.length > 0 && (
+                <Button 
+                  variant="destructive" 
+                  className="flex items-center gap-2"
+                  onClick={handleBulkDelete}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Selected ({selectedPages.length})
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">
+                      <Checkbox 
+                        checked={selectedPages.length === filteredPages.length && filteredPages.length > 0}
+                        onCheckedChange={toggleSelectAll}
+                        aria-label="Select all pages"
+                      />
+                    </TableHead>
                     <TableHead>Title</TableHead>
                     <TableHead>Slug</TableHead>
                     <TableHead>Created</TableHead>
@@ -630,7 +691,14 @@ export default function ContentManagement() {
                 </TableHeader>
                 <TableBody>
                   {filteredPages.map((page) => (
-                    <TableRow key={page.id}>
+                    <TableRow key={page.id} className={selectedPages.includes(page.id) ? "bg-muted/30" : ""}>
+                      <TableCell>
+                        <Checkbox 
+                          checked={selectedPages.includes(page.id)}
+                          onCheckedChange={() => toggleSelectPage(page.id)}
+                          aria-label={`Select ${page.title}`}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">
                         {page.title}
                       </TableCell>
@@ -667,7 +735,7 @@ export default function ContentManagement() {
                   ))}
                   {filteredPages.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
+                      <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
                         No pages found matching your search criteria.
                       </TableCell>
                     </TableRow>
@@ -675,22 +743,57 @@ export default function ContentManagement() {
                 </TableBody>
               </Table>
             </CardContent>
+            {selectedPages.length > 0 && (
+              <CardFooter className="border-t bg-muted/30 justify-between py-2">
+                <div className="text-sm text-muted-foreground">
+                  {selectedPages.length} pages selected
+                </div>
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  className="flex items-center gap-2"
+                  onClick={handleBulkDelete}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Selected
+                </Button>
+              </CardFooter>
+            )}
           </Card>
         </TabsContent>
         
         {/* Categories Tab Content */}
         <TabsContent value="categories" className="mt-6">
           <Card>
-            <CardHeader>
-              <CardTitle>Resource Categories</CardTitle>
-              <CardDescription>
-                Manage resource categories and classifications.
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Resource Categories</CardTitle>
+                <CardDescription>
+                  Manage resource categories and classifications.
+                </CardDescription>
+              </div>
+              {selectedCategories.length > 0 && (
+                <Button 
+                  variant="destructive" 
+                  className="flex items-center gap-2"
+                  onClick={handleBulkDelete}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Selected ({selectedCategories.length})
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">
+                      <Checkbox 
+                        checked={selectedCategories.length === filteredCategories.length && filteredCategories.length > 0}
+                        onCheckedChange={toggleSelectAll}
+                        aria-label="Select all categories"
+                      />
+                    </TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Resources</TableHead>
                     <TableHead></TableHead>
@@ -698,7 +801,14 @@ export default function ContentManagement() {
                 </TableHeader>
                 <TableBody>
                   {filteredCategories.map((category) => (
-                    <TableRow key={category.id}>
+                    <TableRow key={category.id} className={selectedCategories.includes(category.id) ? "bg-muted/30" : ""}>
+                      <TableCell>
+                        <Checkbox 
+                          checked={selectedCategories.includes(category.id)}
+                          onCheckedChange={() => toggleSelectCategory(category.id)}
+                          aria-label={`Select ${category.name}`}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">
                         {category.name}
                       </TableCell>
@@ -733,7 +843,7 @@ export default function ContentManagement() {
                   ))}
                   {filteredCategories.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center py-6 text-muted-foreground">
+                      <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
                         No categories found matching your search criteria.
                       </TableCell>
                     </TableRow>
@@ -741,9 +851,44 @@ export default function ContentManagement() {
                 </TableBody>
               </Table>
             </CardContent>
+            {selectedCategories.length > 0 && (
+              <CardFooter className="border-t bg-muted/30 justify-between py-2">
+                <div className="text-sm text-muted-foreground">
+                  {selectedCategories.length} categories selected
+                </div>
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  className="flex items-center gap-2"
+                  onClick={handleBulkDelete}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Selected
+                </Button>
+              </CardFooter>
+            )}
           </Card>
         </TabsContent>
       </Tabs>
+      <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Bulk Delete</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the selected items? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmBulkDelete} 
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

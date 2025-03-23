@@ -38,6 +38,8 @@ export default function UsersManagement() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [confirmDeleteUser, setConfirmDeleteUser] = useState<User | null>(null);
+  const [confirmCascadeDelete, setConfirmCascadeDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Fetch all users
   const { data: users, isLoading, error } = useQuery<User[]>({

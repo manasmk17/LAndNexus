@@ -3903,15 +3903,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid page content ID" });
       }
 
+      // First check if the content exists
+      const content = await storage.getPageContent(id);
+      if (!content) {
+        return res.status(404).json({ message: "Page content not found" });
+      }
+
+      console.log(`Attempting to delete page content with ID: ${id}`);
       const success = await storage.deletePageContent(id);
+      
+      console.log(`Delete operation result: ${success ? 'Success' : 'Failed'}`);
+      
       if (success) {
         res.status(204).send();
       } else {
-        res.status(404).json({ message: "Page content not found" });
+        res.status(404).json({ message: "Page content not found or could not be deleted" });
       }
     } catch (err) {
       console.error("Error deleting page content:", err);
-      res.status(500).json({ message: "Internal server error" });
+      console.error(err instanceof Error ? err.stack : String(err));
+      res.status(500).json({ 
+        message: "Internal server error", 
+        error: err instanceof Error ? err.message : String(err)
+      });
     }
   });
 

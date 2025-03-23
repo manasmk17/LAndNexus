@@ -34,9 +34,6 @@ import Subscribe from "@/pages/subscribe";
 import SubscriptionSuccess from "@/pages/subscription-success";
 import ProfileSuccess from "@/pages/profile-success";
 import BookConsultation from "@/pages/book-consultation";
-import TestSecurity from "@/pages/test-security";
-import TestCascadeDelete from "@/pages/test-cascade-delete";
-import CsrfTest from "@/pages/csrf-test";
 import PageView from "@/pages/page";
 import NotFound from "@/pages/not-found";
 import { AuthProvider } from "@/lib/auth";
@@ -127,21 +124,6 @@ function Router() {
       <ProtectedRoute 
         path="/book-consultation/:id" 
         component={BookConsultation} 
-      />
-      
-      {/* Test pages for security features */}
-      <ProtectedRoute 
-        path="/test-security" 
-        component={TestSecurity} 
-      />
-      <ProtectedRoute 
-        path="/test-cascade-delete" 
-        component={TestCascadeDelete} 
-        adminOnly={true}
-      />
-      <Route 
-        path="/csrf-test" 
-        component={CsrfTest} 
       />
 
       {/* 404 route */}

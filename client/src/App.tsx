@@ -17,6 +17,7 @@ import RecoverUsername from "@/pages/recover-username";
 import ProfessionalDashboard from "@/pages/professional-dashboard";
 import CompanyDashboard from "@/pages/company-dashboard";
 import AdminPage from "@/pages/admin-page";
+import AdminIndex from "@/pages/admin/index";
 import Professionals from "@/pages/professionals";
 import ProfessionalProfile from "@/pages/professional-profile";
 import EditProfile from "@/pages/edit-profile";
@@ -69,10 +70,9 @@ function Router() {
         component={CompanyDashboard} 
         userTypes={["company"]} 
       />
-      <ProtectedRoute 
+      <Route 
         path="/admin" 
-        component={AdminPage} 
-        adminOnly={true} 
+        component={AdminIndex} 
       />
       <ProtectedRoute 
         path="/edit-profile" 

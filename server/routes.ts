@@ -38,6 +38,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import Stripe from "stripe";
 import memorystore from "memorystore";
+import { registerAdminRoutes } from "./admin-routes";
 
 // Initialize Stripe with secret key
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -80,6 +81,9 @@ async function initializeResourceCategories() {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize resource categories
   await initializeResourceCategories();
+  
+  // Register admin-specific routes
+  registerAdminRoutes(app);
   
   // Configure multer storage for file uploads
   const storage25MB = multer.diskStorage({

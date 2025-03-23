@@ -41,6 +41,13 @@ interface ActivityData {
   time: string;
 }
 
+interface ActivityItem {
+  id: number;
+  type: string;
+  description: string;
+  timestamp: string;
+}
+
 interface DashboardStats {
   totalUsers: number;
   professionals: number;
@@ -48,12 +55,7 @@ interface DashboardStats {
   jobPostings: number;
   resources: number;
   revenue: number;
-  recentActivity: Array<{
-    id: number;
-    type: string;
-    description: string;
-    timestamp: string;
-  }>;
+  recentActivity: ActivityItem[];
 }
 
 export default function SimpleDashboard() {
@@ -63,12 +65,21 @@ export default function SimpleDashboard() {
   const [activityData, setActivityData] = useState<ActivityData[]>([]);
   
   // Fetch dashboard stats from API
-  const { data: dashboardStats, isLoading, refetch } = useQuery<DashboardStats>({
+  const { 
+    data: dashboardStats, 
+    isLoading, 
+    refetch, 
+    error 
+  } = useQuery<DashboardStats>({
     queryKey: ['/api/admin/dashboard-stats'],
     queryFn: getQueryFn({ on401: 'throw' }),
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 1,
-    onError: (error) => {
+    retry: 1
+  });
+  
+  // Handle error cases with a separate effect
+  useEffect(() => {
+    if (error) {
       console.error('Failed to fetch dashboard stats:', error);
       // Fallback to sample data
       initializeSampleData();
@@ -78,7 +89,7 @@ export default function SimpleDashboard() {
         variant: "destructive",
       });
     }
-  });
+  }, [error, toast]);
 
   // Format timestamps to relative time
   const formatRelativeTime = (timestamp: string): string => {
@@ -159,45 +170,48 @@ export default function SimpleDashboard() {
   // Process dashboard stats when they arrive
   useEffect(() => {
     if (dashboardStats) {
+      // Type assertion to handle TypeScript error
+      const stats = dashboardStats as DashboardStats;
+      
       const newStatsData: StatData[] = [
         {
           title: "Total Users",
-          value: dashboardStats.totalUsers.toString(),
+          value: stats.totalUsers.toString(),
           description: "Registered platform users",
           icon: <Users className="h-4 w-4 text-muted-foreground" />,
           trend: "up"
         },
         {
           title: "Professionals",
-          value: dashboardStats.professionals.toString(),
+          value: stats.professionals.toString(),
           description: "Active L&D experts",
           icon: <Briefcase className="h-4 w-4 text-muted-foreground" />,
           trend: "up"
         },
         {
           title: "Companies",
-          value: dashboardStats.companies.toString(),
+          value: stats.companies.toString(),
           description: "Registered businesses",
           icon: <Building2 className="h-4 w-4 text-muted-foreground" />,
           trend: "up"
         },
         {
           title: "Job Postings",
-          value: dashboardStats.jobPostings.toString(),
+          value: stats.jobPostings.toString(),
           description: "Active opportunities",
           icon: <FileText className="h-4 w-4 text-muted-foreground" />,
           trend: "up"
         },
         {
           title: "Resources",
-          value: dashboardStats.resources.toString(),
+          value: stats.resources.toString(),
           description: "Published materials",
           icon: <BookOpen className="h-4 w-4 text-muted-foreground" />,
           trend: "up"
         },
         {
           title: "Revenue",
-          value: `$${dashboardStats.revenue.toLocaleString()}`,
+          value: `$${stats.revenue.toLocaleString()}`,
           description: "Platform revenue",
           icon: <CreditCard className="h-4 w-4 text-muted-foreground" />,
           trend: "up"
@@ -207,8 +221,8 @@ export default function SimpleDashboard() {
       setStatsData(newStatsData);
       
       // Format activity data
-      if (dashboardStats.recentActivity) {
-        const newActivityData: ActivityData[] = dashboardStats.recentActivity.map(activity => ({
+      if (stats.recentActivity) {
+        const newActivityData: ActivityData[] = stats.recentActivity.map((activity: ActivityItem) => ({
           id: activity.id,
           message: activity.description,
           time: formatRelativeTime(activity.timestamp)
@@ -220,7 +234,7 @@ export default function SimpleDashboard() {
       // Initialize with sample data if no data is available and not loading
       initializeSampleData();
     }
-  }, [dashboardStats]);
+  }, [dashboardStats, isLoading]);
 
   // Function to refresh stats
   const refreshStats = () => {

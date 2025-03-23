@@ -83,7 +83,7 @@ export default function AdminLogin() {
             </CardDescription>
             <CardDescription className="mt-2 text-sm text-muted-foreground">
               Test admin credentials available:<br/>
-              Username: admin1742708297528<br/>
+              Username: admin1742719383348<br/>
               Password: admin123
             </CardDescription>
           </CardHeader>

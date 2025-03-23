@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { DragAndDropProvider } from "@/components/dnd";
+import { useState, useEffect } from "react";
 
 import Navbar from "@/components/ui/navbar";
 import Footer from "@/components/ui/footer";
@@ -69,7 +70,12 @@ function Router() {
         userTypes={["company"]} 
       />
       <ProtectedRoute 
-        path="/admin/*" 
+        path="/admin" 
+        component={AdminIndex} 
+        adminOnly={true} 
+      />
+      <ProtectedRoute 
+        path="/admin/:section" 
         component={AdminIndex} 
         adminOnly={true} 
       />
@@ -133,16 +139,24 @@ function Router() {
 }
 
 function App() {
+  const [isAdmin, setIsAdmin] = useState(false);
+  const location = window.location.pathname;
+  
+  useEffect(() => {
+    // Check if current route is admin route
+    setIsAdmin(location.startsWith('/admin'));
+  }, [location]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <DragAndDropProvider>
           <div className="flex flex-col min-h-screen">
-            <Navbar />
-            <main className="flex-grow">
+            {!isAdmin && <Navbar />}
+            <main className={`flex-grow ${isAdmin ? 'bg-background' : ''}`}>
               <Router />
             </main>
-            <Footer />
+            {!isAdmin && <Footer />}
           </div>
           <Toaster />
         </DragAndDropProvider>

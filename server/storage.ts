@@ -56,6 +56,7 @@ export interface IStorage {
   createExpertise(expertise: InsertExpertise): Promise<Expertise>;
   getProfessionalExpertise(professionalId: number): Promise<Expertise[]>;
   addProfessionalExpertise(professionalExpertise: InsertProfessionalExpertise): Promise<ProfessionalExpertise>;
+  deleteProfessionalExpertise(id: number): Promise<boolean>;
   
   // Certification operations
   getCertification(id: number): Promise<Certification | undefined>;

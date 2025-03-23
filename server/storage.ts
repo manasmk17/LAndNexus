@@ -511,6 +511,16 @@ export class MemStorage implements IStorage {
     return profExpertise;
   }
   
+  // Delete professional expertise
+  async deleteProfessionalExpertise(id: number): Promise<boolean> {
+    if (!this.professionalExpertises.has(id)) {
+      return false;
+    }
+    
+    this.professionalExpertises.delete(id);
+    return true;
+  }
+  
   // Certification operations
   async getCertification(id: number): Promise<Certification | undefined> {
     return this.certifications.get(id);
@@ -574,6 +584,16 @@ export class MemStorage implements IStorage {
     const updated = { ...existing, ...profile };
     this.companyProfiles.set(id, updated);
     return updated;
+  }
+  
+  // Delete company profile
+  async deleteCompanyProfile(id: number): Promise<boolean> {
+    if (!this.companyProfiles.has(id)) {
+      return false;
+    }
+    
+    this.companyProfiles.delete(id);
+    return true;
   }
   
   // Job Posting operations
@@ -671,6 +691,16 @@ export class MemStorage implements IStorage {
     const updated = { ...existing, status };
     this.jobApplications.set(id, updated);
     return updated;
+  }
+  
+  // Delete job application
+  async deleteJobApplication(id: number): Promise<boolean> {
+    if (!this.jobApplications.has(id)) {
+      return false;
+    }
+    
+    this.jobApplications.delete(id);
+    return true;
   }
   
   // Resource operations

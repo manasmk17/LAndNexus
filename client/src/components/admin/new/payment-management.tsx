@@ -1,8 +1,4 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getQueryFn, apiRequest } from "@/lib/queryClient";
-import { User, Consultation } from "@shared/schema";
-import { useToast } from "@/hooks/use-toast";
 import {
   Card,
   CardContent,
@@ -10,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -18,6 +15,28 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { 
+  Search, 
+  Filter,
+  Download,
+  Eye,
+  MoreHorizontal,
+  ReceiptText,
+  FileBarChart,
+  ArrowUp,
+  ArrowDown,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  CreditCard,
+  DollarSign,
+  Clock,
+  Calendar,
+  BarChart3,
+  ArrowUpRight,
+  CalendarRange
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,954 +45,894 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 import {
-  Eye,
-  Download,
-  MoreHorizontal,
-  RefreshCw,
-  Search,
-  X,
-  CreditCard,
-  Calendar,
-  CheckCircle,
-  XCircle,
-  DollarSign,
-  Receipt,
-  ArrowUpDown,
-  Clock,
-  BarChart3,
-  TrendingUp,
-  TrendingDown,
-  User as UserIcon,
-  CalendarX,
-  CheckSquare,
-  CreditCard as CreditCardIcon
-} from "lucide-react";
-import { format, subMonths, startOfMonth, endOfMonth, isSameMonth } from "date-fns";
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Line, LineChart } from "recharts";
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 
-const subscriptionData = [
-  { month: "Jan", active: 12, canceled: 2, new: 4 },
-  { month: "Feb", active: 14, canceled: 1, new: 3 },
-  { month: "Mar", active: 16, canceled: 3, new: 5 },
-  { month: "Apr", active: 18, canceled: 2, new: 4 },
-  { month: "May", active: 20, canceled: 1, new: 3 },
-  { month: "Jun", active: 22, canceled: 2, new: 4 },
-];
-
-const revenueData = [
-  { month: "Jan", subscriptions: 1200, consultations: 800, total: 2000 },
-  { month: "Feb", subscriptions: 1300, consultations: 750, total: 2050 },
-  { month: "Mar", subscriptions: 1400, consultations: 900, total: 2300 },
-  { month: "Apr", subscriptions: 1500, consultations: 850, total: 2350 },
-  { month: "May", subscriptions: 1600, consultations: 1000, total: 2600 },
-  { month: "Jun", subscriptions: 1700, consultations: 1100, total: 2800 },
-];
-
-const paymentHistory = [
+// Sample data for payments
+const sampleTransactions = [
   {
-    id: 'pi_123456',
-    type: 'subscription',
-    status: 'succeeded',
-    amount: 49.99,
-    date: '2025-03-15T10:24:00Z',
+    id: "TX-98765",
     userId: 1,
-    description: 'Monthly professional subscription'
+    userName: "John Smith",
+    userType: "professional",
+    type: "subscription",
+    plan: "Premium",
+    amount: 79.99,
+    status: "completed",
+    date: new Date("2023-03-01"),
+    paymentMethod: "credit_card",
+    lastFour: "4242",
+    invoiceId: "INV-87654",
+    description: "Premium plan - Monthly subscription"
   },
   {
-    id: 'pi_123457',
-    type: 'subscription',
-    status: 'succeeded',
-    amount: 29.99,
-    date: '2025-03-14T14:56:00Z',
+    id: "TX-98764",
     userId: 2,
-    description: 'Monthly company basic subscription'
+    userName: "TechCorp Innovations",
+    userType: "company",
+    type: "job_posting",
+    amount: 199.99,
+    status: "completed",
+    date: new Date("2023-03-02"),
+    paymentMethod: "credit_card",
+    lastFour: "5555",
+    invoiceId: "INV-87653",
+    description: "Featured job posting - 30 days"
   },
   {
-    id: 'pi_123458',
-    type: 'consultation',
-    status: 'succeeded',
-    amount: 125.00,
-    date: '2025-03-13T11:32:00Z',
+    id: "TX-98763",
     userId: 3,
-    description: 'Consultation payment for 2-hour session'
+    userName: "Sarah Johnson",
+    userType: "professional",
+    type: "subscription",
+    plan: "Basic",
+    amount: 29.99,
+    status: "completed",
+    date: new Date("2023-03-03"),
+    paymentMethod: "paypal",
+    invoiceId: "INV-87652",
+    description: "Basic plan - Monthly subscription"
   },
   {
-    id: 'pi_123459',
-    type: 'subscription',
-    status: 'failed',
-    amount: 49.99,
-    date: '2025-03-12T09:15:00Z',
+    id: "TX-98762",
     userId: 4,
-    description: 'Monthly professional subscription (failed)'
+    userName: "HealthPlus",
+    userType: "company",
+    type: "consultation",
+    amount: 350.00,
+    status: "pending",
+    date: new Date("2023-03-04"),
+    paymentMethod: "bank_transfer",
+    invoiceId: "INV-87651",
+    description: "2-hour training consultation"
   },
   {
-    id: 'pi_123460',
-    type: 'consultation',
-    status: 'refunded',
-    amount: 75.00,
-    date: '2025-03-10T15:45:00Z',
+    id: "TX-98761",
     userId: 5,
-    description: 'Consultation payment refund'
+    userName: "Michael Rodriguez",
+    userType: "professional",
+    type: "resource_purchase",
+    amount: 49.99,
+    status: "completed",
+    date: new Date("2023-03-05"),
+    paymentMethod: "credit_card",
+    lastFour: "1234",
+    invoiceId: "INV-87650",
+    description: "Training materials package - Leadership essentials"
   },
   {
-    id: 'pi_123461',
-    type: 'subscription',
-    status: 'succeeded',
-    amount: 99.99,
-    date: '2025-03-09T08:30:00Z',
+    id: "TX-98760",
     userId: 6,
-    description: 'Annual company premium subscription'
-  },
-];
-
-// Simulated data - would be fetched from the server in a real application
-const subscriptionPlans = [
-  {
-    id: 'basic_professional',
-    name: 'Basic Professional',
-    price: 29.99,
-    interval: 'month',
-    currency: 'usd',
-    features: [
-      'Profile visibility',
-      'Apply to jobs',
-      'Basic analytics'
-    ],
-    type: 'professional',
-    active: true
+    userName: "Global Finance Group",
+    userType: "company",
+    type: "subscription",
+    plan: "Enterprise",
+    amount: 999.99,
+    status: "failed",
+    date: new Date("2023-03-06"),
+    paymentMethod: "credit_card",
+    lastFour: "9876",
+    invoiceId: "INV-87649",
+    description: "Enterprise plan - Annual subscription"
   },
   {
-    id: 'premium_professional',
-    name: 'Premium Professional',
-    price: 49.99,
-    interval: 'month',
-    currency: 'usd',
-    features: [
-      'Featured profile',
-      'Priority applications',
-      'Advanced analytics',
-      'Unlimited resources'
-    ],
-    type: 'professional',
-    active: true
+    id: "TX-98759",
+    userId: 7,
+    userName: "Emma Chen",
+    userType: "professional",
+    type: "profile_boost",
+    amount: 59.99,
+    status: "completed",
+    date: new Date("2023-03-07"),
+    paymentMethod: "credit_card",
+    lastFour: "4321",
+    invoiceId: "INV-87648",
+    description: "Profile boost - 30 days featured"
   },
   {
-    id: 'basic_company',
-    name: 'Basic Company',
-    price: 99.99,
-    interval: 'month',
-    currency: 'usd',
-    features: [
-      'Company profile',
-      'Post up to 5 jobs',
-      'Basic candidate search'
-    ],
-    type: 'company',
-    active: true
-  },
-  {
-    id: 'premium_company',
-    name: 'Premium Company',
-    price: 199.99,
-    interval: 'month',
-    currency: 'usd',
-    features: [
-      'Featured company profile',
-      'Unlimited job postings',
-      'Advanced candidate search',
-      'Priority support'
-    ],
-    type: 'company',
-    active: true
+    id: "TX-98758",
+    userId: 8,
+    userName: "EduLearn Solutions",
+    userType: "company",
+    type: "job_posting",
+    amount: 149.99,
+    status: "completed",
+    date: new Date("2023-03-08"),
+    paymentMethod: "paypal",
+    invoiceId: "INV-87647",
+    description: "Standard job posting - 14 days"
   }
 ];
 
+// Sample data for payouts
+const samplePayouts = [
+  {
+    id: "PO-12345",
+    professionalId: 1,
+    professionalName: "John Smith",
+    amount: 450.00,
+    status: "completed",
+    date: new Date("2023-03-05"),
+    method: "bank_transfer",
+    bankLast4: "5678",
+    invoiceId: "INV-PO-12345",
+    serviceFee: 45.00,
+    totalAmount: 495.00,
+    description: "Consultation services - February 2023"
+  },
+  {
+    id: "PO-12346",
+    professionalId: 3,
+    professionalName: "Sarah Johnson",
+    amount: 275.00,
+    status: "pending",
+    date: new Date("2023-03-07"),
+    method: "paypal",
+    invoiceId: "INV-PO-12346",
+    serviceFee: 27.50,
+    totalAmount: 302.50,
+    description: "Training workshop - March 2023"
+  },
+  {
+    id: "PO-12347",
+    professionalId: 5,
+    professionalName: "Michael Rodriguez",
+    amount: 620.00,
+    status: "processing",
+    date: new Date("2023-03-08"),
+    method: "bank_transfer",
+    bankLast4: "9012",
+    invoiceId: "INV-PO-12347",
+    serviceFee: 62.00,
+    totalAmount: 682.00,
+    description: "Course development - Q1 2023"
+  },
+  {
+    id: "PO-12348",
+    professionalId: 7,
+    professionalName: "Emma Chen",
+    amount: 880.00,
+    status: "completed",
+    date: new Date("2023-03-02"),
+    method: "bank_transfer",
+    bankLast4: "3456",
+    invoiceId: "INV-PO-12348",
+    serviceFee: 88.00,
+    totalAmount: 968.00,
+    description: "Executive coaching - February 2023"
+  },
+  {
+    id: "PO-12349",
+    professionalId: 9,
+    professionalName: "David Wilson",
+    amount: 345.00,
+    status: "failed",
+    date: new Date("2023-03-06"),
+    method: "paypal",
+    invoiceId: "INV-PO-12349",
+    serviceFee: 34.50,
+    totalAmount: 379.50,
+    description: "Training materials - March 2023"
+  },
+  {
+    id: "PO-12350",
+    professionalId: 11,
+    professionalName: "Olivia Martinez",
+    amount: 590.00,
+    status: "completed",
+    date: new Date("2023-03-04"),
+    method: "bank_transfer",
+    bankLast4: "7890",
+    invoiceId: "INV-PO-12350",
+    serviceFee: 59.00,
+    totalAmount: 649.00,
+    description: "Workshop facilitation - February 2023"
+  }
+];
+
+// Sample data for invoices
+const sampleInvoices = [
+  {
+    id: "INV-87654",
+    userId: 1,
+    userName: "John Smith",
+    userType: "professional",
+    amount: 79.99,
+    status: "paid",
+    issueDate: new Date("2023-03-01"),
+    dueDate: new Date("2023-03-15"),
+    paidDate: new Date("2023-03-01"),
+    items: [
+      {
+        description: "Premium plan - Monthly subscription",
+        amount: 79.99,
+        quantity: 1
+      }
+    ]
+  },
+  {
+    id: "INV-87653",
+    userId: 2,
+    userName: "TechCorp Innovations",
+    userType: "company",
+    amount: 199.99,
+    status: "paid",
+    issueDate: new Date("2023-03-02"),
+    dueDate: new Date("2023-03-16"),
+    paidDate: new Date("2023-03-02"),
+    items: [
+      {
+        description: "Featured job posting - 30 days",
+        amount: 199.99,
+        quantity: 1
+      }
+    ]
+  },
+  {
+    id: "INV-PO-12345",
+    userId: 1,
+    userName: "John Smith",
+    userType: "professional",
+    amount: 450.00,
+    status: "paid",
+    issueDate: new Date("2023-03-05"),
+    dueDate: new Date("2023-03-19"),
+    paidDate: new Date("2023-03-05"),
+    items: [
+      {
+        description: "Consultation services - February 2023",
+        amount: 450.00,
+        quantity: 1
+      }
+    ]
+  },
+  {
+    id: "INV-87651",
+    userId: 4,
+    userName: "HealthPlus",
+    userType: "company",
+    amount: 350.00,
+    status: "unpaid",
+    issueDate: new Date("2023-03-04"),
+    dueDate: new Date("2023-03-18"),
+    items: [
+      {
+        description: "2-hour training consultation",
+        amount: 350.00,
+        quantity: 1
+      }
+    ]
+  },
+  {
+    id: "INV-87649",
+    userId: 6,
+    userName: "Global Finance Group",
+    userType: "company",
+    amount: 999.99,
+    status: "overdue",
+    issueDate: new Date("2023-03-06"),
+    dueDate: new Date("2023-03-13"),
+    items: [
+      {
+        description: "Enterprise plan - Annual subscription",
+        amount: 999.99,
+        quantity: 1
+      }
+    ]
+  },
+  {
+    id: "INV-PO-12347",
+    userId: 5,
+    userName: "Michael Rodriguez",
+    userType: "professional",
+    amount: 620.00,
+    status: "processing",
+    issueDate: new Date("2023-03-08"),
+    dueDate: new Date("2023-03-22"),
+    items: [
+      {
+        description: "Course development - Q1 2023",
+        amount: 620.00,
+        quantity: 1
+      }
+    ]
+  }
+];
+
+// Main component
 export default function PaymentManagement() {
+  const [activeTab, setActiveTab] = useState("transactions");
+  const [transactions, setTransactions] = useState(sampleTransactions);
+  const [payouts, setPayouts] = useState(samplePayouts);
+  const [invoices, setInvoices] = useState(sampleInvoices);
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("overview");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedPayment, setSelectedPayment] = useState<any>(null);
-  const [isViewPaymentDialogOpen, setIsViewPaymentDialogOpen] = useState(false);
-  const [selectedSubscriptionPlan, setSelectedSubscriptionPlan] = useState<any>(null);
-  const [isEditPlanDialogOpen, setIsEditPlanDialogOpen] = useState(false);
-  const [sortColumn, setSortColumn] = useState<string | null>(null);
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  
-  // Fetch users for additional info
-  const { data: users = [] } = useQuery({
-    queryKey: ['/api/admin/users'],
-    queryFn: getQueryFn<User[]>({ on401: "throw" }),
+
+  // Filter transactions based on search term
+  const filteredTransactions = transactions.filter(transaction => {
+    const searchFields = [
+      transaction.id,
+      transaction.userName,
+      transaction.type,
+      transaction.plan,
+      transaction.status,
+      transaction.description,
+    ];
+    
+    return searchFields.some(field => 
+      field?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+    );
   });
 
-  // Get user name by ID
-  const getUserName = (userId: number) => {
-    const user = users.find(u => u.id === userId);
-    return user ? `${user.firstName} ${user.lastName}` : `User ${userId}`;
-  };
+  // Filter payouts based on search term
+  const filteredPayouts = payouts.filter(payout => {
+    const searchFields = [
+      payout.id,
+      payout.professionalName,
+      payout.status,
+      payout.method,
+      payout.description,
+    ];
+    
+    return searchFields.some(field => 
+      field?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
 
-  // Filter and sort payment history
-  const filteredPayments = paymentHistory
-    .filter(payment => 
-      !searchQuery || 
-      payment.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      payment.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      getUserName(payment.userId).toLowerCase().includes(searchQuery.toLowerCase()) ||
-      payment.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      payment.status.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (!sortColumn) return new Date(b.date).getTime() - new Date(a.date).getTime();
-      
-      switch (sortColumn) {
-        case 'date':
-          return sortDirection === 'asc' 
-            ? new Date(a.date).getTime() - new Date(b.date).getTime()
-            : new Date(b.date).getTime() - new Date(a.date).getTime();
-        case 'amount':
-          return sortDirection === 'asc' 
-            ? a.amount - b.amount
-            : b.amount - a.amount;
-        case 'status':
-          return sortDirection === 'asc'
-            ? a.status.localeCompare(b.status)
-            : b.status.localeCompare(a.status);
-        case 'type':
-          return sortDirection === 'asc'
-            ? a.type.localeCompare(b.type)
-            : b.type.localeCompare(a.type);
-        default:
-          return 0;
-      }
-    });
+  // Filter invoices based on search term
+  const filteredInvoices = invoices.filter(invoice => {
+    const searchFields = [
+      invoice.id,
+      invoice.userName,
+      invoice.status,
+      invoice.items[0]?.description,
+    ];
+    
+    return searchFields.some(field => 
+      field?.toString().toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
 
-  // Handle view payment details
-  const handleViewPayment = (payment: any) => {
-    setSelectedPayment(payment);
-    setIsViewPaymentDialogOpen(true);
-  };
-
-  // Handle sorting
-  const handleSort = (column: string) => {
-    if (sortColumn === column) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortColumn(column);
-      setSortDirection('desc');
-    }
-  };
-
-  // Handle edit subscription plan
-  const handleEditPlan = (plan: any) => {
-    setSelectedSubscriptionPlan(plan);
-    setIsEditPlanDialogOpen(true);
-  };
-
-  // Payment type badge
-  const getPaymentTypeBadge = (type: string) => {
-    switch (type) {
+  // Helper function to get transaction type badge style
+  const getTransactionTypeColor = (type: string) => {
+    switch(type) {
       case 'subscription':
-        return (
-          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-            <CreditCardIcon className="h-3 w-3 mr-1" /> Subscription
-          </Badge>
-        );
+        return 'bg-purple-100 text-purple-800';
+      case 'job_posting':
+        return 'bg-blue-100 text-blue-800';
       case 'consultation':
-        return (
-          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-            <Calendar className="h-3 w-3 mr-1" /> Consultation
-          </Badge>
-        );
+        return 'bg-amber-100 text-amber-800';
+      case 'resource_purchase':
+        return 'bg-emerald-100 text-emerald-800';
+      case 'profile_boost':
+        return 'bg-pink-100 text-pink-800';
       default:
-        return (
-          <Badge variant="outline">
-            <DollarSign className="h-3 w-3 mr-1" /> {type}
-          </Badge>
-        );
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  // Payment status badge
-  const getPaymentStatusBadge = (status: string) => {
-    switch (status) {
-      case 'succeeded':
-        return (
-          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-            <CheckCircle className="h-3 w-3 mr-1" /> Succeeded
-          </Badge>
-        );
-      case 'failed':
-        return (
-          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-            <XCircle className="h-3 w-3 mr-1" /> Failed
-          </Badge>
-        );
-      case 'refunded':
-        return (
-          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
-            <ArrowUpDown className="h-3 w-3 mr-1" /> Refunded
-          </Badge>
-        );
+  // Helper function to get status badge style
+  const getStatusColor = (status: string) => {
+    switch(status) {
+      case 'completed':
+      case 'paid':
+        return 'bg-emerald-100 text-emerald-800';
       case 'pending':
-        return (
-          <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
-            <Clock className="h-3 w-3 mr-1" /> Pending
-          </Badge>
-        );
+      case 'processing':
+        return 'bg-amber-100 text-amber-800';
+      case 'failed':
+      case 'overdue':
+        return 'bg-red-100 text-red-800';
+      case 'unpaid':
+        return 'bg-blue-100 text-blue-800';
       default:
-        return (
-          <Badge variant="outline">
-            {status}
-          </Badge>
-        );
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  // Calculate monthly stats
-  const currentMonth = new Date();
-  const previousMonth = subMonths(currentMonth, 1);
+  // Helper function to get payment method icon
+  const getPaymentMethodIcon = (method: string) => {
+    switch(method) {
+      case 'credit_card':
+        return <CreditCard className="h-4 w-4 mr-2" />;
+      case 'paypal':
+        return <DollarSign className="h-4 w-4 mr-2" />;
+      case 'bank_transfer':
+        return <ArrowUpRight className="h-4 w-4 mr-2" />;
+      default:
+        return <DollarSign className="h-4 w-4 mr-2" />;
+    }
+  };
 
-  const currentMonthPayments = paymentHistory.filter(payment => 
-    isSameMonth(new Date(payment.date), currentMonth) && 
-    payment.status === 'succeeded'
-  );
-
-  const previousMonthPayments = paymentHistory.filter(payment => 
-    isSameMonth(new Date(payment.date), previousMonth) && 
-    payment.status === 'succeeded'
-  );
-
-  const currentMonthRevenue = currentMonthPayments.reduce((sum, payment) => sum + payment.amount, 0);
-  const previousMonthRevenue = previousMonthPayments.reduce((sum, payment) => sum + payment.amount, 0);
-  
-  const revenueChange = previousMonthRevenue === 0 
-    ? 100 
-    : ((currentMonthRevenue - previousMonthRevenue) / previousMonthRevenue) * 100;
-
-  const currentMonthSubscriptions = currentMonthPayments.filter(payment => payment.type === 'subscription');
-  const previousMonthSubscriptions = previousMonthPayments.filter(payment => payment.type === 'subscription');
-  
-  const subscriptionChange = previousMonthSubscriptions.length === 0 
-    ? 100 
-    : ((currentMonthSubscriptions.length - previousMonthSubscriptions.length) / previousMonthSubscriptions.length) * 100;
+  // Helper function to get status icon
+  const getStatusIcon = (status: string) => {
+    switch(status) {
+      case 'completed':
+      case 'paid':
+        return <CheckCircle className="h-4 w-4 mr-2" />;
+      case 'pending':
+      case 'processing':
+        return <Clock className="h-4 w-4 mr-2" />;
+      case 'failed':
+      case 'overdue':
+        return <XCircle className="h-4 w-4 mr-2" />;
+      case 'unpaid':
+        return <AlertCircle className="h-4 w-4 mr-2" />;
+      default:
+        return <AlertCircle className="h-4 w-4 mr-2" />;
+    }
+  };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold tracking-tight">Payment Management</h2>
+        <div className="flex gap-2">
+          <Button variant="outline" className="flex items-center gap-1">
+            <FileBarChart className="h-4 w-4" />
+            <span className="hidden sm:inline">Generate Report</span>
+          </Button>
+          <Button variant="outline" className="flex items-center gap-1">
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Export</span>
+          </Button>
+        </div>
+      </div>
+      
+      {/* Financial overview cards */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <ArrowUp className="h-4 w-4 text-emerald-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">$24,565.00</div>
+            <p className="text-xs text-muted-foreground">
+              +12.5% from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Payouts</CardTitle>
+            <ArrowDown className="h-4 w-4 text-amber-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">$3,160.00</div>
+            <p className="text-xs text-muted-foreground">
+              +8.2% from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Subscriptions</CardTitle>
+            <BarChart3 className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">245</div>
+            <p className="text-xs text-muted-foreground">
+              +18.1% from last month
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Invoices</CardTitle>
+            <CalendarRange className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">8</div>
+            <p className="text-xs text-muted-foreground">
+              -3 from last month
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Tabs for different payment sections */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="history">Payment History</TabsTrigger>
-          <TabsTrigger value="plans">Subscription Plans</TabsTrigger>
+        <TabsList className="grid grid-cols-3 w-full md:w-[500px]">
+          <TabsTrigger value="transactions" className="flex items-center gap-2">
+            <CreditCard className="h-4 w-4" />
+            <span>Transactions</span>
+          </TabsTrigger>
+          <TabsTrigger value="payouts" className="flex items-center gap-2">
+            <ArrowUpRight className="h-4 w-4" />
+            <span>Payouts</span>
+          </TabsTrigger>
+          <TabsTrigger value="invoices" className="flex items-center gap-2">
+            <ReceiptText className="h-4 w-4" />
+            <span>Invoices</span>
+          </TabsTrigger>
         </TabsList>
-
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total Revenue (Current Month)
-                </CardTitle>
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">${currentMonthRevenue.toFixed(2)}</div>
-                <div className="flex items-center pt-1 text-xs text-muted-foreground">
-                  {revenueChange >= 0 ? (
-                    <>
-                      <TrendingUp className="mr-1 h-3.5 w-3.5 text-green-500" />
-                      <span className="text-green-500">+{revenueChange.toFixed(1)}%</span>
-                    </>
-                  ) : (
-                    <>
-                      <TrendingDown className="mr-1 h-3.5 w-3.5 text-red-500" />
-                      <span className="text-red-500">{revenueChange.toFixed(1)}%</span>
-                    </>
-                  )}
-                  <span className="ml-1">vs last month</span>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Active Subscriptions
-                </CardTitle>
-                <CreditCard className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{currentMonthSubscriptions.length}</div>
-                <div className="flex items-center pt-1 text-xs text-muted-foreground">
-                  {subscriptionChange >= 0 ? (
-                    <>
-                      <TrendingUp className="mr-1 h-3.5 w-3.5 text-green-500" />
-                      <span className="text-green-500">+{subscriptionChange.toFixed(1)}%</span>
-                    </>
-                  ) : (
-                    <>
-                      <TrendingDown className="mr-1 h-3.5 w-3.5 text-red-500" />
-                      <span className="text-red-500">{subscriptionChange.toFixed(1)}%</span>
-                    </>
-                  )}
-                  <span className="ml-1">vs last month</span>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Recent Transactions
-                </CardTitle>
-                <Receipt className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {paymentHistory.filter(p => {
-                    const date = new Date(p.date);
-                    const now = new Date();
-                    const diffTime = Math.abs(now.getTime() - date.getTime());
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    return diffDays <= 7;
-                  }).length}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  transactions in the last 7 days
-                </p>
-              </CardContent>
-            </Card>
+      
+        {/* Search and filter area */}
+        <div className="flex flex-col sm:flex-row gap-4 mt-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={`Search ${activeTab}...`}
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Revenue Breakdown</CardTitle>
-                <CardDescription>
-                  Monthly revenue by type
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={revenueData}>
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip 
-                      formatter={(value) => [`$${value}`, 'Revenue']}
-                      labelFormatter={(label) => `Month: ${label}`}
-                    />
-                    <Legend />
-                    <Bar 
-                      dataKey="subscriptions" 
-                      name="Subscriptions" 
-                      stackId="a" 
-                      fill="#4f46e5" 
-                    />
-                    <Bar 
-                      dataKey="consultations" 
-                      name="Consultations" 
-                      stackId="a" 
-                      fill="#0ea5e9" 
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Subscription Trend</CardTitle>
-                <CardDescription>
-                  Monthly subscription metrics
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={subscriptionData}>
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="active" 
-                      name="Active Subscriptions" 
-                      stroke="#4f46e5" 
-                      strokeWidth={2} 
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="new" 
-                      name="New Subscriptions" 
-                      stroke="#10b981" 
-                      strokeWidth={2} 
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="canceled" 
-                      name="Canceled" 
-                      stroke="#f43f5e" 
-                      strokeWidth={2} 
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Payment History Tab */}
-        <TabsContent value="history" className="space-y-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-1">
+                <Filter className="h-4 w-4" />
+                <span>Filter</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Filter {activeTab}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {activeTab === "transactions" && (
+                <>
+                  <DropdownMenuItem>All Transactions</DropdownMenuItem>
+                  <DropdownMenuItem>Subscriptions Only</DropdownMenuItem>
+                  <DropdownMenuItem>Job Postings Only</DropdownMenuItem>
+                  <DropdownMenuItem>Consultations Only</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem>Completed</DropdownMenuItem>
+                  <DropdownMenuItem>Pending</DropdownMenuItem>
+                  <DropdownMenuItem>Failed</DropdownMenuItem>
+                </>
+              )}
+              {activeTab === "payouts" && (
+                <>
+                  <DropdownMenuItem>All Payouts</DropdownMenuItem>
+                  <DropdownMenuItem>Completed</DropdownMenuItem>
+                  <DropdownMenuItem>Pending</DropdownMenuItem>
+                  <DropdownMenuItem>Failed</DropdownMenuItem>
+                </>
+              )}
+              {activeTab === "invoices" && (
+                <>
+                  <DropdownMenuItem>All Invoices</DropdownMenuItem>
+                  <DropdownMenuItem>Paid</DropdownMenuItem>
+                  <DropdownMenuItem>Unpaid</DropdownMenuItem>
+                  <DropdownMenuItem>Overdue</DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      
+        {/* Transactions Tab Content */}
+        <TabsContent value="transactions" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Payment History</CardTitle>
+              <CardTitle>Transactions</CardTitle>
               <CardDescription>
-                View all transactions across the platform
+                View all payment transactions on the platform.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col space-y-4">
-                <div className="flex items-center space-x-2">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="search"
-                      placeholder="Search payments by ID, user, or status..."
-                      className="pl-8"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    {searchQuery && (
-                      <button
-                        type="button"
-                        onClick={() => setSearchQuery("")}
-                        className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      // In a real app, this would refresh the payment data
-                      toast({
-                        title: "Data Refreshed",
-                        description: "Payment history has been updated",
-                      });
-                    }}
-                  >
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Refresh
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      // In a real app, this would download a CSV
-                      toast({
-                        title: "Export Started",
-                        description: "Your payment data export is being prepared",
-                      });
-                    }}
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
-                  </Button>
-                </div>
-
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[120px] cursor-pointer" onClick={() => handleSort('date')}>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Transaction ID</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Method</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredTransactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell className="font-medium">{transaction.id}</TableCell>
+                      <TableCell>{transaction.userName}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={getTransactionTypeColor(transaction.type)}>
+                          {transaction.type.replace('_', ' ')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-semibold">${transaction.amount.toFixed(2)}</TableCell>
+                      <TableCell>{format(transaction.date, 'MMM d, yyyy')}</TableCell>
+                      <TableCell className="capitalize">
+                        <div className="flex items-center">
+                          {getPaymentMethodIcon(transaction.paymentMethod)}
+                          <span>{transaction.paymentMethod.replace('_', ' ')}</span>
+                          {transaction.lastFour && <span className="ml-1 text-muted-foreground text-xs">×{transaction.lastFour}</span>}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={getStatusColor(transaction.status)}>
                           <div className="flex items-center">
-                            Date
-                            {sortColumn === 'date' && (
-                              <ArrowUpDown className="ml-1 h-3 w-3" />
-                            )}
+                            {getStatusIcon(transaction.status)}
+                            <span>{transaction.status}</span>
                           </div>
-                        </TableHead>
-                        <TableHead>Transaction ID</TableHead>
-                        <TableHead className="cursor-pointer" onClick={() => handleSort('type')}>
-                          <div className="flex items-center">
-                            Type
-                            {sortColumn === 'type' && (
-                              <ArrowUpDown className="ml-1 h-3 w-3" />
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <ReceiptText className="h-4 w-4 mr-2" />
+                              View Invoice
+                            </DropdownMenuItem>
+                            {transaction.status === 'pending' && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem>
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  Mark as Completed
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <XCircle className="h-4 w-4 mr-2" />
+                                  Mark as Failed
+                                </DropdownMenuItem>
+                              </>
                             )}
-                          </div>
-                        </TableHead>
-                        <TableHead>User</TableHead>
-                        <TableHead className="cursor-pointer" onClick={() => handleSort('amount')}>
-                          <div className="flex items-center">
-                            Amount
-                            {sortColumn === 'amount' && (
-                              <ArrowUpDown className="ml-1 h-3 w-3" />
-                            )}
-                          </div>
-                        </TableHead>
-                        <TableHead className="cursor-pointer" onClick={() => handleSort('status')}>
-                          <div className="flex items-center">
-                            Status
-                            {sortColumn === 'status' && (
-                              <ArrowUpDown className="ml-1 h-3 w-3" />
-                            )}
-                          </div>
-                        </TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredPayments.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={7} className="h-24 text-center">
-                            No payments found.
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        filteredPayments.map((payment) => (
-                          <TableRow key={payment.id}>
-                            <TableCell className="font-medium">
-                              {format(new Date(payment.date), 'MMM d, yyyy')}
-                            </TableCell>
-                            <TableCell className="font-mono text-xs">
-                              {payment.id}
-                            </TableCell>
-                            <TableCell>
-                              {getPaymentTypeBadge(payment.type)}
-                            </TableCell>
-                            <TableCell>{getUserName(payment.userId)}</TableCell>
-                            <TableCell>${payment.amount.toFixed(2)}</TableCell>
-                            <TableCell>
-                              {getPaymentStatusBadge(payment.status)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                  <DropdownMenuItem onClick={() => handleViewPayment(payment)}>
-                                    <Eye className="mr-2 h-4 w-4" />
-                                    View Details
-                                  </DropdownMenuItem>
-                                  {payment.status === 'succeeded' && (
-                                    <DropdownMenuItem
-                                      onClick={() => {
-                                        // In a real app, this would open a refund dialog
-                                        toast({
-                                          title: "Refund Initiated",
-                                          description: `Refund for transaction ${payment.id} has been initiated`,
-                                        });
-                                      }}
-                                    >
-                                      <ArrowUpDown className="mr-2 h-4 w-4" />
-                                      Issue Refund
-                                    </DropdownMenuItem>
-                                  )}
-                                  <DropdownMenuItem onClick={() => {
-                                    // In a real app, this would download a receipt
-                                    toast({
-                                      title: "Receipt Downloaded",
-                                      description: `Receipt for transaction ${payment.id} has been downloaded`,
-                                    });
-                                  }}>
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Download Receipt
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem>
+                              <Download className="h-4 w-4 mr-2" />
+                              Download Receipt
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredTransactions.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                        No transactions found matching your search criteria.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
-
-        {/* Subscription Plans Tab */}
-        <TabsContent value="plans" className="space-y-4">
+        
+        {/* Payouts Tab Content */}
+        <TabsContent value="payouts" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Subscription Plans</CardTitle>
+              <CardTitle>Professional Payouts</CardTitle>
               <CardDescription>
-                Manage platform subscription plans and pricing
+                Manage payouts to learning and development professionals.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                {subscriptionPlans.map((plan) => (
-                  <Card key={plan.id} className={plan.active ? "" : "opacity-60"}>
-                    <CardHeader className="pb-2">
-                      <div className="flex justify-between items-center">
-                        <CardTitle>{plan.name}</CardTitle>
-                        <Badge variant={plan.type === 'professional' ? 'default' : 'secondary'}>
-                          {plan.type}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Payout ID</TableHead>
+                    <TableHead>Professional</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Fee</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Method</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPayouts.map((payout) => (
+                    <TableRow key={payout.id}>
+                      <TableCell className="font-medium">{payout.id}</TableCell>
+                      <TableCell>{payout.professionalName}</TableCell>
+                      <TableCell>${payout.amount.toFixed(2)}</TableCell>
+                      <TableCell className="text-muted-foreground">${payout.serviceFee.toFixed(2)}</TableCell>
+                      <TableCell className="font-semibold">${payout.totalAmount.toFixed(2)}</TableCell>
+                      <TableCell>{format(payout.date, 'MMM d, yyyy')}</TableCell>
+                      <TableCell className="capitalize">
+                        <div className="flex items-center">
+                          {getPaymentMethodIcon(payout.method)}
+                          <span>{payout.method.replace('_', ' ')}</span>
+                          {payout.bankLast4 && <span className="ml-1 text-muted-foreground text-xs">×{payout.bankLast4}</span>}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={getStatusColor(payout.status)}>
+                          <div className="flex items-center">
+                            {getStatusIcon(payout.status)}
+                            <span>{payout.status}</span>
+                          </div>
                         </Badge>
-                      </div>
-                      <CardDescription>
-                        ${plan.price}/{plan.interval}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="list-disc list-inside text-sm space-y-1">
-                        {plan.features.map((feature, index) => (
-                          <li key={index}>{feature}</li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                    <CardFooter className="flex justify-between">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          // In a real app, this would toggle the plan's active status
-                          toast({
-                            title: plan.active ? "Plan Deactivated" : "Plan Activated",
-                            description: `${plan.name} is now ${plan.active ? 'inactive' : 'active'}`,
-                          });
-                        }}
-                      >
-                        {plan.active ? (
-                          <><CalendarX className="mr-2 h-4 w-4" /> Deactivate</>
-                        ) : (
-                          <><CheckSquare className="mr-2 h-4 w-4" /> Activate</>
-                        )}
-                      </Button>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => handleEditPlan(plan)}
-                      >
-                        <Edit className="mr-2 h-4 w-4" /> Edit Plan
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-              
-              <Button
-                onClick={() => {
-                  // In a real app, this would open a dialog to add a new plan
-                  toast({
-                    title: "Coming Soon",
-                    description: "Adding new plans will be available soon",
-                  });
-                }}
-              >
-                <Plus className="mr-2 h-4 w-4" /> Add New Plan
-              </Button>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <ReceiptText className="h-4 w-4 mr-2" />
+                              View Invoice
+                            </DropdownMenuItem>
+                            {payout.status === 'pending' && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem>
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  Process Payout
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            {payout.status === 'processing' && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem>
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  Mark as Completed
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                  <XCircle className="h-4 w-4 mr-2" />
+                                  Mark as Failed
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem>
+                              <Download className="h-4 w-4 mr-2" />
+                              Download Statement
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredPayouts.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
+                        No payouts found matching your search criteria.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* Invoices Tab Content */}
+        <TabsContent value="invoices" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Invoices</CardTitle>
+              <CardDescription>
+                Manage invoices and billing documents.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Invoice ID</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Issue Date</TableHead>
+                    <TableHead>Due Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredInvoices.map((invoice) => (
+                    <TableRow key={invoice.id}>
+                      <TableCell className="font-medium">{invoice.id}</TableCell>
+                      <TableCell>{invoice.userName}</TableCell>
+                      <TableCell className="capitalize">{invoice.userType}</TableCell>
+                      <TableCell className="font-semibold">${invoice.amount.toFixed(2)}</TableCell>
+                      <TableCell>{format(invoice.issueDate, 'MMM d, yyyy')}</TableCell>
+                      <TableCell>{format(invoice.dueDate, 'MMM d, yyyy')}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={getStatusColor(invoice.status)}>
+                          <div className="flex items-center">
+                            {getStatusIcon(invoice.status)}
+                            <span>{invoice.status}</span>
+                          </div>
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Invoice
+                            </DropdownMenuItem>
+                            {(invoice.status === 'unpaid' || invoice.status === 'overdue') && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem>
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  Mark as Paid
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem>
+                              <Download className="h-4 w-4 mr-2" />
+                              Download Invoice
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Calendar className="h-4 w-4 mr-2" />
+                              Send Reminder
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredInvoices.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+                        No invoices found matching your search criteria.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* View Payment Dialog */}
-      <Dialog open={isViewPaymentDialogOpen} onOpenChange={setIsViewPaymentDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Payment Details</DialogTitle>
-            <DialogDescription>
-              Complete information about the transaction
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedPayment && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Transaction ID</Label>
-                  <div className="font-mono text-sm mt-1">{selectedPayment.id}</div>
-                </div>
-                <div>
-                  <Label>Date</Label>
-                  <div className="text-sm mt-1">
-                    {format(new Date(selectedPayment.date), 'MMM d, yyyy h:mm a')}
-                  </div>
-                </div>
-                <div>
-                  <Label>Type</Label>
-                  <div className="mt-1">{getPaymentTypeBadge(selectedPayment.type)}</div>
-                </div>
-                <div>
-                  <Label>Status</Label>
-                  <div className="mt-1">{getPaymentStatusBadge(selectedPayment.status)}</div>
-                </div>
-                <div>
-                  <Label>Amount</Label>
-                  <div className="text-sm font-medium mt-1">${selectedPayment.amount.toFixed(2)}</div>
-                </div>
-                <div>
-                  <Label>User</Label>
-                  <div className="text-sm mt-1">{getUserName(selectedPayment.userId)}</div>
-                </div>
-              </div>
-
-              <div>
-                <Label>Description</Label>
-                <div className="text-sm mt-1 border rounded-md p-2 bg-muted/30">
-                  {selectedPayment.description}
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-between">
-                {selectedPayment.status === 'succeeded' && (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      // In a real app, this would process a refund
-                      toast({
-                        title: "Refund Initiated",
-                        description: `Refund for transaction ${selectedPayment.id} has been initiated`,
-                      });
-                      setIsViewPaymentDialogOpen(false);
-                    }}
-                  >
-                    <ArrowUpDown className="mr-2 h-4 w-4" />
-                    Issue Refund
-                  </Button>
-                )}
-                <Button
-                  onClick={() => {
-                    // In a real app, this would download a receipt
-                    toast({
-                      title: "Receipt Downloaded",
-                      description: `Receipt for transaction ${selectedPayment.id} has been downloaded`,
-                    });
-                  }}
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  Download Receipt
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Plan Dialog */}
-      <Dialog open={isEditPlanDialogOpen} onOpenChange={setIsEditPlanDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Edit Subscription Plan</DialogTitle>
-            <DialogDescription>
-              Update the plan details and pricing
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedSubscriptionPlan && (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="planName">Plan Name</Label>
-                <Input
-                  id="planName"
-                  defaultValue={selectedSubscriptionPlan.name}
-                  className="mt-1"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="planPrice">Price</Label>
-                  <div className="flex items-center mt-1">
-                    <span className="mr-1">$</span>
-                    <Input
-                      id="planPrice"
-                      type="number"
-                      step="0.01"
-                      defaultValue={selectedSubscriptionPlan.price}
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="planInterval">Billing Interval</Label>
-                  <Select defaultValue={selectedSubscriptionPlan.interval}>
-                    <SelectTrigger className="mt-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="month">Monthly</SelectItem>
-                      <SelectItem value="year">Yearly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="planType">Plan Type</Label>
-                <Select defaultValue={selectedSubscriptionPlan.type}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="professional">Professional</SelectItem>
-                    <SelectItem value="company">Company</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="planFeatures">Features (one per line)</Label>
-                <Textarea
-                  id="planFeatures"
-                  className="mt-1 min-h-[100px]"
-                  defaultValue={selectedSubscriptionPlan.features.join('\n')}
-                />
-              </div>
-
-              <DialogFooter className="gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsEditPlanDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => {
-                    toast({
-                      title: "Plan Updated",
-                      description: `${selectedSubscriptionPlan.name} has been updated successfully`,
-                    });
-                    setIsEditPlanDialogOpen(false);
-                  }}
-                >
-                  Save Changes
-                </Button>
-              </DialogFooter>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -240,7 +240,7 @@ export default function UserManagement() {
     }
   };
 
-  const handleToggleAdmin = (user) => {
+  const handleToggleAdmin = (user: typeof sampleUsers[0]) => {
     const updatedUser = {...user, isAdmin: !user.isAdmin};
     setUsers(users.map(u => u.id === user.id ? updatedUser : u));
     
@@ -250,7 +250,7 @@ export default function UserManagement() {
     });
   };
 
-  const getUserTypeColor = (userType) => {
+  const getUserTypeColor = (userType: string) => {
     switch(userType) {
       case 'professional':
         return 'bg-blue-100 text-blue-800';

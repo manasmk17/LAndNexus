@@ -20,8 +20,8 @@ import {
   BarChart3,
   Loader2,
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { getQueryFn } from "@/lib/queryClient";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getQueryFn, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
@@ -41,74 +41,111 @@ interface ActivityData {
   time: string;
 }
 
+interface DashboardStats {
+  totalUsers: number;
+  professionals: number;
+  companies: number;
+  jobPostings: number;
+  resources: number;
+  revenue: number;
+  recentActivity: Array<{
+    id: number;
+    type: string;
+    description: string;
+    timestamp: string;
+  }>;
+}
+
 export default function SimpleDashboard() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [statsData, setStatsData] = useState<StatData[]>([]);
   const [activityData, setActivityData] = useState<ActivityData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Use static stats for stability while testing
-  const useStaticData = true;
-
-  // For static demo data
-  const staticStats: StatData[] = [
-    {
-      title: "Total Users",
-      value: "348",
-      description: "Registered platform users",
-      icon: <Users className="h-4 w-4 text-muted-foreground" />,
-      trend: "up"
-    },
-    {
-      title: "Professionals",
-      value: "179",
-      description: "Active L&D experts",
-      icon: <Briefcase className="h-4 w-4 text-muted-foreground" />,
-      trend: "up"
-    },
-    {
-      title: "Companies",
-      value: "169",
-      description: "Registered businesses",
-      icon: <Building2 className="h-4 w-4 text-muted-foreground" />,
-      trend: "up"
-    },
-    {
-      title: "Job Postings",
-      value: "245",
-      description: "Active opportunities",
-      icon: <FileText className="h-4 w-4 text-muted-foreground" />,
-      trend: "up"
-    },
-    {
-      title: "Resources",
-      value: "156",
-      description: "Published materials",
-      icon: <BookOpen className="h-4 w-4 text-muted-foreground" />,
-      trend: "up"
-    },
-    {
-      title: "Revenue",
-      value: "$45,789",
-      description: "Platform revenue",
-      icon: <CreditCard className="h-4 w-4 text-muted-foreground" />,
-      trend: "up"
+  
+  // Fetch dashboard stats from API
+  const { data: dashboardStats, isLoading, refetch } = useQuery<DashboardStats>({
+    queryKey: ['/api/admin/dashboard-stats'],
+    queryFn: getQueryFn({ on401: 'throw' }),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 1,
+    onError: (error) => {
+      console.error('Failed to fetch dashboard stats:', error);
+      // Fallback to sample data
+      initializeSampleData();
+      toast({
+        title: "Failed to load dashboard stats",
+        description: "Using sample data instead. Please try again later.",
+        variant: "destructive",
+      });
     }
-  ];
+  });
 
-  // Init static data
-  useEffect(() => {
-    if (useStaticData) {
-      // Use static data for demo purposes
-      setStatsData(staticStats);
-      setIsLoading(false);
-    }
-  }, []);
+  // Format timestamps to relative time
+  const formatRelativeTime = (timestamp: string): string => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) return 'just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    
+    return date.toLocaleDateString();
+  };
 
-  // Recent activity - could be fetch from an API endpoint in the future
-  useEffect(() => {
-    // For now using static data, but this would be from API in production
-    const recentActivity: ActivityData[] = [
+  // Initialize sample data as fallback
+  const initializeSampleData = () => {
+    // For static demo data
+    const sampleStats: StatData[] = [
+      {
+        title: "Total Users",
+        value: "15",
+        description: "Registered platform users",
+        icon: <Users className="h-4 w-4 text-muted-foreground" />,
+        trend: "up"
+      },
+      {
+        title: "Professionals",
+        value: "8",
+        description: "Active L&D experts",
+        icon: <Briefcase className="h-4 w-4 text-muted-foreground" />,
+        trend: "up"
+      },
+      {
+        title: "Companies",
+        value: "7",
+        description: "Registered businesses",
+        icon: <Building2 className="h-4 w-4 text-muted-foreground" />,
+        trend: "up"
+      },
+      {
+        title: "Job Postings",
+        value: "5",
+        description: "Active opportunities",
+        icon: <FileText className="h-4 w-4 text-muted-foreground" />,
+        trend: "up"
+      },
+      {
+        title: "Resources",
+        value: "12",
+        description: "Published materials",
+        icon: <BookOpen className="h-4 w-4 text-muted-foreground" />,
+        trend: "up"
+      },
+      {
+        title: "Revenue",
+        value: "$1,250",
+        description: "Platform revenue",
+        icon: <CreditCard className="h-4 w-4 text-muted-foreground" />,
+        trend: "up"
+      }
+    ];
+    
+    setStatsData(sampleStats);
+    
+    // Sample activity data
+    const sampleActivity: ActivityData[] = [
       { id: 1, message: "New professional profile created by John Doe", time: "2 hours ago" },
       { id: 2, message: "TechCorp posted a new job: Learning Experience Designer", time: "5 hours ago" },
       { id: 3, message: "New resource published: 'The Future of Corporate Training'", time: "1 day ago" },
@@ -116,26 +153,82 @@ export default function SimpleDashboard() {
       { id: 5, message: "New forum discussion started: 'Best practices for virtual learning'", time: "2 days ago" },
     ];
     
-    setActivityData(recentActivity);
-  }, []);
+    setActivityData(sampleActivity);
+  };
+
+  // Process dashboard stats when they arrive
+  useEffect(() => {
+    if (dashboardStats) {
+      const newStatsData: StatData[] = [
+        {
+          title: "Total Users",
+          value: dashboardStats.totalUsers.toString(),
+          description: "Registered platform users",
+          icon: <Users className="h-4 w-4 text-muted-foreground" />,
+          trend: "up"
+        },
+        {
+          title: "Professionals",
+          value: dashboardStats.professionals.toString(),
+          description: "Active L&D experts",
+          icon: <Briefcase className="h-4 w-4 text-muted-foreground" />,
+          trend: "up"
+        },
+        {
+          title: "Companies",
+          value: dashboardStats.companies.toString(),
+          description: "Registered businesses",
+          icon: <Building2 className="h-4 w-4 text-muted-foreground" />,
+          trend: "up"
+        },
+        {
+          title: "Job Postings",
+          value: dashboardStats.jobPostings.toString(),
+          description: "Active opportunities",
+          icon: <FileText className="h-4 w-4 text-muted-foreground" />,
+          trend: "up"
+        },
+        {
+          title: "Resources",
+          value: dashboardStats.resources.toString(),
+          description: "Published materials",
+          icon: <BookOpen className="h-4 w-4 text-muted-foreground" />,
+          trend: "up"
+        },
+        {
+          title: "Revenue",
+          value: `$${dashboardStats.revenue.toLocaleString()}`,
+          description: "Platform revenue",
+          icon: <CreditCard className="h-4 w-4 text-muted-foreground" />,
+          trend: "up"
+        }
+      ];
+      
+      setStatsData(newStatsData);
+      
+      // Format activity data
+      if (dashboardStats.recentActivity) {
+        const newActivityData: ActivityData[] = dashboardStats.recentActivity.map(activity => ({
+          id: activity.id,
+          message: activity.description,
+          time: formatRelativeTime(activity.timestamp)
+        }));
+        
+        setActivityData(newActivityData);
+      }
+    } else if (!isLoading) {
+      // Initialize with sample data if no data is available and not loading
+      initializeSampleData();
+    }
+  }, [dashboardStats]);
 
   // Function to refresh stats
   const refreshStats = () => {
-    setIsLoading(true);
-    // Invalidate queries to refetch data
+    refetch();
     toast({
       title: "Refreshing dashboard data",
       description: "Fetching the latest platform statistics",
     });
-    
-    // This will be replaced with proper react-query invalidation in production
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Dashboard refreshed",
-        description: "Statistics updated with latest data",
-      });
-    }, 1500);
   };
 
   if (isLoading) {

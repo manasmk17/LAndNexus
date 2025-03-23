@@ -13,8 +13,29 @@ async function throwIfResNotOk(res: Response) {
       return;
     }
     
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    // Special handling for DELETE operations that return 204 No Content
+    if (res.status === 204) {
+      // 204 is success for DELETE, don't throw
+      return;
+    }
+    
+    let errorText;
+    try {
+      // Try to parse as JSON first
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const errorJson = await res.json();
+        errorText = errorJson.message || errorJson.error || JSON.stringify(errorJson);
+      } else {
+        // Fall back to text
+        errorText = await res.text();
+      }
+    } catch (e) {
+      // If we can't get the body, fall back to status text
+      errorText = res.statusText;
+    }
+    
+    throw new Error(`${res.status}: ${errorText}`);
   }
 }
 

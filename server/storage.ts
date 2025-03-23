@@ -432,6 +432,9 @@ export class MemStorage implements IStorage {
     const newProfile: ProfessionalProfile = { 
       id,
       userId: profile.userId,
+      firstName: profile.firstName || null,
+      lastName: profile.lastName || null,
+      email: profile.email || null,
       title: profile.title || null,
       bio: profile.bio || null,
       location: profile.location || null,
@@ -439,7 +442,9 @@ export class MemStorage implements IStorage {
       ratePerHour: profile.ratePerHour || null,
       profileImageUrl: profile.profileImageUrl || null,
       profileImagePath: profile.profileImagePath || null,
+      galleryImages: profile.galleryImages || [],
       featured: profile.featured || false,
+      verified: profile.verified || false,
       rating: profile.rating || 0,
       reviewCount: profile.reviewCount || 0,
       yearsExperience: profile.yearsExperience || 0,
@@ -544,11 +549,18 @@ export class MemStorage implements IStorage {
   async createCompanyProfile(profile: InsertCompanyProfile): Promise<CompanyProfile> {
     const id = this.companyProfileId++;
     const newProfile: CompanyProfile = { 
-      ...profile, 
       id,
+      userId: profile.userId,
+      companyName: profile.companyName,
+      industry: profile.industry,
+      description: profile.description,
+      size: profile.size,
+      location: profile.location,
       website: profile.website || null,
       logoUrl: profile.logoUrl || null,
-      logoImagePath: profile.logoImagePath || null
+      logoImagePath: profile.logoImagePath || null,
+      featured: profile.featured || false,
+      verified: profile.verified || false
     };
     this.companyProfiles.set(id, newProfile);
     return newProfile;

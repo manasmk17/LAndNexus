@@ -26,7 +26,10 @@ import {
   XCircle, 
   MoreHorizontal,
   Download,
-  Eye
+  Eye,
+  Trash2,
+  AlertTriangle,
+  Edit
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -38,6 +41,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Sample freelancer data
 const sampleFreelancers = [
@@ -142,6 +155,8 @@ const sampleFreelancers = [
 export default function FreelancerManagement() {
   const [freelancers, setFreelancers] = useState(sampleFreelancers);
   const [searchTerm, setSearchTerm] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [freelancerToDelete, setFreelancerToDelete] = useState<number | null>(null);
   const { toast } = useToast();
 
   // Filter freelancers based on search term
@@ -189,6 +204,28 @@ export default function FreelancerManagement() {
       title: `Verification status updated`,
       description: `${freelancer?.firstName} ${freelancer?.lastName} has been ${action}.`,
     });
+  };
+
+  const handleDeleteClick = (id: number) => {
+    setFreelancerToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (freelancerToDelete === null) return;
+    
+    const freelancerName = freelancers.find(f => f.id === freelancerToDelete);
+    setFreelancers(freelancers.filter(freelancer => freelancer.id !== freelancerToDelete));
+    
+    toast({
+      title: "Freelancer deleted",
+      description: `${freelancerName?.firstName} ${freelancerName?.lastName} has been deleted successfully.`,
+      variant: "default",
+    });
+
+    // Close the dialog
+    setDeleteDialogOpen(false);
+    setFreelancerToDelete(null);
   };
 
   return (
@@ -345,6 +382,14 @@ export default function FreelancerManagement() {
                             </>
                           )}
                         </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          onClick={() => handleDeleteClick(freelancer.id)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Freelancer
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -361,6 +406,31 @@ export default function FreelancerManagement() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Delete Professional
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the professional profile
+              and remove all associated data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import SimpleDashboard from "@/components/admin/new/simple-dashboard";
+import SimpleDashboard from "../components/admin/new/simple-dashboard";
 
 export default function AdminTest() {
   const [, setLocation] = useLocation();

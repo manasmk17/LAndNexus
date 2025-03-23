@@ -63,7 +63,8 @@ export function JobsPanel() {
     ? jobs.filter(
         (job) =>
           job.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          job.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          // Using companyId instead of company
+          String(job.companyId).includes(searchQuery) ||
           job.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           job.description?.toLowerCase().includes(searchQuery.toLowerCase())
       )
@@ -122,7 +123,7 @@ export function JobsPanel() {
       case 'active':
         return <Badge variant="default">Active</Badge>;
       case 'filled':
-        return <Badge variant="success">Filled</Badge>;
+        return <Badge variant="outline" className="border-green-500 text-green-500">Filled</Badge>;
       case 'expired':
         return <Badge variant="destructive">Expired</Badge>;
       case 'draft':
@@ -211,7 +212,7 @@ export function JobsPanel() {
                   filteredJobs.map((job) => (
                     <TableRow key={job.id}>
                       <TableCell className="font-medium">{job.title}</TableCell>
-                      <TableCell>{job.company}</TableCell>
+                      <TableCell>Company ID: {job.companyId}</TableCell>
                       <TableCell>{job.location || 'Remote'}</TableCell>
                       <TableCell>{getStatusBadge(job.status)}</TableCell>
                       <TableCell>
@@ -289,7 +290,7 @@ export function JobsPanel() {
               <DialogHeader>
                 <DialogTitle>{selectedJob.title}</DialogTitle>
                 <DialogDescription>
-                  {selectedJob.company} • {selectedJob.location || 'Remote'}
+                  Company ID: {selectedJob.companyId} • {selectedJob.location || 'Remote'}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -298,10 +299,10 @@ export function JobsPanel() {
                   <div className="col-span-2">{selectedJob.jobType || 'N/A'}</div>
                 </div>
                 <div className="grid grid-cols-3">
-                  <div className="font-semibold">Salary:</div>
+                  <div className="font-semibold">Compensation:</div>
                   <div className="col-span-2">
-                    {selectedJob.salaryMin && selectedJob.salaryMax
-                      ? `$${selectedJob.salaryMin.toLocaleString()} - $${selectedJob.salaryMax.toLocaleString()}`
+                    {selectedJob.minCompensation && selectedJob.maxCompensation
+                      ? `$${selectedJob.minCompensation.toLocaleString()} - $${selectedJob.maxCompensation.toLocaleString()} ${selectedJob.compensationUnit || 'yearly'}`
                       : 'Not specified'}
                   </div>
                 </div>

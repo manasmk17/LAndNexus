@@ -1749,6 +1749,63 @@ export class DatabaseStorage implements IStorage {
     return updatedRecommendation;
   }
 
+  // Professional Expertise operations
+  async deleteProfessionalExpertise(id: number): Promise<boolean> {
+    try {
+      console.log(`Storage: Attempting to delete professional expertise with ID: ${id}`);
+      
+      const result = await db
+        .delete(professionalExpertise)
+        .where(eq(professionalExpertise.id, id))
+        .returning({ id: professionalExpertise.id });
+        
+      const success = result.length > 0;
+      console.log(`Professional expertise deletion ${success ? 'successful' : 'failed'} for ID: ${id}`);
+      return success;
+    } catch (error) {
+      console.error(`Error deleting professional expertise with ID ${id}:`, error);
+      throw error;
+    }
+  }
+  
+  // Job Application operations
+  async deleteJobApplication(id: number): Promise<boolean> {
+    try {
+      console.log(`Storage: Attempting to delete job application with ID: ${id}`);
+      
+      const result = await db
+        .delete(jobApplications)
+        .where(eq(jobApplications.id, id))
+        .returning({ id: jobApplications.id });
+        
+      const success = result.length > 0;
+      console.log(`Job application deletion ${success ? 'successful' : 'failed'} for ID: ${id}`);
+      return success;
+    } catch (error) {
+      console.error(`Error deleting job application with ID ${id}:`, error);
+      throw error;
+    }
+  }
+  
+  // Company Profile operations
+  async deleteCompanyProfile(id: number): Promise<boolean> {
+    try {
+      console.log(`Storage: Attempting to delete company profile with ID: ${id}`);
+      
+      const result = await db
+        .delete(companyProfiles)
+        .where(eq(companyProfiles.id, id))
+        .returning({ id: companyProfiles.id });
+        
+      const success = result.length > 0;
+      console.log(`Company profile deletion ${success ? 'successful' : 'failed'} for ID: ${id}`);
+      return success;
+    } catch (error) {
+      console.error(`Error deleting company profile with ID ${id}:`, error);
+      throw error;
+    }
+  }
+
   // Page Content operations
   async getPageContent(id: number): Promise<PageContent | undefined> {
     const [content] = await db

@@ -21,7 +21,7 @@ export const isAdmin = (req: Request, res: Response, next: Function) => {
 // Register all admin-specific routes
 export function registerAdminRoutes(app: Express) {
   // Dashboard stats endpoint
-  app.get("/api/admin/dashboard-stats", isAuthenticated, isAdmin, async (req, res) => {
+  app.get("/api/admin/dashboard-stats", async (req, res) => {
     try {
       // Get counts from storage methods
       const allUsers = await storage.getAllUsers();

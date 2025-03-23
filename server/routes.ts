@@ -82,9 +82,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize resource categories
   await initializeResourceCategories();
   
-  // Register admin-specific routes
-  registerAdminRoutes(app);
-  
   // Configure multer storage for file uploads
   const storage25MB = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -279,6 +276,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(403).json({ message: "Forbidden: Admin access required" });
   };
 
+  // Register admin-specific routes after auth middleware is set up
+  registerAdminRoutes(app);
+  
   // CSRF token refresh endpoint
   app.get('/api/csrf-token', (req: any, res) => {
     if (req.csrfToken) {

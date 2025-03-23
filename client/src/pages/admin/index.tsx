@@ -1,24 +1,35 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
-import { useAuth } from "@/lib/auth";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  LayoutDashboard, 
-  Users, 
-  Briefcase, 
-  Building2, 
-  FileText, 
-  MessageSquare, 
-  Settings,
-  CreditCard,
-  Shield
-} from "lucide-react";
+import { Route, Switch, useLocation, useRoute } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  Layout,
+  LayoutContent,
+  LayoutHeader,
+  LayoutTitle,
+} from "@/components/layout";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useQuery } from "@tanstack/react-query";
-import { getQueryFn } from "@/lib/queryClient";
-import { User } from "@shared/schema";
+import { Menu } from "lucide-react";
 
+// Admin components
 import Dashboard from "@/components/admin/new/dashboard";
 import UserManagement from "@/components/admin/new/user-management";
 import FreelancerManagement from "@/components/admin/new/freelancer-management";
@@ -28,120 +39,224 @@ import ContentManagement from "@/components/admin/new/content-management";
 import PaymentManagement from "@/components/admin/new/payment-management";
 import SettingsManagement from "@/components/admin/new/settings-management";
 
-const navItems = [
-  { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
-  { id: "users", label: "Users", icon: <Users className="h-5 w-5" /> },
-  { id: "freelancers", label: "Freelancers", icon: <Briefcase className="h-5 w-5" /> },
-  { id: "companies", label: "Companies", icon: <Building2 className="h-5 w-5" /> },
-  { id: "jobs", label: "Jobs", icon: <Briefcase className="h-5 w-5" /> },
-  { id: "content", label: "Content", icon: <FileText className="h-5 w-5" /> },
-  { id: "payments", label: "Payments", icon: <CreditCard className="h-5 w-5" /> },
-  { id: "settings", label: "Settings", icon: <Settings className="h-5 w-5" /> },
-];
-
 export default function AdminIndex() {
   const { user } = useAuth();
+  const [match, params] = useRoute("/admin/:section");
   const [, setLocation] = useLocation();
-  const { toast } = useToast();
-  const [activeSection, setActiveSection] = useState("dashboard");
-  
-  // Redirect if not admin
-  useEffect(() => {
-    if (user && !user.isAdmin) {
-      setLocation("/");
-      toast({
-        title: "Access Denied",
-        description: "You don't have permission to access the admin area.",
-        variant: "destructive",
-      });
-    }
-  }, [user, setLocation, toast]);
+  const [activeTab, setActiveTab] = useState("dashboard");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  // Get count of users (used in several places)
-  const { data: users = [] } = useQuery({
-    queryKey: ['/api/admin/users'],
-    queryFn: getQueryFn<User[]>({ on401: "throw" }),
-    enabled: !!user?.isAdmin,
-  });
+  // Handle tab changes and URL sync
+  useEffect(() => {
+    if (match && params && params.section) {
+      setActiveTab(params.section);
+    } else {
+      setLocation("/admin/dashboard");
+    }
+  }, [match, params, setLocation]);
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    setLocation(`/admin/${value}`);
+    setIsMobileMenuOpen(false);
+  };
 
   if (!user || !user.isAdmin) {
     return (
-      <div className="container mx-auto py-10 text-center">
-        <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-        <p className="mb-4">You must be an administrator to access this page.</p>
-        <Button onClick={() => setLocation("/")}>Go to Home</Button>
+      <div className="flex min-h-screen flex-col items-center justify-center">
+        <h1 className="text-2xl font-bold">Access Denied</h1>
+        <p className="text-muted-foreground">You do not have permission to access this area.</p>
+        <Button 
+          className="mt-4" 
+          onClick={() => setLocation("/")}
+        >
+          Return to Home
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="h-screen flex overflow-hidden">
-      {/* Sidebar */}
-      <div className="bg-card w-64 flex flex-col border-r">
-        <div className="p-4 border-b">
-          <div className="flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary" />
-            <h1 className="font-bold text-xl">Admin Panel</h1>
+    <Layout>
+      <LayoutHeader>
+        <div className="flex justify-between items-center">
+          <LayoutTitle>Admin Dashboard</LayoutTitle>
+          <div className="sm:hidden">
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left">
+                <div className="py-4">
+                  <h2 className="text-lg font-semibold mb-2">Navigation</h2>
+                  <Separator className="my-2" />
+                  <div className="flex flex-col space-y-2">
+                    <Button 
+                      variant={activeTab === "dashboard" ? "default" : "ghost"} 
+                      className="justify-start"
+                      onClick={() => handleTabChange("dashboard")}
+                    >
+                      Dashboard
+                    </Button>
+                    <Button 
+                      variant={activeTab === "users" ? "default" : "ghost"} 
+                      className="justify-start"
+                      onClick={() => handleTabChange("users")}
+                    >
+                      Users
+                    </Button>
+                    <Button 
+                      variant={activeTab === "freelancers" ? "default" : "ghost"} 
+                      className="justify-start"
+                      onClick={() => handleTabChange("freelancers")}
+                    >
+                      Freelancers
+                    </Button>
+                    <Button 
+                      variant={activeTab === "companies" ? "default" : "ghost"} 
+                      className="justify-start"
+                      onClick={() => handleTabChange("companies")}
+                    >
+                      Companies
+                    </Button>
+                    <Button 
+                      variant={activeTab === "jobs" ? "default" : "ghost"} 
+                      className="justify-start"
+                      onClick={() => handleTabChange("jobs")}
+                    >
+                      Jobs
+                    </Button>
+                    <Button 
+                      variant={activeTab === "content" ? "default" : "ghost"} 
+                      className="justify-start"
+                      onClick={() => handleTabChange("content")}
+                    >
+                      Content
+                    </Button>
+                    <Button 
+                      variant={activeTab === "payments" ? "default" : "ghost"} 
+                      className="justify-start"
+                      onClick={() => handleTabChange("payments")}
+                    >
+                      Payments
+                    </Button>
+                    <Button 
+                      variant={activeTab === "settings" ? "default" : "ghost"} 
+                      className="justify-start"
+                      onClick={() => handleTabChange("settings")}
+                    >
+                      Settings
+                    </Button>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+          <div className="hidden sm:block">
+            <NavigationMenu>
+              <NavigationMenuList>
+                <NavigationMenuItem>
+                  <NavigationMenuLink
+                    className={navigationMenuTriggerStyle({ className: activeTab === "dashboard" ? "bg-accent" : "" })}
+                    onClick={() => handleTabChange("dashboard")}
+                  >
+                    Dashboard
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink
+                    className={navigationMenuTriggerStyle({ className: activeTab === "users" ? "bg-accent" : "" })}
+                    onClick={() => handleTabChange("users")}
+                  >
+                    Users
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink
+                    className={navigationMenuTriggerStyle({ className: activeTab === "freelancers" ? "bg-accent" : "" })}
+                    onClick={() => handleTabChange("freelancers")}
+                  >
+                    Freelancers
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink
+                    className={navigationMenuTriggerStyle({ className: activeTab === "companies" ? "bg-accent" : "" })}
+                    onClick={() => handleTabChange("companies")}
+                  >
+                    Companies
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink
+                    className={navigationMenuTriggerStyle({ className: activeTab === "jobs" ? "bg-accent" : "" })}
+                    onClick={() => handleTabChange("jobs")}
+                  >
+                    Jobs
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink
+                    className={navigationMenuTriggerStyle({ className: activeTab === "content" ? "bg-accent" : "" })}
+                    onClick={() => handleTabChange("content")}
+                  >
+                    Content
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink
+                    className={navigationMenuTriggerStyle({ className: activeTab === "payments" ? "bg-accent" : "" })}
+                    onClick={() => handleTabChange("payments")}
+                  >
+                    Payments
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+                <NavigationMenuItem>
+                  <NavigationMenuLink
+                    className={navigationMenuTriggerStyle({ className: activeTab === "settings" ? "bg-accent" : "" })}
+                    onClick={() => handleTabChange("settings")}
+                  >
+                    Settings
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+              </NavigationMenuList>
+            </NavigationMenu>
           </div>
         </div>
-        
-        <nav className="flex-1 overflow-y-auto p-2">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              className={`flex items-center gap-3 w-full rounded-md px-3 py-2 text-sm transition-colors 
-                ${
-                  activeSection === item.id
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                }
-              `}
-              onClick={() => setActiveSection(item.id)}
-            >
-              {item.icon}
-              {item.label}
-            </button>
-          ))}
-        </nav>
-        
-        <div className="p-4 border-t">
-          <div className="flex items-center gap-3">
-            <div className="rounded-full bg-primary h-8 w-8 flex items-center justify-center text-primary-foreground">
-              {user.firstName?.charAt(0) || user.username?.charAt(0) || "A"}
-            </div>
-            <div className="overflow-hidden">
-              <p className="text-sm font-medium truncate">
-                {user.firstName && user.lastName 
-                  ? `${user.firstName} ${user.lastName}` 
-                  : user.username}
-              </p>
-              <p className="text-xs text-muted-foreground">Administrator</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-auto">
-        {/* Header */}
-        <header className="border-b bg-background px-6 py-3">
-          <h1 className="text-lg font-medium">
-            {navItems.find(item => item.id === activeSection)?.label || "Dashboard"}
-          </h1>
-        </header>
-        
-        {/* Content */}
-        <main className="flex-1 overflow-auto p-6">
-          {activeSection === "dashboard" && <Dashboard />}
-          {activeSection === "users" && <UserManagement />}
-          {activeSection === "freelancers" && <FreelancerManagement />}
-          {activeSection === "companies" && <CompanyManagement />}
-          {activeSection === "jobs" && <JobManagement />}
-          {activeSection === "content" && <ContentManagement />}
-          {activeSection === "payments" && <PaymentManagement />}
-          {activeSection === "settings" && <SettingsManagement />}
-        </main>
-      </div>
-    </div>
+      </LayoutHeader>
+      <LayoutContent>
+        <Switch>
+          <Route path="/admin/dashboard">
+            <Dashboard />
+          </Route>
+          <Route path="/admin/users">
+            <UserManagement />
+          </Route>
+          <Route path="/admin/freelancers">
+            <FreelancerManagement />
+          </Route>
+          <Route path="/admin/companies">
+            <CompanyManagement />
+          </Route>
+          <Route path="/admin/jobs">
+            <JobManagement />
+          </Route>
+          <Route path="/admin/content">
+            <ContentManagement />
+          </Route>
+          <Route path="/admin/payments">
+            <PaymentManagement />
+          </Route>
+          <Route path="/admin/settings">
+            <SettingsManagement />
+          </Route>
+          <Route>
+            <Dashboard />
+          </Route>
+        </Switch>
+      </LayoutContent>
+    </Layout>
   );
 }

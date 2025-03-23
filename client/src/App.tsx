@@ -15,8 +15,7 @@ import ResetPassword from "@/pages/reset-password";
 import RecoverUsername from "@/pages/recover-username";
 import ProfessionalDashboard from "@/pages/professional-dashboard";
 import CompanyDashboard from "@/pages/company-dashboard";
-import AdminDashboard from "@/pages/admin-dashboard";
-import AdminPanel from "@/pages/admin-panel"; // Added new simplified admin panel
+import AdminIndex from "@/pages/admin/index";
 import Professionals from "@/pages/professionals";
 import ProfessionalProfile from "@/pages/professional-profile";
 import EditProfile from "@/pages/edit-profile";
@@ -73,13 +72,8 @@ function Router() {
         userTypes={["company"]} 
       />
       <ProtectedRoute 
-        path="/admin-dashboard" 
-        component={AdminDashboard} 
-        adminOnly={true} 
-      />
-      <ProtectedRoute 
-        path="/admin-panel" 
-        component={AdminPanel} 
+        path="/admin/*" 
+        component={AdminIndex} 
         adminOnly={true} 
       />
       <ProtectedRoute 

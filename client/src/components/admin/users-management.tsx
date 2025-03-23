@@ -105,10 +105,18 @@ export default function UsersManagement() {
   // Delete user
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: number) => {
-      const response = await apiRequest("DELETE", `/api/admin/users/${userId}`);
-      
-      // The error message will already be thrown by apiRequest if the status isn't 2xx
-      return response.json();
+      try {
+        const response = await apiRequest("DELETE", `/api/admin/users/${userId}`);
+        
+        // If the response is successful, parse and return the JSON
+        return await response.json();
+      } catch (error: any) {
+        // If there's an error, handle it and extract the details from the server response
+        console.error("Delete user request failed:", error);
+        
+        // Rethrow the error with appropriate details to be handled in onError
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
@@ -119,18 +127,21 @@ export default function UsersManagement() {
       });
     },
     onError: (error: any) => {
-      console.log("Delete error details:", error);
+      console.log("Delete error details:", { error });
       
       // Get a more user-friendly message based on the error
       let errorMessage = "Failed to delete user";
       
-      if (error.message) {
+      if (error && error.message) {
         if (error.message.includes("company profiles")) {
           errorMessage = "This user has associated company profiles. Please delete those first.";
         } else if (error.message.includes("professional profiles")) {
           errorMessage = "This user has associated professional profiles. Please delete those first.";
         } else if (error.message.includes("associated records")) {
           errorMessage = "This user has associated records. Please delete those first.";
+        } else if (error.message.includes("409:")) {
+          // Extract the message from the 409 error
+          errorMessage = error.message.replace("409: ", "");
         } else {
           errorMessage = error.message;
         }
@@ -141,6 +152,9 @@ export default function UsersManagement() {
         description: errorMessage,
         variant: "destructive",
       });
+      
+      // Close the delete dialog
+      setConfirmDeleteUser(null);
     },
   });
 

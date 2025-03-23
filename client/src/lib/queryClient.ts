@@ -133,6 +133,25 @@ export async function apiRequest(
       }
       throw new Error(`Forbidden (403): ${responseText}`);
     }
+    
+    // Enhanced error handling for Conflict errors (typically dependency constraints)
+    if (res.status === 409) {
+      let errorDetails = "";
+      try {
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorJson = await res.json();
+          errorDetails = errorJson.details || errorJson.message || JSON.stringify(errorJson);
+        } else {
+          errorDetails = await res.text();
+        }
+      } catch (e) {
+        errorDetails = await res.text();
+      }
+      
+      console.error('Conflict error (409):', errorDetails);
+      throw new Error(`409: ${errorDetails}`);
+    }
 
     await throwIfResNotOk(res);
     return res;
@@ -275,6 +294,25 @@ export async function secureFileUpload(
       console.error('Authentication error:', responseText);
       throw new Error(`Authentication Error (401): You must be logged in to perform this action. Please log in and try again.`);
     }
+    
+    // Enhanced error handling for Conflict errors (typically dependency constraints)
+    if (res.status === 409) {
+      let errorDetails = "";
+      try {
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorJson = await res.json();
+          errorDetails = errorJson.details || errorJson.message || JSON.stringify(errorJson);
+        } else {
+          errorDetails = await res.text();
+        }
+      } catch (e) {
+        errorDetails = await res.text();
+      }
+      
+      console.error('Conflict error (409):', errorDetails);
+      throw new Error(`409: ${errorDetails}`);
+    }
 
     // Handle other errors with detailed information
     if (!res.ok) {
@@ -368,6 +406,25 @@ export const getQueryFn: <T>(options: {
           throw new Error(`CSRF Protection Error (403): ${responseText}. Please refresh the page and try again.`);
         }
         throw new Error(`Forbidden (403): ${responseText}`);
+      }
+      
+      // Enhanced error handling for Conflict errors (typically dependency constraints)
+      if (res.status === 409) {
+        let errorDetails = "";
+        try {
+          const contentType = res.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const errorJson = await res.json();
+            errorDetails = errorJson.details || errorJson.message || JSON.stringify(errorJson);
+          } else {
+            errorDetails = await res.text();
+          }
+        } catch (e) {
+          errorDetails = await res.text();
+        }
+        
+        console.error('Conflict error (409) in query function:', errorDetails);
+        throw new Error(`409: ${errorDetails}`);
       }
 
       await throwIfResNotOk(res);

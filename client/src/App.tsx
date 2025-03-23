@@ -78,6 +78,11 @@ function Router() {
         userTypes={["admin"]} 
       />
       <ProtectedRoute 
+        path="/admin-dashboard" 
+        component={AdminIndex} 
+        userTypes={["admin"]} 
+      />
+      <ProtectedRoute 
         path="/edit-profile" 
         component={EditProfile} 
       />

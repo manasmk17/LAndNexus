@@ -60,7 +60,7 @@ export default function AdminPage() {
 
   const handleLogout = async () => {
     await logout();
-    setLocation("/login");
+    setLocation("/admin-login");
     toast({
       title: "Logged out",
       description: "You have been logged out successfully.",

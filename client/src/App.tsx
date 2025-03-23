@@ -18,6 +18,7 @@ import ProfessionalDashboard from "@/pages/professional-dashboard";
 import CompanyDashboard from "@/pages/company-dashboard";
 import AdminPage from "@/pages/admin-page";
 import AdminIndex from "@/pages/admin/index";
+import AdminLogin from "@/pages/admin-login";
 import Professionals from "@/pages/professionals";
 import ProfessionalProfile from "@/pages/professional-profile";
 import EditProfile from "@/pages/edit-profile";
@@ -50,6 +51,7 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/recover-username" component={RecoverUsername} />
+      <Route path="/admin-login" component={AdminLogin} />
       <Route path="/professionals" component={Professionals} />
       <Route path="/professional-profile/:id" component={ProfessionalProfile} />
       <Route path="/jobs" component={Jobs} />
@@ -70,9 +72,10 @@ function Router() {
         component={CompanyDashboard} 
         userTypes={["company"]} 
       />
-      <Route 
+      <ProtectedRoute 
         path="/admin" 
         component={AdminIndex} 
+        userTypes={["admin"]} 
       />
       <ProtectedRoute 
         path="/edit-profile" 
@@ -138,8 +141,8 @@ function App() {
   const location = window.location.pathname;
   
   useEffect(() => {
-    // Check if current route is admin route
-    setIsAdmin(location.startsWith('/admin'));
+    // Check if current route is admin route or admin login
+    setIsAdmin(location.startsWith('/admin') || location === '/admin-login');
   }, [location]);
 
   return (

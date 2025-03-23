@@ -10,7 +10,7 @@ export default function AdminIndex() {
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        setLocation("/login?redirect=/admin");
+        setLocation("/admin-login");
       } else if (!user.isAdmin) {
         setLocation("/");
       }

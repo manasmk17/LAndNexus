@@ -129,32 +129,71 @@ export function ContentManagement() {
   // Delete page content
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      console.log(`Attempting to delete page content with ID: ${id}`);
-      const response = await apiRequest("DELETE", `/api/page-contents/${id}`);
-      console.log(`Delete response status: ${response.status}`);
-      return response;
+      console.log(`Frontend: Attempting to delete page content with ID: ${id}`);
+      
+      try {
+        const response = await apiRequest("DELETE", `/api/page-contents/${id}`);
+        console.log(`Delete response status: ${response.status}`);
+        
+        if (response.status === 200) {
+          const result = await response.json();
+          console.log("Delete success response:", result);
+          return result;
+        } else if (response.status === 204) {
+          // Handle 204 No Content response (success with no body)
+          console.log("Delete success with no content");
+          return { message: "Page deleted successfully" };
+        } else {
+          console.error(`Unexpected success status code: ${response.status}`);
+          return { message: "Unknown response from server" };
+        }
+      } catch (error) {
+        console.error("Delete request error:", error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Delete mutation succeeded:", data);
       toast({
         title: "Page deleted",
-        description: "The page has been deleted successfully",
+        description: data.message || "The page has been deleted successfully",
       });
       
-      // Force refetch the data instead of just invalidating the query
+      // Force immediate refetch the data with both invalidate and refetch
+      console.log("Forcing refetch of page content data");
       queryClient.invalidateQueries({ queryKey: ["/api/page-contents"] });
       queryClient.refetchQueries({ queryKey: ["/api/page-contents"] });
       
+      // Clear UI state
       setIsDeleteDialogOpen(false);
       setDeleteContentId(null);
     },
     onError: (err: any) => {
       console.error("Delete mutation error:", err);
       
+      // More detailed error message
+      const errorMessage = err.message || "An error occurred while deleting the page";
+      console.error("Error message:", errorMessage);
+      
       toast({
         title: "Failed to delete page",
-        description: err.message || "An error occurred while deleting the page",
+        description: errorMessage,
         variant: "destructive",
       });
+    },
+    // Add retry behavior for network errors
+    retry: (failureCount, error: any) => {
+      // Only retry for network-related errors, not for 4xx responses
+      const isNetworkError = error.message && 
+        (error.message.includes('network') || 
+         error.message.includes('connection') ||
+         error.message.includes('offline'));
+         
+      if (isNetworkError && failureCount < 2) {
+        console.log(`Retrying delete operation, attempt ${failureCount + 1}`);
+        return true;
+      }
+      return false;
     },
   });
 

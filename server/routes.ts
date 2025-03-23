@@ -3898,33 +3898,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Delete page content (admin only)
   app.delete("/api/page-contents/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
+      // req.user is guaranteed to exist because of isAuthenticated middleware
+      const userId = req.user?.id || 0; // Add fallback for TypeScript
       const id = parseInt(req.params.id);
+      
+      console.log(`User ${userId} attempting to delete page content with ID: ${id}`);
+      
       if (isNaN(id)) {
+        console.log(`Invalid page content ID: ${req.params.id}`);
         return res.status(400).json({ message: "Invalid page content ID" });
       }
 
       // First check if the content exists
+      console.log(`Checking if page content with ID ${id} exists`);
       const content = await storage.getPageContent(id);
+      
       if (!content) {
+        console.log(`Page content with ID ${id} not found during pre-delete check`);
         return res.status(404).json({ message: "Page content not found" });
       }
-
-      console.log(`Attempting to delete page content with ID: ${id}`);
+      
+      console.log(`Found page content: "${content.title}" (ID: ${id}). Proceeding with deletion.`);
+      
+      // Perform the actual deletion
+      console.log(`Calling storage.deletePageContent(${id})`);
       const success = await storage.deletePageContent(id);
       
-      console.log(`Delete operation result: ${success ? 'Success' : 'Failed'}`);
+      console.log(`Delete operation result for ID ${id}: ${success ? 'Success' : 'Failed'}`);
       
       if (success) {
-        res.status(204).send();
+        // Return 200 with success message instead of 204 empty response for better client handling
+        res.status(200).json({ message: "Page content deleted successfully" });
       } else {
-        res.status(404).json({ message: "Page content not found or could not be deleted" });
+        console.log(`Failed to delete page content with ID ${id} (storage returned false)`);
+        res.status(404).json({ 
+          message: "Page content not found or could not be deleted",
+          id: id
+        });
       }
     } catch (err) {
+      // Enhanced error logging
       console.error("Error deleting page content:", err);
       console.error(err instanceof Error ? err.stack : String(err));
+      
+      // More detailed error response for client
       res.status(500).json({ 
-        message: "Internal server error", 
-        error: err instanceof Error ? err.message : String(err)
+        message: "Internal server error when deleting page content", 
+        error: err instanceof Error ? err.message : String(err),
+        id: req.params.id // Include the ID for debugging
       });
     }
   });

@@ -106,10 +106,9 @@ export default function UsersManagement() {
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: number) => {
       const response = await apiRequest("DELETE", `/api/admin/users/${userId}`);
-      if (!response.ok) {
-        throw new Error("Failed to delete user");
-      }
-      return true;
+      
+      // The error message will already be thrown by apiRequest if the status isn't 2xx
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
@@ -119,10 +118,27 @@ export default function UsersManagement() {
         description: "User has been deleted successfully",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.log("Delete error details:", error);
+      
+      // Get a more user-friendly message based on the error
+      let errorMessage = "Failed to delete user";
+      
+      if (error.message) {
+        if (error.message.includes("company profiles")) {
+          errorMessage = "This user has associated company profiles. Please delete those first.";
+        } else if (error.message.includes("professional profiles")) {
+          errorMessage = "This user has associated professional profiles. Please delete those first.";
+        } else if (error.message.includes("associated records")) {
+          errorMessage = "This user has associated records. Please delete those first.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Delete Failed",
-        description: error instanceof Error ? error.message : "Failed to delete user",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -375,6 +391,44 @@ export default function UsersManagement() {
                     ? This action cannot be undone.
                   </DialogDescription>
                 </DialogHeader>
+                
+                {/* Important warning for potential foreign key dependencies */}
+                {confirmDeleteUser.userType === "company" && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-md p-3 my-4">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-amber-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-amber-800">Company User Warning</h3>
+                        <div className="mt-2 text-sm text-amber-700">
+                          <p>This user is a company user and may have associated company profiles, job postings, or other records. You'll need to delete those records first.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {confirmDeleteUser.userType === "professional" && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-md p-3 my-4">
+                    <div className="flex items-start">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-amber-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-amber-800">Professional User Warning</h3>
+                        <div className="mt-2 text-sm text-amber-700">
+                          <p>This user is a professional user and may have associated professional profiles, certifications, or expertise. You'll need to delete those records first.</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <DialogFooter>
                   <Button
                     variant="outline"

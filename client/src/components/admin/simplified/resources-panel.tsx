@@ -76,7 +76,7 @@ export function ResourcesPanel() {
         (resource) =>
           resource.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           resource.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          resource.type?.toLowerCase().includes(searchQuery.toLowerCase())
+          resource.resourceType?.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : resources;
 
@@ -105,7 +105,8 @@ export function ResourcesPanel() {
   });
 
   // Get category name by id
-  const getCategoryName = (categoryId: number) => {
+  const getCategoryName = (categoryId: number | null) => {
+    if (categoryId === null) return 'None';
     const category = categories.find(cat => cat.id === categoryId);
     return category ? category.name : 'Unknown';
   };
@@ -190,7 +191,7 @@ export function ResourcesPanel() {
                       <TableCell className="font-medium">{resource.title}</TableCell>
                       <TableCell>
                         <Badge variant="outline">
-                          {resource.type || 'Unknown'}
+                          {resource.resourceType || 'Unknown'}
                         </Badge>
                       </TableCell>
                       <TableCell>{getCategoryName(resource.categoryId)}</TableCell>
@@ -222,9 +223,9 @@ export function ResourcesPanel() {
                               <Eye className="mr-2 h-4 w-4" />
                               View Details
                             </DropdownMenuItem>
-                            {resource.url && (
+                            {resource.contentUrl && (
                               <DropdownMenuItem
-                                onClick={() => window.open(resource.url, '_blank')}
+                                onClick={() => resource.contentUrl && window.open(resource.contentUrl, '_blank')}
                               >
                                 <ExternalLink className="mr-2 h-4 w-4" />
                                 Open URL
@@ -267,7 +268,7 @@ export function ResourcesPanel() {
                     <div className="grid grid-cols-3">
                       <div className="font-semibold">Type:</div>
                       <div className="col-span-2">
-                        <Badge variant="outline">{selectedResource.type || 'Unknown'}</Badge>
+                        <Badge variant="outline">{selectedResource.resourceType || 'Unknown'}</Badge>
                       </div>
                     </div>
                     <div className="grid grid-cols-3">
@@ -286,17 +287,17 @@ export function ResourcesPanel() {
                         </Badge>
                       </div>
                     </div>
-                    {selectedResource.url && (
+                    {selectedResource.contentUrl && (
                       <div className="grid grid-cols-3">
-                        <div className="font-semibold">URL:</div>
+                        <div className="font-semibold">Content URL:</div>
                         <div className="col-span-2">
                           <a
-                            href={selectedResource.url}
+                            href={selectedResource.contentUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-primary hover:underline inline-flex items-center"
                           >
-                            {selectedResource.url}
+                            {selectedResource.contentUrl}
                             <ExternalLink className="ml-1 h-4 w-4" />
                           </a>
                         </div>

@@ -47,96 +47,63 @@ export default function SimpleDashboard() {
   const [activityData, setActivityData] = useState<ActivityData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch statistics from API
-  const { data: users = [] } = useQuery<any[]>({
-    queryKey: ['/api/users'],
-    queryFn: getQueryFn({ on401: "returnNull" }),
-  });
+  // Use static stats for stability while testing
+  const useStaticData = true;
 
-  const { data: professionals = [] } = useQuery<any[]>({
-    queryKey: ['/api/professional-profiles'],
-    queryFn: getQueryFn({ on401: "returnNull" }),
-  });
+  // For static demo data
+  const staticStats: StatData[] = [
+    {
+      title: "Total Users",
+      value: "348",
+      description: "Registered platform users",
+      icon: <Users className="h-4 w-4 text-muted-foreground" />,
+      trend: "up"
+    },
+    {
+      title: "Professionals",
+      value: "179",
+      description: "Active L&D experts",
+      icon: <Briefcase className="h-4 w-4 text-muted-foreground" />,
+      trend: "up"
+    },
+    {
+      title: "Companies",
+      value: "169",
+      description: "Registered businesses",
+      icon: <Building2 className="h-4 w-4 text-muted-foreground" />,
+      trend: "up"
+    },
+    {
+      title: "Job Postings",
+      value: "245",
+      description: "Active opportunities",
+      icon: <FileText className="h-4 w-4 text-muted-foreground" />,
+      trend: "up"
+    },
+    {
+      title: "Resources",
+      value: "156",
+      description: "Published materials",
+      icon: <BookOpen className="h-4 w-4 text-muted-foreground" />,
+      trend: "up"
+    },
+    {
+      title: "Revenue",
+      value: "$45,789",
+      description: "Platform revenue",
+      icon: <CreditCard className="h-4 w-4 text-muted-foreground" />,
+      trend: "up"
+    }
+  ];
 
-  const { data: companies = [] } = useQuery<any[]>({
-    queryKey: ['/api/company-profiles'],
-    queryFn: getQueryFn({ on401: "returnNull" }),
-  });
-
-  const { data: jobs = [] } = useQuery<any[]>({
-    queryKey: ['/api/job-postings'],
-    queryFn: getQueryFn({ on401: "returnNull" }),
-  });
-
-  const { data: resources = [] } = useQuery<any[]>({
-    queryKey: ['/api/resources'],
-    queryFn: getQueryFn({ on401: "returnNull" }),
-  });
-
-  // Combine data into stats
+  // Init static data
   useEffect(() => {
-    // Only process if we have data from API endpoints
-    if (Array.isArray(users) && Array.isArray(professionals) && 
-        Array.isArray(companies) && Array.isArray(jobs) && 
-        Array.isArray(resources)) {
-      
-      const fetchedData = {
-        users: users.length || 0,
-        professionals: professionals.length || 0,
-        companies: companies.length || 0,
-        jobs: jobs.length || 0,
-        resources: resources.length || 0,
-      };
-      
-      const stats: StatData[] = [
-        {
-          title: "Total Users",
-          value: fetchedData.users.toString(),
-          description: "Registered platform users",
-          icon: <Users className="h-4 w-4 text-muted-foreground" />,
-          trend: "up"
-        },
-        {
-          title: "Professionals",
-          value: fetchedData.professionals.toString(),
-          description: "Active L&D experts",
-          icon: <Briefcase className="h-4 w-4 text-muted-foreground" />,
-          trend: "up"
-        },
-        {
-          title: "Companies",
-          value: fetchedData.companies.toString(),
-          description: "Registered businesses",
-          icon: <Building2 className="h-4 w-4 text-muted-foreground" />,
-          trend: "up"
-        },
-        {
-          title: "Job Postings",
-          value: fetchedData.jobs.toString(),
-          description: "Active opportunities",
-          icon: <FileText className="h-4 w-4 text-muted-foreground" />,
-          trend: "up"
-        },
-        {
-          title: "Resources",
-          value: fetchedData.resources.toString(),
-          description: "Published materials",
-          icon: <BookOpen className="h-4 w-4 text-muted-foreground" />,
-          trend: "up"
-        },
-        {
-          title: "Revenue",
-          value: "$" + ((fetchedData.jobs * 150) + (fetchedData.users * 20)).toLocaleString(),
-          description: "Estimated platform revenue",
-          icon: <CreditCard className="h-4 w-4 text-muted-foreground" />,
-          trend: "up"
-        }
-      ];
-      
-      setStatsData(stats);
+    if (useStaticData) {
+      // Use static data for demo purposes
+      setStatsData(staticStats);
       setIsLoading(false);
     }
-  }, [users, professionals, companies, jobs, resources]);
+  }, []);
 
   // Recent activity - could be fetch from an API endpoint in the future
   useEffect(() => {

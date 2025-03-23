@@ -31,7 +31,7 @@ import { Button } from "@/components/ui/button";
 import { getQueryFn } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 
-import Dashboard from "@/components/admin/new/dashboard";
+import SimpleDashboard from "@/components/admin/new/simple-dashboard";
 import UserManagement from "@/components/admin/new/user-management";
 import FreelancerManagement from "@/components/admin/new/freelancer-management";
 import CompanyManagement from "@/components/admin/new/company-management";
@@ -209,7 +209,7 @@ export default function AdminPage() {
 
           {/* Main content area */}
           <main className="flex-1 p-4 overflow-y-auto">
-            {activeTab === "dashboard" && <Dashboard />}
+            {activeTab === "dashboard" && <SimpleDashboard />}
             {activeTab === "users" && <UserManagement />}
             {activeTab === "freelancers" && <FreelancerManagement />}
             {activeTab === "companies" && <CompanyManagement />}

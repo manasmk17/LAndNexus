@@ -17,6 +17,7 @@ import RecoverUsername from "@/pages/recover-username";
 import ProfessionalDashboard from "@/pages/professional-dashboard";
 import CompanyDashboard from "@/pages/company-dashboard";
 import AdminPage from "@/pages/admin-page";
+import AdminTest from "@/pages/admin-test";
 import AdminIndex from "@/pages/admin/index";
 import AdminLogin from "@/pages/admin-login";
 import Professionals from "@/pages/professionals";
@@ -60,6 +61,7 @@ function Router() {
       <Route path="/resource/:id" component={ResourceDetail} />
       <Route path="/forum" component={Forum} />
       <Route path="/pages/:slug" component={PageView} />
+      <Route path="/admin-test" component={AdminTest} />
 
       {/* Protected routes with user type restrictions */}
       <ProtectedRoute 

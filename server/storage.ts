@@ -1075,11 +1075,50 @@ export class DatabaseStorage implements IStorage {
   }
   
   async deleteUser(id: number): Promise<boolean> {
-    const result = await db
-      .delete(users)
-      .where(eq(users.id, id))
-      .returning({ id: users.id });
-    return result.length > 0;
+    try {
+      console.log(`Storage: Attempting to delete user with ID: ${id}`);
+      
+      // Start a transaction to handle related records
+      return await db.transaction(async (tx) => {
+        // Check for company profiles associated with this user
+        const companyProfiles = await tx
+          .select({ id: companyProfiles.id })
+          .from(companyProfiles)
+          .where(eq(companyProfiles.userId, id));
+          
+        if (companyProfiles.length > 0) {
+          console.log(`Cannot delete user ${id}: Found ${companyProfiles.length} associated company profiles`);
+          throw new Error(`User is associated with company profiles. Please delete those first.`);
+        }
+        
+        // Check for professional profiles associated with this user
+        const professionalProfiles = await tx
+          .select({ id: professionalProfiles.id })
+          .from(professionalProfiles)
+          .where(eq(professionalProfiles.userId, id));
+          
+        if (professionalProfiles.length > 0) {
+          console.log(`Cannot delete user ${id}: Found ${professionalProfiles.length} associated professional profiles`);
+          throw new Error(`User is associated with professional profiles. Please delete those first.`);
+        }
+        
+        // Check for job postings, resources, etc. associated with this user
+        // Check for other dependencies as needed...
+        
+        // If no dependencies found, proceed with deletion
+        const result = await tx
+          .delete(users)
+          .where(eq(users.id, id))
+          .returning({ id: users.id });
+          
+        const success = result.length > 0;
+        console.log(`User deletion ${success ? 'successful' : 'failed'} for ID: ${id}`);
+        return success;
+      });
+    } catch (error) {
+      console.error(`Error deleting user with ID ${id}:`, error);
+      throw error; // Re-throw to handle in the route
+    }
   }
 
   // Stripe operations

@@ -2601,17 +2601,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
       
-      // Delete the user using our method
-      const deleted = await storage.deleteUser(userId);
-      
-      if (deleted) {
-        res.json({ success: true, message: "User deleted successfully" });
-      } else {
-        res.status(500).json({ message: "Failed to delete user" });
+      try {
+        // Delete the user using our method
+        const deleted = await storage.deleteUser(userId);
+        
+        if (deleted) {
+          return res.json({ success: true, message: "User deleted successfully" });
+        } else {
+          return res.status(500).json({ message: "Failed to delete user" });
+        }
+      } catch (deleteError: any) {
+        // Handle specific error from our deleteUser method
+        console.log("Delete user operation error:", deleteError.message);
+        
+        // Return a more detailed error message based on the specific error
+        if (deleteError.message.includes("company profiles")) {
+          return res.status(409).json({ 
+            message: "Cannot delete user with associated company profiles",
+            details: deleteError.message
+          });
+        } else if (deleteError.message.includes("professional profiles")) {
+          return res.status(409).json({ 
+            message: "Cannot delete user with associated professional profiles",
+            details: deleteError.message
+          });
+        } else {
+          return res.status(409).json({ 
+            message: "Cannot delete user with associated records",
+            details: deleteError.message
+          });
+        }
       }
     } catch (err) {
       console.error("Error deleting user:", err);
-      res.status(500).json({ message: "Error deleting user" });
+      return res.status(500).json({ message: "Error deleting user" });
     }
   });
   

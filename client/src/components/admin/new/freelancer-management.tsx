@@ -201,6 +201,73 @@ export default function FreelancerManagement() {
     deleteMutation.mutate(freelancerToDelete);
   };
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-3xl font-bold tracking-tight">Freelancer Management</h2>
+          <Button variant="outline" disabled className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading...
+          </Button>
+        </div>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>L&D Professionals</CardTitle>
+            <CardDescription>
+              Loading professional profiles...
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="w-full h-12 bg-muted/30 animate-pulse rounded-md"></div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h2 className="text-3xl font-bold tracking-tight">Freelancer Management</h2>
+          <Button 
+            variant="outline" 
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/professional-profiles'] })}
+            className="flex items-center gap-2"
+          >
+            <AlertTriangle className="h-4 w-4 text-destructive" />
+            Retry
+          </Button>
+        </div>
+        
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle className="text-destructive flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              Error Loading Data
+            </CardTitle>
+            <CardDescription>
+              There was a problem loading professional profiles. Please try again.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <pre className="bg-muted p-4 rounded-md overflow-auto text-xs">
+              {error instanceof Error ? error.message : 'Unknown error occurred'}
+            </pre>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -250,11 +317,16 @@ export default function FreelancerManagement() {
       
       {/* Freelancers table */}
       <Card>
-        <CardHeader>
-          <CardTitle>L&D Professionals</CardTitle>
-          <CardDescription>
-            Manage professional profiles, verification, and featured status.
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>L&D Professionals</CardTitle>
+            <CardDescription>
+              Manage professional profiles, verification, and featured status.
+            </CardDescription>
+          </div>
+          <Badge variant="outline">
+            {freelancers.length} {freelancers.length === 1 ? 'Professional' : 'Professionals'}
+          </Badge>
         </CardHeader>
         <CardContent>
           <Table>
@@ -274,10 +346,10 @@ export default function FreelancerManagement() {
               {filteredFreelancers.map((freelancer) => (
                 <TableRow key={freelancer.id}>
                   <TableCell className="font-medium">
-                    {freelancer.firstName} {freelancer.lastName}
+                    {freelancer.firstName || 'Unnamed'} {freelancer.lastName || 'Professional'}
                   </TableCell>
-                  <TableCell>{freelancer.title}</TableCell>
-                  <TableCell>{freelancer.location}</TableCell>
+                  <TableCell>{freelancer.title || 'No title'}</TableCell>
+                  <TableCell>{freelancer.location || 'No location'}</TableCell>
                   <TableCell>
                     <div className="flex items-center">
                       <Star className="h-4 w-4 text-amber-500 fill-amber-500 mr-1" />
@@ -290,6 +362,7 @@ export default function FreelancerManagement() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleToggleFeatured(freelancer.id)}
+                      disabled={toggleFeaturedMutation.isPending}
                     >
                       {freelancer.featured ? (
                         <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
@@ -303,6 +376,7 @@ export default function FreelancerManagement() {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleToggleVerified(freelancer.id)}
+                      disabled={toggleVerifiedMutation.isPending}
                     >
                       {freelancer.verified ? (
                         <CheckCircle2 className="h-5 w-5 text-emerald-500" />
@@ -326,6 +400,7 @@ export default function FreelancerManagement() {
                           View Profile
                         </DropdownMenuItem>
                         <DropdownMenuItem>
+                          <Edit className="h-4 w-4 mr-2" />
                           Edit Details
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -394,12 +469,20 @@ export default function FreelancerManagement() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deleteMutation.isPending}
             >
-              Delete
+              {deleteMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

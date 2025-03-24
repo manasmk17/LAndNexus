@@ -29,7 +29,8 @@ import {
   Eye,
   Trash2,
   AlertTriangle,
-  Edit
+  Edit,
+  Loader2
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -51,122 +52,98 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-// Sample freelancer data
-const sampleFreelancers = [
-  {
-    id: 1,
-    userId: 101,
-    firstName: "John",
-    lastName: "Doe",
-    title: "Leadership Development Specialist",
-    bio: "Experienced leadership trainer with 10+ years in corporate settings",
-    location: "New York, USA",
-    featured: true,
-    verified: true,
-    contactEmail: "john.doe@example.com",
-    profilePictureUrl: null,
-    availability: "Full-time",
-    avgRating: 4.8,
-    experienceYears: 10,
-  },
-  {
-    id: 2,
-    userId: 102,
-    firstName: "Sarah",
-    lastName: "Johnson",
-    title: "Corporate Training Consultant",
-    bio: "Specializing in corporate training programs and team building",
-    location: "Chicago, USA",
-    featured: false,
-    verified: true,
-    contactEmail: "sarah.j@example.com",
-    profilePictureUrl: null,
-    availability: "Part-time",
-    avgRating: 4.5,
-    experienceYears: 8,
-  },
-  {
-    id: 3,
-    userId: 103,
-    firstName: "Michael",
-    lastName: "Rodriguez",
-    title: "E-Learning Designer",
-    bio: "Creative instructional designer with expertise in digital learning",
-    location: "Austin, USA",
-    featured: true,
-    verified: true,
-    contactEmail: "michael.r@example.com",
-    profilePictureUrl: null,
-    availability: "Contract",
-    avgRating: 4.9,
-    experienceYears: 7,
-  },
-  {
-    id: 4,
-    userId: 104,
-    firstName: "Emma",
-    lastName: "Chen",
-    title: "Diversity & Inclusion Trainer",
-    bio: "Specializing in diversity programs and inclusive workplace strategies",
-    location: "San Francisco, USA",
-    featured: false,
-    verified: true,
-    contactEmail: "emma.c@example.com",
-    profilePictureUrl: null,
-    availability: "Full-time",
-    avgRating: 4.7,
-    experienceYears: 9,
-  },
-  {
-    id: 5,
-    userId: 105,
-    firstName: "David",
-    lastName: "Wilson",
-    title: "Sales Training Specialist",
-    bio: "Expert in sales methodology and performance enhancement",
-    location: "Miami, USA",
-    featured: false,
-    verified: false,
-    contactEmail: "david.w@example.com",
-    profilePictureUrl: null,
-    availability: "Contract",
-    avgRating: 4.4,
-    experienceYears: 6,
-  },
-  {
-    id: 6,
-    userId: 106,
-    firstName: "Olivia",
-    lastName: "Martinez",
-    title: "Executive Coach",
-    bio: "Certified executive coach with focus on leadership development",
-    location: "Denver, USA",
-    featured: true,
-    verified: true,
-    contactEmail: "olivia.m@example.com",
-    profilePictureUrl: null,
-    availability: "Part-time",
-    avgRating: 5.0,
-    experienceYears: 12,
-  },
-];
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getQueryFn, apiRequest } from "@/lib/queryClient";
+import { ProfessionalProfile } from "@shared/schema";
 
 export default function FreelancerManagement() {
-  const [freelancers, setFreelancers] = useState(sampleFreelancers);
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [freelancerToDelete, setFreelancerToDelete] = useState<number | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
+  // Fetch all professional profiles from the API
+  const { 
+    data: freelancers = [], 
+    isLoading,
+    isError,
+    error
+  } = useQuery<ProfessionalProfile[]>({
+    queryKey: ['/api/professional-profiles'],
+    queryFn: getQueryFn({ on401: 'throw' })
+  });
+  
+  // Toggle featured status mutation
+  const toggleFeaturedMutation = useMutation({
+    mutationFn: async ({ id, featured }: { id: number, featured: boolean }) => {
+      return await apiRequest('PATCH', `/api/professional-profiles/${id}`, {
+        featured
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/professional-profiles'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to update featured status',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  });
+  
+  // Toggle verified status mutation
+  const toggleVerifiedMutation = useMutation({
+    mutationFn: async ({ id, verified }: { id: number, verified: boolean }) => {
+      return await apiRequest('PATCH', `/api/professional-profiles/${id}`, {
+        verified
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/professional-profiles'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to update verification status',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  });
+  
+  // Delete professional profile mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest('DELETE', `/api/professional-profiles/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/professional-profiles'] });
+      setDeleteDialogOpen(false);
+      setFreelancerToDelete(null);
+      
+      toast({
+        title: "Professional profile deleted",
+        description: "The profile has been removed successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to delete profile',
+        description: error.message,
+        variant: 'destructive'
+      });
+    }
+  });
 
   // Filter freelancers based on search term
   const filteredFreelancers = freelancers.filter(freelancer => {
     const searchFields = [
-      freelancer.firstName,
-      freelancer.lastName,
-      freelancer.title,
-      freelancer.location,
-      freelancer.bio,
+      freelancer.firstName || '',
+      freelancer.lastName || '',
+      freelancer.title || '',
+      freelancer.location || '',
+      freelancer.bio || '',
     ];
     
     return searchFields.some(field => 
@@ -175,34 +152,40 @@ export default function FreelancerManagement() {
   });
 
   const handleToggleFeatured = (id: number) => {
-    setFreelancers(freelancers.map(freelancer => 
-      freelancer.id === id 
-        ? { ...freelancer, featured: !freelancer.featured } 
-        : freelancer
-    ));
-
     const freelancer = freelancers.find(f => f.id === id);
-    const action = freelancer?.featured ? "removed from" : "added to";
+    if (!freelancer) return;
     
+    // Using the new value (opposite of current value)
+    const newFeaturedValue = !freelancer.featured;
+    
+    toggleFeaturedMutation.mutate({ 
+      id, 
+      featured: newFeaturedValue 
+    });
+    
+    const action = freelancer.featured ? "removed from" : "added to";
     toast({
       title: `Featured status updated`,
-      description: `${freelancer?.firstName} ${freelancer?.lastName} has been ${action} featured professionals.`,
+      description: `${freelancer?.firstName || 'Professional'} ${freelancer?.lastName || ''} has been ${action} featured professionals.`,
     });
   };
 
   const handleToggleVerified = (id: number) => {
-    setFreelancers(freelancers.map(freelancer => 
-      freelancer.id === id 
-        ? { ...freelancer, verified: !freelancer.verified } 
-        : freelancer
-    ));
-
     const freelancer = freelancers.find(f => f.id === id);
-    const action = freelancer?.verified ? "unverified" : "verified";
+    if (!freelancer) return;
     
+    // Using the new value (opposite of current value)
+    const newVerifiedValue = !freelancer.verified;
+    
+    toggleVerifiedMutation.mutate({ 
+      id, 
+      verified: newVerifiedValue 
+    });
+    
+    const action = freelancer.verified ? "unverified" : "verified";
     toast({
       title: `Verification status updated`,
-      description: `${freelancer?.firstName} ${freelancer?.lastName} has been ${action}.`,
+      description: `${freelancer?.firstName || 'Professional'} ${freelancer?.lastName || ''} has been ${action}.`,
     });
   };
 
@@ -214,18 +197,8 @@ export default function FreelancerManagement() {
   const handleDeleteConfirm = () => {
     if (freelancerToDelete === null) return;
     
-    const freelancerName = freelancers.find(f => f.id === freelancerToDelete);
-    setFreelancers(freelancers.filter(freelancer => freelancer.id !== freelancerToDelete));
-    
-    toast({
-      title: "Freelancer deleted",
-      description: `${freelancerName?.firstName} ${freelancerName?.lastName} has been deleted successfully.`,
-      variant: "default",
-    });
-
-    // Close the dialog
-    setDeleteDialogOpen(false);
-    setFreelancerToDelete(null);
+    // Call the delete mutation
+    deleteMutation.mutate(freelancerToDelete);
   };
 
   return (
@@ -308,10 +281,10 @@ export default function FreelancerManagement() {
                   <TableCell>
                     <div className="flex items-center">
                       <Star className="h-4 w-4 text-amber-500 fill-amber-500 mr-1" />
-                      <span>{freelancer.avgRating}</span>
+                      <span>{freelancer.rating || 0}</span>
                     </div>
                   </TableCell>
-                  <TableCell>{freelancer.experienceYears} years</TableCell>
+                  <TableCell>{freelancer.yearsExperience || 0} years</TableCell>
                   <TableCell className="text-center">
                     <Button
                       variant="ghost"

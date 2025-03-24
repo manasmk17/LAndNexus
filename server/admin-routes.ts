@@ -41,8 +41,10 @@ export function registerAdminRoutes(app: Express) {
       
       // Add professionals (limited to 3)
       professionals.slice(0, 3).forEach((profile, index) => {
+        // Use a multiplier of 10 for professionals to ensure unique IDs
+        const uniqueId = 10 + index;
         recentActivity.push({
-          id: index + 1,
+          id: uniqueId,
           type: 'professional',
           description: `New professional profile: ${profile.firstName} ${profile.lastName}`,
           timestamp: new Date(Date.now() - (index + 1) * 24 * 60 * 60 * 1000).toISOString() // Simulating dates
@@ -51,8 +53,10 @@ export function registerAdminRoutes(app: Express) {
       
       // Add job postings (limited to 3)
       jobPostings.slice(0, 3).forEach((job, index) => {
+        // Use a multiplier of 50 for job postings to ensure unique IDs
+        const uniqueId = 50 + index;
         recentActivity.push({
-          id: recentActivity.length + index + 1,
+          id: uniqueId,
           type: 'job',
           description: `New job posted: ${job.title}`,
           timestamp: new Date(Date.now() - (index + 2) * 12 * 60 * 60 * 1000).toISOString()
@@ -61,8 +65,10 @@ export function registerAdminRoutes(app: Express) {
       
       // Add resources (limited to 3)
       resources.slice(0, 3).forEach((resource, index) => {
+        // Calculate a guaranteed unique ID by using a base offset
+        const uniqueId = 100 + recentActivity.length + index;
         recentActivity.push({
-          id: recentActivity.length + index + 1,
+          id: uniqueId,
           type: 'resource',
           description: `New resource published: '${resource.title}'`,
           timestamp: new Date(Date.now() - (index + 1) * 36 * 60 * 60 * 1000).toISOString()

@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db, useRealDatabase } from "./db";
 import { and, asc, desc, eq, or, isNull, not, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import {
@@ -1195,6 +1195,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getFeaturedProfessionalProfiles(limit: number): Promise<ProfessionalProfile[]> {
+    if (!db) {
+      console.warn("Database not available, using empty result for getFeaturedProfessionalProfiles");
+      return [];
+    }
     return db
       .select()
       .from(professionalProfiles)
@@ -1363,6 +1367,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getLatestJobPostings(limit: number): Promise<JobPosting[]> {
+    if (!db) {
+      console.warn("Database not available, using empty result for getLatestJobPostings");
+      return [];
+    }
     return db
       .select()
       .from(jobPostings)
@@ -1459,10 +1467,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllResources(): Promise<Resource[]> {
+    if (!db) {
+      console.warn("Database not available, using empty result for getAllResources");
+      return [];
+    }
     return db.select().from(resources).orderBy(desc(resources.createdAt));
   }
 
   async getFeaturedResources(limit: number): Promise<Resource[]> {
+    if (!db) {
+      console.warn("Database not available, using empty result for getFeaturedResources");
+      return [];
+    }
     return db
       .select()
       .from(resources)
@@ -1883,5 +1899,5 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Use DatabaseStorage instead of MemStorage
-export const storage = new DatabaseStorage();
+// Dynamically use MemStorage or DatabaseStorage based on database connection status
+export const storage = useRealDatabase ? new DatabaseStorage() : new MemStorage();

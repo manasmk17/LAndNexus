@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { initializeDatabase } from "./db";
 import csurf from "csurf";
 import cookieParser from "cookie-parser";
 
@@ -165,9 +166,12 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialize database connection with retry capability
+  await initializeDatabase();
+  
   const server = await registerRoutes(app);
 
-  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
+  app.use(async (err: any, req: Request, res: Response, _next: NextFunction) => {
     // Special handling for CSRF errors
     if (err.code === 'EBADCSRFTOKEN') {
       console.error('CSRF error details:', {
@@ -181,6 +185,27 @@ app.use((req, res, next) => {
         message: "CSRF token validation failed",
         details: "The form submission security token is invalid or expired. Please refresh the page and try again."
       });
+    }
+    
+    // Check for database connection errors and try to reconnect
+    if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || 
+        err.message?.includes('database') || err.message?.includes('pool') ||
+        err.message?.includes('connection')) {
+      console.error('Database connection error detected, attempting to reconnect:', err);
+      
+      try {
+        // Try to re-initialize the database connection
+        await initializeDatabase();
+        
+        // If the request was a database query, we can't retry it automatically
+        // Just let the client know to retry
+        return res.status(503).json({
+          message: "Database connection reestablished. Please retry your request.",
+          retry: true
+        });
+      } catch (reconnectErr) {
+        console.error('Failed to reconnect to database:', reconnectErr);
+      }
     }
     
     const status = err.status || err.statusCode || 500;

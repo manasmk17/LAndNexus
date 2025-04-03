@@ -38,15 +38,19 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import Stripe from "stripe";
 import memorystore from "memorystore";
-import { registerAdminRoutes } from "./admin-routes";
 
-// Initialize Stripe with secret key
+// Initialize Stripe with the API key
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+} else {
+  console.log('Stripe initialized with secret key.');
 }
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2023-10-16" as any,
+  apiVersion: "2025-02-24.acacia" as any,
 });
+
+import { registerAdminRoutes } from "./admin-routes";
 
 const MemoryStore = memorystore(session);
 

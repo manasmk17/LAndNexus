@@ -1191,6 +1191,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllProfessionalProfiles(): Promise<ProfessionalProfile[]> {
+    if (!db) {
+      console.warn("Database not available, using empty result for getAllProfessionalProfiles");
+      return [];
+    }
     return db.select().from(professionalProfiles);
   }
 
@@ -1236,6 +1240,10 @@ export class DatabaseStorage implements IStorage {
 
   // Expertise operations
   async getAllExpertise(): Promise<Expertise[]> {
+    if (!db) {
+      console.warn("Database not available, using empty result for getAllExpertise");
+      return [];
+    }
     return db.select().from(expertise);
   }
 
@@ -1326,6 +1334,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllCompanyProfiles(): Promise<CompanyProfile[]> {
+    if (!db) {
+      console.warn("Database not available, using empty result for getAllCompanyProfiles");
+      return [];
+    }
     return db.select().from(companyProfiles);
   }
 
@@ -1359,6 +1371,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllJobPostings(): Promise<JobPosting[]> {
+    if (!db) {
+      console.warn("Database not available, using empty result for getAllJobPostings");
+      return [];
+    }
     return db
       .select()
       .from(jobPostings)
@@ -1554,6 +1570,10 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getAllResourceCategories(): Promise<ResourceCategory[]> {
+    if (!db) {
+      console.warn("Database not available, using empty result for getAllResourceCategories");
+      return [];
+    }
     return db.select().from(resourceCategories);
   }
   
@@ -1609,6 +1629,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllForumPosts(): Promise<ForumPost[]> {
+    if (!db) {
+      console.warn("Database not available, using empty result for getAllForumPosts");
+      return [];
+    }
     return db
       .select()
       .from(forumPosts)
@@ -1840,6 +1864,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllPageContents(): Promise<PageContent[]> {
+    if (!db) {
+      console.warn("Database not available, using empty result for getAllPageContents");
+      return [];
+    }
     return db.select().from(pageContents).orderBy(desc(pageContents.updatedAt));
   }
 

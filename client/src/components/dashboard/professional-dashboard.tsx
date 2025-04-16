@@ -16,11 +16,13 @@ import {
   FileText,
   CheckCircle,
   XCircle,
-  CreditCard
+  CreditCard,
+  Zap
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import SubscriptionStatus from "@/components/dashboard/subscription-status";
+import ProfessionalJobMatches from "@/components/matching/professional-job-matches";
 import type { 
   ProfessionalProfile, 
   JobApplication, 
@@ -182,6 +184,17 @@ export default function ProfessionalDashboard() {
         <div>
           <SubscriptionStatus />
         </div>
+      </div>
+      
+      {/* AI Job Matching Section */}
+      <div className="mb-8">
+        <div className="flex items-center mb-4">
+          <h2 className="text-2xl font-bold flex items-center">
+            <Zap className="mr-2 h-5 w-5 text-amber-500" /> AI Powered Job Matches
+          </h2>
+          <div className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded">New</div>
+        </div>
+        <ProfessionalJobMatches />
       </div>
       
       <Tabs defaultValue="applications">

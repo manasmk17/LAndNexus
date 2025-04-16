@@ -41,6 +41,11 @@ export interface IStorage {
   updateUserSubscription(userId: number, tier: string, status: string): Promise<User | undefined>;
   getUserByStripeCustomerId(customerId: string): Promise<User | undefined>;
   
+  // AI Matching operations
+  getMatchingJobsForProfessional(professionalId: number, limit?: number): Promise<Array<{job: JobPosting, score: number}>>;
+  getMatchingProfessionalsForJob(jobId: number, limit?: number): Promise<Array<{professional: ProfessionalProfile, score: number}>>;
+  saveJobMatch(jobId: number, professionalId: number, score: number): Promise<boolean>;
+  
   // Professional Profile operations
   getProfessionalProfile(id: number): Promise<ProfessionalProfile | undefined>;
   getProfessionalProfileByUserId(userId: number): Promise<ProfessionalProfile | undefined>;

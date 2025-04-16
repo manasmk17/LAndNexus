@@ -169,6 +169,7 @@ export class MemStorage implements IStorage {
   private consultations: Map<number, Consultation>;
   private skillRecommendations: Map<number, SkillRecommendation>;
   private pageContents: Map<number, PageContent>;
+  private subscriptionPlans: Map<number, SubscriptionPlan>;
   private jobMatches: Map<string, number>; // Format: "jobId-professionalId" -> score
   
   private userId: number;
@@ -187,6 +188,7 @@ export class MemStorage implements IStorage {
   private consultationId: number;
   private skillRecommendationId: number;
   private pageContentId: number;
+  private subscriptionPlanId: number;
 
   constructor() {
     this.users = new Map();
@@ -205,6 +207,7 @@ export class MemStorage implements IStorage {
     this.consultations = new Map();
     this.skillRecommendations = new Map();
     this.pageContents = new Map();
+    this.subscriptionPlans = new Map();
     this.jobMatches = new Map();
     
     this.userId = 1;
@@ -223,12 +226,16 @@ export class MemStorage implements IStorage {
     this.consultationId = 1;
     this.skillRecommendationId = 1;
     this.pageContentId = 1;
+    this.subscriptionPlanId = 1;
     
     // Initialize with some expertise areas
     this.initExpertise();
     
     // Initialize with some resource categories
     this.initResourceCategories();
+    
+    // Initialize with subscription plans
+    this.initSubscriptionPlans();
   }
   
   private initExpertise() {
@@ -270,6 +277,166 @@ export class MemStorage implements IStorage {
         description: cat.description
       };
       this.resourceCategories.set(id, category);
+    });
+  }
+  
+  private initSubscriptionPlans() {
+    const plans = [
+      // Professional plans
+      {
+        name: "Free",
+        userType: "professional",
+        billingType: "monthly",
+        price: 0,
+        features: ["Basic profile", "Limited job applications", "Community access"],
+        maxApplications: 5,
+        maxResources: 2,
+        featuredProfile: false,
+        aiMatchmaking: false,
+        prioritySupport: false,
+        advancedAnalytics: false,
+        unlimitedMessaging: false,
+      },
+      {
+        name: "Basic",
+        userType: "professional",
+        billingType: "monthly",
+        price: 2999, // $29.99
+        features: ["Enhanced profile", "More job applications", "Resource uploads", "AI matchmaking"],
+        maxApplications: 15,
+        maxResources: 10,
+        featuredProfile: false,
+        aiMatchmaking: true,
+        prioritySupport: false,
+        advancedAnalytics: false,
+        unlimitedMessaging: true,
+      },
+      {
+        name: "Premium",
+        userType: "professional",
+        billingType: "monthly",
+        price: 4999, // $49.99
+        features: ["Featured profile", "Unlimited applications", "Priority support", "Advanced analytics"],
+        maxApplications: 999, // Unlimited
+        maxResources: 999, // Unlimited
+        featuredProfile: true,
+        aiMatchmaking: true,
+        prioritySupport: true,
+        advancedAnalytics: true,
+        unlimitedMessaging: true,
+      },
+      // Annual versions (with discount)
+      {
+        name: "Basic",
+        userType: "professional",
+        billingType: "annually",
+        price: 29988, // $299.88 ($24.99/mo)
+        features: ["Enhanced profile", "More job applications", "Resource uploads", "AI matchmaking"],
+        maxApplications: 15,
+        maxResources: 10,
+        featuredProfile: false,
+        aiMatchmaking: true,
+        prioritySupport: false,
+        advancedAnalytics: false,
+        unlimitedMessaging: true,
+      },
+      {
+        name: "Premium",
+        userType: "professional",
+        billingType: "annually",
+        price: 49988, // $499.88 ($41.66/mo)
+        features: ["Featured profile", "Unlimited applications", "Priority support", "Advanced analytics"],
+        maxApplications: 999, // Unlimited
+        maxResources: 999, // Unlimited
+        featuredProfile: true,
+        aiMatchmaking: true,
+        prioritySupport: true,
+        advancedAnalytics: true,
+        unlimitedMessaging: true,
+      },
+      // Company plans
+      {
+        name: "Free",
+        userType: "company",
+        billingType: "monthly",
+        price: 0,
+        features: ["Basic company profile", "Limited job postings", "Community access"],
+        maxJobPostings: 1,
+        maxResources: 2,
+        featuredProfile: false,
+        aiMatchmaking: false,
+        prioritySupport: false,
+        advancedAnalytics: false,
+        unlimitedMessaging: false,
+      },
+      {
+        name: "Basic",
+        userType: "company",
+        billingType: "monthly",
+        price: 9999, // $99.99
+        features: ["Enhanced profile", "More job postings", "Resource uploads", "AI matchmaking"],
+        maxJobPostings: 10,
+        maxResources: 15,
+        featuredProfile: false,
+        aiMatchmaking: true,
+        prioritySupport: false,
+        advancedAnalytics: false,
+        unlimitedMessaging: true,
+      },
+      {
+        name: "Premium",
+        userType: "company",
+        billingType: "monthly",
+        price: 19999, // $199.99
+        features: ["Featured profile", "Unlimited job postings", "Priority support", "Advanced analytics"],
+        maxJobPostings: 999, // Unlimited
+        maxResources: 999, // Unlimited
+        featuredProfile: true,
+        aiMatchmaking: true,
+        prioritySupport: true,
+        advancedAnalytics: true,
+        unlimitedMessaging: true,
+      },
+      // Annual versions (with discount)
+      {
+        name: "Basic",
+        userType: "company",
+        billingType: "annually",
+        price: 99988, // $999.88 ($83.32/mo)
+        features: ["Enhanced profile", "More job postings", "Resource uploads", "AI matchmaking"],
+        maxJobPostings: 10,
+        maxResources: 15,
+        featuredProfile: false,
+        aiMatchmaking: true,
+        prioritySupport: false,
+        advancedAnalytics: false,
+        unlimitedMessaging: true,
+      },
+      {
+        name: "Premium",
+        userType: "company", 
+        billingType: "annually",
+        price: 199988, // $1999.88 ($166.66/mo)
+        features: ["Featured profile", "Unlimited job postings", "Priority support", "Advanced analytics"],
+        maxJobPostings: 999, // Unlimited
+        maxResources: 999, // Unlimited
+        featuredProfile: true,
+        aiMatchmaking: true,
+        prioritySupport: true,
+        advancedAnalytics: true,
+        unlimitedMessaging: true,
+      },
+    ];
+    
+    plans.forEach(plan => {
+      const id = this.subscriptionPlanId++;
+      const subscriptionPlan: SubscriptionPlan = {
+        ...plan,
+        id,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      this.subscriptionPlans.set(id, subscriptionPlan);
     });
   }
   

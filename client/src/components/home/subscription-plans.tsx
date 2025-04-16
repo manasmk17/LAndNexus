@@ -21,44 +21,43 @@ const plans: PricingPlan[] = [
     price: 0,
     description: "Essential tools for L&D professionals",
     features: [
-      "Create a basic profile",
+      "Create basic profile",
       "Browse job listings",
       "Access public resources",
       "Join community forum"
     ],
-    buttonText: "Current Plan",
+    buttonText: "Current Plan", 
     mostPopular: false
   },
   {
-    id: "basic",
-    name: "Basic",
+    id: "pro",
+    name: "Pro",
     price: 29,
-    description: "Essential tools for L&D professionals and companies",
+    description: "Enhanced features for growing professionals",
     features: [
-      "Create enhanced profile",
-      "Browse and apply to job postings",
-      "Access full resource library",
-      "Apply to up to 5 jobs monthly",
-      "Basic analytics dashboard"
-    ],
-    buttonText: "Subscribe Now",
-    mostPopular: false
-  },
-  {
-    id: "premium",
-    name: "Premium",
-    price: 79,
-    description: "Advanced features for serious L&D experts",
-    features: [
-      "Featured profile placement",
+      "Enhanced profile with portfolio",
       "Unlimited job applications",
-      "Premium resource access",
-      "Direct messaging",
-      "Priority support",
-      "Advanced analytics"
+      "Video introduction",
+      "Early access to job opportunities",
+      "Profile analytics"
     ],
     buttonText: "Subscribe Now",
     mostPopular: true
+  },
+  {
+    id: "premium", 
+    name: "Premium",
+    price: 79,
+    description: "Premium features for established professionals",
+    features: [
+      "All Pro features",
+      "Featured profile placement",
+      "Direct consultation bookings",
+      "Publish resources & articles", 
+      "Priority customer support"
+    ],
+    buttonText: "Subscribe Now",
+    mostPopular: false
   }
 ];
 

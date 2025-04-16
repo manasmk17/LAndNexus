@@ -18,11 +18,13 @@ import {
   PencilIcon,
   FileText,
   User,
-  CreditCard
+  CreditCard,
+  Zap
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import SubscriptionStatus from "@/components/dashboard/subscription-status";
+import JobProfessionalMatches from "@/components/dashboard/job-professional-matches";
 import type { 
   CompanyProfile, 
   JobPosting, 
@@ -216,6 +218,13 @@ export default function CompanyDashboard() {
           <SubscriptionStatus />
         </div>
       </div>
+      
+      {/* AI Job Matching Section */}
+      {profile && jobPostings && jobPostings.length > 0 && (
+        <div className="mb-8">
+          <JobProfessionalMatches />
+        </div>
+      )}
       
       <Tabs defaultValue="jobs">
         <TabsList className="grid grid-cols-3 w-full mb-8">

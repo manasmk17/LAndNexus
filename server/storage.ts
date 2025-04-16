@@ -17,7 +17,8 @@ import {
   messages, Message, InsertMessage,
   consultations, Consultation, InsertConsultation,
   skillRecommendations, SkillRecommendation, InsertSkillRecommendation,
-  pageContents, PageContent, InsertPageContent
+  pageContents, PageContent, InsertPageContent,
+  subscriptionPlans, SubscriptionPlan, InsertSubscriptionPlan
 } from "@shared/schema";
 
 export interface IStorage {

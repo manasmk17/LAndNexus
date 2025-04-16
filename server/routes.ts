@@ -2166,20 +2166,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Professional profile not found for current user" });
         }
       } else {
-        // Regular case with numeric ID
-        const professionalId = parseInt(req.params.professionalId);
-        if (isNaN(professionalId)) {
-          return res.status(400).json({ message: "Invalid professional ID format" });
-        }
-        
-        professionalProfile = await storage.getProfessionalProfile(professionalId);
-        if (!professionalProfile) {
-          return res.status(404).json({ message: "Professional profile not found" });
-        }
-        
-        // Check if the user is the professional or an admin
-        if (user.id !== professionalProfile.userId && !user.isAdmin) {
-          return res.status(403).json({ message: "You do not have permission to access this resource" });
+        try {
+          // Regular case with numeric ID
+          const professionalId = parseInt(req.params.professionalId);
+          if (isNaN(professionalId)) {
+            return res.status(400).json({ message: "Invalid professional ID format" });
+          }
+          
+          professionalProfile = await storage.getProfessionalProfile(professionalId);
+          if (!professionalProfile) {
+            return res.status(404).json({ message: "Professional profile not found" });
+          }
+          
+          // Check if the user is the professional or an admin
+          if (user.id !== professionalProfile.userId && !user.isAdmin) {
+            return res.status(403).json({ message: "You do not have permission to access this resource" });
+          }
+        } catch (err) {
+          console.error("Error retrieving professional profile:", err);
+          return res.status(400).json({ message: "Invalid professional ID" });
         }
       }
       
@@ -2468,13 +2473,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ message: "Professional profile not found for current user" });
         }
       } else {
-        // Regular case with profile ID
-        const professionalId = parseInt(req.params.id);
-        professionalProfile = await storage.getProfessionalProfile(professionalId);
-        
-        // Check if user is the professional
-        if (!professionalProfile || professionalProfile.userId !== user.id) {
-          return res.status(403).json({ message: "You can only view your own applications" });
+        try {
+          // Regular case with profile ID
+          const professionalId = parseInt(req.params.id);
+          if (isNaN(professionalId)) {
+            return res.status(400).json({ message: "Invalid professional ID format" });
+          }
+          
+          professionalProfile = await storage.getProfessionalProfile(professionalId);
+          
+          // Check if user is the professional
+          if (!professionalProfile || professionalProfile.userId !== user.id) {
+            return res.status(403).json({ message: "You can only view your own applications" });
+          }
+        } catch (err) {
+          console.error("Error retrieving professional profile:", err);
+          return res.status(400).json({ message: "Invalid professional ID" });
         }
       }
 

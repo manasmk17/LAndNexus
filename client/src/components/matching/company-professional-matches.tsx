@@ -6,10 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ExternalLink, Users, MapPin, Star, Award, Lightbulb, ChevronRight, Mail } from "lucide-react";
-import type { ProfessionalProfile } from "@shared/schema";
+import type { ProfessionalProfile, JobPosting } from "@shared/schema";
+
+// Define an extended professional profile type for the match results
+// to account for additional properties used in the component
+interface ExtendedProfessionalProfile extends ProfessionalProfile {
+  yearsExperience?: number;
+  yearsOfExperience?: number; // Both variations to be safe
+  industries?: string[];
+  expertise?: string[];
+  ratePerHour?: number;
+}
 
 type MatchResult = {
-  professional: ProfessionalProfile;
+  professional: ExtendedProfessionalProfile;
   score: number;
 };
 
@@ -186,7 +196,7 @@ export default function CompanyProfessionalMatches({ jobId }: { jobId: number })
                       <span className="text-sm font-medium">Key Expertise</span>
                     </div>
                     <div className="flex flex-wrap gap-1">
-                      {professional.expertise.map((skill, index) => (
+                      {professional.expertise.map((skill: string, index: number) => (
                         <Badge key={index} variant="secondary" className="bg-gray-100">
                           {skill}
                         </Badge>

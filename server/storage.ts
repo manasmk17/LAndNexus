@@ -161,6 +161,7 @@ export class MemStorage implements IStorage {
   private consultations: Map<number, Consultation>;
   private skillRecommendations: Map<number, SkillRecommendation>;
   private pageContents: Map<number, PageContent>;
+  private jobMatches: Map<string, number>; // Format: "jobId-professionalId" -> score
   
   private userId: number;
   private profProfileId: number;
@@ -196,6 +197,7 @@ export class MemStorage implements IStorage {
     this.consultations = new Map();
     this.skillRecommendations = new Map();
     this.pageContents = new Map();
+    this.jobMatches = new Map();
     
     this.userId = 1;
     this.profProfileId = 1;
@@ -281,6 +283,109 @@ export class MemStorage implements IStorage {
     };
     this.resourceCategories.set(id, newCategory);
     return newCategory;
+  }
+  
+  // AI Matching operations
+  async getMatchingJobsForProfessional(professionalId: number, limit: number = 5): Promise<Array<{job: JobPosting, score: number}>> {
+    const professional = await this.getProfessionalProfile(professionalId);
+    if (!professional) {
+      return [];
+    }
+
+    // Get all jobs and calculate match scores
+    const jobs = await this.getAllJobPostings();
+    const matches = jobs
+      .filter(job => job.status === "open") // Only consider open jobs
+      .map(job => {
+        // Get stored match score if available
+        const key = `${job.id}-${professionalId}`;
+        let score = this.jobMatches.get(key);
+        
+        // If no stored score, calculate a basic match score
+        if (score === undefined) {
+          const profTitle = professional.title?.toLowerCase() || '';
+          const profBio = professional.bio?.toLowerCase() || '';
+          const profIndustry = professional.industryFocus?.toLowerCase() || '';
+          
+          const jobTitle = job.title.toLowerCase();
+          const jobDescription = job.description.toLowerCase();
+          const jobRequirements = job.requirements.toLowerCase();
+          
+          // Calculate text-based match score
+          const titleMatch = profTitle && jobTitle.includes(profTitle) ? 0.3 : 0;
+          const bioMatch = profBio && (jobDescription.includes(profBio) || jobRequirements.includes(profBio)) ? 0.2 : 0;
+          const industryMatch = profIndustry && jobDescription.includes(profIndustry) ? 0.2 : 0;
+          
+          // Assign a moderate score for location match
+          const locationMatch = professional.location && 
+            professional.location === job.location ? 0.3 : 0;
+          
+          score = titleMatch + bioMatch + industryMatch + locationMatch;
+          
+          // Save the calculated score
+          this.jobMatches.set(key, score);
+        }
+        
+        return { job, score };
+      });
+    
+    // Sort by score (descending) and apply limit
+    return matches
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
+  }
+  
+  async getMatchingProfessionalsForJob(jobId: number, limit: number = 5): Promise<Array<{professional: ProfessionalProfile, score: number}>> {
+    const job = await this.getJobPosting(jobId);
+    if (!job) {
+      return [];
+    }
+    
+    // Get all professionals and calculate match scores
+    const professionals = await this.getAllProfessionalProfiles();
+    const matches = professionals.map(professional => {
+      // Get stored match score if available
+      const key = `${jobId}-${professional.id}`;
+      let score = this.jobMatches.get(key);
+      
+      // If no stored score, calculate a basic match score
+      if (score === undefined) {
+        const profTitle = professional.title?.toLowerCase() || '';
+        const profBio = professional.bio?.toLowerCase() || '';
+        const profIndustry = professional.industryFocus?.toLowerCase() || '';
+        
+        const jobTitle = job.title.toLowerCase();
+        const jobDescription = job.description.toLowerCase();
+        const jobRequirements = job.requirements.toLowerCase();
+        
+        // Calculate text-based match score
+        const titleMatch = profTitle && jobTitle.includes(profTitle) ? 0.3 : 0;
+        const bioMatch = profBio && (jobDescription.includes(profBio) || jobRequirements.includes(profBio)) ? 0.2 : 0;
+        const industryMatch = profIndustry && jobDescription.includes(profIndustry) ? 0.2 : 0;
+        
+        // Assign a moderate score for location match
+        const locationMatch = professional.location && 
+          professional.location === job.location ? 0.3 : 0;
+        
+        score = titleMatch + bioMatch + industryMatch + locationMatch;
+        
+        // Save the calculated score
+        this.jobMatches.set(key, score);
+      }
+      
+      return { professional, score };
+    });
+    
+    // Sort by score (descending) and apply limit
+    return matches
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
+  }
+  
+  async saveJobMatch(jobId: number, professionalId: number, score: number): Promise<boolean> {
+    const key = `${jobId}-${professionalId}`;
+    this.jobMatches.set(key, score);
+    return true;
   }
   
   // Additional Resource operations

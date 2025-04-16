@@ -1510,6 +1510,57 @@ export class DatabaseStorage implements IStorage {
       .where(eq(users.stripeCustomerId, customerId));
     return user;
   }
+  
+  // Subscription Plan operations
+  async createSubscriptionPlan(plan: InsertSubscriptionPlan): Promise<SubscriptionPlan> {
+    const [createdPlan] = await db
+      .insert(subscriptionPlans)
+      .values(plan)
+      .returning();
+    return createdPlan;
+  }
+  
+  async getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined> {
+    const [plan] = await db
+      .select()
+      .from(subscriptionPlans)
+      .where(eq(subscriptionPlans.id, id));
+    return plan;
+  }
+  
+  async getSubscriptionPlans(userType: string, billingType?: string): Promise<SubscriptionPlan[]> {
+    let query = db.select().from(subscriptionPlans);
+    
+    if (userType) {
+      query = query.where(eq(subscriptionPlans.userType, userType));
+    }
+    
+    if (billingType) {
+      query = query.where(eq(subscriptionPlans.billingType, billingType));
+    }
+    
+    return query;
+  }
+  
+  async updateSubscriptionPlan(id: number, planData: Partial<InsertSubscriptionPlan>): Promise<SubscriptionPlan | undefined> {
+    const [updatedPlan] = await db
+      .update(subscriptionPlans)
+      .set({
+        ...planData,
+        updatedAt: new Date()
+      })
+      .where(eq(subscriptionPlans.id, id))
+      .returning();
+    return updatedPlan;
+  }
+  
+  async deleteSubscriptionPlan(id: number): Promise<boolean> {
+    const result = await db
+      .delete(subscriptionPlans)
+      .where(eq(subscriptionPlans.id, id))
+      .returning({ id: subscriptionPlans.id });
+    return result.length > 0;
+  }
 
   // Professional Profile operations
   async getProfessionalProfile(id: number): Promise<ProfessionalProfile | undefined> {

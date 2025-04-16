@@ -1011,13 +1011,14 @@ export class MemStorage implements IStorage {
     return updated;
   }
   
-  async updateUserSubscription(userId: number, tier: string, status: string): Promise<User | undefined> {
+  async updateUserSubscription(userId: number, tier: string, subscriptionType: string, status: string): Promise<User | undefined> {
     const user = await this.getUser(userId);
     if (!user) return undefined;
     
     const updated = { 
       ...user, 
-      subscriptionTier: tier, 
+      subscriptionTier: tier,
+      subscriptionType: subscriptionType,
       subscriptionStatus: status 
     };
     this.users.set(userId, updated);
@@ -1278,8 +1279,12 @@ export class DatabaseStorage implements IStorage {
     return this.updateUser(userId, { stripeSubscriptionId: subscriptionId });
   }
 
-  async updateUserSubscription(userId: number, tier: string, status: string): Promise<User | undefined> {
-    return this.updateUser(userId, { subscriptionTier: tier, subscriptionStatus: status });
+  async updateUserSubscription(userId: number, tier: string, subscriptionType: string, status: string): Promise<User | undefined> {
+    return this.updateUser(userId, { 
+      subscriptionTier: tier, 
+      subscriptionType: subscriptionType,
+      subscriptionStatus: status 
+    });
   }
 
   async getUserByStripeCustomerId(customerId: string): Promise<User | undefined> {

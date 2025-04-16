@@ -1,67 +1,101 @@
+import type { Request, Response } from "express";
+import { storage } from "./storage";
+import { JobPosting, ProfessionalProfile } from "@shared/schema";
 
-import OpenAI from 'openai';
-import similarity from 'similarity';
-import type { JobPosting, ProfessionalProfile } from '@shared/schema';
+// Controller for AI matching endpoints
 
-// Initialize OpenAI only if API key is available
-let openai: OpenAI | null = null;
-try {
-  if (process.env.OPENAI_API_KEY) {
-    openai = new OpenAI();
-  }
-} catch (error) {
-  console.warn("OpenAI client initialization failed. AI matching features will be disabled.");
-}
-
-export async function generateJobEmbedding(job: JobPosting): Promise<number[] | null> {
-  if (!openai) {
-    console.warn("OpenAI client not available. Cannot generate job embedding.");
-    return null;
-  }
-  
+// Get matching jobs for a professional profile
+export async function getMatchingJobsForProfessional(req: Request, res: Response) {
   try {
-    const jobText = `${job.title} ${job.description} ${job.requirements}`;
-    const response = await openai.embeddings.create({
-      input: jobText,
-      model: "text-embedding-ada-002"
-    });
-    return response.data[0].embedding;
+    const professionalId = parseInt(req.params.professionalId);
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
+    
+    if (isNaN(professionalId)) {
+      return res.status(400).json({ message: "Invalid professional ID" });
+    }
+    
+    // Use the storage method to get matching jobs
+    const matchingJobs = await storage.getMatchingJobsForProfessional(professionalId, limit);
+    
+    // Format the response with enhanced match details
+    const formattedMatches = matchingJobs.map(match => ({
+      job: match.job,
+      matchScore: Math.round(match.score * 100), // Format as percentage
+      matchStrength: getMatchStrengthLabel(match.score),
+      matchReasons: generateMatchReasons(match.job, match.score)
+    }));
+    
+    return res.json(formattedMatches);
   } catch (error) {
-    console.error("Error generating job embedding:", error);
-    return null;
-  }
-}
-
-export async function generateProfileEmbedding(profile: ProfessionalProfile): Promise<number[] | null> {
-  if (!openai) {
-    console.warn("OpenAI client not available. Cannot generate profile embedding.");
-    return null;
-  }
-  
-  try {
-    const profileText = `${profile.title} ${profile.bio}`;
-    const response = await openai.embeddings.create({
-      input: profileText,
-      model: "text-embedding-ada-002"
-    });
-    return response.data[0].embedding;
-  } catch (error) {
-    console.error("Error generating profile embedding:", error);
-    return null;
+    console.error("Error in AI matching jobs for professional:", error);
+    return res.status(500).json({ message: "Failed to retrieve matching jobs" });
   }
 }
 
-export function calculateMatchScore(jobEmbedding: number[] | null, profileEmbedding: number[] | null): number {
-  // If either embedding is null, return 0 (no match)
-  if (!jobEmbedding || !profileEmbedding) {
-    return 0;
+// Get matching professionals for a job posting
+export async function getMatchingProfessionalsForJob(req: Request, res: Response) {
+  try {
+    const jobId = parseInt(req.params.jobId);
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
+    
+    if (isNaN(jobId)) {
+      return res.status(400).json({ message: "Invalid job ID" });
+    }
+    
+    // Use the storage method to get matching professionals
+    const matchingProfessionals = await storage.getMatchingProfessionalsForJob(jobId, limit);
+    
+    // Format the response with enhanced match details
+    const formattedMatches = matchingProfessionals.map(match => ({
+      professional: match.professional,
+      matchScore: Math.round(match.score * 100), // Format as percentage
+      matchStrength: getMatchStrengthLabel(match.score),
+      matchReasons: generateMatchReasons(match.professional, match.score)
+    }));
+    
+    return res.json(formattedMatches);
+  } catch (error) {
+    console.error("Error in AI matching professionals for job:", error);
+    return res.status(500).json({ message: "Failed to retrieve matching professionals" });
+  }
+}
+
+// Helper function to convert score to a descriptive strength label
+function getMatchStrengthLabel(score: number): string {
+  if (score >= 0.8) return "Excellent Match";
+  if (score >= 0.6) return "Strong Match";
+  if (score >= 0.4) return "Good Match";
+  if (score >= 0.2) return "Moderate Match";
+  return "Basic Match";
+}
+
+// Helper function to generate human-readable match reasons 
+// This will be enhanced later with more sophisticated AI analysis
+function generateMatchReasons(entity: JobPosting | ProfessionalProfile, score: number): string[] {
+  const reasons: string[] = [];
+  
+  // Basic reasons based on match score
+  if (score >= 0.8) {
+    reasons.push("Highly relevant skills and experience");
+    reasons.push("Strong alignment with requirements");
+  } else if (score >= 0.6) {
+    reasons.push("Good skills match");
+    reasons.push("Relevant experience");
+  } else if (score >= 0.4) {
+    reasons.push("Some matching skills");
+    reasons.push("Partial alignment with requirements");
+  } else {
+    reasons.push("Basic match on key terms");
   }
   
-  try {
-    // The similarity module might have type issues, but we know it works with arrays of numbers
-    return similarity(jobEmbedding, profileEmbedding) as number;
-  } catch (error) {
-    console.error("Error calculating match score:", error);
-    return 0;
+  // If this is a job posting
+  if ('description' in entity && 'requirements' in entity) {
+    reasons.push("Based on job description and requirements");
+  } 
+  // If this is a professional profile
+  else if ('bio' in entity && 'title' in entity) {
+    reasons.push("Based on professional bio and expertise");
   }
+  
+  return reasons;
 }

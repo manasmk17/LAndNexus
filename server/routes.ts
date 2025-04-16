@@ -28,9 +28,8 @@ import {
 import { eq } from "drizzle-orm";
 import { generateCareerRecommendations } from "./career-recommendations";
 import { 
-  generateJobEmbedding, 
-  generateProfileEmbedding, 
-  calculateMatchScore 
+  getMatchingJobsForProfessional,
+  getMatchingProfessionalsForJob
 } from "./ai-matching";
 import { z } from "zod";
 import session from "express-session";
@@ -2090,90 +2089,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // AI Job Matching
   app.get("/api/jobs/:jobId/matches", isAuthenticated, async (req, res) => {
-    try {
-      const jobId = parseInt(req.params.jobId);
-      const job = await storage.getJobPosting(jobId);
-
-      if (!job) {
-        return res.status(404).json({ message: "Job not found" });
-      }
-
-      const professionals = await storage.getAllProfessionalProfiles();
-      const jobEmbedding = await generateJobEmbedding(job);
-      
-      // If AI matching is not available, fall back to basic matching
-      if (jobEmbedding === null) {
-        // Simple keyword-based matching if OpenAI is not available
-        const matches = professionals.map(profile => {
-          // Calculate a basic score based on title keyword matching
-          const jobTitle = job.title.toLowerCase();
-          const profileTitle = profile.title ? profile.title.toLowerCase() : '';
-          const profileBio = profile.bio ? profile.bio.toLowerCase() : '';
-          
-          // Simple score based on whether keywords appear in the profile
-          let score = 0;
-          if (profileTitle.includes(jobTitle) || jobTitle.includes(profileTitle)) {
-            score += 0.5;
-          }
-          
-          // Check if any keywords from job description appear in bio
-          const jobKeywords = job.description.toLowerCase().split(/\s+/);
-          for (const keyword of jobKeywords) {
-            if (keyword.length > 4 && profileBio.includes(keyword)) {
-              score += 0.01;
-            }
-          }
-          
-          return { profile, score: Math.min(score, 1) };
-        });
-        
-        const topMatches = matches
-          .sort((a, b) => b.score - a.score)
-          .slice(0, 5);
-          
-        return res.json(topMatches);
-      }
-
-      // Use AI-based matching if available
-      const matches = await Promise.all(
-        professionals.map(async (profile) => {
-          const profileEmbedding = await generateProfileEmbedding(profile);
-          const score = calculateMatchScore(jobEmbedding, profileEmbedding);
-          return { profile, score };
-        })
-      );
-
-      const topMatches = matches
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 5);
-
-      res.json(topMatches);
-    } catch (err) {
-      res.status(500).json({ message: "Error finding matches" });
-    }
+    // This endpoint is a duplicate of the one below and should now use the refactored controller function
+    return getMatchingProfessionalsForJob(req, res); 
   });
   
   // AI Professional Matching with Jobs
   app.get("/api/professionals/:professionalId/matches", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as User;
-      let professionalProfile;
+      let professionalId: number;
       
       // Special case for "me" endpoint
       if (req.params.professionalId === "me") {
-        professionalProfile = await storage.getProfessionalProfileByUserId(user.id);
+        const professionalProfile = await storage.getProfessionalProfileByUserId(user.id);
         if (!professionalProfile) {
           return res.status(404).json({ message: "Professional profile not found for current user" });
         }
+        professionalId = professionalProfile.id;
       } else {
         try {
           // Regular case with numeric ID
-          const professionalId = parseInt(req.params.professionalId);
+          professionalId = parseInt(req.params.professionalId);
           if (isNaN(professionalId)) {
             return res.status(400).json({ message: "Invalid professional ID format" });
           }
           
-          professionalProfile = await storage.getProfessionalProfile(professionalId);
+          const professionalProfile = await storage.getProfessionalProfile(professionalId);
           if (!professionalProfile) {
             return res.status(404).json({ message: "Professional profile not found" });
           }
@@ -2188,13 +2129,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
+      // Use the AI matching controller
+      // Prepare the request object expected by the controller
+      const modifiedReq = {
+        ...req,
+        params: { ...req.params, professionalId: professionalId.toString() }
+      };
       
-      // Use already implemented storage method for matching
-      const matches = await storage.getMatchingJobsForProfessional(professionalProfile.id, limit);
-      
-      // Return the matches directly as expected by the frontend
-      res.json(matches);
+      // Call the controller function directly
+      return getMatchingJobsForProfessional(modifiedReq, res);
     } catch (error: any) {
       console.error("Error finding matching jobs:", error);
       res.status(500).json({ message: "Error finding matching jobs" });
@@ -2202,44 +2145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // AI Job Matching with Professionals
-  app.get("/api/jobs/:jobId/matches", isAuthenticated, async (req, res) => {
-    try {
-      const user = req.user as User;
-      const jobId = parseInt(req.params.jobId);
-      
-      if (isNaN(jobId)) {
-        return res.status(400).json({ message: "Invalid job ID format" });
-      }
-      
-      // Fetch the job posting
-      const job = await storage.getJobPosting(jobId);
-      if (!job) {
-        return res.status(404).json({ message: "Job posting not found" });
-      }
-      
-      // Fetch company to check ownership
-      const company = await storage.getCompanyProfile(job.companyId);
-      if (!company) {
-        return res.status(500).json({ message: "Company not found for this job posting" });
-      }
-      
-      // Check if user is the job owner or an admin
-      if (company.userId !== user.id && !user.isAdmin) {
-        return res.status(403).json({ message: "You do not have permission to access this resource" });
-      }
-      
-      const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
-      
-      // Use already implemented storage method for matching
-      const matches = await storage.getMatchingProfessionalsForJob(jobId, limit);
-      
-      // Return the matches directly as expected by the frontend
-      res.json(matches);
-    } catch (error: any) {
-      console.error("Error finding matching professionals:", error);
-      res.status(500).json({ message: "Error finding matching professionals" });
-    }
-  });
+  // This route is now handled by the endpoint above
 
   // Job Posting Routes
   app.post("/api/job-postings", isAuthenticated, async (req, res) => {

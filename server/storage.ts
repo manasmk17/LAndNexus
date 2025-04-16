@@ -2051,32 +2051,24 @@ export class DatabaseStorage implements IStorage {
       const jobs = await db.select().from(jobPostings)
         .where(eq(jobPostings.status, "open"));
       
-      // This is a placeholder for a more sophisticated database query
-      // In a real implementation, we might use a database-specific similarity ranking
-      // or vector search capability
-      const matches = await Promise.all(jobs.map(async (job) => {
-        // Calculate a basic match score based on text similarity
-        const profTitle = professional.title?.toLowerCase() || '';
-        const profBio = professional.bio?.toLowerCase() || '';
-        const profIndustry = professional.industryFocus?.toLowerCase() || '';
-        
-        const jobTitle = job.title.toLowerCase();
-        const jobDescription = job.description.toLowerCase();
-        const jobRequirements = job.requirements.toLowerCase();
-        
-        // Calculate text-based match score
-        const titleMatch = profTitle && jobTitle.includes(profTitle) ? 0.3 : 0;
-        const bioMatch = profBio && (jobDescription.includes(profBio) || jobRequirements.includes(profBio)) ? 0.2 : 0;
-        const industryMatch = profIndustry && jobDescription.includes(profIndustry) ? 0.2 : 0;
-        
-        // Assign a moderate score for location match
-        const locationMatch = professional.location && 
-          professional.location === job.location ? 0.3 : 0;
-        
-        const score = titleMatch + bioMatch + industryMatch + locationMatch;
-        
-        return { job, score };
-      }));
+      // Import AI services locally to avoid circular dependencies
+      const { calculateProfileJobMatchScore } = await import('./ai-services');
+      
+      // Generate match scores using AI services
+      const matchPromises = jobs.map(async (job) => {
+        try {
+          // Calculate match score using AI embeddings with fallback
+          const score = await calculateProfileJobMatchScore(professional, job);
+          return { job, score };
+        } catch (error) {
+          console.error(`Error matching job ${job.id} with professional ${professionalId}:`, error);
+          // Return a very low score if there was an error
+          return { job, score: 0.01 };
+        }
+      });
+      
+      // Resolve all match promises
+      const matches = await Promise.all(matchPromises);
       
       // Sort by score (descending) and apply limit
       return matches
@@ -2101,30 +2093,25 @@ export class DatabaseStorage implements IStorage {
       // Get all professional profiles
       const professionals = await db.select().from(professionalProfiles);
       
-      // Placeholder for more sophisticated database query
-      const matches = await Promise.all(professionals.map(async (professional) => {
-        // Calculate a basic match score based on text similarity
-        const profTitle = professional.title?.toLowerCase() || '';
-        const profBio = professional.bio?.toLowerCase() || '';
-        const profIndustry = professional.industryFocus?.toLowerCase() || '';
-        
-        const jobTitle = job.title.toLowerCase();
-        const jobDescription = job.description.toLowerCase();
-        const jobRequirements = job.requirements.toLowerCase();
-        
-        // Calculate text-based match score
-        const titleMatch = profTitle && jobTitle.includes(profTitle) ? 0.3 : 0;
-        const bioMatch = profBio && (jobDescription.includes(profBio) || jobRequirements.includes(profBio)) ? 0.2 : 0;
-        const industryMatch = profIndustry && jobDescription.includes(profIndustry) ? 0.2 : 0;
-        
-        // Assign a moderate score for location match
-        const locationMatch = professional.location && 
-          professional.location === job.location ? 0.3 : 0;
-        
-        const score = titleMatch + bioMatch + industryMatch + locationMatch;
-        
-        return { professional, score };
-      }));
+      // Import AI services locally to avoid circular dependencies
+      const { calculateProfileJobMatchScore } = await import('./ai-services');
+      
+      // Generate match scores using AI services
+      const matchPromises = professionals.map(async (professional) => {
+        try {
+          // Calculate match score using AI embeddings with fallback
+          // We'll use the same function but invert the parameters order in the results
+          const score = await calculateProfileJobMatchScore(professional, job);
+          return { professional, score };
+        } catch (error) {
+          console.error(`Error matching professional ${professional.id} with job ${jobId}:`, error);
+          // Return a very low score if there was an error
+          return { professional, score: 0.01 };
+        }
+      });
+      
+      // Resolve all match promises
+      const matches = await Promise.all(matchPromises);
       
       // Sort by score (descending) and apply limit
       return matches

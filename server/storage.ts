@@ -17,8 +17,7 @@ import {
   messages, Message, InsertMessage,
   consultations, Consultation, InsertConsultation,
   skillRecommendations, SkillRecommendation, InsertSkillRecommendation,
-  pageContents, PageContent, InsertPageContent,
-  subscriptionPlans, SubscriptionPlan, InsertSubscriptionPlan
+  pageContents, PageContent, InsertPageContent
 } from "@shared/schema";
 
 export interface IStorage {
@@ -169,7 +168,6 @@ export class MemStorage implements IStorage {
   private consultations: Map<number, Consultation>;
   private skillRecommendations: Map<number, SkillRecommendation>;
   private pageContents: Map<number, PageContent>;
-  private subscriptionPlans: Map<number, SubscriptionPlan>;
   private jobMatches: Map<string, number>; // Format: "jobId-professionalId" -> score
   
   private userId: number;
@@ -188,7 +186,6 @@ export class MemStorage implements IStorage {
   private consultationId: number;
   private skillRecommendationId: number;
   private pageContentId: number;
-  private subscriptionPlanId: number;
 
   constructor() {
     this.users = new Map();
@@ -207,7 +204,6 @@ export class MemStorage implements IStorage {
     this.consultations = new Map();
     this.skillRecommendations = new Map();
     this.pageContents = new Map();
-    this.subscriptionPlans = new Map();
     this.jobMatches = new Map();
     
     this.userId = 1;
@@ -226,16 +222,12 @@ export class MemStorage implements IStorage {
     this.consultationId = 1;
     this.skillRecommendationId = 1;
     this.pageContentId = 1;
-    this.subscriptionPlanId = 1;
     
     // Initialize with some expertise areas
     this.initExpertise();
     
     // Initialize with some resource categories
     this.initResourceCategories();
-    
-    // Initialize with subscription plans
-    this.initSubscriptionPlans();
   }
   
   private initExpertise() {
@@ -277,166 +269,6 @@ export class MemStorage implements IStorage {
         description: cat.description
       };
       this.resourceCategories.set(id, category);
-    });
-  }
-  
-  private initSubscriptionPlans() {
-    const plans = [
-      // Professional plans
-      {
-        name: "Free",
-        userType: "professional",
-        billingType: "monthly",
-        price: 0,
-        features: ["Basic profile", "Limited job applications", "Community access"],
-        maxApplications: 5,
-        maxResources: 2,
-        featuredProfile: false,
-        aiMatchmaking: false,
-        prioritySupport: false,
-        advancedAnalytics: false,
-        unlimitedMessaging: false,
-      },
-      {
-        name: "Basic",
-        userType: "professional",
-        billingType: "monthly",
-        price: 2999, // $29.99
-        features: ["Enhanced profile", "More job applications", "Resource uploads", "AI matchmaking"],
-        maxApplications: 15,
-        maxResources: 10,
-        featuredProfile: false,
-        aiMatchmaking: true,
-        prioritySupport: false,
-        advancedAnalytics: false,
-        unlimitedMessaging: true,
-      },
-      {
-        name: "Premium",
-        userType: "professional",
-        billingType: "monthly",
-        price: 4999, // $49.99
-        features: ["Featured profile", "Unlimited applications", "Priority support", "Advanced analytics"],
-        maxApplications: 999, // Unlimited
-        maxResources: 999, // Unlimited
-        featuredProfile: true,
-        aiMatchmaking: true,
-        prioritySupport: true,
-        advancedAnalytics: true,
-        unlimitedMessaging: true,
-      },
-      // Annual versions (with discount)
-      {
-        name: "Basic",
-        userType: "professional",
-        billingType: "annually",
-        price: 29988, // $299.88 ($24.99/mo)
-        features: ["Enhanced profile", "More job applications", "Resource uploads", "AI matchmaking"],
-        maxApplications: 15,
-        maxResources: 10,
-        featuredProfile: false,
-        aiMatchmaking: true,
-        prioritySupport: false,
-        advancedAnalytics: false,
-        unlimitedMessaging: true,
-      },
-      {
-        name: "Premium",
-        userType: "professional",
-        billingType: "annually",
-        price: 49988, // $499.88 ($41.66/mo)
-        features: ["Featured profile", "Unlimited applications", "Priority support", "Advanced analytics"],
-        maxApplications: 999, // Unlimited
-        maxResources: 999, // Unlimited
-        featuredProfile: true,
-        aiMatchmaking: true,
-        prioritySupport: true,
-        advancedAnalytics: true,
-        unlimitedMessaging: true,
-      },
-      // Company plans
-      {
-        name: "Free",
-        userType: "company",
-        billingType: "monthly",
-        price: 0,
-        features: ["Basic company profile", "Limited job postings", "Community access"],
-        maxJobPostings: 1,
-        maxResources: 2,
-        featuredProfile: false,
-        aiMatchmaking: false,
-        prioritySupport: false,
-        advancedAnalytics: false,
-        unlimitedMessaging: false,
-      },
-      {
-        name: "Basic",
-        userType: "company",
-        billingType: "monthly",
-        price: 9999, // $99.99
-        features: ["Enhanced profile", "More job postings", "Resource uploads", "AI matchmaking"],
-        maxJobPostings: 10,
-        maxResources: 15,
-        featuredProfile: false,
-        aiMatchmaking: true,
-        prioritySupport: false,
-        advancedAnalytics: false,
-        unlimitedMessaging: true,
-      },
-      {
-        name: "Premium",
-        userType: "company",
-        billingType: "monthly",
-        price: 19999, // $199.99
-        features: ["Featured profile", "Unlimited job postings", "Priority support", "Advanced analytics"],
-        maxJobPostings: 999, // Unlimited
-        maxResources: 999, // Unlimited
-        featuredProfile: true,
-        aiMatchmaking: true,
-        prioritySupport: true,
-        advancedAnalytics: true,
-        unlimitedMessaging: true,
-      },
-      // Annual versions (with discount)
-      {
-        name: "Basic",
-        userType: "company",
-        billingType: "annually",
-        price: 99988, // $999.88 ($83.32/mo)
-        features: ["Enhanced profile", "More job postings", "Resource uploads", "AI matchmaking"],
-        maxJobPostings: 10,
-        maxResources: 15,
-        featuredProfile: false,
-        aiMatchmaking: true,
-        prioritySupport: false,
-        advancedAnalytics: false,
-        unlimitedMessaging: true,
-      },
-      {
-        name: "Premium",
-        userType: "company", 
-        billingType: "annually",
-        price: 199988, // $1999.88 ($166.66/mo)
-        features: ["Featured profile", "Unlimited job postings", "Priority support", "Advanced analytics"],
-        maxJobPostings: 999, // Unlimited
-        maxResources: 999, // Unlimited
-        featuredProfile: true,
-        aiMatchmaking: true,
-        prioritySupport: true,
-        advancedAnalytics: true,
-        unlimitedMessaging: true,
-      },
-    ];
-    
-    plans.forEach(plan => {
-      const id = this.subscriptionPlanId++;
-      const subscriptionPlan: SubscriptionPlan = {
-        ...plan,
-        id,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      this.subscriptionPlans.set(id, subscriptionPlan);
     });
   }
   
@@ -1179,14 +1011,13 @@ export class MemStorage implements IStorage {
     return updated;
   }
   
-  async updateUserSubscription(userId: number, tier: string, subscriptionType: string, status: string): Promise<User | undefined> {
+  async updateUserSubscription(userId: number, tier: string, status: string): Promise<User | undefined> {
     const user = await this.getUser(userId);
     if (!user) return undefined;
     
     const updated = { 
       ...user, 
-      subscriptionTier: tier,
-      subscriptionType: subscriptionType,
+      subscriptionTier: tier, 
       subscriptionStatus: status 
     };
     this.users.set(userId, updated);
@@ -1197,54 +1028,6 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values()).find(
       (user) => user.stripeCustomerId === customerId
     );
-  }
-  
-  // Subscription Plan operations
-  async createSubscriptionPlan(plan: InsertSubscriptionPlan): Promise<SubscriptionPlan> {
-    const id = this.subscriptionPlanId++;
-    const now = new Date();
-    const newPlan: SubscriptionPlan = {
-      ...plan,
-      id,
-      createdAt: now,
-      updatedAt: now
-    };
-    this.subscriptionPlans.set(id, newPlan);
-    return newPlan;
-  }
-  
-  async getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined> {
-    return this.subscriptionPlans.get(id);
-  }
-  
-  async getSubscriptionPlans(userType: string, billingType?: string): Promise<SubscriptionPlan[]> {
-    return Array.from(this.subscriptionPlans.values())
-      .filter(plan => {
-        if (userType && plan.userType !== userType) {
-          return false;
-        }
-        if (billingType && plan.billingType !== billingType) {
-          return false;
-        }
-        return true;
-      });
-  }
-  
-  async updateSubscriptionPlan(id: number, planData: Partial<InsertSubscriptionPlan>): Promise<SubscriptionPlan | undefined> {
-    const plan = this.subscriptionPlans.get(id);
-    if (!plan) return undefined;
-    
-    const updated: SubscriptionPlan = {
-      ...plan,
-      ...planData,
-      updatedAt: new Date()
-    };
-    this.subscriptionPlans.set(id, updated);
-    return updated;
-  }
-  
-  async deleteSubscriptionPlan(id: number): Promise<boolean> {
-    return this.subscriptionPlans.delete(id);
   }
 
   // Skill Recommendation operations
@@ -1495,12 +1278,8 @@ export class DatabaseStorage implements IStorage {
     return this.updateUser(userId, { stripeSubscriptionId: subscriptionId });
   }
 
-  async updateUserSubscription(userId: number, tier: string, subscriptionType: string, status: string): Promise<User | undefined> {
-    return this.updateUser(userId, { 
-      subscriptionTier: tier, 
-      subscriptionType: subscriptionType,
-      subscriptionStatus: status 
-    });
+  async updateUserSubscription(userId: number, tier: string, status: string): Promise<User | undefined> {
+    return this.updateUser(userId, { subscriptionTier: tier, subscriptionStatus: status });
   }
 
   async getUserByStripeCustomerId(customerId: string): Promise<User | undefined> {
@@ -1509,57 +1288,6 @@ export class DatabaseStorage implements IStorage {
       .from(users)
       .where(eq(users.stripeCustomerId, customerId));
     return user;
-  }
-  
-  // Subscription Plan operations
-  async createSubscriptionPlan(plan: InsertSubscriptionPlan): Promise<SubscriptionPlan> {
-    const [createdPlan] = await db
-      .insert(subscriptionPlans)
-      .values(plan)
-      .returning();
-    return createdPlan;
-  }
-  
-  async getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined> {
-    const [plan] = await db
-      .select()
-      .from(subscriptionPlans)
-      .where(eq(subscriptionPlans.id, id));
-    return plan;
-  }
-  
-  async getSubscriptionPlans(userType: string, billingType?: string): Promise<SubscriptionPlan[]> {
-    let query = db.select().from(subscriptionPlans);
-    
-    if (userType) {
-      query = query.where(eq(subscriptionPlans.userType, userType));
-    }
-    
-    if (billingType) {
-      query = query.where(eq(subscriptionPlans.billingType, billingType));
-    }
-    
-    return query;
-  }
-  
-  async updateSubscriptionPlan(id: number, planData: Partial<InsertSubscriptionPlan>): Promise<SubscriptionPlan | undefined> {
-    const [updatedPlan] = await db
-      .update(subscriptionPlans)
-      .set({
-        ...planData,
-        updatedAt: new Date()
-      })
-      .where(eq(subscriptionPlans.id, id))
-      .returning();
-    return updatedPlan;
-  }
-  
-  async deleteSubscriptionPlan(id: number): Promise<boolean> {
-    const result = await db
-      .delete(subscriptionPlans)
-      .where(eq(subscriptionPlans.id, id))
-      .returning({ id: subscriptionPlans.id });
-    return result.length > 0;
   }
 
   // Professional Profile operations

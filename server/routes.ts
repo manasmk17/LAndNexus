@@ -383,7 +383,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update user with subscription data
       await storage.updateStripeSubscriptionId(user.id, subscription.id);
-      await storage.updateUserSubscription(user.id, tier, 'monthly', subscription.status);
+      await storage.updateUserSubscription(user.id, tier, subscription.status);
 
       const invoice = subscription.latest_invoice as any;
       const paymentIntent = invoice.payment_intent as any;
@@ -441,11 +441,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (user) {
           // Update the subscription status
           const subscriptionTier = user.subscriptionTier || "basic";
-          const subscriptionType = user.subscriptionType || "monthly";
           await storage.updateUserSubscription(
             user.id, 
-            subscriptionTier,
-            subscriptionType,
+            subscriptionTier, 
             subscription.status
           );
         }
@@ -1013,9 +1011,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Update user's subscription status in our database
-      // Default to monthly billing type if not specified
-      const billingType = req.body.billingType || 'monthly';
-      await storage.updateUserSubscription(user.id, tierId, billingType, status);
+      await storage.updateUserSubscription(user.id, tierId, status);
       
       // Create or update a customer in Stripe if needed
       if (!user.stripeCustomerId) {

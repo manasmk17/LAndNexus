@@ -40,6 +40,13 @@ export default function ProfessionalJobMatches() {
     error: matchError 
   } = useQuery<MatchResult[]>({
     queryKey: ["/api/professionals/me/matches"],
+    queryFn: async () => {
+      const response = await fetch('/api/professionals/me/matches');
+      if (!response.ok) {
+        throw new Error('Failed to fetch job matches');
+      }
+      return response.json();
+    },
     enabled: !!profile,
   });
   

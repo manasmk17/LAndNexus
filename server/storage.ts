@@ -2035,6 +2035,117 @@ export class DatabaseStorage implements IStorage {
       throw error; // Re-throw to allow proper error handling
     }
   }
+  
+  // AI Matching operations
+  async getMatchingJobsForProfessional(professionalId: number, limit: number = 5): Promise<Array<{job: JobPosting, score: number}>> {
+    try {
+      // Get the professional profile
+      const [professional] = await db.select().from(professionalProfiles)
+        .where(eq(professionalProfiles.id, professionalId));
+      
+      if (!professional) {
+        return [];
+      }
+      
+      // Get all open job postings
+      const jobs = await db.select().from(jobPostings)
+        .where(eq(jobPostings.status, "open"));
+      
+      // This is a placeholder for a more sophisticated database query
+      // In a real implementation, we might use a database-specific similarity ranking
+      // or vector search capability
+      const matches = await Promise.all(jobs.map(async (job) => {
+        // Calculate a basic match score based on text similarity
+        const profTitle = professional.title?.toLowerCase() || '';
+        const profBio = professional.bio?.toLowerCase() || '';
+        const profIndustry = professional.industryFocus?.toLowerCase() || '';
+        
+        const jobTitle = job.title.toLowerCase();
+        const jobDescription = job.description.toLowerCase();
+        const jobRequirements = job.requirements.toLowerCase();
+        
+        // Calculate text-based match score
+        const titleMatch = profTitle && jobTitle.includes(profTitle) ? 0.3 : 0;
+        const bioMatch = profBio && (jobDescription.includes(profBio) || jobRequirements.includes(profBio)) ? 0.2 : 0;
+        const industryMatch = profIndustry && jobDescription.includes(profIndustry) ? 0.2 : 0;
+        
+        // Assign a moderate score for location match
+        const locationMatch = professional.location && 
+          professional.location === job.location ? 0.3 : 0;
+        
+        const score = titleMatch + bioMatch + industryMatch + locationMatch;
+        
+        return { job, score };
+      }));
+      
+      // Sort by score (descending) and apply limit
+      return matches
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
+    } catch (error) {
+      console.error("Error getting matching jobs:", error);
+      return [];
+    }
+  }
+  
+  async getMatchingProfessionalsForJob(jobId: number, limit: number = 5): Promise<Array<{professional: ProfessionalProfile, score: number}>> {
+    try {
+      // Get the job posting
+      const [job] = await db.select().from(jobPostings)
+        .where(eq(jobPostings.id, jobId));
+      
+      if (!job) {
+        return [];
+      }
+      
+      // Get all professional profiles
+      const professionals = await db.select().from(professionalProfiles);
+      
+      // Placeholder for more sophisticated database query
+      const matches = await Promise.all(professionals.map(async (professional) => {
+        // Calculate a basic match score based on text similarity
+        const profTitle = professional.title?.toLowerCase() || '';
+        const profBio = professional.bio?.toLowerCase() || '';
+        const profIndustry = professional.industryFocus?.toLowerCase() || '';
+        
+        const jobTitle = job.title.toLowerCase();
+        const jobDescription = job.description.toLowerCase();
+        const jobRequirements = job.requirements.toLowerCase();
+        
+        // Calculate text-based match score
+        const titleMatch = profTitle && jobTitle.includes(profTitle) ? 0.3 : 0;
+        const bioMatch = profBio && (jobDescription.includes(profBio) || jobRequirements.includes(profBio)) ? 0.2 : 0;
+        const industryMatch = profIndustry && jobDescription.includes(profIndustry) ? 0.2 : 0;
+        
+        // Assign a moderate score for location match
+        const locationMatch = professional.location && 
+          professional.location === job.location ? 0.3 : 0;
+        
+        const score = titleMatch + bioMatch + industryMatch + locationMatch;
+        
+        return { professional, score };
+      }));
+      
+      // Sort by score (descending) and apply limit
+      return matches
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
+    } catch (error) {
+      console.error("Error getting matching professionals:", error);
+      return [];
+    }
+  }
+  
+  async saveJobMatch(jobId: number, professionalId: number, score: number): Promise<boolean> {
+    try {
+      // In a real implementation, we would add a job_matches table
+      // For now, this is a placeholder function since we're calculating scores on the fly
+      return true;
+    } catch (error) {
+      console.error("Error saving job match:", error);
+      return false;
+    }
+  }
 }
 
 // Dynamically use MemStorage or DatabaseStorage based on database connection status

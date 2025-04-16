@@ -2156,27 +2156,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Professional Matching with Jobs
   app.get("/api/professionals/:professionalId/matches", isAuthenticated, async (req, res) => {
     try {
-      const professionalId = parseInt(req.params.professionalId);
+      const user = req.user as User;
+      let professionalProfile;
+      
+      // Special case for "me" endpoint
+      if (req.params.professionalId === "me") {
+        professionalProfile = await storage.getProfessionalProfileByUserId(user.id);
+        if (!professionalProfile) {
+          return res.status(404).json({ message: "Professional profile not found for current user" });
+        }
+      } else {
+        // Regular case with numeric ID
+        const professionalId = parseInt(req.params.professionalId);
+        if (isNaN(professionalId)) {
+          return res.status(400).json({ message: "Invalid professional ID format" });
+        }
+        
+        professionalProfile = await storage.getProfessionalProfile(professionalId);
+        if (!professionalProfile) {
+          return res.status(404).json({ message: "Professional profile not found" });
+        }
+        
+        // Check if the user is the professional or an admin
+        if (user.id !== professionalProfile.userId && !user.isAdmin) {
+          return res.status(403).json({ message: "You do not have permission to access this resource" });
+        }
+      }
+      
       const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
       
-      const professional = await storage.getProfessionalProfile(professionalId);
-      if (!professional) {
-        return res.status(404).json({ message: "Professional profile not found" });
-      }
-      
-      // Check if the user is the professional or an admin
-      const user = req.user as User;
-      if (user.id !== professional.userId && !user.isAdmin) {
-        return res.status(403).json({ message: "You do not have permission to access this resource" });
-      }
-      
       // Use already implemented storage method for matching
-      const matches = await storage.getMatchingJobsForProfessional(professionalId, limit);
+      const matches = await storage.getMatchingJobsForProfessional(professionalProfile.id, limit);
       
-      res.json({
-        matches,
-        count: matches.length
-      });
+      // Return the matches directly as expected by the frontend
+      res.json(matches);
     } catch (error: any) {
       console.error("Error finding matching jobs:", error);
       res.status(500).json({ message: "Error finding matching jobs" });

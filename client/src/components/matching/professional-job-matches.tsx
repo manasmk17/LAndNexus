@@ -36,7 +36,8 @@ export default function ProfessionalJobMatches() {
   // Fetch matched jobs
   const { 
     data: matches, 
-    isLoading: isLoadingMatches 
+    isLoading: isLoadingMatches,
+    error: matchError 
   } = useQuery<MatchResult[]>({
     queryKey: ["/api/professionals/me/matches"],
     enabled: !!profile,
@@ -79,6 +80,13 @@ export default function ProfessionalJobMatches() {
             <Link href="/edit-profile">
               <Button>Complete Your Profile</Button>
             </Link>
+          </div>
+        ) : matchError ? (
+          <div className="text-center py-6">
+            <Briefcase className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+            <h3 className="font-medium mb-1">Error Loading Matches</h3>
+            <p className="text-gray-500 mb-4">There was a problem retrieving your job matches</p>
+            <Button onClick={() => window.location.reload()}>Try Again</Button>
           </div>
         ) : isLoadingMatches ? (
           <div className="space-y-4">

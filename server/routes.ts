@@ -2195,6 +2195,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error finding matching jobs" });
     }
   });
+  
+  // AI Job Matching with Professionals
+  app.get("/api/jobs/:jobId/matches", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const jobId = parseInt(req.params.jobId);
+      
+      if (isNaN(jobId)) {
+        return res.status(400).json({ message: "Invalid job ID format" });
+      }
+      
+      // Fetch the job posting
+      const job = await storage.getJobPosting(jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+      
+      // Fetch company to check ownership
+      const company = await storage.getCompanyProfile(job.companyId);
+      if (!company) {
+        return res.status(500).json({ message: "Company not found for this job posting" });
+      }
+      
+      // Check if user is the job owner or an admin
+      if (company.userId !== user.id && !user.isAdmin) {
+        return res.status(403).json({ message: "You do not have permission to access this resource" });
+      }
+      
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 5;
+      
+      // Use already implemented storage method for matching
+      const matches = await storage.getMatchingProfessionalsForJob(jobId, limit);
+      
+      // Return the matches directly as expected by the frontend
+      res.json(matches);
+    } catch (error: any) {
+      console.error("Error finding matching professionals:", error);
+      res.status(500).json({ message: "Error finding matching professionals" });
+    }
+  });
 
   // Job Posting Routes
   app.post("/api/job-postings", isAuthenticated, async (req, res) => {

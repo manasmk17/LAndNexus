@@ -7,10 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ExternalLink, Briefcase, MapPin, Clock, Building, CalendarClock, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
-import type { JobPosting } from "@shared/schema";
+import type { JobPosting, CompanyProfile } from "@shared/schema";
+
+// Extended JobPosting type with additional properties for display
+interface EnhancedJobPosting extends JobPosting {
+  companyName?: string;
+  contractType?: string;
+  skills?: string[];
+}
 
 type MatchResult = {
-  job: JobPosting;
+  job: EnhancedJobPosting;
   score: number;
 };
 
@@ -35,9 +42,24 @@ export default function ProfessionalJobMatches() {
     enabled: !!profile,
   });
   
+  // Fetch company profiles to get company names
+  const {
+    data: companies
+  } = useQuery<CompanyProfile[]>({
+    queryKey: ["/api/company-profiles"],
+    enabled: !!matches && matches.length > 0,
+  });
+  
   // Format the match score as a percentage
   const formatMatchScore = (score: number) => {
     return `${Math.round(score * 100)}%`;
+  };
+  
+  // Helper to get company name for a job
+  const getCompanyName = (companyId: number) => {
+    if (!companies) return "Company";
+    const company = companies.find(c => c.id === companyId);
+    return company?.companyName || "Company";
   };
   
   return (
@@ -83,7 +105,7 @@ export default function ProfessionalJobMatches() {
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-medium text-lg">{job.title}</h3>
-                    <p className="text-gray-500">{job.companyName || "Company"}</p>
+                    <p className="text-gray-500">{job.companyName || getCompanyName(job.companyId)}</p>
                     
                     <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-600">
                       {job.location && (
@@ -97,10 +119,15 @@ export default function ProfessionalJobMatches() {
                         <Badge variant="outline" className="bg-blue-50">Remote</Badge>
                       )}
                       
-                      {job.contractType && (
+                      {job.contractType ? (
                         <div className="flex items-center">
                           <CalendarClock className="h-4 w-4 mr-1" />
                           <span>{job.contractType}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center">
+                          <CalendarClock className="h-4 w-4 mr-1" />
+                          <span>{job.jobType}</span>
                         </div>
                       )}
                       
@@ -131,7 +158,7 @@ export default function ProfessionalJobMatches() {
                   </p>
                 )}
                 
-                {job.skills && job.skills.length > 0 && (
+                {job.skills && job.skills.length > 0 ? (
                   <div className="mt-3">
                     <div className="flex flex-wrap gap-1">
                       {job.skills.map((skill, index) => (
@@ -139,6 +166,19 @@ export default function ProfessionalJobMatches() {
                           {skill}
                         </Badge>
                       ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-3">
+                    <div className="flex flex-wrap gap-1">
+                      <Badge variant="secondary" className="bg-gray-100">
+                        {job.jobType}
+                      </Badge>
+                      {job.compensationUnit && (
+                        <Badge variant="secondary" className="bg-gray-100">
+                          {job.compensationUnit} pay
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 )}

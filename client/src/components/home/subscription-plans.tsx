@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckIcon } from "lucide-react";
@@ -21,10 +22,9 @@ const plans: PricingPlan[] = [
     price: 0,
     description: "Essential tools for L&D professionals",
     features: [
-      "Create basic profile",
-      "Browse job listings",
-      "Access public resources",
-      "Join community forum"
+      "Basic profile",
+      "5 job applications per month",
+      "Access to community forum",
     ],
     buttonText: "Current Plan", 
     mostPopular: false
@@ -33,7 +33,7 @@ const plans: PricingPlan[] = [
     id: "pro",
     name: "Pro",
     price: 29,
-    description: "Enhanced features for growing professionals",
+    description: "Everything you need to succeed",
     features: [
       "Enhanced profile with portfolio",
       "Unlimited job applications",
@@ -45,15 +45,15 @@ const plans: PricingPlan[] = [
     mostPopular: true
   },
   {
-    id: "premium", 
-    name: "Premium",
+    id: "premium",
+    name: "Premium", 
     price: 79,
-    description: "Premium features for established professionals",
+    description: "For established professionals",
     features: [
       "All Pro features",
       "Featured profile placement",
-      "Direct consultation bookings",
-      "Publish resources & articles", 
+      "Direct consultation bookings", 
+      "Publish resources & articles",
       "Priority customer support"
     ],
     buttonText: "Subscribe Now",
@@ -69,7 +69,7 @@ export default function SubscriptionPlans() {
       <div className="container px-4 mx-auto">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
-            Pricing Plans
+            Plans & Pricing
           </h2>
           <p className="text-muted-foreground text-lg">
             Choose the perfect plan for your L&D professional journey

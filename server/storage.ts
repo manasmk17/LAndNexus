@@ -1198,6 +1198,54 @@ export class MemStorage implements IStorage {
       (user) => user.stripeCustomerId === customerId
     );
   }
+  
+  // Subscription Plan operations
+  async createSubscriptionPlan(plan: InsertSubscriptionPlan): Promise<SubscriptionPlan> {
+    const id = this.subscriptionPlanId++;
+    const now = new Date();
+    const newPlan: SubscriptionPlan = {
+      ...plan,
+      id,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.subscriptionPlans.set(id, newPlan);
+    return newPlan;
+  }
+  
+  async getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined> {
+    return this.subscriptionPlans.get(id);
+  }
+  
+  async getSubscriptionPlans(userType: string, billingType?: string): Promise<SubscriptionPlan[]> {
+    return Array.from(this.subscriptionPlans.values())
+      .filter(plan => {
+        if (userType && plan.userType !== userType) {
+          return false;
+        }
+        if (billingType && plan.billingType !== billingType) {
+          return false;
+        }
+        return true;
+      });
+  }
+  
+  async updateSubscriptionPlan(id: number, planData: Partial<InsertSubscriptionPlan>): Promise<SubscriptionPlan | undefined> {
+    const plan = this.subscriptionPlans.get(id);
+    if (!plan) return undefined;
+    
+    const updated: SubscriptionPlan = {
+      ...plan,
+      ...planData,
+      updatedAt: new Date()
+    };
+    this.subscriptionPlans.set(id, updated);
+    return updated;
+  }
+  
+  async deleteSubscriptionPlan(id: number): Promise<boolean> {
+    return this.subscriptionPlans.delete(id);
+  }
 
   // Skill Recommendation operations
   async getSkillRecommendation(id: number): Promise<SkillRecommendation | undefined> {

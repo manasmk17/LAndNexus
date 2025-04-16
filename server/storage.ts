@@ -38,8 +38,15 @@ export interface IStorage {
   // Stripe operations
   updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined>;
   updateStripeSubscriptionId(userId: number, subscriptionId: string): Promise<User | undefined>;
-  updateUserSubscription(userId: number, tier: string, status: string): Promise<User | undefined>;
+  updateUserSubscription(userId: number, tier: string, subscriptionType: string, status: string): Promise<User | undefined>;
   getUserByStripeCustomerId(customerId: string): Promise<User | undefined>;
+  
+  // Subscription Plans operations
+  createSubscriptionPlan(plan: InsertSubscriptionPlan): Promise<SubscriptionPlan>;
+  getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined>;
+  getSubscriptionPlans(userType: string, billingType?: string): Promise<SubscriptionPlan[]>;
+  updateSubscriptionPlan(id: number, plan: Partial<InsertSubscriptionPlan>): Promise<SubscriptionPlan | undefined>;
+  deleteSubscriptionPlan(id: number): Promise<boolean>;
   
   // AI Matching operations
   getMatchingJobsForProfessional(professionalId: number, limit?: number): Promise<Array<{job: JobPosting, score: number}>>;

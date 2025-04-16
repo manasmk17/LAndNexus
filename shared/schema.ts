@@ -16,6 +16,7 @@ export const users = pgTable("users", {
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
   subscriptionTier: text("subscription_tier"), // "free", "basic", "premium"
+  subscriptionType: text("subscription_type"), // "monthly", "annually"
   subscriptionStatus: text("subscription_status"), // "active", "trialing", "past_due", "canceled"
   resetToken: text("reset_token"),
   resetTokenExpiry: timestamp("reset_token_expiry"),
@@ -335,3 +336,32 @@ export const insertPageContentSchema = createInsertSchema(pageContents).omit({
 
 export type PageContent = typeof pageContents.$inferSelect;
 export type InsertPageContent = z.infer<typeof insertPageContentSchema>;
+
+// Subscription Plans
+export const subscriptionPlans = pgTable("subscription_plans", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // "Free", "Basic", "Premium"
+  userType: text("user_type").notNull(), // "professional" or "company"
+  billingType: text("billing_type").notNull(), // "monthly" or "annually"
+  price: integer("price").notNull(), // Price in cents
+  features: jsonb("features").notNull(), // Array of features for this plan
+  maxJobPostings: integer("max_job_postings"), // For company plans
+  maxApplications: integer("max_applications"), // For professional plans
+  maxResources: integer("max_resources"), // Limit on resources that can be uploaded
+  featuredProfile: boolean("featured_profile").default(false), // Whether profiles are featured
+  aiMatchmaking: boolean("ai_matchmaking").default(false), // Whether AI matchmaking is available
+  prioritySupport: boolean("priority_support").default(false), // Whether priority support is available
+  advancedAnalytics: boolean("advanced_analytics").default(false), // Whether advanced analytics are available
+  unlimitedMessaging: boolean("unlimited_messaging").default(false), // Whether unlimited messaging is available
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertSubscriptionPlanSchema = createInsertSchema(subscriptionPlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
+export type InsertSubscriptionPlan = z.infer<typeof insertSubscriptionPlanSchema>;

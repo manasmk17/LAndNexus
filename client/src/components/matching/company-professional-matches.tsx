@@ -11,11 +11,9 @@ import type { ProfessionalProfile, JobPosting } from "@shared/schema";
 // Define an extended professional profile type for the match results
 // to account for additional properties used in the component
 interface ExtendedProfessionalProfile extends ProfessionalProfile {
-  yearsExperience?: number;
-  yearsOfExperience?: number; // Both variations to be safe
-  industries?: string[];
-  expertise?: string[];
-  ratePerHour?: number;
+  yearsOfExperience?: number | null; // Additional property used in the component
+  industries?: string[] | null; // Additional property used in the component
+  expertise?: string[] | null; // Additional property used in the component
 }
 
 type MatchResult = {
@@ -49,7 +47,7 @@ export default function CompanyProfessionalMatches({ jobId }: { jobId: number })
   const {
     data: job,
     isLoading: isLoadingJob
-  } = useQuery({
+  } = useQuery<JobPosting>({
     queryKey: ["/api/job-postings", jobId],
     enabled: !!jobId,
   });

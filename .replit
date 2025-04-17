@@ -52,8 +52,4 @@ mode = "sequential"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "pkill -9 node || true"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
 args = "npm run dev"

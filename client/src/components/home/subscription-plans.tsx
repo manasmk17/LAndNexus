@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckIcon } from "lucide-react";
@@ -22,42 +21,44 @@ const plans: PricingPlan[] = [
     price: 0,
     description: "Essential tools for L&D professionals",
     features: [
-      "Basic profile",
-      "5 job applications per month",
-      "Access to community forum",
+      "Create a basic profile",
+      "Browse job listings",
+      "Access public resources",
+      "Join community forum"
     ],
-    buttonText: "Current Plan", 
+    buttonText: "Current Plan",
     mostPopular: false
   },
   {
-    id: "pro",
-    name: "Pro",
+    id: "basic",
+    name: "Basic",
     price: 29,
-    description: "Everything you need to succeed",
+    description: "Essential tools for L&D professionals and companies",
     features: [
-      "Enhanced profile with portfolio",
-      "Unlimited job applications",
-      "Video introduction",
-      "Early access to job opportunities",
-      "Profile analytics"
+      "Create enhanced profile",
+      "Browse and apply to job postings",
+      "Access full resource library",
+      "Apply to up to 5 jobs monthly",
+      "Basic analytics dashboard"
     ],
     buttonText: "Subscribe Now",
-    mostPopular: true
+    mostPopular: false
   },
   {
     id: "premium",
-    name: "Premium", 
+    name: "Premium",
     price: 79,
-    description: "For established professionals",
+    description: "Advanced features for serious L&D experts",
     features: [
-      "All Pro features",
       "Featured profile placement",
-      "Direct consultation bookings", 
-      "Publish resources & articles",
-      "Priority customer support"
+      "Unlimited job applications",
+      "Premium resource access",
+      "Direct messaging",
+      "Priority support",
+      "Advanced analytics"
     ],
     buttonText: "Subscribe Now",
-    mostPopular: false
+    mostPopular: true
   }
 ];
 
@@ -69,7 +70,7 @@ export default function SubscriptionPlans() {
       <div className="container px-4 mx-auto">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
-            Plans & Pricing
+            Pricing Plans
           </h2>
           <p className="text-muted-foreground text-lg">
             Choose the perfect plan for your L&D professional journey

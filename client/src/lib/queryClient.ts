@@ -454,6 +454,19 @@ export const getQueryFn: <T>(options: {
     }
   };
 
+// Setup global unhandled rejection handler for React Query
+window.addEventListener('unhandledrejection', event => {
+  // Only log and prevent default if it's our query or mutation error
+  if (event.reason && 
+      (event.reason.name === 'QueryError' || 
+       event.reason.name === 'MutationError' || 
+       event.reason.message?.includes('Network'))) {
+    console.log('Handled React Query rejection:', event.reason);
+    // Prevent the default browser handling of the error
+    event.preventDefault();
+  }
+});
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -463,10 +476,18 @@ export const queryClient = new QueryClient({
       staleTime: Infinity,
       retry: 3,
       retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+      // Add explicit error handling
+      onError: (error) => {
+        console.log('Query error handled gracefully:', error);
+      }
     },
     mutations: {
       retry: 2,
       retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000),
+      // Add explicit error handling
+      onError: (error) => {
+        console.log('Mutation error handled gracefully:', error);
+      }
     },
   }
 });

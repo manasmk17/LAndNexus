@@ -1549,7 +1549,7 @@ export class DatabaseStorage implements IStorage {
     return !!deleted;
   }
   
-  async getUserNotificationPreferences(userId: number, typeId: number): Promise<NotificationPreference | undefined> {
+  async getUserNotificationPreference(userId: number, typeId: number): Promise<NotificationPreference | undefined> {
     const [preference] = await db?.select()
       .from(notificationPreferences)
       .where(eq(notificationPreferences.userId, userId))
@@ -1557,9 +1557,16 @@ export class DatabaseStorage implements IStorage {
     return preference;
   }
   
+  async getUserNotificationPreferences(userId: number): Promise<NotificationPreference[]> {
+    const preferences = await db?.select()
+      .from(notificationPreferences)
+      .where(eq(notificationPreferences.userId, userId)) || [];
+    return preferences;
+  }
+  
   async createOrUpdateNotificationPreference(preference: InsertNotificationPreference): Promise<NotificationPreference> {
     // Check if preference already exists
-    const existingPreference = await this.getUserNotificationPreferences(
+    const existingPreference = await this.getUserNotificationPreference(
       preference.userId, 
       preference.typeId
     );

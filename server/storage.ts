@@ -1153,6 +1153,212 @@ export class MemStorage implements IStorage {
   async deletePageContent(id: number): Promise<boolean> {
     return this.pageContents.delete(id);
   }
+  
+  // Review operations
+  async getReview(id: number): Promise<Review | undefined> {
+    return this.reviews.get(id);
+  }
+  
+  async getProfessionalReviews(professionalId: number): Promise<Review[]> {
+    return Array.from(this.reviews.values())
+      .filter(review => review.professionalId === professionalId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+  
+  async getCompanyReviews(companyId: number): Promise<Review[]> {
+    return Array.from(this.reviews.values())
+      .filter(review => review.companyId === companyId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+  
+  async getConsultationReview(consultationId: number): Promise<Review | undefined> {
+    return Array.from(this.reviews.values())
+      .find(review => review.consultationId === consultationId);
+  }
+  
+  async createReview(review: InsertReview): Promise<Review> {
+    const id = this.reviewId++;
+    const newReview: Review = {
+      ...review,
+      id,
+      createdAt: new Date()
+    };
+    this.reviews.set(id, newReview);
+    
+    // Update the professional's rating
+    await this.updateProfessionalRating(review.professionalId);
+    
+    return newReview;
+  }
+  
+  async updateReview(id: number, review: Partial<Review>): Promise<Review | undefined> {
+    const existing = this.reviews.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { ...existing, ...review };
+    this.reviews.set(id, updated);
+    
+    // Update the professional's rating if the rating was changed
+    if (review.rating) {
+      await this.updateProfessionalRating(existing.professionalId);
+    }
+    
+    return updated;
+  }
+  
+  async deleteReview(id: number): Promise<boolean> {
+    const review = this.reviews.get(id);
+    if (!review) return false;
+    
+    const result = this.reviews.delete(id);
+    
+    // Update the professional's rating
+    if (result) {
+      await this.updateProfessionalRating(review.professionalId);
+    }
+    
+    return result;
+  }
+  
+  async updateProfessionalRating(professionalId: number): Promise<boolean> {
+    const professional = await this.getProfessionalProfile(professionalId);
+    if (!professional) return false;
+    
+    const reviews = await this.getProfessionalReviews(professionalId);
+    
+    if (reviews.length === 0) {
+      // Reset rating if no reviews
+      const updated = {
+        ...professional,
+        rating: 0,
+        reviewCount: 0
+      };
+      this.professionalProfiles.set(professionalId, updated);
+      return true;
+    }
+    
+    // Calculate average rating
+    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+    const averageRating = Math.round(totalRating / reviews.length);
+    
+    const updated = {
+      ...professional,
+      rating: averageRating,
+      reviewCount: reviews.length
+    };
+    
+    this.professionalProfiles.set(professionalId, updated);
+    return true;
+  }
+  
+  // Notification Type operations
+  async getNotificationType(id: number): Promise<NotificationType | undefined> {
+    return this.notificationTypes.get(id);
+  }
+  
+  async getNotificationTypeByName(name: string): Promise<NotificationType | undefined> {
+    return Array.from(this.notificationTypes.values())
+      .find(type => type.name === name);
+  }
+  
+  async getAllNotificationTypes(): Promise<NotificationType[]> {
+    return Array.from(this.notificationTypes.values());
+  }
+  
+  async createNotificationType(type: InsertNotificationType): Promise<NotificationType> {
+    const id = this.notificationTypeId++;
+    const newType: NotificationType = {
+      ...type,
+      id
+    };
+    this.notificationTypes.set(id, newType);
+    return newType;
+  }
+  
+  // Notification operations
+  async getNotification(id: number): Promise<Notification | undefined> {
+    return this.notifications.get(id);
+  }
+  
+  async getUserNotifications(userId: number): Promise<Notification[]> {
+    return Array.from(this.notifications.values())
+      .filter(notification => notification.userId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+  
+  async getUserUnreadNotifications(userId: number): Promise<Notification[]> {
+    return Array.from(this.notifications.values())
+      .filter(notification => notification.userId === userId && !notification.read)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+  
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const id = this.notificationId++;
+    const newNotification: Notification = {
+      ...notification,
+      id,
+      read: false,
+      createdAt: new Date()
+    };
+    this.notifications.set(id, newNotification);
+    return newNotification;
+  }
+  
+  async markNotificationAsRead(id: number): Promise<boolean> {
+    const notification = this.notifications.get(id);
+    if (!notification) return false;
+    
+    const updated = { ...notification, read: true };
+    this.notifications.set(id, updated);
+    return true;
+  }
+  
+  async markAllUserNotificationsAsRead(userId: number): Promise<boolean> {
+    const userNotifications = await this.getUserNotifications(userId);
+    
+    userNotifications.forEach(notification => {
+      const updated = { ...notification, read: true };
+      this.notifications.set(notification.id, updated);
+    });
+    
+    return true;
+  }
+  
+  async deleteNotification(id: number): Promise<boolean> {
+    return this.notifications.delete(id);
+  }
+  
+  // Notification Preferences operations
+  async getUserNotificationPreferences(userId: number): Promise<NotificationPreference[]> {
+    return Array.from(this.notificationPreferences.values())
+      .filter(pref => pref.userId === userId);
+  }
+  
+  async getUserNotificationPreference(userId: number, typeId: number): Promise<NotificationPreference | undefined> {
+    return Array.from(this.notificationPreferences.values())
+      .find(pref => pref.userId === userId && pref.typeId === typeId);
+  }
+  
+  async createOrUpdateNotificationPreference(preference: InsertNotificationPreference): Promise<NotificationPreference> {
+    // Check if preference already exists
+    const existing = await this.getUserNotificationPreference(preference.userId, preference.typeId);
+    
+    if (existing) {
+      // Update existing preference
+      const updated = { ...existing, ...preference };
+      this.notificationPreferences.set(existing.id, updated);
+      return updated;
+    } else {
+      // Create new preference
+      const id = this.notificationPreferenceId++;
+      const newPreference: NotificationPreference = {
+        ...preference,
+        id
+      };
+      this.notificationPreferences.set(id, newPreference);
+      return newPreference;
+    }
+  }
 }
 
 export class DatabaseStorage implements IStorage {

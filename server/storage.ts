@@ -1362,6 +1362,219 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Review operations
+  async getReview(id: number): Promise<Review | undefined> {
+    const [review] = await db?.select().from(reviews).where(eq(reviews.id, id)) || [];
+    return review;
+  }
+  
+  async getProfessionalReviews(professionalId: number): Promise<Review[]> {
+    const results = await db?.select()
+      .from(reviews)
+      .where(eq(reviews.professionalId, professionalId))
+      .orderBy(desc(reviews.createdAt)) || [];
+    return results;
+  }
+  
+  async getCompanyReviews(companyId: number): Promise<Review[]> {
+    const results = await db?.select()
+      .from(reviews)
+      .where(eq(reviews.companyId, companyId))
+      .orderBy(desc(reviews.createdAt)) || [];
+    return results;
+  }
+  
+  async getConsultationReview(consultationId: number): Promise<Review | undefined> {
+    const [review] = await db?.select()
+      .from(reviews)
+      .where(eq(reviews.consultationId, consultationId)) || [];
+    return review;
+  }
+  
+  async createReview(review: InsertReview): Promise<Review> {
+    const [newReview] = await db?.insert(reviews)
+      .values(review)
+      .returning() || [];
+    
+    // Update the professional's rating
+    await this.updateProfessionalRating(review.professionalId);
+    
+    return newReview;
+  }
+  
+  async updateReview(id: number, reviewData: Partial<Review>): Promise<Review | undefined> {
+    const [updatedReview] = await db?.update(reviews)
+      .set(reviewData)
+      .where(eq(reviews.id, id))
+      .returning() || [];
+    
+    if (updatedReview && reviewData.rating !== undefined) {
+      await this.updateProfessionalRating(updatedReview.professionalId);
+    }
+    
+    return updatedReview;
+  }
+  
+  async deleteReview(id: number): Promise<boolean> {
+    const [deletedReview] = await db?.delete(reviews)
+      .where(eq(reviews.id, id))
+      .returning() || [];
+    
+    if (deletedReview) {
+      await this.updateProfessionalRating(deletedReview.professionalId);
+      return true;
+    }
+    
+    return false;
+  }
+  
+  async updateProfessionalRating(professionalId: number): Promise<boolean> {
+    // Get all reviews for this professional
+    const professionalReviews = await this.getProfessionalReviews(professionalId);
+    
+    if (professionalReviews.length === 0) {
+      // Reset rating if no reviews
+      await db?.update(professionalProfiles)
+        .set({
+          rating: 0,
+          reviewCount: 0
+        })
+        .where(eq(professionalProfiles.id, professionalId));
+      return true;
+    }
+    
+    // Calculate average rating
+    const totalRating = professionalReviews.reduce((sum, review) => sum + review.rating, 0);
+    const averageRating = Math.round(totalRating / professionalReviews.length);
+    
+    // Update the professional profile
+    await db?.update(professionalProfiles)
+      .set({
+        rating: averageRating,
+        reviewCount: professionalReviews.length
+      })
+      .where(eq(professionalProfiles.id, professionalId));
+    
+    return true;
+  }
+
+  // Notification operations
+  async getNotificationType(id: number): Promise<NotificationType | undefined> {
+    const [notificationType] = await db?.select()
+      .from(notificationTypes)
+      .where(eq(notificationTypes.id, id)) || [];
+    return notificationType;
+  }
+  
+  async getNotificationTypeByName(name: string): Promise<NotificationType | undefined> {
+    const [notificationType] = await db?.select()
+      .from(notificationTypes)
+      .where(eq(notificationTypes.name, name)) || [];
+    return notificationType;
+  }
+  
+  async getAllNotificationTypes(): Promise<NotificationType[]> {
+    const results = await db?.select().from(notificationTypes) || [];
+    return results;
+  }
+  
+  async createNotificationType(type: InsertNotificationType): Promise<NotificationType> {
+    const [newType] = await db?.insert(notificationTypes)
+      .values(type)
+      .returning() || [];
+    return newType;
+  }
+  
+  async getNotification(id: number): Promise<Notification | undefined> {
+    const [notification] = await db?.select()
+      .from(notifications)
+      .where(eq(notifications.id, id)) || [];
+    return notification;
+  }
+  
+  async getUserNotifications(userId: number): Promise<Notification[]> {
+    const results = await db?.select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt)) || [];
+    return results;
+  }
+  
+  async getUserUnreadNotifications(userId: number): Promise<Notification[]> {
+    const results = await db?.select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .where(eq(notifications.read, false))
+      .orderBy(desc(notifications.createdAt)) || [];
+    return results;
+  }
+  
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const [newNotification] = await db?.insert(notifications)
+      .values({
+        ...notification,
+        read: false
+      })
+      .returning() || [];
+    return newNotification;
+  }
+  
+  async markNotificationAsRead(id: number): Promise<boolean> {
+    const [updated] = await db?.update(notifications)
+      .set({ read: true })
+      .where(eq(notifications.id, id))
+      .returning() || [];
+    return !!updated;
+  }
+  
+  async markAllUserNotificationsAsRead(userId: number): Promise<boolean> {
+    await db?.update(notifications)
+      .set({ read: true })
+      .where(eq(notifications.userId, userId));
+    return true;
+  }
+  
+  async deleteNotification(id: number): Promise<boolean> {
+    const [deleted] = await db?.delete(notifications)
+      .where(eq(notifications.id, id))
+      .returning() || [];
+    return !!deleted;
+  }
+  
+  async getUserNotificationPreferences(userId: number, typeId: number): Promise<NotificationPreference | undefined> {
+    const [preference] = await db?.select()
+      .from(notificationPreferences)
+      .where(eq(notificationPreferences.userId, userId))
+      .where(eq(notificationPreferences.typeId, typeId)) || [];
+    return preference;
+  }
+  
+  async createOrUpdateNotificationPreference(preference: InsertNotificationPreference): Promise<NotificationPreference> {
+    // Check if preference already exists
+    const existingPreference = await this.getUserNotificationPreferences(
+      preference.userId, 
+      preference.typeId
+    );
+    
+    if (existingPreference) {
+      // Update existing preference
+      const [updated] = await db?.update(notificationPreferences)
+        .set({
+          email: preference.email,
+          inApp: preference.inApp
+        })
+        .where(eq(notificationPreferences.id, existingPreference.id))
+        .returning() || [];
+      return updated;
+    } else {
+      // Create new preference
+      const [newPreference] = await db?.insert(notificationPreferences)
+        .values(preference)
+        .returning() || [];
+      return newPreference;
+    }
+  }
+  
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));

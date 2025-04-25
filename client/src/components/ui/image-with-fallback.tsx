@@ -57,27 +57,51 @@ export function ImageWithFallback({
   // Ensure URLs are absolute and properly formatted
   // This handles common edge cases that can cause image loading errors
   const getProperImageUrl = (src: string): string => {
-    // Already absolute URL (http/https)
-    if (src.startsWith('http')) {
-      return src;
+    try {
+      // Check for empty string - this can cause console errors
+      if (!src.trim()) {
+        throw new Error('Empty image URL');
+      }
+      
+      // Already absolute URL (http/https)
+      if (src.startsWith('http')) {
+        // Validate it's a proper URL 
+        try {
+          new URL(src);
+          return src;
+        } catch (e) {
+          throw new Error(`Invalid URL format: ${src}`);
+        }
+      }
+      
+      // Already starts with slash (relative to root)
+      if (src.startsWith('/')) {
+        // Remove any duplicate slashes
+        return '/' + src.replace(/^\/+/, '');
+      }
+      
+      // Fix data URLs if they're missing the proper prefix
+      if (src.startsWith('data:image')) {
+        if (!src.includes(';base64,')) {
+          return `data:image/jpeg;base64,${src.replace('data:image/', '')}`;
+        }
+        return src;
+      }
+      
+      // Other cases - assume relative path
+      return `/${src}`;
+    } catch (error) {
+      // If we catch any errors, log them and trigger the fallback
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn(`ImageWithFallback - URL processing error:`, error);
+      }
+      setError(true);
+      return ''; // Return empty string that will trigger fallback
     }
-    
-    // Already starts with slash (relative to root)
-    if (src.startsWith('/')) {
-      // Remove any duplicate slashes
-      return '/' + src.replace(/^\/+/, '');
-    }
-    
-    // Fix data URLs if they're missing the proper prefix
-    if (src.startsWith('data:image') && !src.includes(';base64,')) {
-      return `data:image/jpeg;base64,${src.replace('data:image/', '')}`;
-    }
-    
-    // Other cases - assume relative path
-    return `/${src}`;
   };
   
-  const fullSrc = getProperImageUrl(imgSrc);
+  // Only process the URL if we're not already in an error state
+  const fullSrc = !error ? getProperImageUrl(imgSrc) : '';
 
   return (
     <img

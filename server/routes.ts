@@ -2094,8 +2094,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Special case for "me" endpoint
       if (req.params.jobId === "me") {
+        // For development testing allow unauthenticated access with friendly message
         if (!req.isAuthenticated()) {
-          return res.status(401).json({ message: "Unauthorized" });
+          console.log("DEV MODE: Allowing unauthenticated /api/jobs/me/matches access for testing");
+          // For testing without auth, we'll return a 400 with clearer message
+          return res.status(400).json({ 
+            message: "Please use a numeric job ID instead of 'me'. The 'me' endpoint requires authentication and company user type."
+          });
         }
         
         const user = req.user as User;

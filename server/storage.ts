@@ -17,7 +17,11 @@ import {
   messages, Message, InsertMessage,
   consultations, Consultation, InsertConsultation,
   skillRecommendations, SkillRecommendation, InsertSkillRecommendation,
-  pageContents, PageContent, InsertPageContent
+  pageContents, PageContent, InsertPageContent,
+  reviews, Review, InsertReview,
+  notifications, Notification, InsertNotification,
+  notificationTypes, NotificationType, InsertNotificationType,
+  notificationPreferences, NotificationPreference, InsertNotificationPreference
 } from "@shared/schema";
 
 export interface IStorage {
@@ -142,6 +146,35 @@ export interface IStorage {
   createPageContent(content: InsertPageContent): Promise<PageContent>;
   updatePageContent(id: number, content: Partial<InsertPageContent>): Promise<PageContent | undefined>;
   deletePageContent(id: number): Promise<boolean>;
+  
+  // Review operations
+  getReview(id: number): Promise<Review | undefined>;
+  getProfessionalReviews(professionalId: number): Promise<Review[]>;
+  getCompanyReviews(companyId: number): Promise<Review[]>;
+  getConsultationReview(consultationId: number): Promise<Review | undefined>;
+  createReview(review: InsertReview): Promise<Review>;
+  updateReview(id: number, review: Partial<Review>): Promise<Review | undefined>;
+  deleteReview(id: number): Promise<boolean>;
+  updateProfessionalRating(professionalId: number): Promise<boolean>;
+  
+  // Notification operations
+  getNotificationType(id: number): Promise<NotificationType | undefined>;
+  getNotificationTypeByName(name: string): Promise<NotificationType | undefined>;
+  getAllNotificationTypes(): Promise<NotificationType[]>;
+  createNotificationType(type: InsertNotificationType): Promise<NotificationType>;
+  
+  getNotification(id: number): Promise<Notification | undefined>;
+  getUserNotifications(userId: number): Promise<Notification[]>;
+  getUserUnreadNotifications(userId: number): Promise<Notification[]>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  markNotificationAsRead(id: number): Promise<boolean>;
+  markAllUserNotificationsAsRead(userId: number): Promise<boolean>;
+  deleteNotification(id: number): Promise<boolean>;
+  
+  // Notification Preferences operations
+  getUserNotificationPreferences(userId: number): Promise<NotificationPreference[]>;
+  getUserNotificationPreference(userId: number, typeId: number): Promise<NotificationPreference | undefined>;
+  createOrUpdateNotificationPreference(preference: InsertNotificationPreference): Promise<NotificationPreference>;
 }
 
 export class MemStorage implements IStorage {
@@ -162,6 +195,10 @@ export class MemStorage implements IStorage {
   private skillRecommendations: Map<number, SkillRecommendation>;
   private pageContents: Map<number, PageContent>;
   private jobMatches: Map<string, number>; // Format: "jobId-professionalId" -> score
+  private reviews: Map<number, Review>;
+  private notificationTypes: Map<number, NotificationType>;
+  private notifications: Map<number, Notification>;
+  private notificationPreferences: Map<number, NotificationPreference>;
   
   private userId: number;
   private profProfileId: number;
@@ -179,6 +216,10 @@ export class MemStorage implements IStorage {
   private consultationId: number;
   private skillRecommendationId: number;
   private pageContentId: number;
+  private reviewId: number;
+  private notificationTypeId: number;
+  private notificationId: number;
+  private notificationPreferenceId: number;
 
   constructor() {
     this.users = new Map();
@@ -198,6 +239,10 @@ export class MemStorage implements IStorage {
     this.skillRecommendations = new Map();
     this.pageContents = new Map();
     this.jobMatches = new Map();
+    this.reviews = new Map();
+    this.notificationTypes = new Map();
+    this.notifications = new Map();
+    this.notificationPreferences = new Map();
     
     this.userId = 1;
     this.profProfileId = 1;
@@ -215,6 +260,10 @@ export class MemStorage implements IStorage {
     this.consultationId = 1;
     this.skillRecommendationId = 1;
     this.pageContentId = 1;
+    this.reviewId = 1;
+    this.notificationTypeId = 1;
+    this.notificationId = 1;
+    this.notificationPreferenceId = 1;
     
     // Initialize with some expertise areas
     this.initExpertise();

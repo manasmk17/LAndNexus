@@ -335,3 +335,77 @@ export const insertPageContentSchema = createInsertSchema(pageContents).omit({
 
 export type PageContent = typeof pageContents.$inferSelect;
 export type InsertPageContent = z.infer<typeof insertPageContentSchema>;
+
+// Reviews
+export const reviews = pgTable("reviews", {
+  id: serial("id").primaryKey(),
+  professionalId: integer("professional_id").notNull().references(() => professionalProfiles.id),
+  companyId: integer("company_id").notNull().references(() => companyProfiles.id),
+  consultationId: integer("consultation_id").references(() => consultations.id),
+  rating: integer("rating").notNull(), // 1-5 star rating
+  comment: text("comment"),
+  isPublic: boolean("is_public").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertReviewSchema = createInsertSchema(reviews).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type Review = typeof reviews.$inferSelect;
+export type InsertReview = z.infer<typeof insertReviewSchema>;
+
+// Notifications
+export const notificationTypes = pgTable("notification_types", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  description: text("description"),
+});
+
+export const insertNotificationTypeSchema = createInsertSchema(notificationTypes).omit({
+  id: true,
+});
+
+export type NotificationType = typeof notificationTypes.$inferSelect;
+export type InsertNotificationType = z.infer<typeof insertNotificationTypeSchema>;
+
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  typeId: integer("type_id").notNull().references(() => notificationTypes.id),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  link: text("link"),
+  read: boolean("read").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({
+  id: true,
+  createdAt: true,
+  read: true,
+});
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+// User Notification Preferences
+export const notificationPreferences = pgTable("notification_preferences", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  typeId: integer("type_id").notNull().references(() => notificationTypes.id),
+  email: boolean("email").default(true),
+  inApp: boolean("in_app").default(true),
+}, (table) => {
+  return {
+    unq: unique().on(table.userId, table.typeId),
+  }
+});
+
+export const insertNotificationPreferenceSchema = createInsertSchema(notificationPreferences).omit({
+  id: true,
+});
+
+export type NotificationPreference = typeof notificationPreferences.$inferSelect;
+export type InsertNotificationPreference = z.infer<typeof insertNotificationPreferenceSchema>;

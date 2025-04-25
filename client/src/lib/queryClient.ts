@@ -475,19 +475,11 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       staleTime: Infinity,
       retry: 3,
-      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
-      // Add explicit error handling
-      onError: (error) => {
-        console.log('Query error handled gracefully:', error);
-      }
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
     },
     mutations: {
       retry: 2,
-      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000),
-      // Add explicit error handling
-      onError: (error) => {
-        console.log('Mutation error handled gracefully:', error);
-      }
-    },
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000)
+    }
   }
 });

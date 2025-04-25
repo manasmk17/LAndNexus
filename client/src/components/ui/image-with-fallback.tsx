@@ -36,8 +36,10 @@ export function ImageWithFallback({
   // Handle image load error
   const handleError = () => {
     setError(true);
-    // Avoid console error message, silently use fallback
-    console.log("Image load error, using placeholder");
+    // Log with source info to help debugging
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`Image load error for: ${imgSrc}, using placeholder`);
+    }
   };
 
   // Handle missing src or error loading image
@@ -52,10 +54,30 @@ export function ImageWithFallback({
     );
   }
 
-  // Ensure URLs are absolute (convert relative URLs if needed)
-  const fullSrc = imgSrc.startsWith('http') || imgSrc.startsWith('/') 
-    ? imgSrc 
-    : `/${imgSrc}`;
+  // Ensure URLs are absolute and properly formatted
+  // This handles common edge cases that can cause image loading errors
+  const getProperImageUrl = (src: string): string => {
+    // Already absolute URL (http/https)
+    if (src.startsWith('http')) {
+      return src;
+    }
+    
+    // Already starts with slash (relative to root)
+    if (src.startsWith('/')) {
+      // Remove any duplicate slashes
+      return '/' + src.replace(/^\/+/, '');
+    }
+    
+    // Fix data URLs if they're missing the proper prefix
+    if (src.startsWith('data:image') && !src.includes(';base64,')) {
+      return `data:image/jpeg;base64,${src.replace('data:image/', '')}`;
+    }
+    
+    // Other cases - assume relative path
+    return `/${src}`;
+  };
+  
+  const fullSrc = getProperImageUrl(imgSrc);
 
   return (
     <img

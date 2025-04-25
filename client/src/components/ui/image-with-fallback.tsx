@@ -36,6 +36,8 @@ export function ImageWithFallback({
   // Handle image load error
   const handleError = () => {
     setError(true);
+    // Avoid console error message, silently use fallback
+    console.log("Image load error, using placeholder");
   };
 
   // Handle missing src or error loading image

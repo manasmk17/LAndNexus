@@ -1,6 +1,7 @@
 import { db, useRealDatabase, pool } from "./db";
-import { and, asc, desc, eq, or, isNull, not, sql } from "drizzle-orm";
+import { and, asc, desc, eq, or, isNull, not, sql, gt, gte, isNotNull } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
+import { AdminRole, AdminPermission } from "./admin/types/admin.types";
 import {
   users, User, InsertUser,
   professionalProfiles, ProfessionalProfile, InsertProfessionalProfile,
@@ -1532,7 +1533,7 @@ export class MemStorage implements IStorage {
       password: adminUser.password,
       firstName: adminUser.firstName,
       lastName: adminUser.lastName,
-      role: adminUser.role, // This is now the AdminRole enum
+      role: adminUser.role as AdminRole, // Using AdminRole enum
       customPermissions: adminUser.customPermissions || [],
       lastLogin: null,
       createdAt: now,
@@ -1988,12 +1989,23 @@ export class DatabaseStorage implements IStorage {
   async createAdminUser(adminUser: InsertAdminUser): Promise<AdminUser> {
     if (!db) throw new Error("Database not available");
     
+    const adminData = {
+      username: adminUser.username,
+      password: adminUser.password,
+      email: adminUser.email,
+      firstName: adminUser.firstName,
+      lastName: adminUser.lastName,
+      role: adminUser.role as AdminRole,
+      customPermissions: adminUser.customPermissions,
+      isActive: adminUser.isActive !== undefined ? adminUser.isActive : true,
+      twoFactorEnabled: adminUser.twoFactorEnabled !== undefined ? adminUser.twoFactorEnabled : false,
+      twoFactorSecret: adminUser.twoFactorSecret,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
     const [newAdmin] = await db.insert(adminUsers)
-      .values({
-        ...adminUser,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })
+      .values(adminData)
       .returning() || [];
     
     return newAdmin;
@@ -2122,11 +2134,17 @@ export class DatabaseStorage implements IStorage {
   async logAdminLoginAttempt(loginAttempt: InsertAdminLoginAttempt): Promise<AdminLoginAttempt> {
     if (!db) throw new Error("Database not available");
     
+    const attemptData = {
+      adminId: loginAttempt.adminId,
+      success: loginAttempt.success,
+      ipAddress: loginAttempt.ipAddress || null,
+      userAgent: loginAttempt.userAgent || null,
+      details: loginAttempt.details || null,
+      timestamp: new Date()
+    };
+    
     const [newLoginAttempt] = await db.insert(adminLoginAttempts)
-      .values({
-        ...loginAttempt,
-        timestamp: new Date()
-      })
+      .values(attemptData)
       .returning() || [];
     
     return newLoginAttempt;

@@ -402,6 +402,9 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
+// Import the AdminRole enum from our admin types
+import { AdminRole } from "../server/admin/types/admin.types";
+
 // Admin Users
 export const adminUsers = pgTable("admin_users", {
   id: serial("id").primaryKey(),
@@ -410,7 +413,7 @@ export const adminUsers = pgTable("admin_users", {
   password: text("password").notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  role: text("role").notNull(), // "super_admin", "admin", "moderator", "analyst"
+  role: text("role").notNull().$type<AdminRole>(), // Using the AdminRole enum
   customPermissions: jsonb("custom_permissions"), // Array of permission strings
   lastLogin: timestamp("last_login"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

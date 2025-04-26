@@ -1532,8 +1532,8 @@ export class MemStorage implements IStorage {
       password: adminUser.password,
       firstName: adminUser.firstName,
       lastName: adminUser.lastName,
-      role: adminUser.role,
-      customPermissions: adminUser.customPermissions || null,
+      role: adminUser.role, // This is now the AdminRole enum
+      customPermissions: adminUser.customPermissions || [],
       lastLogin: null,
       createdAt: now,
       updatedAt: now,

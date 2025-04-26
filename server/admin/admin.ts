@@ -3,6 +3,7 @@ import adminRoutes from './routes/admin.routes';
 import { storage } from '../storage';
 import crypto from 'crypto';
 import { useRealDatabase } from '../db';
+import { AdminRole } from './types/admin.types';
 
 /**
  * Create a default admin user for testing if none exists
@@ -33,7 +34,7 @@ async function ensureDefaultAdminExists(): Promise<void> {
         password: hashedPassword,
         firstName: 'System',
         lastName: 'Administrator',
-        role: 'super_admin',
+        role: AdminRole.SUPER_ADMIN,
         customPermissions: null,
         isActive: true,
         twoFactorEnabled: false

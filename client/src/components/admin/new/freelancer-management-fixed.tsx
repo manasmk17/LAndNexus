@@ -98,6 +98,7 @@ export default function FreelancerManagement() {
     onSuccess: () => {
       // Invalidate multiple related queries
       invalidateQueries([
+        '/api/admin/professional-profiles',
         '/api/professional-profiles',
         '/api/professional-profiles/featured',
         '/api/admin/dashboard-stats'
@@ -126,6 +127,7 @@ export default function FreelancerManagement() {
     onSuccess: () => {
       // Invalidate multiple related queries
       invalidateQueries([
+        '/api/admin/professional-profiles',
         '/api/professional-profiles',
         '/api/professional-profiles/featured',
         '/api/admin/dashboard-stats'
@@ -152,6 +154,7 @@ export default function FreelancerManagement() {
     onSuccess: () => {
       // Invalidate multiple related queries
       invalidateQueries([
+        '/api/admin/professional-profiles',
         '/api/professional-profiles',
         '/api/professional-profiles/featured',
         '/api/admin/dashboard-stats'

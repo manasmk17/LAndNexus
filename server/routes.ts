@@ -282,6 +282,150 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register admin-specific routes after auth middleware is set up
   registerAdminRoutes(app);
   
+  // Add endpoints for /api/users to support the admin dashboard
+  app.get("/api/users", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error retrieving users:", error);
+      res.status(500).json({ message: "Failed to retrieve users" });
+    }
+  });
+  
+  // Get specific user
+  app.get("/api/users/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      console.error("Error retrieving user:", error);
+      res.status(500).json({ message: "Failed to retrieve user" });
+    }
+  });
+  
+  // Update user
+  app.patch("/api/users/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const updateData = req.body;
+      
+      // Remove sensitive fields that shouldn't be updated directly
+      const { password, ...safeUpdateData } = updateData;
+      
+      const updatedUser = await storage.updateUser(userId, safeUpdateData);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+  
+  // Delete user
+  app.delete("/api/users/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Perform user deletion (soft delete if available, or regular delete)
+      const success = await storage.deleteUser(userId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "User not found or already deleted" });
+      }
+      
+      res.json({ success: true, message: "User successfully deleted" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+  
+  // Get user activity
+  app.get("/api/users/:id/activity", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      // This is a mock structure for now as we're using memory storage
+      // In a real application, this would fetch login history, actions, etc.
+      const activity = {
+        lastLogin: new Date().toISOString(),
+        logins: [
+          { date: new Date(Date.now() - 3600000).toISOString(), ip: "192.168.1.1", device: "Chrome on Windows" },
+          { date: new Date(Date.now() - 86400000).toISOString(), ip: "192.168.1.1", device: "Firefox on MacOS" }
+        ],
+        actions: [
+          { type: "profile_update", date: new Date(Date.now() - 7200000).toISOString() },
+          { type: "resource_created", date: new Date(Date.now() - 172800000).toISOString() }
+        ]
+      };
+      
+      res.json(activity);
+    } catch (error) {
+      console.error("Error retrieving user activity:", error);
+      res.status(500).json({ message: "Failed to retrieve user activity" });
+    }
+  });
+  
+  // Get user transactions
+  app.get("/api/users/:id/transactions", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      // This is a mock structure for now
+      // In a real application, this would fetch transaction history from Stripe or another payment processor
+      const transactions = [
+        {
+          id: 1,
+          date: new Date(Date.now() - 2592000000).toISOString(), // 30 days ago
+          amount: 39.99,
+          type: "subscription_payment",
+          status: "completed"
+        },
+        {
+          id: 2,
+          date: new Date(Date.now() - 5184000000).toISOString(), // 60 days ago
+          amount: 39.99,
+          type: "subscription_payment",
+          status: "completed"
+        }
+      ];
+      
+      res.json(transactions);
+    } catch (error) {
+      console.error("Error retrieving user transactions:", error);
+      res.status(500).json({ message: "Failed to retrieve user transactions" });
+    }
+  });
+  
+  // Get user complaints
+  app.get("/api/users/:id/complaints", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      // This is a mock structure for now
+      const complaints: Array<{ 
+        id: number, 
+        date: string, 
+        type: string, 
+        status: string, 
+        description: string 
+      }> = [];
+      
+      res.json(complaints);
+    } catch (error) {
+      console.error("Error retrieving user complaints:", error);
+      res.status(500).json({ message: "Failed to retrieve user complaints" });
+    }
+  });
+  
   // CSRF token refresh endpoint
   app.get('/api/csrf-token', (req: any, res) => {
     if (req.csrfToken) {

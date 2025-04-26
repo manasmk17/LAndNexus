@@ -2633,9 +2633,12 @@ export class DatabaseStorage implements IStorage {
   
   async getUserNotificationPreference(userId: number, typeId: number): Promise<NotificationPreference | undefined> {
     if (!useRealDatabase) {
-      // In-memory implementation
-      return Array.from(this.notificationPreferences.values())
-        .find((p: NotificationPreference) => p.userId === userId && p.typeId === typeId);
+      // Only for MemStorage class
+      if (this instanceof MemStorage) {
+        return Array.from(this.notificationPreferences.values())
+          .find((p: NotificationPreference) => p.userId === userId && p.typeId === typeId);
+      }
+      return undefined;
     }
 
     try {
@@ -2658,9 +2661,12 @@ export class DatabaseStorage implements IStorage {
   
   async getUserNotificationPreferences(userId: number): Promise<NotificationPreference[]> {
     if (!useRealDatabase) {
-      // In-memory implementation
-      return Array.from(this.notificationPreferences.values())
-        .filter((p: NotificationPreference) => p.userId === userId);
+      // Only for MemStorage class
+      if (this instanceof MemStorage) {
+        return Array.from(this.notificationPreferences.values())
+          .filter((p: NotificationPreference) => p.userId === userId);
+      }
+      return [];
     }
     
     // Database implementation with proper error handling
@@ -2683,28 +2689,42 @@ export class DatabaseStorage implements IStorage {
     );
     
     if (!useRealDatabase) {
-      // In-memory implementation
-      if (existingPreference) {
-        // Update existing preference
-        const updated: NotificationPreference = {
-          ...existingPreference,
-          email: preference.email,
-          inApp: preference.inApp
-        };
-        
-        this.notificationPreferences.set(existingPreference.id, updated);
-        return updated;
-      } else {
-        // Create new preference
-        const id = this.notificationPreferenceId++;
-        const newPreference: NotificationPreference = {
-          id,
-          ...preference
-        };
-        
-        this.notificationPreferences.set(id, newPreference);
-        return newPreference;
+      // Only for MemStorage implementation
+      if (this instanceof MemStorage) {
+        if (existingPreference) {
+          // Update existing preference
+          const updated: NotificationPreference = {
+            ...existingPreference,
+            email: preference.email ?? null,
+            inApp: preference.inApp ?? null
+          };
+          
+          this.notificationPreferences.set(existingPreference.id, updated);
+          return updated;
+        } else {
+          // Create new preference
+          const id = this.notificationPreferenceId++;
+          const newPreference: NotificationPreference = {
+            id,
+            userId: preference.userId,
+            typeId: preference.typeId,
+            email: preference.email ?? null,
+            inApp: preference.inApp ?? null
+          };
+          
+          this.notificationPreferences.set(id, newPreference);
+          return newPreference;
+        }
       }
+      
+      // If not MemStorage, create a mock notification preference
+      return {
+        id: 0,
+        userId: preference.userId,
+        typeId: preference.typeId,
+        email: preference.email ?? null,
+        inApp: preference.inApp ?? null
+      };
     }
     
     // Database implementation
@@ -2713,16 +2733,22 @@ export class DatabaseStorage implements IStorage {
         // Update existing preference
         const [updated] = await db?.update(notificationPreferences)
           .set({
-            email: preference.email,
-            inApp: preference.inApp
+            email: preference.email ?? null,
+            inApp: preference.inApp ?? null
           })
           .where(eq(notificationPreferences.id, existingPreference.id))
           .returning() || [];
         return updated;
       } else {
-        // Create new preference
+        // Create new preference with explicit null values for optional fields
+        const insertPreference = {
+          ...preference,
+          email: preference.email ?? null,
+          inApp: preference.inApp ?? null
+        };
+        
         const [newPreference] = await db?.insert(notificationPreferences)
-          .values(preference)
+          .values(insertPreference)
           .returning() || [];
         return newPreference;
       }

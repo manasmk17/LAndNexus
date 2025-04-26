@@ -144,11 +144,13 @@ export interface AdminUser {
   lastName: string;
   role: AdminRole;
   customPermissions?: AdminPermission[]; // For special cases
-  lastLogin: Date;
+  lastLogin: Date | null;
   createdAt: Date;
   updatedAt: Date;
   isActive: boolean;
   twoFactorEnabled: boolean;
+  twoFactorSecret: string | null;
+  password: string;
 }
 
 // Admin Action Log Interface

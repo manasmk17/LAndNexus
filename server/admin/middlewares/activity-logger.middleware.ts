@@ -50,9 +50,13 @@ export const adminActivityLogger = (req: Request, res: Response, next: NextFunct
     return originalJson.apply(this, [body]);
   };
   
-  res.end = function(chunk) {
-    logResponse(chunk);
-    return originalEnd.apply(this, [chunk]);
+  res.end = function(chunk, encoding?, callback?) {
+    if (chunk) {
+      logResponse(chunk);
+    }
+    // TypeScript doesn't like using arguments directly with apply
+    // So we'll bypass the type check here
+    return originalEnd.apply(this, arguments as unknown as [any, BufferEncoding, (() => void) | undefined]);
   };
   
   function logResponse(body: any) {

@@ -85,9 +85,17 @@ export const login = async (req: Request, res: Response) => {
       }
     }
     
+    // Ensure customPermissions is properly typed for token generation
+    const typedAdmin: AdminUser = {
+      ...adminUser,
+      customPermissions: Array.isArray(adminUser.customPermissions) 
+        ? adminUser.customPermissions as AdminPermission[]
+        : undefined
+    };
+
     // Generate tokens
-    const accessToken = generateAdminToken(adminUser);
-    const refreshToken = generateAdminRefreshToken(adminUser);
+    const accessToken = generateAdminToken(typedAdmin);
+    const refreshToken = generateAdminRefreshToken(typedAdmin);
     
     // Save refresh token to database
     await storage.saveAdminRefreshToken(adminUser.id, refreshToken);
@@ -157,9 +165,17 @@ export const refreshToken = async (req: Request, res: Response) => {
         return res.status(401).json({ message: 'Invalid refresh token' });
       }
       
+      // Ensure customPermissions is properly typed for token generation
+      const typedAdmin: AdminUser = {
+        ...adminUser,
+        customPermissions: Array.isArray(adminUser.customPermissions) 
+          ? adminUser.customPermissions as AdminPermission[]
+          : undefined
+      };
+      
       // Generate new tokens
-      const newAccessToken = generateAdminToken(adminUser);
-      const newRefreshToken = generateAdminRefreshToken(adminUser);
+      const newAccessToken = generateAdminToken(typedAdmin);
+      const newRefreshToken = generateAdminRefreshToken(typedAdmin);
       
       // Invalidate old refresh token and save new one
       await storage.rotateAdminRefreshToken(adminUser.id, refreshToken, newRefreshToken);

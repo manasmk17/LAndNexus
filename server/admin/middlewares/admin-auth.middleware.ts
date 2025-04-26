@@ -44,8 +44,16 @@ export const verifyAdminToken = async (req: Request, res: Response, next: NextFu
         return res.status(403).json({ message: 'Admin account is inactive' });
       }
       
+      // Ensure customPermissions is properly typed
+      const typedAdmin: AdminUser = {
+        ...adminUser,
+        customPermissions: Array.isArray(adminUser.customPermissions) 
+          ? adminUser.customPermissions as AdminPermission[]
+          : undefined
+      };
+      
       // Attach admin user to request object
-      req.adminUser = adminUser;
+      req.adminUser = typedAdmin;
       next();
     } catch (error) {
       if ((error as Error).name === 'TokenExpiredError') {
@@ -213,7 +221,7 @@ export const adminAuthRateLimiter = (req: Request, res: Response, next: NextFunc
   const rateLimitMap: Map<string, { count: number, resetTime: number }> = 
     (global as any).adminRateLimitMap || ((global as any).adminRateLimitMap = new Map());
   
-  const ip = req.ip;
+  const ip = req.ip || '127.0.0.1'; // Ensure we always have a valid IP
   const now = Date.now();
   const limit = 5; // 5 attempts
   const windowMs = 15 * 60 * 1000; // 15 minutes

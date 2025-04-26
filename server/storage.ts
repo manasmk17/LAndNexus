@@ -2647,7 +2647,7 @@ export class DatabaseStorage implements IStorage {
 
     try {
       // Database implementation with proper error handling
-      const result = await db?.select()
+      const result = await getDB().select()
         .from(notificationPreferences)
         .where(
           and(
@@ -2656,7 +2656,7 @@ export class DatabaseStorage implements IStorage {
           )
         );
       
-      return result && result.length > 0 ? result[0] : undefined;
+      return result.length > 0 ? result[0] : undefined;
     } catch (error) {
       console.error("Error getting user notification preference:", error);
       return undefined;
@@ -2675,9 +2675,9 @@ export class DatabaseStorage implements IStorage {
     
     // Database implementation with proper error handling
     try {
-      const preferences = await db?.select()
+      const preferences = await getDB().select()
         .from(notificationPreferences)
-        .where(eq(notificationPreferences.userId, userId)) || [];
+        .where(eq(notificationPreferences.userId, userId));
       return preferences;
     } catch (error) {
       console.error("Error getting user notification preferences:", error);
@@ -2699,8 +2699,8 @@ export class DatabaseStorage implements IStorage {
           // Update existing preference
           const updated: NotificationPreference = {
             ...existingPreference,
-            email: preference.email ?? null,
-            inApp: preference.inApp ?? null
+            email: preference.email !== undefined ? preference.email : existingPreference.email,
+            inApp: preference.inApp !== undefined ? preference.inApp : existingPreference.inApp
           };
           
           this.notificationPreferences.set(existingPreference.id, updated);
@@ -2735,23 +2735,23 @@ export class DatabaseStorage implements IStorage {
     try {
       if (existingPreference) {
         // Update existing preference
-        const [updated] = await db?.update(notificationPreferences)
+        const [updated] = await getDB().update(notificationPreferences)
           .set({
-            email: preference.email ?? null,
-            inApp: preference.inApp ?? null
+            email: preference.email !== undefined ? preference.email : existingPreference.email,
+            inApp: preference.inApp !== undefined ? preference.inApp : existingPreference.inApp
           })
           .where(eq(notificationPreferences.id, existingPreference.id))
           .returning() || [];
         return updated;
       } else {
-        // Create new preference with explicit null values for optional fields
+        // Create new preference with proper default values
         const insertPreference = {
           ...preference,
-          email: preference.email ?? null,
-          inApp: preference.inApp ?? null
+          email: preference.email !== undefined ? preference.email : true,
+          inApp: preference.inApp !== undefined ? preference.inApp : true
         };
         
-        const [newPreference] = await db?.insert(notificationPreferences)
+        const [newPreference] = await getDB().insert(notificationPreferences)
           .values(insertPreference)
           .returning() || [];
         return newPreference;

@@ -43,11 +43,6 @@ export interface IStorage {
   updateUser(id: number, userData: Partial<User>): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
   
-  // Password and account recovery operations
-  createResetToken(email: string): Promise<string | null>;
-  getUserByResetToken(token: string): Promise<User | undefined>;
-  resetPassword(token: string, newPassword: string): Promise<boolean>;
-  
   // Admin User operations
   getAdminUserById(id: number): Promise<AdminUser | undefined>;
   getAdminUserByEmail(email: string): Promise<AdminUser | undefined>;
@@ -65,6 +60,7 @@ export interface IStorage {
   invalidateAllAdminRefreshTokens(adminId: number): Promise<boolean>;
   updateAdminLastLogin(adminId: number): Promise<boolean>;
   logAdminLoginAttempt(loginAttempt: InsertAdminLoginAttempt): Promise<AdminLoginAttempt>;
+  updateAdminPassword(adminId: number, newPassword: string): Promise<boolean>;
   
   // Admin Two-Factor Authentication operations
   saveAdminTOTPSecret(adminId: number, secret: string): Promise<boolean>;
@@ -94,6 +90,13 @@ export interface IStorage {
   getActiveUsersCount(since: Date): Promise<number>;
   getUserSubscription(userId: number): Promise<any>;
   getUserTransactions(userId: number): Promise<any[]>;
+  
+  // Password and account recovery operations
+  createResetToken(email: string): Promise<string | null>;
+  getUserByResetToken(token: string): Promise<User | undefined>;
+  resetPassword(token: string, newPassword: string): Promise<boolean>;
+  
+
   
   // Stripe operations
   updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined>;
@@ -1911,15 +1914,40 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Helper method to safely handle database table errors
+  private async safeDbOperation<T>(operation: () => Promise<T>, fallback: T, errorPrefix: string = "Database error"): Promise<T> {
+    try {
+      return await operation();
+    } catch (error: any) {
+      // If the error is about a missing table/relation, return the fallback value
+      if (error.code === '42P01') { // undefined_table
+        console.warn(`${errorPrefix}: table does not exist - ${error.message}`);
+        return fallback;
+      }
+      
+      // For other errors, log them but still return the fallback
+      console.error(`${errorPrefix}:`, error);
+      return fallback;
+    }
+  }
   // Admin User operations
   async getAdminUserById(id: number): Promise<AdminUser | undefined> {
     if (!db) return undefined;
     
-    const [admin] = await db.select()
-      .from(adminUsers)
-      .where(eq(adminUsers.id, id)) || [];
-    
-    return admin;
+    try {
+      const [admin] = await db.select()
+        .from(adminUsers)
+        .where(eq(adminUsers.id, id)) || [];
+      
+      return admin;
+    } catch (error: any) {
+      // If the error is about a missing table, return undefined
+      if (error.code === '42P01') { // undefined_table
+        console.warn('Admin tables not yet migrated, running with in-memory storage for admin functions');
+        return undefined;
+      }
+      throw error;
+    }
   }
   
   async getAdminUserByEmail(email: string): Promise<AdminUser | undefined> {

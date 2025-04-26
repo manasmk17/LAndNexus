@@ -55,7 +55,9 @@ export function registerAdminRoutes(app: Express): void {
   app.use('/api/admin', adminRoutes);
   
   // Ensure a default admin user exists
-  ensureDefaultAdminExists();
+  ensureDefaultAdminExists().catch(err => {
+    console.error('Error ensuring default admin exists:', err);
+  });
   
   console.log('Admin routes registered successfully');
 }

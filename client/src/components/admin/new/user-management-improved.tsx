@@ -161,8 +161,18 @@ export default function UserManagement() {
     refetch
   } = useQuery<User[]>({
     queryKey: ['/api/users'],
-    queryFn: getQueryFn({ on401: 'throw' }),
-    staleTime: 5000 // Short stale time to force refreshes
+    queryFn: getQueryFn({ on401: 'returnNull' }),
+    staleTime: 5000, // Short stale time to force refreshes
+    retry: false,
+    // Prevent errors from propagating and causing unhandled rejections
+    onError: (error) => {
+      console.log(`Error fetching users: ${error.message}`);
+      toast({
+        title: "Failed to load users",
+        description: "There was an error loading the user data. Please try again.",
+        variant: "destructive"
+      });
+    }
   });
   
   // Fetch user activity
@@ -170,16 +180,26 @@ export default function UserManagement() {
     data: userActivity,
     isLoading: isLoadingActivity
   } = useQuery<UserActivity>({
-    queryKey: ['/api/users', selectedUser?.id, 'activity'],
+    queryKey: selectedUser ? [`/api/users/${selectedUser.id}/activity`] : ['no-user-activity'],
     queryFn: selectedUser ? 
-      getQueryFn({ on401: 'throw' }) : 
+      getQueryFn({ on401: 'returnNull' }) : 
       () => Promise.resolve({
         postedJobs: 0,
         completedProjects: 0,
         totalPayments: 0,
         lastActive: new Date().toISOString()
       }),
-    enabled: !!selectedUser
+    enabled: !!selectedUser,
+    retry: false,
+    // Prevent errors from propagating and causing unhandled rejections
+    onError: (error) => {
+      console.log(`Error fetching user activity: ${error.message}`);
+      toast({
+        title: "Activity data unavailable",
+        description: "Unable to load user activity data.",
+        variant: "destructive"
+      });
+    }
   });
   
   // Fetch user transactions
@@ -187,11 +207,21 @@ export default function UserManagement() {
     data: userTransactions = [],
     isLoading: isLoadingTransactions
   } = useQuery<UserTransaction[]>({
-    queryKey: ['/api/users', selectedUser?.id, 'transactions'],
+    queryKey: selectedUser ? [`/api/users/${selectedUser.id}/transactions`] : ['no-user-transactions'],
     queryFn: selectedUser ? 
-      getQueryFn({ on401: 'throw' }) : 
+      getQueryFn({ on401: 'returnNull' }) : 
       () => Promise.resolve([]),
-    enabled: !!selectedUser && activeProfileTab === "transactions"
+    enabled: !!selectedUser && activeProfileTab === "transactions",
+    retry: false,
+    // Prevent errors from propagating and causing unhandled rejections
+    onError: (error) => {
+      console.log(`Error fetching user transactions: ${error.message}`);
+      toast({
+        title: "Transaction data unavailable",
+        description: "Unable to load transaction history.",
+        variant: "destructive"
+      });
+    }
   });
   
   // Fetch user complaints
@@ -199,11 +229,21 @@ export default function UserManagement() {
     data: userComplaints = [],
     isLoading: isLoadingComplaints
   } = useQuery<UserComplaint[]>({
-    queryKey: ['/api/users', selectedUser?.id, 'complaints'],
+    queryKey: selectedUser ? [`/api/users/${selectedUser.id}/complaints`] : ['no-user-complaints'],
     queryFn: selectedUser ? 
-      getQueryFn({ on401: 'throw' }) : 
+      getQueryFn({ on401: 'returnNull' }) : 
       () => Promise.resolve([]),
-    enabled: !!selectedUser && activeProfileTab === "complaints"
+    enabled: !!selectedUser && activeProfileTab === "complaints",
+    retry: false,
+    // Prevent errors from propagating and causing unhandled rejections
+    onError: (error) => {
+      console.log(`Error fetching user complaints: ${error.message}`);
+      toast({
+        title: "Complaint data unavailable",
+        description: "Unable to load user complaints.",
+        variant: "destructive"
+      });
+    }
   });
   
   // Block/unblock user mutation

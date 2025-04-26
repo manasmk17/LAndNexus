@@ -41,6 +41,27 @@ export default function ProfessionalDashboard() {
   } = useQuery<ProfessionalProfile>({
     queryKey: ["/api/professionals/me"],
     enabled: !!user,
+    queryFn: async ({ queryKey }) => {
+      try {
+        const response = await fetch(queryKey[0] as string, {
+          credentials: "include"
+        });
+        
+        if (response.status === 401) {
+          // Return null for unauthorized
+          return null;
+        }
+        
+        if (!response.ok) {
+          throw new Error(`Error fetching profile: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error("Error in query function for /api/professionals/me:", error);
+        return null;
+      }
+    },
   });
   
   // Fetch job applications - using "me" endpoint that doesn't require profile ID
@@ -50,6 +71,27 @@ export default function ProfessionalDashboard() {
   } = useQuery<JobApplication[]>({
     queryKey: ["/api/professionals/me/applications"],
     enabled: !!user,
+    queryFn: async ({ queryKey }) => {
+      try {
+        const response = await fetch(queryKey[0] as string, {
+          credentials: "include"
+        });
+        
+        if (response.status === 401) {
+          // Return empty array for unauthorized
+          return [];
+        }
+        
+        if (!response.ok) {
+          throw new Error(`Error fetching applications: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error("Error in query function for /api/professionals/me/applications:", error);
+        return [];
+      }
+    },
   });
   
   // Fetch messages
@@ -59,6 +101,27 @@ export default function ProfessionalDashboard() {
   } = useQuery<Message[]>({
     queryKey: ["/api/messages"],
     enabled: !!user,
+    queryFn: async ({ queryKey }) => {
+      try {
+        const response = await fetch(queryKey[0] as string, {
+          credentials: "include"
+        });
+        
+        if (response.status === 401) {
+          // Return empty array for unauthorized
+          return [];
+        }
+        
+        if (!response.ok) {
+          throw new Error(`Error fetching messages: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error("Error in query function for /api/messages:", error);
+        return [];
+      }
+    },
   });
   
   // Fetch consultations - using "me" endpoint that doesn't require profile ID
@@ -68,6 +131,27 @@ export default function ProfessionalDashboard() {
   } = useQuery<Consultation[]>({
     queryKey: ["/api/professionals/me/consultations"],
     enabled: !!user,
+    queryFn: async ({ queryKey }) => {
+      try {
+        const response = await fetch(queryKey[0] as string, {
+          credentials: "include"
+        });
+        
+        if (response.status === 401) {
+          // Return empty array for unauthorized
+          return [];
+        }
+        
+        if (!response.ok) {
+          throw new Error(`Error fetching consultations: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error("Error in query function for /api/professionals/me/consultations:", error);
+        return [];
+      }
+    },
   });
   
   // Additional query for job details
@@ -76,6 +160,22 @@ export default function ProfessionalDashboard() {
   } = useQuery<JobPosting[]>({
     queryKey: ["/api/job-postings"],
     enabled: !!applications && applications.length > 0,
+    queryFn: async ({ queryKey }) => {
+      try {
+        const response = await fetch(queryKey[0] as string, {
+          credentials: "include"
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Error fetching job postings: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error("Error in query function for /api/job-postings:", error);
+        return [];
+      }
+    },
   });
   
   // Helper to get job details

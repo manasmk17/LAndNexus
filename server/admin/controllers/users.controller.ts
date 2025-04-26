@@ -311,12 +311,12 @@ export const updateUserSubscription = [
         return res.status(400).json({ message: 'Subscription tier and status are required' });
       }
       
-      // Update subscription
+      // Update subscription 
+      // Ensure we only pass expected parameters to the storage method
       const updatedSubscription = await storage.updateUserSubscription(
         userId,
         subscriptionTier,
-        status,
-        expiresAt ? new Date(expiresAt) : undefined
+        status
       );
       
       return res.status(200).json(updatedSubscription);

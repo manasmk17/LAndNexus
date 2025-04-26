@@ -2,7 +2,8 @@ import { Request, Response } from 'express';
 import { 
   adminLoginSchema, 
   AdminRole, 
-  AdminPermission 
+  AdminPermission,
+  AdminUser
 } from '../types/admin.types';
 import { 
   generateAdminToken, 
@@ -268,6 +269,10 @@ export const updatePassword = async (req: Request, res: Response) => {
     
     // Get admin with password
     const admin = await storage.getAdminUserById(req.adminUser.id);
+    
+    if (!admin) {
+      return res.status(404).json({ message: 'Admin user not found' });
+    }
     
     // Verify current password
     const passwordValid = await verifyPassword(currentPassword, admin.password);

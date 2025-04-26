@@ -80,7 +80,7 @@ export default function CompanyProfessionalMatches({ jobId }: { jobId: number })
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {!company ? (
+        {!company && user ? (
           <div className="text-center py-4">
             <p className="text-gray-500 mb-4">Complete your company profile to see matches</p>
             <Link href="/company/edit-profile">

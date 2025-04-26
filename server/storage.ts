@@ -1659,10 +1659,17 @@ export class DatabaseStorage implements IStorage {
       // Get basic user fields that are guaranteed to exist
       const query = `
         SELECT 
-          id, username, password, email, "firstName", "lastName", "userType", 
-          "isAdmin", "createdAt", "stripeCustomerId", "stripeSubscriptionId",
-          "subscriptionTier", "subscriptionStatus", "resetToken", "resetTokenExpiry",
-          "emailVerified", "emailVerificationToken", "googleId", "linkedinId"
+          id, username, password, email, 
+          first_name AS "firstName", last_name AS "lastName", user_type AS "userType", 
+          is_admin AS "isAdmin", created_at AS "createdAt", 
+          stripe_customer_id AS "stripeCustomerId", 
+          stripe_subscription_id AS "stripeSubscriptionId",
+          subscription_tier AS "subscriptionTier", 
+          subscription_status AS "subscriptionStatus", 
+          reset_token AS "resetToken", reset_token_expiry AS "resetTokenExpiry",
+          email_verified AS "emailVerified", 
+          email_verification_token AS "emailVerificationToken", 
+          google_id AS "googleId", linkedin_id AS "linkedinId"
         FROM users 
         WHERE id = $1
       `;
@@ -1733,10 +1740,17 @@ export class DatabaseStorage implements IStorage {
       // Get basic user fields that are guaranteed to exist
       const query = `
         SELECT 
-          id, username, password, email, "firstName", "lastName", "userType", 
-          "isAdmin", "createdAt", "stripeCustomerId", "stripeSubscriptionId",
-          "subscriptionTier", "subscriptionStatus", "resetToken", "resetTokenExpiry",
-          "emailVerified", "emailVerificationToken", "googleId", "linkedinId"
+          id, username, password, email, 
+          first_name AS "firstName", last_name AS "lastName", user_type AS "userType", 
+          is_admin AS "isAdmin", created_at AS "createdAt", 
+          stripe_customer_id AS "stripeCustomerId", 
+          stripe_subscription_id AS "stripeSubscriptionId",
+          subscription_tier AS "subscriptionTier", 
+          subscription_status AS "subscriptionStatus", 
+          reset_token AS "resetToken", reset_token_expiry AS "resetTokenExpiry",
+          email_verified AS "emailVerified", 
+          email_verification_token AS "emailVerificationToken", 
+          google_id AS "googleId", linkedin_id AS "linkedinId"
         FROM users 
         WHERE username = $1
       `;
@@ -1807,10 +1821,17 @@ export class DatabaseStorage implements IStorage {
       // Get basic user fields that are guaranteed to exist
       const query = `
         SELECT 
-          id, username, password, email, "firstName", "lastName", "userType", 
-          "isAdmin", "createdAt", "stripeCustomerId", "stripeSubscriptionId",
-          "subscriptionTier", "subscriptionStatus", "resetToken", "resetTokenExpiry",
-          "emailVerified", "emailVerificationToken", "googleId", "linkedinId"
+          id, username, password, email, 
+          first_name AS "firstName", last_name AS "lastName", user_type AS "userType", 
+          is_admin AS "isAdmin", created_at AS "createdAt", 
+          stripe_customer_id AS "stripeCustomerId", 
+          stripe_subscription_id AS "stripeSubscriptionId",
+          subscription_tier AS "subscriptionTier", 
+          subscription_status AS "subscriptionStatus", 
+          reset_token AS "resetToken", reset_token_expiry AS "resetTokenExpiry",
+          email_verified AS "emailVerified", 
+          email_verification_token AS "emailVerificationToken", 
+          google_id AS "googleId", linkedin_id AS "linkedinId"
         FROM users 
         WHERE email = $1
       `;
@@ -1883,12 +1904,19 @@ export class DatabaseStorage implements IStorage {
       // Use raw SQL query to handle potential missing columns
       const query = `
         SELECT 
-          id, username, password, email, "firstName", "lastName", "userType", 
-          "isAdmin", "createdAt", "stripeCustomerId", "stripeSubscriptionId",
-          "subscriptionTier", "subscriptionStatus", "resetToken", "resetTokenExpiry",
-          "emailVerified", "emailVerificationToken", "googleId", "linkedinId"
+          id, username, password, email, 
+          first_name AS "firstName", last_name AS "lastName", user_type AS "userType", 
+          is_admin AS "isAdmin", created_at AS "createdAt", 
+          stripe_customer_id AS "stripeCustomerId", 
+          stripe_subscription_id AS "stripeSubscriptionId",
+          subscription_tier AS "subscriptionTier", 
+          subscription_status AS "subscriptionStatus", 
+          reset_token AS "resetToken", reset_token_expiry AS "resetTokenExpiry",
+          email_verified AS "emailVerified", 
+          email_verification_token AS "emailVerificationToken", 
+          google_id AS "googleId", linkedin_id AS "linkedinId"
         FROM users 
-        WHERE "${provider}Id" = $1
+        WHERE ${provider}_id = $1
       `;
       
       const result = await pool?.query(query, [profileId]);
@@ -1968,10 +1996,12 @@ export class DatabaseStorage implements IStorage {
       // Use raw SQL for update to avoid column errors
       const query = `
         UPDATE users
-        SET "${provider}Id" = $1
+        SET ${provider}_id = $1
         WHERE id = $2
-        RETURNING id, username, email, "firstName", "lastName", "userType", 
-                 "isAdmin", "createdAt", "googleId", "linkedinId"
+        RETURNING id, username, email, 
+                 first_name AS "firstName", last_name AS "lastName", user_type AS "userType", 
+                 is_admin AS "isAdmin", created_at AS "createdAt", 
+                 google_id AS "googleId", linkedin_id AS "linkedinId"
       `;
       
       const result = await pool?.query(query, [profileId, userId]);
@@ -2096,7 +2126,44 @@ export class DatabaseStorage implements IStorage {
   // These methods are already defined above
   
   async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
+    if (!db) return [];
+    
+    try {
+      // Use raw SQL to ensure correct column mapping
+      const query = `
+        SELECT 
+          id, username, password, email, 
+          first_name AS "firstName", last_name AS "lastName", user_type AS "userType", 
+          is_admin AS "isAdmin", created_at AS "createdAt", 
+          stripe_customer_id AS "stripeCustomerId", 
+          stripe_subscription_id AS "stripeSubscriptionId",
+          subscription_tier AS "subscriptionTier", 
+          subscription_status AS "subscriptionStatus", 
+          reset_token AS "resetToken", reset_token_expiry AS "resetTokenExpiry",
+          email_verified AS "emailVerified", 
+          email_verification_token AS "emailVerificationToken", 
+          google_id AS "googleId", linkedin_id AS "linkedinId",
+          blocked, block_reason AS "blockReason", 
+          last_active_at AS "lastActiveAt",
+          deleted, deleted_at AS "deletedAt"
+        FROM users
+      `;
+      
+      const result = await (pool?.query(query));
+      if (!result?.rows) return [];
+      
+      return result.rows;
+    } catch (error) {
+      console.error("Error in getAllUsers:", error);
+      
+      // Fallback to standard ORM query if raw query fails
+      try {
+        return await db.select().from(users);
+      } catch (fallbackError) {
+        console.error("Fallback query also failed:", fallbackError);
+        return [];
+      }
+    }
   }
 
   async createUser(user: InsertUser): Promise<User> {

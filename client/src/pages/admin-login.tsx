@@ -36,7 +36,12 @@ export default function AdminLogin() {
     
     try {
       const userData = await login({ username, password });
-      if (!userData.isAdmin) {
+      // Check for isAdmin or is_admin property (handling both camelCase and snake_case)
+      const hasAdminPrivileges = userData.isAdmin === true || userData.is_admin === true;
+      
+      console.log("Login response:", JSON.stringify(userData, null, 2));
+      
+      if (!hasAdminPrivileges) {
         setLoginError("You do not have admin privileges");
         return;
       }
@@ -61,7 +66,7 @@ export default function AdminLogin() {
   }
 
   // If already logged in as admin, useEffect will redirect
-  if (user && user.isAdmin) {
+  if (user && (user.isAdmin === true || user.is_admin === true)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

@@ -55,7 +55,27 @@ export default function UsersPanel() {
   // Fetch all users
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['/api/users'],
-    queryFn: getQueryFn<User[]>({ on401: "returnNull" }),
+    queryFn: async ({ queryKey }) => {
+      try {
+        const response = await fetch(queryKey[0] as string, {
+          credentials: "include"
+        });
+        
+        if (response.status === 401) {
+          // Return empty array for unauthorized
+          return [];
+        }
+        
+        if (!response.ok) {
+          throw new Error(`Error fetching users: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        return [];
+      }
+    },
   });
 
   // Apply filters

@@ -51,7 +51,7 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/recover-username" component={RecoverUsername} />
-      <Route path="/admin-login" component={AdminLogin} />
+      <Route path="/admin/login" component={AdminLogin} />
       <Route path="/professionals" component={Professionals} />
       <Route path="/professional-profile/:id" component={ProfessionalProfile} />
       <Route path="/company-profile/:id" component={CompanyProfile} />
@@ -151,7 +151,7 @@ function App() {
     // Check if current route is admin route or admin login
     const checkIfAdmin = () => {
       const currentPath = window.location.pathname;
-      setIsAdmin(currentPath.startsWith('/admin') || currentPath === '/admin-login');
+      setIsAdmin(currentPath.startsWith('/admin'));
     };
     
     // Initial check

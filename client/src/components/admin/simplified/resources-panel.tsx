@@ -55,12 +55,52 @@ export default function ResourcesPanel() {
   // Fetch all resources and categories
   const { data: resources = [], isLoading } = useQuery({
     queryKey: ['/api/admin/resources'],
-    queryFn: getQueryFn<Resource[]>({ on401: "throw" }),
+    queryFn: async ({ queryKey }) => {
+      try {
+        const response = await fetch(queryKey[0] as string, {
+          credentials: "include"
+        });
+        
+        if (response.status === 401) {
+          // Return empty array for unauthorized
+          return [];
+        }
+        
+        if (!response.ok) {
+          throw new Error(`Error fetching resources: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error("Error fetching resources:", error);
+        return [];
+      }
+    },
   });
 
   const { data: categories = [] } = useQuery({
     queryKey: ['/api/resource-categories'],
-    queryFn: getQueryFn<ResourceCategory[]>({ on401: "returnNull" }),
+    queryFn: async ({ queryKey }) => {
+      try {
+        const response = await fetch(queryKey[0] as string, {
+          credentials: "include"
+        });
+        
+        if (response.status === 401) {
+          // Return empty array for unauthorized
+          return [];
+        }
+        
+        if (!response.ok) {
+          throw new Error(`Error fetching resource categories: ${response.statusText}`);
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error("Error fetching resource categories:", error);
+        return [];
+      }
+    },
   });
 
   // Get category names by ID

@@ -2634,21 +2634,22 @@ export class DatabaseStorage implements IStorage {
   async getUserNotificationPreference(userId: number, typeId: number): Promise<NotificationPreference | undefined> {
     if (!useRealDatabase) {
       // In-memory implementation
-      const preference = Array.from(this.notificationPreferences.values())
-        .find(p => p.userId === userId && p.typeId === typeId);
-      return preference;
+      return Array.from(this.notificationPreferences.values())
+        .find((p: NotificationPreference) => p.userId === userId && p.typeId === typeId);
     }
 
     try {
       // Database implementation with proper error handling
-      const [preference] = await getDB()
-        .select()
+      const result = await db?.select()
         .from(notificationPreferences)
-        .where(and(
-          eq(notificationPreferences.userId, userId),
-          eq(notificationPreferences.typeId, typeId)
-        )) || [];
-      return preference;
+        .where(
+          and(
+            eq(notificationPreferences.userId, userId),
+            eq(notificationPreferences.typeId, typeId)
+          )
+        );
+      
+      return result && result.length > 0 ? result[0] : undefined;
     } catch (error) {
       console.error("Error getting user notification preference:", error);
       return undefined;
@@ -2656,10 +2657,22 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getUserNotificationPreferences(userId: number): Promise<NotificationPreference[]> {
-    const preferences = await db?.select()
-      .from(notificationPreferences)
-      .where(eq(notificationPreferences.userId, userId)) || [];
-    return preferences;
+    if (!useRealDatabase) {
+      // In-memory implementation
+      return Array.from(this.notificationPreferences.values())
+        .filter((p: NotificationPreference) => p.userId === userId);
+    }
+    
+    // Database implementation with proper error handling
+    try {
+      const preferences = await db?.select()
+        .from(notificationPreferences)
+        .where(eq(notificationPreferences.userId, userId)) || [];
+      return preferences;
+    } catch (error) {
+      console.error("Error getting user notification preferences:", error);
+      return [];
+    }
   }
   
   async createOrUpdateNotificationPreference(preference: InsertNotificationPreference): Promise<NotificationPreference> {
@@ -2669,22 +2682,53 @@ export class DatabaseStorage implements IStorage {
       preference.typeId
     );
     
-    if (existingPreference) {
-      // Update existing preference
-      const [updated] = await db?.update(notificationPreferences)
-        .set({
+    if (!useRealDatabase) {
+      // In-memory implementation
+      if (existingPreference) {
+        // Update existing preference
+        const updated: NotificationPreference = {
+          ...existingPreference,
           email: preference.email,
           inApp: preference.inApp
-        })
-        .where(eq(notificationPreferences.id, existingPreference.id))
-        .returning() || [];
-      return updated;
-    } else {
-      // Create new preference
-      const [newPreference] = await db?.insert(notificationPreferences)
-        .values(preference)
-        .returning() || [];
-      return newPreference;
+        };
+        
+        this.notificationPreferences.set(existingPreference.id, updated);
+        return updated;
+      } else {
+        // Create new preference
+        const id = this.notificationPreferenceId++;
+        const newPreference: NotificationPreference = {
+          id,
+          ...preference
+        };
+        
+        this.notificationPreferences.set(id, newPreference);
+        return newPreference;
+      }
+    }
+    
+    // Database implementation
+    try {
+      if (existingPreference) {
+        // Update existing preference
+        const [updated] = await db?.update(notificationPreferences)
+          .set({
+            email: preference.email,
+            inApp: preference.inApp
+          })
+          .where(eq(notificationPreferences.id, existingPreference.id))
+          .returning() || [];
+        return updated;
+      } else {
+        // Create new preference
+        const [newPreference] = await db?.insert(notificationPreferences)
+          .values(preference)
+          .returning() || [];
+        return newPreference;
+      }
+    } catch (error) {
+      console.error("Error creating/updating notification preference:", error);
+      throw error;
     }
   }
   

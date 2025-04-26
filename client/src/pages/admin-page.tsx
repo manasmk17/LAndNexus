@@ -38,7 +38,7 @@ import { useQuery } from "@tanstack/react-query";
 
 // Import admin components
 import EnhancedAdminDashboard from "../components/admin/enhanced-dashboard";
-import UserManagement from "../components/admin/new/user-management";
+import UserManagement from "../components/admin/new/user-management-improved";
 import FreelancerManagement from "../components/admin/new/freelancer-management-fixed";
 import CompanyManagement from "../components/admin/new/company-management";
 import JobManagement from "../components/admin/new/job-management";

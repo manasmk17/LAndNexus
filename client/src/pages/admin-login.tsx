@@ -19,7 +19,7 @@ export default function AdminLogin() {
   // Redirect if already logged in as admin
   useEffect(() => {
     if (user && user.isAdmin) {
-      setLocation("/admin-dashboard");
+      setLocation("/admin/dashboard");
     }
   }, [user, setLocation]);
 
@@ -45,7 +45,7 @@ export default function AdminLogin() {
         setLoginError("You do not have admin privileges");
         return;
       }
-      setLocation("/admin-dashboard");
+      setLocation("/admin/dashboard");
     } catch (error) {
       if (error instanceof Error) {
         setLoginError(error.message);

@@ -146,7 +146,7 @@ export default function FreelancerManagement() {
   // Delete professional profile mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest('DELETE', `/api/professional-profiles/${id}`);
+      const response = await apiRequest('DELETE', `/api/admin/professional-profiles/${id}`);
       return response;
     },
     onSuccess: () => {

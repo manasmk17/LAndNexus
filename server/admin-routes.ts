@@ -147,7 +147,15 @@ export function registerAdminRoutes(app: Express) {
       // Calculate response, hiring, and transaction statistics
       const activeJobPostings = jobPostings.filter(job => job.status === 'open').length;
       const completedJobPostings = jobPostings.filter(job => job.status === 'closed').length;
-      const totalApplications = jobPostings.reduce((sum, job) => sum + (job.applicationCount || 0), 0);
+      
+      // Calculate application statistics
+      // Since applicationCount might not exist in the JobPosting type, we need to handle it safely
+      const totalApplications = jobPostings.reduce((sum, job) => {
+        // Cast job to any to avoid TypeScript errors with the applicationCount property
+        const applications = (job as any).applicationCount || 0;
+        return sum + applications;
+      }, 0);
+      
       const successfulHires = Math.min(completedJobPostings, Math.floor(totalApplications * 0.3));
       
       // Calculate platform commissions (estimated as 15% of revenue)

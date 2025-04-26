@@ -25,14 +25,19 @@ import {
   CreditCard,
   Settings,
   LogOut,
-  Shield
+  Shield,
+  AlertTriangle,
+  BellRing,
+  HelpCircle,
+  LayoutDashboard,
+  History
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getQueryFn } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
 
-// Direct import with explicit path to ensure the component is found
-import SimpleDashboard from "../components/admin/new/simple-dashboard";
+// Import admin components
+import EnhancedAdminDashboard from "../components/admin/enhanced-dashboard";
 import UserManagement from "../components/admin/new/user-management";
 import FreelancerManagement from "../components/admin/new/freelancer-management";
 import CompanyManagement from "../components/admin/new/company-management";
@@ -180,7 +185,7 @@ export default function AdminPage() {
         <main className="flex-1 p-4">
           {activeTab === "dashboard" && (
             <div className="w-full">
-              <SimpleDashboard />
+              <EnhancedAdminDashboard />
             </div>
           )}
           {activeTab === "users" && <UserManagement />}

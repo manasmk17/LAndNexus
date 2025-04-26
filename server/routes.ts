@@ -265,7 +265,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Check if user is authenticated
+  // For development purposes, create a flag to bypass authentication
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  const bypassAuth = isDevelopment;
+  
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
+    // In development mode, allow bypass of authentication
+    if (bypassAuth) {
+      console.log('DEVELOPMENT MODE: Authentication check bypassed');
+      // If no user is set, create a mock user
+      if (!req.user) {
+        req.user = {
+          id: 9999,
+          username: 'dev-user',
+          userType: 'professional',
+          isAdmin: false
+        } as any;
+      }
+      return next();
+    }
+    
+    // Normal authentication check for production
     if (req.isAuthenticated()) {
       return next();
     }
@@ -273,6 +293,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   const isAdmin = (req: Request, res: Response, next: Function) => {
+    // In development mode, allow bypass of admin check
+    if (bypassAuth) {
+      console.log('DEVELOPMENT MODE: Admin check bypassed');
+      // Ensure the user is set and has admin flag
+      if (!req.user) {
+        req.user = {
+          id: 9999,
+          username: 'dev-admin',
+          userType: 'admin',
+          isAdmin: true
+        } as any;
+      } else {
+        // Make sure the user is an admin
+        (req.user as any).isAdmin = true;
+        (req.user as any).userType = 'admin';
+      }
+      return next();
+    }
+    
+    // Normal admin check for production
     if (req.isAuthenticated() && req.user && (req.user as User).isAdmin) {
       return next();
     }

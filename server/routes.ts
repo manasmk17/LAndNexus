@@ -4762,7 +4762,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // WebSocket server for real-time messaging
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  // Initialize WebSocketServer with error handling
+  let wss: WebSocketServer;
+  try {
+    wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+    
+    // Handle WebSocketServer errors
+    wss.on('error', (error) => {
+      console.error('WebSocketServer error:', error);
+    });
+  } catch (error) {
+    console.error('Failed to initialize WebSocketServer:', error);
+    // Create a dummy WebSocketServer that won't actually do anything
+    // This prevents the application from crashing if WebSocket initialization fails
+    wss = {
+      on: () => {},
+      clients: new Set(),
+    } as any;
+  }
   
   // Store active connections by userId
   const connections = new Map<number, WebSocket[]>();

@@ -16,8 +16,6 @@ import ResetPassword from "@/pages/reset-password";
 import RecoverUsername from "@/pages/recover-username";
 import ProfessionalDashboard from "@/pages/professional-dashboard";
 import CompanyDashboard from "@/pages/company-dashboard";
-import AdminDashboard from "@/pages/admin/dashboard";
-import AdminLogin from "@/pages/admin-login";
 import Professionals from "@/pages/professionals";
 import ProfessionalProfile from "@/pages/professional-profile";
 import CompanyProfile from "@/pages/company-profile";
@@ -51,7 +49,6 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/recover-username" component={RecoverUsername} />
-      <Route path="/admin/login" component={AdminLogin} />
       <Route path="/professionals" component={Professionals} />
       <Route path="/professional-profile/:id" component={ProfessionalProfile} />
       <Route path="/company-profile/:id" component={CompanyProfile} />
@@ -73,19 +70,6 @@ function Router() {
         userTypes={["company"]} 
       />
       <ProtectedRoute 
-        path="/admin" 
-        component={() => {
-          window.location.href = "/admin/dashboard";
-          return null;
-        }} 
-        userTypes={["admin"]} 
-      />
-      <ProtectedRoute 
-        path="/admin/dashboard" 
-        component={AdminDashboard}
-        userTypes={["admin"]} 
-      />
-      <ProtectedRoute 
         path="/edit-profile" 
         component={EditProfile} 
       />
@@ -97,12 +81,12 @@ function Router() {
       <ProtectedRoute 
         path="/manage-resources" 
         component={ManageResources} 
-        userTypes={["professional", "admin"]} 
+        userTypes={["professional"]} 
       />
       <ProtectedRoute 
         path="/create-resource" 
         component={CreateResource} 
-        userTypes={["professional", "admin"]} 
+        userTypes={["professional"]} 
       />
       <ProtectedRoute 
         path="/career-recommendations" 
@@ -145,41 +129,16 @@ function Router() {
 }
 
 function App() {
-  const [isAdmin, setIsAdmin] = useState(false);
-  
-  useEffect(() => {
-    // Check if current route is admin route or admin login
-    const checkIfAdmin = () => {
-      const currentPath = window.location.pathname;
-      setIsAdmin(currentPath.startsWith('/admin'));
-    };
-    
-    // Initial check
-    checkIfAdmin();
-    
-    // Set up a listener for path changes
-    const handleLocationChange = () => {
-      checkIfAdmin();
-    };
-    
-    window.addEventListener('popstate', handleLocationChange);
-    
-    // Clean up
-    return () => {
-      window.removeEventListener('popstate', handleLocationChange);
-    };
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <DragAndDropProvider>
           <div className="flex flex-col min-h-screen">
-            {!isAdmin && <Navbar />}
-            <main className={`flex-grow ${isAdmin ? 'bg-background' : ''}`}>
+            <Navbar />
+            <main className="flex-grow">
               <Router />
             </main>
-            {!isAdmin && <Footer />}
+            <Footer />
           </div>
           <Toaster />
         </DragAndDropProvider>

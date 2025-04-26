@@ -63,7 +63,9 @@ export default function JobCard({ job }: JobCardProps) {
           </div>
           <div className="ml-4">
             <h3 className="text-xl font-heading font-medium">{job.title}</h3>
-            <p className="text-primary font-medium">{company?.companyName || "Loading..."}</p>
+            <Link href={`/company-profile/${job.companyId}`} className="text-primary font-medium hover:underline">
+              {company?.companyName || "Loading..."}
+            </Link>
           </div>
         </div>
         <Badge className={`

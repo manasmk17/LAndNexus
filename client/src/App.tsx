@@ -22,6 +22,7 @@ import AdminIndex from "@/pages/admin/index";
 import AdminLogin from "@/pages/admin-login";
 import Professionals from "@/pages/professionals";
 import ProfessionalProfile from "@/pages/professional-profile";
+import CompanyProfile from "@/pages/company-profile";
 import EditProfile from "@/pages/edit-profile";
 import Jobs from "@/pages/jobs";
 import PostJob from "@/pages/post-job";
@@ -55,6 +56,7 @@ function Router() {
       <Route path="/admin-login" component={AdminLogin} />
       <Route path="/professionals" component={Professionals} />
       <Route path="/professional-profile/:id" component={ProfessionalProfile} />
+      <Route path="/company-profile/:id" component={CompanyProfile} />
       <Route path="/jobs" component={Jobs} />
       <Route path="/job/:id" component={JobDetail} />
       <Route path="/resources" component={Resources} />

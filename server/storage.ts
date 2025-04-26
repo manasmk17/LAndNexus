@@ -1911,6 +1911,478 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Admin User operations
+  async getAdminUserById(id: number): Promise<AdminUser | undefined> {
+    if (!db) return undefined;
+    
+    const [admin] = await db.select()
+      .from(adminUsers)
+      .where(eq(adminUsers.id, id)) || [];
+    
+    return admin;
+  }
+  
+  async getAdminUserByEmail(email: string): Promise<AdminUser | undefined> {
+    if (!db) return undefined;
+    
+    const [admin] = await db.select()
+      .from(adminUsers)
+      .where(eq(adminUsers.email, email)) || [];
+    
+    return admin;
+  }
+  
+  async getAdminUserByUsername(username: string): Promise<AdminUser | undefined> {
+    if (!db) return undefined;
+    
+    const [admin] = await db.select()
+      .from(adminUsers)
+      .where(eq(adminUsers.username, username)) || [];
+    
+    return admin;
+  }
+  
+  async createAdminUser(adminUser: InsertAdminUser): Promise<AdminUser> {
+    if (!db) throw new Error("Database not available");
+    
+    const [newAdmin] = await db.insert(adminUsers)
+      .values({
+        ...adminUser,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      .returning() || [];
+    
+    return newAdmin;
+  }
+  
+  async updateAdminUser(id: number, userData: Partial<AdminUser>): Promise<AdminUser | undefined> {
+    if (!db) return undefined;
+    
+    const [updatedAdmin] = await db.update(adminUsers)
+      .set({
+        ...userData,
+        updatedAt: new Date()
+      })
+      .where(eq(adminUsers.id, id))
+      .returning() || [];
+    
+    return updatedAdmin;
+  }
+  
+  async deleteAdminUser(id: number): Promise<boolean> {
+    if (!db) return false;
+    
+    const [deletedAdmin] = await db.delete(adminUsers)
+      .where(eq(adminUsers.id, id))
+      .returning() || [];
+    
+    return !!deletedAdmin;
+  }
+  
+  async getAllAdminUsers(): Promise<AdminUser[]> {
+    if (!db) return [];
+    
+    const admins = await db.select()
+      .from(adminUsers) || [];
+    
+    return admins;
+  }
+  
+  // Admin Authentication operations
+  async saveAdminRefreshToken(adminId: number, token: string): Promise<boolean> {
+    if (!db) return false;
+    
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    
+    const [refreshToken] = await db.insert(adminRefreshTokens)
+      .values({
+        adminId,
+        token,
+        expiresAt,
+        createdAt: now,
+        revokedAt: null
+      })
+      .returning() || [];
+    
+    return !!refreshToken;
+  }
+  
+  async validateAdminRefreshToken(adminId: number, token: string): Promise<boolean> {
+    if (!db) return false;
+    
+    const [refreshToken] = await db.select()
+      .from(adminRefreshTokens)
+      .where(and(
+        eq(adminRefreshTokens.adminId, adminId),
+        eq(adminRefreshTokens.token, token),
+        isNull(adminRefreshTokens.revokedAt),
+        gt(adminRefreshTokens.expiresAt, new Date())
+      )) || [];
+    
+    return !!refreshToken;
+  }
+  
+  async rotateAdminRefreshToken(adminId: number, oldToken: string, newToken: string): Promise<boolean> {
+    const isValid = await this.validateAdminRefreshToken(adminId, oldToken);
+    if (!isValid || !db) return false;
+    
+    // Invalidate old token
+    await this.invalidateAdminRefreshToken(adminId, oldToken);
+    
+    // Create new token
+    return this.saveAdminRefreshToken(adminId, newToken);
+  }
+  
+  async invalidateAdminRefreshToken(adminId: number, token: string): Promise<boolean> {
+    if (!db) return false;
+    
+    const [updatedToken] = await db.update(adminRefreshTokens)
+      .set({ revokedAt: new Date() })
+      .where(and(
+        eq(adminRefreshTokens.adminId, adminId),
+        eq(adminRefreshTokens.token, token)
+      ))
+      .returning() || [];
+    
+    return !!updatedToken;
+  }
+  
+  async invalidateAllAdminRefreshTokens(adminId: number): Promise<boolean> {
+    if (!db) return false;
+    
+    const result = await db.update(adminRefreshTokens)
+      .set({ revokedAt: new Date() })
+      .where(and(
+        eq(adminRefreshTokens.adminId, adminId),
+        isNull(adminRefreshTokens.revokedAt)
+      )) || [];
+    
+    return true;
+  }
+  
+  async updateAdminLastLogin(adminId: number): Promise<boolean> {
+    if (!db) return false;
+    
+    const [updatedAdmin] = await db.update(adminUsers)
+      .set({ 
+        lastLogin: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(adminUsers.id, adminId))
+      .returning() || [];
+    
+    return !!updatedAdmin;
+  }
+  
+  async logAdminLoginAttempt(loginAttempt: InsertAdminLoginAttempt): Promise<AdminLoginAttempt> {
+    if (!db) throw new Error("Database not available");
+    
+    const [newLoginAttempt] = await db.insert(adminLoginAttempts)
+      .values({
+        ...loginAttempt,
+        timestamp: new Date()
+      })
+      .returning() || [];
+    
+    return newLoginAttempt;
+  }
+  
+  async updateAdminPassword(adminId: number, newPassword: string): Promise<boolean> {
+    if (!db) return false;
+    
+    const [updatedAdmin] = await db.update(adminUsers)
+      .set({ 
+        password: newPassword,
+        updatedAt: new Date()
+      })
+      .where(eq(adminUsers.id, adminId))
+      .returning() || [];
+    
+    return !!updatedAdmin;
+  }
+  
+  // Admin Two-Factor Authentication operations
+  async saveAdminTOTPSecret(adminId: number, secret: string): Promise<boolean> {
+    // For security, we'll store the temporary TOTP secret directly in the admin user record
+    // with a flag indicating it's not yet verified
+    if (!db) return false;
+    
+    const [updatedAdmin] = await db.update(adminUsers)
+      .set({ 
+        twoFactorSecret: secret,
+        updatedAt: new Date()
+      })
+      .where(eq(adminUsers.id, adminId))
+      .returning() || [];
+    
+    return !!updatedAdmin;
+  }
+  
+  async getAdminTOTPSecret(adminId: number): Promise<string | undefined> {
+    if (!db) return undefined;
+    
+    const [admin] = await db.select()
+      .from(adminUsers)
+      .where(eq(adminUsers.id, adminId)) || [];
+    
+    return admin?.twoFactorSecret || undefined;
+  }
+  
+  async enableAdminTwoFactor(adminId: number, secret: string): Promise<boolean> {
+    if (!db) return false;
+    
+    const [updatedAdmin] = await db.update(adminUsers)
+      .set({ 
+        twoFactorEnabled: true,
+        twoFactorSecret: secret,
+        updatedAt: new Date()
+      })
+      .where(eq(adminUsers.id, adminId))
+      .returning() || [];
+    
+    return !!updatedAdmin;
+  }
+  
+  async disableAdminTwoFactor(adminId: number): Promise<boolean> {
+    if (!db) return false;
+    
+    const [updatedAdmin] = await db.update(adminUsers)
+      .set({ 
+        twoFactorEnabled: false,
+        twoFactorSecret: null,
+        updatedAt: new Date()
+      })
+      .where(eq(adminUsers.id, adminId))
+      .returning() || [];
+    
+    return !!updatedAdmin;
+  }
+  
+  // Admin Logging operations
+  async createAdminActionLog(log: InsertAdminActionLog): Promise<AdminActionLog> {
+    if (!db) throw new Error("Database not available");
+    
+    const [newLog] = await db.insert(adminActionLogs)
+      .values({
+        ...log,
+        timestamp: log.timestamp || new Date()
+      })
+      .returning() || [];
+    
+    return newLog;
+  }
+  
+  async createAdminActivityLog(log: InsertAdminActivityLog): Promise<AdminActivityLog> {
+    if (!db) throw new Error("Database not available");
+    
+    const [newLog] = await db.insert(adminActivityLogs)
+      .values({
+        ...log,
+        timestamp: log.timestamp || new Date()
+      })
+      .returning() || [];
+    
+    return newLog;
+  }
+  
+  async getAdminActionLogs(adminId: number, page: number = 1, pageSize: number = 20): Promise<{logs: AdminActionLog[], total: number}> {
+    if (!db) return { logs: [], total: 0 };
+    
+    // First count total logs
+    const [{ count }] = await db.select({ count: sql`count(*)` })
+      .from(adminActionLogs)
+      .where(eq(adminActionLogs.adminId, adminId)) || [{ count: 0 }];
+    
+    // Then get paginated logs
+    const offset = (page - 1) * pageSize;
+    const logs = await db.select()
+      .from(adminActionLogs)
+      .where(eq(adminActionLogs.adminId, adminId))
+      .orderBy(desc(adminActionLogs.timestamp))
+      .limit(pageSize)
+      .offset(offset) || [];
+    
+    return {
+      logs,
+      total: Number(count)
+    };
+  }
+  
+  // User management from admin perspective
+  async getAllUsersWithPagination(options: {
+    page: number;
+    pageSize: number;
+    sortBy: string;
+    sortOrder: 'asc' | 'desc';
+    search?: string;
+    userType?: string;
+    isActive?: boolean;
+  }): Promise<{users: User[], total: number}> {
+    if (!db) return { users: [], total: 0 };
+    
+    const { page, pageSize, sortBy, sortOrder, search, userType, isActive } = options;
+    const offset = (page - 1) * pageSize;
+    const conditions: SQL<unknown>[] = [];
+    
+    // Apply search filter
+    if (search) {
+      const searchTerm = `%${search.toLowerCase()}%`;
+      conditions.push(
+        sql`(LOWER(${users.username}) LIKE ${searchTerm} OR 
+             LOWER(${users.email}) LIKE ${searchTerm} OR 
+             LOWER(${users.firstName}) LIKE ${searchTerm} OR 
+             LOWER(${users.lastName}) LIKE ${searchTerm})`
+      );
+    }
+    
+    // Apply userType filter
+    if (userType) {
+      conditions.push(eq(users.userType, userType));
+    }
+    
+    // Apply active status filter
+    if (isActive !== undefined) {
+      conditions.push(eq(users.blocked, !isActive));
+    }
+    
+    // Build the WHERE clause
+    const whereClause = conditions.length ? and(...conditions) : undefined;
+    
+    // First count total users
+    const [{ count }] = await db.select({ count: sql`count(*)` })
+      .from(users)
+      .where(whereClause) || [{ count: 0 }];
+    
+    // Build the ORDER BY clause
+    let orderByClause;
+    const column = users[sortBy as keyof typeof users];
+    
+    if (column) {
+      orderByClause = sortOrder === 'asc' ? asc(column) : desc(column);
+    } else {
+      // Default fallback
+      orderByClause = sortOrder === 'asc' ? asc(users.id) : desc(users.id);
+    }
+    
+    // Then get paginated users
+    const userList = await db.select()
+      .from(users)
+      .where(whereClause)
+      .orderBy(orderByClause)
+      .limit(pageSize)
+      .offset(offset) || [];
+    
+    return {
+      users: userList,
+      total: Number(count)
+    };
+  }
+  
+  async getUserActivityLogs(userId: number, options: {page: number, pageSize: number}): Promise<{activityLogs: any[], total: number}> {
+    // In a real implementation, we would collect activity from various tables
+    // For now we'll return empty results
+    return {
+      activityLogs: [],
+      total: 0
+    };
+  }
+  
+  async resetUserPassword(userId: number, newPassword: string): Promise<boolean> {
+    if (!db) return false;
+    
+    const [updatedUser] = await db.update(users)
+      .set({ password: newPassword })
+      .where(eq(users.id, userId))
+      .returning() || [];
+    
+    return !!updatedUser;
+  }
+  
+  async getUserStats(): Promise<{total: number, professionals: number, companies: number, active: number, inactive: number}> {
+    if (!db) return { total: 0, professionals: 0, companies: 0, active: 0, inactive: 0 };
+    
+    const [totalResult] = await db.select({ count: sql`count(*)` })
+      .from(users) || [{ count: 0 }];
+    
+    const [professionalsResult] = await db.select({ count: sql`count(*)` })
+      .from(users)
+      .where(eq(users.userType, 'professional')) || [{ count: 0 }];
+    
+    const [companiesResult] = await db.select({ count: sql`count(*)` })
+      .from(users)
+      .where(eq(users.userType, 'company')) || [{ count: 0 }];
+    
+    const [activeResult] = await db.select({ count: sql`count(*)` })
+      .from(users)
+      .where(eq(users.blocked, false)) || [{ count: 0 }];
+    
+    const [inactiveResult] = await db.select({ count: sql`count(*)` })
+      .from(users)
+      .where(eq(users.blocked, true)) || [{ count: 0 }];
+    
+    return {
+      total: Number(totalResult.count),
+      professionals: Number(professionalsResult.count),
+      companies: Number(companiesResult.count),
+      active: Number(activeResult.count),
+      inactive: Number(inactiveResult.count)
+    };
+  }
+  
+  async getNewUsersCount(since: Date): Promise<number> {
+    if (!db) return 0;
+    
+    const [result] = await db.select({ count: sql`count(*)` })
+      .from(users)
+      .where(gte(users.createdAt, since)) || [{ count: 0 }];
+    
+    return Number(result.count);
+  }
+  
+  async getActiveUsersCount(since: Date): Promise<number> {
+    if (!db) return 0;
+    
+    const [result] = await db.select({ count: sql`count(*)` })
+      .from(users)
+      .where(and(
+        isNotNull(users.lastActiveAt),
+        gte(users.lastActiveAt, since)
+      )) || [{ count: 0 }];
+    
+    return Number(result.count);
+  }
+  
+  async getUserSubscription(userId: number): Promise<any> {
+    if (!db) return null;
+    
+    const [user] = await db.select({
+      id: users.id,
+      stripeCustomerId: users.stripeCustomerId,
+      stripeSubscriptionId: users.stripeSubscriptionId,
+      subscriptionTier: users.subscriptionTier,
+      subscriptionStatus: users.subscriptionStatus
+    })
+    .from(users)
+    .where(eq(users.id, userId)) || [];
+    
+    if (!user || !user.stripeSubscriptionId) return null;
+    
+    // In a real implementation, we would fetch subscription details from Stripe
+    return {
+      id: user.stripeSubscriptionId,
+      tier: user.subscriptionTier,
+      status: user.subscriptionStatus,
+      startDate: new Date(),
+      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    };
+  }
+  
+  async getUserTransactions(userId: number): Promise<any[]> {
+    // In a real implementation, we would fetch transaction history from Stripe
+    return [];
+  }
   // Review operations
   async getReview(id: number): Promise<Review | undefined> {
     const [review] = await db?.select().from(reviews).where(eq(reviews.id, id)) || [];

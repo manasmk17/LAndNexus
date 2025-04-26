@@ -2,12 +2,19 @@ import { Express } from 'express';
 import adminRoutes from './routes/admin.routes';
 import { storage } from '../storage';
 import crypto from 'crypto';
+import { useRealDatabase } from '../db';
 
 /**
  * Create a default admin user for testing if none exists
  */
 async function ensureDefaultAdminExists(): Promise<void> {
   try {
+    // Skip admin user creation for database storage - we'll implement migrations later
+    if (useRealDatabase) {
+      console.log('Running with database storage, skipping default admin user creation until migrations are applied');
+      return;
+    }
+    
     // Check if any admin user exists
     const adminUsers = await storage.getAllAdminUsers();
     

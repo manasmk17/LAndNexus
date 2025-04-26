@@ -1654,20 +1654,224 @@ export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     if (!db) return undefined;
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    
+    try {
+      // Get basic user fields that are guaranteed to exist
+      const query = `
+        SELECT 
+          id, username, password, email, "firstName", "lastName", "userType", 
+          "isAdmin", "createdAt", "stripeCustomerId", "stripeSubscriptionId",
+          "subscriptionTier", "subscriptionStatus", "resetToken", "resetTokenExpiry",
+          "emailVerified", "emailVerificationToken", "googleId", "linkedinId"
+        FROM users 
+        WHERE id = $1
+      `;
+      
+      const result = await (pool?.query(query, [id]));
+      if (!result?.rows || result.rows.length === 0) return undefined;
+      
+      // Convert returned data to User type
+      const user: any = result.rows[0];
+      
+      // Add default values for potentially missing columns
+      if (!('blocked' in user)) user.blocked = false;
+      if (!('blockReason' in user)) user.blockReason = null;
+      if (!('lastActiveAt' in user)) user.lastActiveAt = null;
+      if (!('deleted' in user)) user.deleted = false; 
+      if (!('deletedAt' in user)) user.deletedAt = null;
+      
+      return user;
+    } catch (error) {
+      console.error("Error fetching user by ID:", error);
+      
+      // Fallback to a basic query when the column error occurs
+      try {
+        const [user] = await db.select({
+          id: users.id,
+          username: users.username,
+          password: users.password,
+          email: users.email, 
+          firstName: users.firstName,
+          lastName: users.lastName,
+          userType: users.userType,
+          isAdmin: users.isAdmin,
+          createdAt: users.createdAt,
+          stripeCustomerId: users.stripeCustomerId,
+          stripeSubscriptionId: users.stripeSubscriptionId
+        }).from(users).where(eq(users.id, id));
+        
+        if (!user) return undefined;
+        
+        // Add missing fields with default values
+        return {
+          ...user,
+          subscriptionTier: null,
+          subscriptionStatus: null,
+          resetToken: null,
+          resetTokenExpiry: null,
+          emailVerified: null,
+          emailVerificationToken: null,
+          googleId: null,
+          linkedinId: null,
+          blocked: false,
+          blockReason: null,
+          lastActiveAt: null,
+          deleted: false,
+          deletedAt: null
+        } as User;
+      } catch (fallbackError) {
+        console.error("Fallback query also failed:", fallbackError);
+        return undefined;
+      }
+    }
   }
   
   async getUserByUsername(username: string): Promise<User | undefined> {
     if (!db) return undefined;
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+    
+    try {
+      // Get basic user fields that are guaranteed to exist
+      const query = `
+        SELECT 
+          id, username, password, email, "firstName", "lastName", "userType", 
+          "isAdmin", "createdAt", "stripeCustomerId", "stripeSubscriptionId",
+          "subscriptionTier", "subscriptionStatus", "resetToken", "resetTokenExpiry",
+          "emailVerified", "emailVerificationToken", "googleId", "linkedinId"
+        FROM users 
+        WHERE username = $1
+      `;
+      
+      const result = await (pool?.query(query, [username]));
+      if (!result?.rows || result.rows.length === 0) return undefined;
+      
+      // Convert returned data to User type
+      const user: any = result.rows[0];
+      
+      // Add default values for potentially missing columns
+      if (!('blocked' in user)) user.blocked = false;
+      if (!('blockReason' in user)) user.blockReason = null;
+      if (!('lastActiveAt' in user)) user.lastActiveAt = null;
+      if (!('deleted' in user)) user.deleted = false; 
+      if (!('deletedAt' in user)) user.deletedAt = null;
+      
+      return user;
+    } catch (error) {
+      console.error("Error fetching user by username:", error);
+      
+      // Fallback to a basic query
+      try {
+        const [user] = await db.select({
+          id: users.id,
+          username: users.username,
+          password: users.password,
+          email: users.email, 
+          firstName: users.firstName,
+          lastName: users.lastName,
+          userType: users.userType,
+          isAdmin: users.isAdmin,
+          createdAt: users.createdAt,
+          stripeCustomerId: users.stripeCustomerId,
+          stripeSubscriptionId: users.stripeSubscriptionId
+        }).from(users).where(eq(users.username, username));
+        
+        if (!user) return undefined;
+        
+        // Add missing fields with default values
+        return {
+          ...user,
+          subscriptionTier: null,
+          subscriptionStatus: null,
+          resetToken: null,
+          resetTokenExpiry: null,
+          emailVerified: null,
+          emailVerificationToken: null,
+          googleId: null,
+          linkedinId: null,
+          blocked: false,
+          blockReason: null,
+          lastActiveAt: null,
+          deleted: false,
+          deletedAt: null
+        } as User;
+      } catch (fallbackError) {
+        console.error("Fallback query also failed:", fallbackError);
+        return undefined;
+      }
+    }
   }
   
   async getUserByEmail(email: string): Promise<User | undefined> {
     if (!db) return undefined;
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user;
+    
+    try {
+      // Get basic user fields that are guaranteed to exist
+      const query = `
+        SELECT 
+          id, username, password, email, "firstName", "lastName", "userType", 
+          "isAdmin", "createdAt", "stripeCustomerId", "stripeSubscriptionId",
+          "subscriptionTier", "subscriptionStatus", "resetToken", "resetTokenExpiry",
+          "emailVerified", "emailVerificationToken", "googleId", "linkedinId"
+        FROM users 
+        WHERE email = $1
+      `;
+      
+      const result = await (pool?.query(query, [email]));
+      if (!result?.rows || result.rows.length === 0) return undefined;
+      
+      // Convert returned data to User type
+      const user: any = result.rows[0];
+      
+      // Add default values for potentially missing columns
+      if (!('blocked' in user)) user.blocked = false;
+      if (!('blockReason' in user)) user.blockReason = null;
+      if (!('lastActiveAt' in user)) user.lastActiveAt = null;
+      if (!('deleted' in user)) user.deleted = false; 
+      if (!('deletedAt' in user)) user.deletedAt = null;
+      
+      return user;
+    } catch (error) {
+      console.error("Error fetching user by email:", error);
+      
+      // Fallback to a basic query
+      try {
+        const [user] = await db.select({
+          id: users.id,
+          username: users.username,
+          password: users.password,
+          email: users.email, 
+          firstName: users.firstName,
+          lastName: users.lastName,
+          userType: users.userType,
+          isAdmin: users.isAdmin,
+          createdAt: users.createdAt,
+          stripeCustomerId: users.stripeCustomerId,
+          stripeSubscriptionId: users.stripeSubscriptionId
+        }).from(users).where(eq(users.email, email));
+        
+        if (!user) return undefined;
+        
+        // Add missing fields with default values
+        return {
+          ...user,
+          subscriptionTier: null,
+          subscriptionStatus: null,
+          resetToken: null,
+          resetTokenExpiry: null,
+          emailVerified: null,
+          emailVerificationToken: null,
+          googleId: null,
+          linkedinId: null,
+          blocked: false,
+          blockReason: null,
+          lastActiveAt: null,
+          deleted: false,
+          deletedAt: null
+        } as User;
+      } catch (fallbackError) {
+        console.error("Fallback query also failed:", fallbackError);
+        return undefined;
+      }
+    }
   }
   
   async getUserBySocialProvider(provider: string, profileId: string): Promise<User | undefined> {

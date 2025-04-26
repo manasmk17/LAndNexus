@@ -21,7 +21,13 @@ import {
   reviews, Review, InsertReview,
   notifications, Notification, InsertNotification,
   notificationTypes, NotificationType, InsertNotificationType,
-  notificationPreferences, NotificationPreference, InsertNotificationPreference
+  notificationPreferences, NotificationPreference, InsertNotificationPreference,
+  // Admin schema types
+  adminUsers, AdminUser, InsertAdminUser,
+  adminRefreshTokens, AdminRefreshToken, InsertAdminRefreshToken,
+  adminActionLogs, AdminActionLog, InsertAdminActionLog,
+  adminActivityLogs, AdminActivityLog, InsertAdminActivityLog,
+  adminLoginAttempts, AdminLoginAttempt, InsertAdminLoginAttempt
 } from "@shared/schema";
 
 export interface IStorage {

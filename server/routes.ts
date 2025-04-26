@@ -59,7 +59,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-02-24.acacia" as any,
 });
 
-// Admin routes removed
+import { registerAdminRoutes } from './admin/admin';
 
 const MemoryStore = memorystore(session);
 
@@ -319,7 +319,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(403).json({ message: "Forbidden: Admin access required" });
   };
 
-  // Admin routes have been removed
+  // Register admin routes
+  registerAdminRoutes(app);
   
   // Add endpoints for /api/users to support the admin dashboard (temporary no auth for development)
   app.get("/api/users", async (req, res) => {

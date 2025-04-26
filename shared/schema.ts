@@ -402,6 +402,112 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
+// Admin Users
+export const adminUsers = pgTable("admin_users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  role: text("role").notNull(), // "super_admin", "admin", "moderator", "analyst"
+  customPermissions: jsonb("custom_permissions"), // Array of permission strings
+  lastLogin: timestamp("last_login"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  twoFactorEnabled: boolean("two_factor_enabled").default(false).notNull(),
+  twoFactorSecret: text("two_factor_secret"),
+});
+
+export const insertAdminUserSchema = createInsertSchema(adminUsers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastLogin: true,
+});
+
+// Admin Refresh Tokens
+export const adminRefreshTokens = pgTable("admin_refresh_tokens", {
+  id: serial("id").primaryKey(),
+  adminId: integer("admin_id").notNull().references(() => adminUsers.id),
+  token: text("token").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  revokedAt: timestamp("revoked_at"),
+});
+
+export const insertAdminRefreshTokenSchema = createInsertSchema(adminRefreshTokens).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Admin Action Logs
+export const adminActionLogs = pgTable("admin_action_logs", {
+  id: serial("id").primaryKey(),
+  adminId: integer("admin_id").notNull().references(() => adminUsers.id),
+  adminUsername: text("admin_username").notNull(),
+  action: text("action").notNull(),
+  entityType: text("entity_type"),
+  entityId: integer("entity_id"),
+  details: text("details"),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export const insertAdminActionLogSchema = createInsertSchema(adminActionLogs).omit({
+  id: true,
+});
+
+// Admin Activity Logs
+export const adminActivityLogs = pgTable("admin_activity_logs", {
+  id: serial("id").primaryKey(),
+  adminId: integer("admin_id").notNull().references(() => adminUsers.id),
+  method: text("method").notNull(),
+  path: text("path").notNull(),
+  statusCode: integer("status_code"),
+  executionTime: integer("execution_time"), // in milliseconds
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export const insertAdminActivityLogSchema = createInsertSchema(adminActivityLogs).omit({
+  id: true,
+});
+
+// Admin Login Attempts
+export const adminLoginAttempts = pgTable("admin_login_attempts", {
+  id: serial("id").primaryKey(),
+  adminId: integer("admin_id").notNull().references(() => adminUsers.id),
+  success: boolean("success").notNull(),
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  details: text("details"),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export const insertAdminLoginAttemptSchema = createInsertSchema(adminLoginAttempts).omit({
+  id: true,
+});
+
+// Export admin types
+export type AdminUser = typeof adminUsers.$inferSelect;
+export type InsertAdminUser = z.infer<typeof insertAdminUserSchema>;
+
+export type AdminRefreshToken = typeof adminRefreshTokens.$inferSelect;
+export type InsertAdminRefreshToken = z.infer<typeof insertAdminRefreshTokenSchema>;
+
+export type AdminActionLog = typeof adminActionLogs.$inferSelect;
+export type InsertAdminActionLog = z.infer<typeof insertAdminActionLogSchema>;
+
+export type AdminActivityLog = typeof adminActivityLogs.$inferSelect;
+export type InsertAdminActivityLog = z.infer<typeof insertAdminActivityLogSchema>;
+
+export type AdminLoginAttempt = typeof adminLoginAttempts.$inferSelect;
+export type InsertAdminLoginAttempt = z.infer<typeof insertAdminLoginAttemptSchema>;
+
 // User Notification Preferences
 export const notificationPreferences = pgTable("notification_preferences", {
   id: serial("id").primaryKey(),

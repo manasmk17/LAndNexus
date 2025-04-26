@@ -1653,8 +1653,70 @@ export class DatabaseStorage implements IStorage {
   
   // User operations
   async getUser(id: number): Promise<User | undefined> {
+    if (!db) return undefined;
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
+  }
+  
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    if (!db) return undefined;
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    if (!db) return undefined;
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+  
+  async getUserBySocialProvider(provider: string, profileId: string): Promise<User | undefined> {
+    if (!db) return undefined;
+    
+    const fieldName = `${provider}Id` as keyof typeof users;
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users[fieldName] as any, profileId));
+    
+    return user;
+  }
+  
+  async linkSocialAccount(userId: number, provider: string, profileId: string): Promise<User | undefined> {
+    if (!db) return undefined;
+    
+    const fieldName = `${provider}Id` as keyof typeof users;
+    const [updatedUser] = await db
+      .update(users)
+      .set({ [fieldName]: profileId })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    return updatedUser;
+  }
+  
+  async createUserFromSocial(user: Partial<InsertUser> & { email: string; username: string; password: string }): Promise<User> {
+    if (!db) throw new Error("Database connection not available");
+    
+    // Insert the user
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        username: user.username,
+        password: user.password,
+        email: user.email,
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        userType: user.userType || "professional",
+        isAdmin: user.isAdmin || false,
+        emailVerified: user.emailVerified || false,
+        profilePhotoUrl: user.profilePhotoUrl || null,
+        googleId: user.googleId || null,
+        linkedinId: user.linkedinId || null,
+      })
+      .returning();
+    
+    return newUser;
   }
   
   // Password and account recovery operations
@@ -1726,15 +1788,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
-  }
-
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user;
-  }
+  // These methods are already defined above
   
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users);

@@ -16,9 +16,7 @@ import ResetPassword from "@/pages/reset-password";
 import RecoverUsername from "@/pages/recover-username";
 import ProfessionalDashboard from "@/pages/professional-dashboard";
 import CompanyDashboard from "@/pages/company-dashboard";
-import AdminPage from "@/pages/admin-page";
-import AdminTest from "@/pages/admin-test";
-import AdminIndex from "@/pages/admin/index";
+import AdminDashboard from "@/pages/admin/dashboard";
 import AdminLogin from "@/pages/admin-login";
 import Professionals from "@/pages/professionals";
 import ProfessionalProfile from "@/pages/professional-profile";
@@ -63,9 +61,6 @@ function Router() {
       <Route path="/resource/:id" component={ResourceDetail} />
       <Route path="/forum" component={Forum} />
       <Route path="/pages/:slug" component={PageView} />
-      <Route path="/admin-test" component={AdminTest} />
-      <Route path="/admin-page" component={AdminPage} />
-
       {/* Protected routes with user type restrictions */}
       <ProtectedRoute 
         path="/professional-dashboard" 
@@ -87,10 +82,7 @@ function Router() {
       />
       <ProtectedRoute 
         path="/admin/dashboard" 
-        component={() => {
-          const Dashboard = require("@/pages/admin/dashboard").default;
-          return <Dashboard />;
-        }}
+        component={AdminDashboard}
         userTypes={["admin"]} 
       />
       <ProtectedRoute 
@@ -159,7 +151,7 @@ function App() {
     // Check if current route is admin route or admin login
     const checkIfAdmin = () => {
       const currentPath = window.location.pathname;
-      setIsAdmin(currentPath.startsWith('/admin') || currentPath === '/admin-login' || currentPath === '/admin-page');
+      setIsAdmin(currentPath.startsWith('/admin') || currentPath === '/admin-login');
     };
     
     // Initial check

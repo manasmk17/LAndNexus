@@ -82,7 +82,7 @@ export default function FreelancerManagement() {
     error,
     refetch
   } = useQuery<ProfessionalProfile[]>({
-    queryKey: ['/api/professional-profiles'],
+    queryKey: ['/api/admin/professional-profiles'],
     queryFn: getQueryFn({ on401: 'throw' }),
     staleTime: 5000 // Very short stale time to force refreshes
   });
@@ -90,7 +90,7 @@ export default function FreelancerManagement() {
   // Toggle featured status mutation
   const toggleFeaturedMutation = useMutation({
     mutationFn: async ({ id, featured }: { id: number, featured: boolean }) => {
-      const response = await apiRequest('PATCH', `/api/professional-profiles/${id}`, {
+      const response = await apiRequest('PATCH', `/api/admin/professional-profiles/${id}`, {
         featured
       });
       return response;
@@ -118,7 +118,7 @@ export default function FreelancerManagement() {
   // Toggle verified status mutation
   const toggleVerifiedMutation = useMutation({
     mutationFn: async ({ id, verified }: { id: number, verified: boolean }) => {
-      const response = await apiRequest('PATCH', `/api/professional-profiles/${id}`, {
+      const response = await apiRequest('PATCH', `/api/admin/professional-profiles/${id}`, {
         verified
       });
       return response;

@@ -1,4 +1,4 @@
-import { db, useRealDatabase } from "./db";
+import { db, useRealDatabase, pool } from "./db";
 import { and, asc, desc, eq, or, isNull, not, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import {
@@ -1877,26 +1877,127 @@ export class DatabaseStorage implements IStorage {
   async getUserBySocialProvider(provider: string, profileId: string): Promise<User | undefined> {
     if (!db) return undefined;
     
-    const fieldName = `${provider}Id` as keyof typeof users;
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users[fieldName] as any, profileId));
-    
-    return user;
+    try {
+      const fieldName = `${provider}Id` as keyof typeof users;
+      
+      // Use raw SQL query to handle potential missing columns
+      const query = `
+        SELECT 
+          id, username, password, email, "firstName", "lastName", "userType", 
+          "isAdmin", "createdAt", "stripeCustomerId", "stripeSubscriptionId",
+          "subscriptionTier", "subscriptionStatus", "resetToken", "resetTokenExpiry",
+          "emailVerified", "emailVerificationToken", "googleId", "linkedinId"
+        FROM users 
+        WHERE "${provider}Id" = $1
+      `;
+      
+      const result = await pool?.query(query, [profileId]);
+      if (!result?.rows || result.rows.length === 0) return undefined;
+      
+      // Convert returned data to User type
+      const user: any = result.rows[0];
+      
+      // Add default values for potentially missing columns
+      if (!('blocked' in user)) user.blocked = false;
+      if (!('blockReason' in user)) user.blockReason = null;
+      if (!('lastActiveAt' in user)) user.lastActiveAt = null;
+      if (!('deleted' in user)) user.deleted = false; 
+      if (!('deletedAt' in user)) user.deletedAt = null;
+      
+      return user;
+    } catch (error) {
+      console.error("Error fetching user by social provider:", error);
+      
+      // Fallback to standard ORM query if raw query fails
+      try {
+        const fieldName = `${provider}Id` as keyof typeof users;
+        const [user] = await db.select({
+          id: users.id,
+          username: users.username,
+          password: users.password,
+          email: users.email, 
+          firstName: users.firstName,
+          lastName: users.lastName,
+          userType: users.userType,
+          isAdmin: users.isAdmin,
+          createdAt: users.createdAt,
+          stripeCustomerId: users.stripeCustomerId,
+          stripeSubscriptionId: users.stripeSubscriptionId,
+          [fieldName]: users[fieldName] as any
+        }).from(users).where(eq(users[fieldName] as any, profileId));
+        
+        if (!user) return undefined;
+        
+        // Add missing fields with default values
+        return {
+          ...user,
+          subscriptionTier: null,
+          subscriptionStatus: null,
+          resetToken: null,
+          resetTokenExpiry: null,
+          emailVerified: null,
+          emailVerificationToken: null,
+          googleId: null,
+          linkedinId: null,
+          blocked: false,
+          blockReason: null,
+          lastActiveAt: null,
+          deleted: false,
+          deletedAt: null
+        } as User;
+      } catch (fallbackError) {
+        console.error("Fallback query also failed:", fallbackError);
+        return undefined;
+      }
+    }
   }
   
   async linkSocialAccount(userId: number, provider: string, profileId: string): Promise<User | undefined> {
     if (!db) return undefined;
     
-    const fieldName = `${provider}Id` as keyof typeof users;
-    const [updatedUser] = await db
-      .update(users)
-      .set({ [fieldName]: profileId })
-      .where(eq(users.id, userId))
-      .returning();
-    
-    return updatedUser;
+    try {
+      const fieldName = `${provider}Id` as keyof typeof users;
+      
+      // First, make sure the user exists
+      const existingUser = await this.getUser(userId);
+      if (!existingUser) {
+        console.error(`User with ID ${userId} not found for social linking`);
+        return undefined;
+      }
+      
+      // Use raw SQL for update to avoid column errors
+      const query = `
+        UPDATE users
+        SET "${provider}Id" = $1
+        WHERE id = $2
+        RETURNING id, username, email, "firstName", "lastName", "userType", 
+                 "isAdmin", "createdAt", "googleId", "linkedinId"
+      `;
+      
+      const result = await pool?.query(query, [profileId, userId]);
+      if (!result?.rows || result.rows.length === 0) return undefined;
+      
+      // Return updated user with default values for any missing fields
+      const updatedUser = await this.getUser(userId);
+      return updatedUser;
+    } catch (error) {
+      console.error(`Error linking ${provider} account:`, error);
+      
+      // Fallback to standard ORM update
+      try {
+        const fieldName = `${provider}Id` as keyof typeof users;
+        const [updatedUser] = await db
+          .update(users)
+          .set({ [fieldName]: profileId })
+          .where(eq(users.id, userId))
+          .returning();
+        
+        return updatedUser;
+      } catch (fallbackError) {
+        console.error("Fallback update also failed:", fallbackError);
+        return undefined;
+      }
+    }
   }
   
   async createUserFromSocial(user: Partial<InsertUser> & { email: string; username: string; password: string }): Promise<User> {

@@ -308,6 +308,238 @@ export function registerAdminRoutes(app: Express) {
     }
   });
   
+  // User management routes for admin actions
+  
+  // Get specific user details
+  app.get("/api/admin/users/:id", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      console.error(`Error retrieving user ${req.params.id}:`, error);
+      res.status(500).json({ message: "Failed to retrieve user details" });
+    }
+  });
+  
+  // Update user (admin action)
+  app.patch("/api/admin/users/:id", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Update user with allowable admin fields
+      const updatedUser = await storage.updateUser(userId, req.body);
+      
+      // Record the admin action
+      const adminId = (req.user as User).id;
+      const adminUsername = (req.user as User).username;
+      recordAdminAction(
+        adminId, 
+        adminUsername, 
+        "updated", 
+        `Updated user profile for ${user.username || user.email}`, 
+        "user", 
+        userId
+      );
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error(`Error updating user ${req.params.id}:`, error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+  
+  // Block user
+  app.post("/api/admin/users/:id/block", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const { reason } = req.body;
+      if (!reason) {
+        return res.status(400).json({ message: "Block reason is required" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Check if already blocked
+      if (user.blocked) {
+        return res.status(400).json({ message: "User is already blocked" });
+      }
+      
+      // Perform block with direct SQL query if needed
+      try {
+        // Try updating with standard ORM method first
+        const updatedUser = await storage.updateUser(userId, { 
+          blocked: true,
+          blockReason: reason
+        });
+        
+        // Record the admin action
+        const adminId = (req.user as User).id;
+        const adminUsername = (req.user as User).username;
+        recordAdminAction(
+          adminId, 
+          adminUsername, 
+          "blocked", 
+          `Blocked user ${user.username || user.email}. Reason: ${reason}`, 
+          "user", 
+          userId
+        );
+        
+        res.json(updatedUser);
+      } catch (error) {
+        console.error(`Error blocking user ${userId}:`, error);
+        res.status(500).json({ message: "Failed to block user" });
+      }
+    } catch (error) {
+      console.error(`Error processing block user request for ${req.params.id}:`, error);
+      res.status(500).json({ message: "Failed to process block user request" });
+    }
+  });
+  
+  // Unblock user
+  app.post("/api/admin/users/:id/unblock", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Check if already unblocked
+      if (!user.blocked) {
+        return res.status(400).json({ message: "User is not blocked" });
+      }
+      
+      // Perform unblock
+      try {
+        // Try updating with standard ORM method first
+        const updatedUser = await storage.updateUser(userId, { 
+          blocked: false,
+          blockReason: null
+        });
+        
+        // Record the admin action
+        const adminId = (req.user as User).id;
+        const adminUsername = (req.user as User).username;
+        recordAdminAction(
+          adminId, 
+          adminUsername, 
+          "unblocked", 
+          `Unblocked user ${user.username || user.email}`, 
+          "user", 
+          userId
+        );
+        
+        res.json(updatedUser);
+      } catch (error) {
+        console.error(`Error unblocking user ${userId}:`, error);
+        res.status(500).json({ message: "Failed to unblock user" });
+      }
+    } catch (error) {
+      console.error(`Error processing unblock user request for ${req.params.id}:`, error);
+      res.status(500).json({ message: "Failed to process unblock user request" });
+    }
+  });
+  
+  // Delete user (soft delete)
+  app.delete("/api/admin/users/:id", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // First try to perform soft delete
+      try {
+        const now = new Date();
+        const updatedUser = await storage.updateUser(userId, {
+          deleted: true,
+          deletedAt: now
+        });
+        
+        // Record the admin action
+        const adminId = (req.user as User).id;
+        const adminUsername = (req.user as User).username;
+        recordAdminAction(
+          adminId, 
+          adminUsername, 
+          "deleted", 
+          `Soft-deleted user ${user.username || user.email}`, 
+          "user", 
+          userId
+        );
+        
+        res.json({ success: true, message: "User deleted successfully" });
+      } catch (softDeleteError) {
+        console.error(`Soft delete failed for user ${userId}, attempting hard delete:`, softDeleteError);
+        
+        try {
+          // If soft delete fails, attempt hard delete
+          const success = await storage.deleteUser(userId);
+          
+          if (success) {
+            // Record the admin action for hard delete
+            const adminId = (req.user as User).id;
+            const adminUsername = (req.user as User).username;
+            recordAdminAction(
+              adminId, 
+              adminUsername, 
+              "hard-deleted", 
+              `Hard-deleted user ${user.username || user.email}`, 
+              "user", 
+              userId
+            );
+            
+            res.json({ success: true, message: "User permanently deleted successfully" });
+          } else {
+            res.status(500).json({ message: "Failed to delete user" });
+          }
+        } catch (hardDeleteError) {
+          console.error(`Hard delete also failed for user ${userId}:`, hardDeleteError);
+          res.status(500).json({ 
+            message: "Failed to delete user", 
+            error: (hardDeleteError as Error).message 
+          });
+        }
+      }
+    } catch (error) {
+      console.error(`Error processing delete user request for ${req.params.id}:`, error);
+      res.status(500).json({ message: "Failed to process delete user request" });
+    }
+  });
+  
   app.get("/api/admin/professional-profiles", async (req, res) => {
     try {
       const profiles = await storage.getAllProfessionalProfiles();

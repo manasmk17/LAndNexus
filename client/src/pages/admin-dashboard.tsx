@@ -1522,7 +1522,7 @@ function ResourcesTab() {
                 </Label>
                 <Input
                   id="edit-image"
-                  value={editingResource.imageUrl || ""}
+                  value={editingResource.imageUrl || "none"}
                   onChange={(e) => setEditingResource({...editingResource, imageUrl: e.target.value})}
                   className="col-span-3"
                   placeholder="https://example.com/image.jpg"
@@ -1554,17 +1554,17 @@ function ResourcesTab() {
                   Category
                 </Label>
                 <Select 
-                  value={editingResource.categoryId?.toString() || "0"}
+                  value={editingResource.categoryId?.toString() || "uncategorized"}
                   onValueChange={(value) => setEditingResource({
                     ...editingResource, 
-                    categoryId: value === "0" ? null : parseInt(value)
+                    categoryId: value === "uncategorized" ? null : parseInt(value)
                   })}
                 >
                   <SelectTrigger id="edit-category" className="col-span-3">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="0">Uncategorized</SelectItem>
+                    <SelectItem value="uncategorized">Uncategorized</SelectItem>
                     {categories.map((category) => (
                       <SelectItem key={category.id} value={category.id.toString()}>
                         {category.name}

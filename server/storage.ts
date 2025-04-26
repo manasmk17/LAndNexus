@@ -2142,10 +2142,7 @@ export class DatabaseStorage implements IStorage {
           reset_token AS "resetToken", reset_token_expiry AS "resetTokenExpiry",
           email_verified AS "emailVerified", 
           email_verification_token AS "emailVerificationToken", 
-          google_id AS "googleId", linkedin_id AS "linkedinId",
-          blocked, block_reason AS "blockReason", 
-          last_active_at AS "lastActiveAt",
-          deleted, deleted_at AS "deletedAt"
+          google_id AS "googleId", linkedin_id AS "linkedinId"
         FROM users
       `;
       

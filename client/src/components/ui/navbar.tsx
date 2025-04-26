@@ -105,6 +105,9 @@ export default function Navbar() {
                     <Link href="/admin-dashboard" className="px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-md transition-colors">
                       Admin Dashboard
                     </Link>
+                    <Link href="/admin-page" className="px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-md transition-colors">
+                      Admin Page
+                    </Link>
                     <Link href="/admin-test" className="px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-md transition-colors">
                       Admin Test
                     </Link>
@@ -249,6 +252,12 @@ export default function Navbar() {
                           : "text-slate-700 hover:text-blue-600 hover:bg-slate-50"}`}>
                           <Settings className={`h-5 w-5 mr-3 ${isActive("/admin-dashboard") ? "text-blue-700" : "text-slate-500"}`} />
                           Admin Dashboard
+                        </Link>
+                        <Link href="/admin-page" className={`flex items-center px-3 py-2.5 rounded-md mt-1 ${isActive("/admin-page") 
+                          ? "text-blue-700 font-medium bg-blue-50" 
+                          : "text-slate-700 hover:text-blue-600 hover:bg-slate-50"}`}>
+                          <Settings className={`h-5 w-5 mr-3 ${isActive("/admin-page") ? "text-blue-700" : "text-slate-500"}`} />
+                          Admin Page
                         </Link>
                         <Link href="/admin-test" className={`flex items-center px-3 py-2.5 rounded-md mt-1 ${isActive("/admin-test") 
                           ? "text-blue-700 font-medium bg-blue-50" 

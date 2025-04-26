@@ -53,8 +53,16 @@ interface DashboardStats {
   professionals: number;
   companies: number;
   jobPostings: number;
+  activeJobPostings: number;
+  completedJobPostings: number;
   resources: number;
   revenue: number;
+  commissions: number;
+  transactionCount: number;
+  applications: number;
+  hires: number;
+  responseRate: number;
+  hireRate: number;
   recentActivity: ActivityItem[];
 }
 
@@ -134,8 +142,15 @@ export default function DashboardStats() {
         {
           title: "Job Postings",
           value: stats.jobPostings.toString(),
-          description: "Active opportunities",
+          description: "Total opportunities",
           icon: <FileText className="h-4 w-4 text-muted-foreground" />,
+          trend: "up"
+        },
+        {
+          title: "Active Jobs",
+          value: (stats.activeJobPostings || 0).toString(),
+          description: "Open opportunities",
+          icon: <Activity className="h-4 w-4 text-muted-foreground" />,
           trend: "up"
         },
         {
@@ -146,8 +161,22 @@ export default function DashboardStats() {
           trend: "up"
         },
         {
+          title: "Applications",
+          value: (stats.applications || 0).toString(),
+          description: "Total job applications",
+          icon: <FileText className="h-4 w-4 text-muted-foreground" />,
+          trend: "up"
+        },
+        {
+          title: "Completed Jobs",
+          value: (stats.completedJobPostings || 0).toString(),
+          description: "Finished projects",
+          icon: <Briefcase className="h-4 w-4 text-muted-foreground" />,
+          trend: "up"
+        },
+        {
           title: "Revenue",
-          value: `$${stats.revenue.toLocaleString()}`,
+          value: `$${(stats.revenue || 0).toLocaleString()}`,
           description: "Platform revenue",
           icon: <CreditCard className="h-4 w-4 text-muted-foreground" />,
           trend: "up"

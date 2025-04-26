@@ -10,6 +10,14 @@ export let useRealDatabase = false;
 export let pool: Pool | null = null;
 export let db: ReturnType<typeof drizzle> | null = null;
 
+// Safe database access helper function
+export function getDB(): ReturnType<typeof drizzle> {
+  if (!db) {
+    throw new Error('Database not initialized. Use in-memory storage until database is available.');
+  }
+  return db;
+}
+
 // Initialize database with safe retry functionality
 export const initializeDatabase = async () => {
   try {

@@ -1,4 +1,4 @@
-import { db, useRealDatabase, pool } from "./db";
+import { db, useRealDatabase, pool, getDB } from "./db";
 import { and, asc, desc, eq, or, isNull, not, sql, gt, gte, isNotNull } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { AdminRole, AdminPermission } from "./admin/types/admin.types";
@@ -2632,11 +2632,27 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getUserNotificationPreference(userId: number, typeId: number): Promise<NotificationPreference | undefined> {
-    const [preference] = await db?.select()
-      .from(notificationPreferences)
-      .where(eq(notificationPreferences.userId, userId))
-      .where(eq(notificationPreferences.typeId, typeId)) || [];
-    return preference;
+    if (!useRealDatabase) {
+      // In-memory implementation
+      const preference = Array.from(this.notificationPreferences.values())
+        .find(p => p.userId === userId && p.typeId === typeId);
+      return preference;
+    }
+
+    try {
+      // Database implementation with proper error handling
+      const [preference] = await getDB()
+        .select()
+        .from(notificationPreferences)
+        .where(and(
+          eq(notificationPreferences.userId, userId),
+          eq(notificationPreferences.typeId, typeId)
+        )) || [];
+      return preference;
+    } catch (error) {
+      console.error("Error getting user notification preference:", error);
+      return undefined;
+    }
   }
   
   async getUserNotificationPreferences(userId: number): Promise<NotificationPreference[]> {

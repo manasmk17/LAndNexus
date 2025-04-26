@@ -102,14 +102,8 @@ export default function Navbar() {
               <div className="hidden md:flex items-center space-x-2">
                 {user.isAdmin ? (
                   <>
-                    <Link href="/admin-dashboard" className="px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-md transition-colors">
+                    <Link href="/admin/dashboard" className="px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-md transition-colors">
                       Admin Dashboard
-                    </Link>
-                    <Link href="/admin-page" className="px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-md transition-colors">
-                      Admin Page
-                    </Link>
-                    <Link href="/admin-test" className="px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-md transition-colors">
-                      Admin Test
                     </Link>
                   </>
                 ) : user.userType === "professional" ? (
@@ -247,23 +241,11 @@ export default function Navbar() {
                   <li className="pt-2 mt-2 border-t border-slate-100">
                     {user.isAdmin ? (
                       <>
-                        <Link href="/admin-dashboard" className={`flex items-center px-3 py-2.5 rounded-md ${isActive("/admin-dashboard") 
+                        <Link href="/admin/dashboard" className={`flex items-center px-3 py-2.5 rounded-md ${isActive("/admin/dashboard") 
                           ? "text-blue-700 font-medium bg-blue-50" 
                           : "text-slate-700 hover:text-blue-600 hover:bg-slate-50"}`}>
-                          <Settings className={`h-5 w-5 mr-3 ${isActive("/admin-dashboard") ? "text-blue-700" : "text-slate-500"}`} />
+                          <Settings className={`h-5 w-5 mr-3 ${isActive("/admin/dashboard") ? "text-blue-700" : "text-slate-500"}`} />
                           Admin Dashboard
-                        </Link>
-                        <Link href="/admin-page" className={`flex items-center px-3 py-2.5 rounded-md mt-1 ${isActive("/admin-page") 
-                          ? "text-blue-700 font-medium bg-blue-50" 
-                          : "text-slate-700 hover:text-blue-600 hover:bg-slate-50"}`}>
-                          <Settings className={`h-5 w-5 mr-3 ${isActive("/admin-page") ? "text-blue-700" : "text-slate-500"}`} />
-                          Admin Page
-                        </Link>
-                        <Link href="/admin-test" className={`flex items-center px-3 py-2.5 rounded-md mt-1 ${isActive("/admin-test") 
-                          ? "text-blue-700 font-medium bg-blue-50" 
-                          : "text-slate-700 hover:text-blue-600 hover:bg-slate-50"}`}>
-                          <Settings className={`h-5 w-5 mr-3 ${isActive("/admin-test") ? "text-blue-700" : "text-slate-500"}`} />
-                          Admin Test
                         </Link>
                       </>
                     ) : user.userType === "professional" ? (

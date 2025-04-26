@@ -60,7 +60,7 @@ export default function ResourcesPanel() {
 
   const { data: categories = [] } = useQuery({
     queryKey: ['/api/resource-categories'],
-    queryFn: getQueryFn<ResourceCategory[]>(),
+    queryFn: getQueryFn<ResourceCategory[]>({ on401: "returnNull" }),
   });
 
   // Get category names by ID

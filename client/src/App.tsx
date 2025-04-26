@@ -146,12 +146,29 @@ function Router() {
 
 function App() {
   const [isAdmin, setIsAdmin] = useState(false);
-  const location = window.location.pathname;
   
   useEffect(() => {
     // Check if current route is admin route or admin login
-    setIsAdmin(location.startsWith('/admin') || location === '/admin-login');
-  }, [location]);
+    const checkIfAdmin = () => {
+      const currentPath = window.location.pathname;
+      setIsAdmin(currentPath.startsWith('/admin') || currentPath === '/admin-login' || currentPath === '/admin-page');
+    };
+    
+    // Initial check
+    checkIfAdmin();
+    
+    // Set up a listener for path changes
+    const handleLocationChange = () => {
+      checkIfAdmin();
+    };
+    
+    window.addEventListener('popstate', handleLocationChange);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+    };
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

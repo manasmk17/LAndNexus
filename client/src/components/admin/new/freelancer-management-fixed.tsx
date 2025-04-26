@@ -54,8 +54,18 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getQueryFn, apiRequest } from "@/lib/queryClient";
-import { invalidateQueries } from "@/lib/cachingHelpers";
 import { ProfessionalProfile } from "@shared/schema";
+
+// Simple utility to help with cache invalidation
+function invalidateQueries(queryKeys: string[], queryClient: any) {
+  queryKeys.forEach(key => {
+    try {
+      queryClient.invalidateQueries({ queryKey: [key] });
+    } catch (error) {
+      console.error(`Failed to invalidate query for key ${key}:`, error);
+    }
+  });
+}
 
 export default function FreelancerManagement() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -69,12 +79,14 @@ export default function FreelancerManagement() {
     data: freelancers = [], 
     isLoading,
     isError,
-    error
+    error,
+    refetch
   } = useQuery<ProfessionalProfile[]>({
     queryKey: ['/api/professional-profiles'],
-    queryFn: getQueryFn({ on401: 'throw' })
+    queryFn: getQueryFn({ on401: 'throw' }),
+    staleTime: 5000 // Very short stale time to force refreshes
   });
-
+  
   // Toggle featured status mutation
   const toggleFeaturedMutation = useMutation({
     mutationFn: async ({ id, featured }: { id: number, featured: boolean }) => {
@@ -91,8 +103,8 @@ export default function FreelancerManagement() {
         '/api/admin/dashboard-stats'
       ], queryClient);
       
-      // Force a refetch to ensure updated data
-      queryClient.refetchQueries({ queryKey: ['/api/professional-profiles'] });
+      // Force refetch of the profiles data
+      refetch();
     },
     onError: (error: Error) => {
       toast({
@@ -119,8 +131,8 @@ export default function FreelancerManagement() {
         '/api/admin/dashboard-stats'
       ], queryClient);
       
-      // Force a refetch to ensure updated data
-      queryClient.refetchQueries({ queryKey: ['/api/professional-profiles'] });
+      // Force refetch of the profiles data
+      refetch();
     },
     onError: (error: Error) => {
       toast({
@@ -145,8 +157,8 @@ export default function FreelancerManagement() {
         '/api/admin/dashboard-stats'
       ], queryClient);
       
-      // Force a refetch to ensure updated data
-      queryClient.refetchQueries({ queryKey: ['/api/professional-profiles'] });
+      // Force refetch of the profiles data
+      refetch();
       
       setDeleteDialogOpen(false);
       setFreelancerToDelete(null);
@@ -230,6 +242,15 @@ export default function FreelancerManagement() {
     deleteMutation.mutate(freelancerToDelete);
   };
 
+  // Refresh button
+  const handleRefresh = () => {
+    refetch();
+    toast({
+      title: "Refreshing data",
+      description: "Getting the latest professional profiles",
+    });
+  };
+
   // Loading state
   if (isLoading) {
     return (
@@ -269,7 +290,7 @@ export default function FreelancerManagement() {
           <h2 className="text-3xl font-bold tracking-tight">Freelancer Management</h2>
           <Button 
             variant="outline" 
-            onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/professional-profiles'] })}
+            onClick={() => refetch()}
             className="flex items-center gap-2"
           >
             <AlertTriangle className="h-4 w-4 text-destructive" />
@@ -302,6 +323,10 @@ export default function FreelancerManagement() {
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold tracking-tight">Freelancer Management</h2>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={handleRefresh} className="flex items-center gap-1">
+            <Loader2 className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </Button>
           <Button className="flex items-center gap-1">
             <UserPlus className="h-4 w-4" />
             <span className="hidden sm:inline">Add Freelancer</span>
@@ -488,29 +513,25 @@ export default function FreelancerManagement() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
-              Delete Professional
-            </AlertDialogTitle>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the professional profile
-              and remove all associated data from our servers.
+              This action cannot be undone. This will permanently delete the
+              professional profile and all associated data.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleDeleteConfirm}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              disabled={deleteMutation.isPending}
+              className="bg-destructive hover:bg-destructive/90"
             >
               {deleteMutation.isPending ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Deleting...
                 </>
               ) : (
-                "Delete"
+                "Delete Profile"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

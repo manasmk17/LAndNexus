@@ -471,8 +471,17 @@ window.addEventListener('unhandledrejection', event => {
     // Prevent the default browser handling of the error
     event.preventDefault();
   } else if (event.reason) {
-    // Log but don't prevent default for other errors
+    // In development mode, we'll prevent all unhandled rejections from appearing in the console
+    // This improves the developer experience while implementing social login where
+    // we expect some rejections due to missing credentials
     console.warn('Unhandled promise rejection (not React Query):', event.reason);
+    
+    // If we're in development (not production), suppress all unhandled rejections
+    // to prevent console noise during development/testing
+    // For production, we would want to see these errors
+    if (import.meta.env.DEV) {
+      event.preventDefault();
+    }
   }
 });
 

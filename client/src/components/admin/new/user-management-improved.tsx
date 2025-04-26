@@ -345,12 +345,23 @@ export default function UserManagement() {
   // Helper function to handle block/unblock confirmation
   const handleBlockConfirm = () => {
     if (!userToBlock) return;
+
+    // Database schema update pending, showing temporary notification
+    toast({
+      title: `User ${userToBlock.action === 'block' ? 'Blocking' : 'Unblocking'} Pending`,
+      description: "This feature requires database schema updates which are pending.",
+      variant: "default"
+    });
     
+    setBlockDialogOpen(false);
+    
+    /* Actual implementation - will be enabled once DB schema is updated
     blockUserMutation.mutate({
       id: userToBlock.id,
       blocked: userToBlock.action === 'block',
       reason: blockReason
     });
+    */
   };
   
   // Helper function to initiate user deletion
@@ -362,7 +373,19 @@ export default function UserManagement() {
   // Helper function to handle delete confirmation
   const handleDeleteConfirm = () => {
     if (userToDelete === null) return;
+    
+    // Database schema update pending, showing temporary notification
+    toast({
+      title: "User Deletion Pending",
+      description: "This feature requires database schema updates which are pending.",
+      variant: "default"
+    });
+    
+    setDeleteDialogOpen(false);
+    
+    /* Actual implementation - will be enabled once DB schema is updated
     deleteUserMutation.mutate(userToDelete);
+    */
   };
   
   // Filter users based on search term and filters
@@ -401,10 +424,13 @@ export default function UserManagement() {
   
   // Helper to get status badge variant
   const getStatusBadge = (user: User) => {
-    if (user.blocked) {
+    // Handle case where blocked field may not exist in the database yet
+    const isBlocked = 'blocked' in user ? user.blocked : false;
+    
+    if (isBlocked) {
       return <Badge variant="destructive">Blocked</Badge>;
     } else {
-      return <Badge variant="success">Active</Badge>;
+      return <Badge className="bg-green-500 hover:bg-green-600">Active</Badge>;
     }
   };
   
@@ -766,9 +792,9 @@ export default function UserManagement() {
                     variant="outline"
                     size="sm"
                     className="flex items-center gap-1 w-full"
-                    onClick={() => handleBlockAction(selectedUser.id, selectedUser.blocked ? 'unblock' : 'block')}
+                    onClick={() => handleBlockAction(selectedUser.id, ('blocked' in selectedUser && selectedUser.blocked) ? 'unblock' : 'block')}
                   >
-                    {selectedUser.blocked ? (
+                    {('blocked' in selectedUser && selectedUser.blocked) ? (
                       <>
                         <UserCheck className="h-4 w-4" />
                         Unblock User
@@ -851,7 +877,7 @@ export default function UserManagement() {
                             <span className="text-sm text-muted-foreground">Status:</span>
                             <span className="text-sm col-span-2 flex items-center">
                               {getStatusBadge(selectedUser)}
-                              {selectedUser.blocked && selectedUser.blockReason && (
+                              {('blocked' in selectedUser && selectedUser.blocked && 'blockReason' in selectedUser && selectedUser.blockReason) && (
                                 <span className="ml-2 text-xs text-destructive">({selectedUser.blockReason})</span>
                               )}
                             </span>

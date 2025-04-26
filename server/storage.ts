@@ -48,6 +48,53 @@ export interface IStorage {
   getUserByResetToken(token: string): Promise<User | undefined>;
   resetPassword(token: string, newPassword: string): Promise<boolean>;
   
+  // Admin User operations
+  getAdminUserById(id: number): Promise<AdminUser | undefined>;
+  getAdminUserByEmail(email: string): Promise<AdminUser | undefined>;
+  getAdminUserByUsername(username: string): Promise<AdminUser | undefined>;
+  createAdminUser(adminUser: InsertAdminUser): Promise<AdminUser>;
+  updateAdminUser(id: number, userData: Partial<AdminUser>): Promise<AdminUser | undefined>;
+  deleteAdminUser(id: number): Promise<boolean>;
+  getAllAdminUsers(): Promise<AdminUser[]>;
+  
+  // Admin Authentication operations
+  saveAdminRefreshToken(adminId: number, token: string): Promise<boolean>;
+  validateAdminRefreshToken(adminId: number, token: string): Promise<boolean>;
+  rotateAdminRefreshToken(adminId: number, oldToken: string, newToken: string): Promise<boolean>;
+  invalidateAdminRefreshToken(adminId: number, token: string): Promise<boolean>;
+  invalidateAllAdminRefreshTokens(adminId: number): Promise<boolean>;
+  updateAdminLastLogin(adminId: number): Promise<boolean>;
+  logAdminLoginAttempt(loginAttempt: InsertAdminLoginAttempt): Promise<AdminLoginAttempt>;
+  
+  // Admin Two-Factor Authentication operations
+  saveAdminTOTPSecret(adminId: number, secret: string): Promise<boolean>;
+  getAdminTOTPSecret(adminId: number): Promise<string | undefined>;
+  enableAdminTwoFactor(adminId: number, secret: string): Promise<boolean>;
+  disableAdminTwoFactor(adminId: number): Promise<boolean>;
+  
+  // Admin Logging operations
+  createAdminActionLog(log: InsertAdminActionLog): Promise<AdminActionLog>;
+  createAdminActivityLog(log: InsertAdminActivityLog): Promise<AdminActivityLog>;
+  getAdminActionLogs(adminId: number, page?: number, pageSize?: number): Promise<{logs: AdminActionLog[], total: number}>;
+  
+  // User management from admin perspective
+  getAllUsersWithPagination(options: {
+    page: number;
+    pageSize: number;
+    sortBy: string;
+    sortOrder: 'asc' | 'desc';
+    search?: string;
+    userType?: string;
+    isActive?: boolean;
+  }): Promise<{users: User[], total: number}>;
+  getUserActivityLogs(userId: number, options: {page: number, pageSize: number}): Promise<{activityLogs: any[], total: number}>;
+  resetUserPassword(userId: number, newPassword: string): Promise<boolean>;
+  getUserStats(): Promise<{total: number, professionals: number, companies: number, active: number, inactive: number}>;
+  getNewUsersCount(since: Date): Promise<number>;
+  getActiveUsersCount(since: Date): Promise<number>;
+  getUserSubscription(userId: number): Promise<any>;
+  getUserTransactions(userId: number): Promise<any[]>;
+  
   // Stripe operations
   updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined>;
   updateStripeSubscriptionId(userId: number, subscriptionId: string): Promise<User | undefined>;
@@ -209,6 +256,14 @@ export class MemStorage implements IStorage {
   private notifications: Map<number, Notification>;
   private notificationPreferences: Map<number, NotificationPreference>;
   
+  // Admin data structures
+  private adminUsers: Map<number, AdminUser>;
+  private adminRefreshTokens: Map<string, AdminRefreshToken>; // Using token as the key
+  private adminActionLogs: Map<number, AdminActionLog>;
+  private adminActivityLogs: Map<number, AdminActivityLog>;
+  private adminLoginAttempts: Map<number, AdminLoginAttempt>;
+  private adminTempTOTPSecrets: Map<number, string>; // Temporary storage for TOTP secrets
+  
   private userId: number;
   private profProfileId: number;
   private expertiseId: number;
@@ -225,6 +280,10 @@ export class MemStorage implements IStorage {
   private consultationId: number;
   private skillRecommendationId: number;
   private pageContentId: number;
+  private adminUserId: number;
+  private adminActionLogId: number;
+  private adminActivityLogId: number;
+  private adminLoginAttemptId: number;
   private reviewId: number;
   private notificationTypeId: number;
   private notificationId: number;
@@ -253,6 +312,14 @@ export class MemStorage implements IStorage {
     this.notifications = new Map();
     this.notificationPreferences = new Map();
     
+    // Initialize admin data structures
+    this.adminUsers = new Map();
+    this.adminRefreshTokens = new Map();
+    this.adminActionLogs = new Map();
+    this.adminActivityLogs = new Map();
+    this.adminLoginAttempts = new Map();
+    this.adminTempTOTPSecrets = new Map();
+    
     this.userId = 1;
     this.profProfileId = 1;
     this.expertiseId = 1;
@@ -273,6 +340,10 @@ export class MemStorage implements IStorage {
     this.notificationTypeId = 1;
     this.notificationId = 1;
     this.notificationPreferenceId = 1;
+    this.adminUserId = 1;
+    this.adminActionLogId = 1;
+    this.adminActivityLogId = 1;
+    this.adminLoginAttemptId = 1;
     
     // Initialize with some expertise areas
     this.initExpertise();
@@ -1412,19 +1483,430 @@ export class MemStorage implements IStorage {
     
     if (existing) {
       // Update existing preference
-      const updated = { ...existing, ...preference };
+      const updated = { 
+        ...existing,
+        email: preference.email !== undefined ? preference.email : existing.email,
+        inApp: preference.inApp !== undefined ? preference.inApp : existing.inApp,
+      };
       this.notificationPreferences.set(existing.id, updated);
       return updated;
     } else {
       // Create new preference
       const id = this.notificationPreferenceId++;
       const newPreference: NotificationPreference = {
-        ...preference,
-        id
+        id,
+        userId: preference.userId,
+        typeId: preference.typeId,
+        email: preference.email !== undefined ? preference.email : true,
+        inApp: preference.inApp !== undefined ? preference.inApp : true,
       };
       this.notificationPreferences.set(id, newPreference);
       return newPreference;
     }
+  }
+  
+  // Admin User operations
+  async getAdminUserById(id: number): Promise<AdminUser | undefined> {
+    return this.adminUsers.get(id);
+  }
+  
+  async getAdminUserByEmail(email: string): Promise<AdminUser | undefined> {
+    return Array.from(this.adminUsers.values()).find(user => user.email === email);
+  }
+  
+  async getAdminUserByUsername(username: string): Promise<AdminUser | undefined> {
+    return Array.from(this.adminUsers.values()).find(user => user.username === username);
+  }
+  
+  async createAdminUser(adminUser: InsertAdminUser): Promise<AdminUser> {
+    const id = this.adminUserId++;
+    const now = new Date();
+    
+    const newAdminUser: AdminUser = {
+      id,
+      username: adminUser.username,
+      email: adminUser.email,
+      password: adminUser.password,
+      firstName: adminUser.firstName,
+      lastName: adminUser.lastName,
+      role: adminUser.role,
+      customPermissions: adminUser.customPermissions || null,
+      lastLogin: null,
+      createdAt: now,
+      updatedAt: now,
+      isActive: adminUser.isActive !== undefined ? adminUser.isActive : true,
+      twoFactorEnabled: adminUser.twoFactorEnabled !== undefined ? adminUser.twoFactorEnabled : false,
+      twoFactorSecret: adminUser.twoFactorSecret || null,
+    };
+    
+    this.adminUsers.set(id, newAdminUser);
+    return newAdminUser;
+  }
+  
+  async updateAdminUser(id: number, userData: Partial<AdminUser>): Promise<AdminUser | undefined> {
+    const user = this.adminUsers.get(id);
+    if (!user) return undefined;
+    
+    const updatedUser: AdminUser = {
+      ...user,
+      ...userData,
+      updatedAt: new Date()
+    };
+    
+    this.adminUsers.set(id, updatedUser);
+    return updatedUser;
+  }
+  
+  async deleteAdminUser(id: number): Promise<boolean> {
+    return this.adminUsers.delete(id);
+  }
+  
+  async getAllAdminUsers(): Promise<AdminUser[]> {
+    return Array.from(this.adminUsers.values());
+  }
+  
+  // Admin Authentication operations
+  async saveAdminRefreshToken(adminId: number, token: string): Promise<boolean> {
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    
+    const refreshToken: AdminRefreshToken = {
+      id: this.adminLoginAttemptId++,
+      adminId,
+      token,
+      expiresAt,
+      createdAt: now,
+      revokedAt: null
+    };
+    
+    this.adminRefreshTokens.set(token, refreshToken);
+    return true;
+  }
+  
+  async validateAdminRefreshToken(adminId: number, token: string): Promise<boolean> {
+    const refreshToken = this.adminRefreshTokens.get(token);
+    if (!refreshToken) return false;
+    
+    const now = new Date();
+    return (
+      refreshToken.adminId === adminId &&
+      refreshToken.revokedAt === null &&
+      refreshToken.expiresAt > now
+    );
+  }
+  
+  async rotateAdminRefreshToken(adminId: number, oldToken: string, newToken: string): Promise<boolean> {
+    const isValid = await this.validateAdminRefreshToken(adminId, oldToken);
+    if (!isValid) return false;
+    
+    // Invalidate old token
+    await this.invalidateAdminRefreshToken(adminId, oldToken);
+    
+    // Create new token
+    return this.saveAdminRefreshToken(adminId, newToken);
+  }
+  
+  async invalidateAdminRefreshToken(adminId: number, token: string): Promise<boolean> {
+    const refreshToken = this.adminRefreshTokens.get(token);
+    if (!refreshToken || refreshToken.adminId !== adminId) return false;
+    
+    const updatedToken = {
+      ...refreshToken,
+      revokedAt: new Date()
+    };
+    
+    this.adminRefreshTokens.set(token, updatedToken);
+    return true;
+  }
+  
+  async invalidateAllAdminRefreshTokens(adminId: number): Promise<boolean> {
+    let success = true;
+    
+    for (const [token, refreshToken] of this.adminRefreshTokens.entries()) {
+      if (refreshToken.adminId === adminId && refreshToken.revokedAt === null) {
+        const updated = {
+          ...refreshToken,
+          revokedAt: new Date()
+        };
+        this.adminRefreshTokens.set(token, updated);
+      }
+    }
+    
+    return success;
+  }
+  
+  async updateAdminLastLogin(adminId: number): Promise<boolean> {
+    const admin = await this.getAdminUserById(adminId);
+    if (!admin) return false;
+    
+    const updated = {
+      ...admin,
+      lastLogin: new Date(),
+      updatedAt: new Date()
+    };
+    
+    this.adminUsers.set(adminId, updated);
+    return true;
+  }
+  
+  async logAdminLoginAttempt(loginAttempt: InsertAdminLoginAttempt): Promise<AdminLoginAttempt> {
+    const id = this.adminLoginAttemptId++;
+    const now = new Date();
+    
+    const newLoginAttempt: AdminLoginAttempt = {
+      id,
+      adminId: loginAttempt.adminId,
+      success: loginAttempt.success,
+      ipAddress: loginAttempt.ipAddress || null,
+      userAgent: loginAttempt.userAgent || null,
+      details: loginAttempt.details || null,
+      timestamp: now
+    };
+    
+    this.adminLoginAttempts.set(id, newLoginAttempt);
+    return newLoginAttempt;
+  }
+  
+  // Admin Two-Factor Authentication operations
+  async saveAdminTOTPSecret(adminId: number, secret: string): Promise<boolean> {
+    this.adminTempTOTPSecrets.set(adminId, secret);
+    return true;
+  }
+  
+  async getAdminTOTPSecret(adminId: number): Promise<string | undefined> {
+    const admin = await this.getAdminUserById(adminId);
+    
+    // If 2FA is enabled, return the permanent secret
+    if (admin?.twoFactorEnabled && admin.twoFactorSecret) {
+      return admin.twoFactorSecret;
+    }
+    
+    // Otherwise return the temporary secret if available
+    return this.adminTempTOTPSecrets.get(adminId);
+  }
+  
+  async enableAdminTwoFactor(adminId: number, secret: string): Promise<boolean> {
+    const admin = await this.getAdminUserById(adminId);
+    if (!admin) return false;
+    
+    const updated = {
+      ...admin,
+      twoFactorEnabled: true,
+      twoFactorSecret: secret,
+      updatedAt: new Date()
+    };
+    
+    this.adminUsers.set(adminId, updated);
+    
+    // Clear the temporary secret
+    this.adminTempTOTPSecrets.delete(adminId);
+    
+    return true;
+  }
+  
+  async disableAdminTwoFactor(adminId: number): Promise<boolean> {
+    const admin = await this.getAdminUserById(adminId);
+    if (!admin) return false;
+    
+    const updated = {
+      ...admin,
+      twoFactorEnabled: false,
+      twoFactorSecret: null,
+      updatedAt: new Date()
+    };
+    
+    this.adminUsers.set(adminId, updated);
+    return true;
+  }
+  
+  // Admin Logging operations
+  async createAdminActionLog(log: InsertAdminActionLog): Promise<AdminActionLog> {
+    const id = this.adminActionLogId++;
+    
+    const newLog: AdminActionLog = {
+      id,
+      adminId: log.adminId,
+      adminUsername: log.adminUsername,
+      action: log.action,
+      entityType: log.entityType || null,
+      entityId: log.entityId || null,
+      details: log.details || null,
+      ipAddress: log.ipAddress || null,
+      userAgent: log.userAgent || null,
+      timestamp: log.timestamp || new Date()
+    };
+    
+    this.adminActionLogs.set(id, newLog);
+    return newLog;
+  }
+  
+  async createAdminActivityLog(log: InsertAdminActivityLog): Promise<AdminActivityLog> {
+    const id = this.adminActivityLogId++;
+    
+    const newLog: AdminActivityLog = {
+      id,
+      adminId: log.adminId,
+      method: log.method,
+      path: log.path,
+      statusCode: log.statusCode || null,
+      executionTime: log.executionTime || null,
+      ipAddress: log.ipAddress || null,
+      userAgent: log.userAgent || null,
+      timestamp: log.timestamp || new Date()
+    };
+    
+    this.adminActivityLogs.set(id, newLog);
+    return newLog;
+  }
+  
+  async getAdminActionLogs(adminId: number, page: number = 1, pageSize: number = 20): Promise<{logs: AdminActionLog[], total: number}> {
+    const allLogs = Array.from(this.adminActionLogs.values())
+      .filter(log => log.adminId === adminId)
+      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    
+    return {
+      logs: allLogs.slice(start, end),
+      total: allLogs.length
+    };
+  }
+  
+  // User management from admin perspective
+  async getAllUsersWithPagination(options: {
+    page: number;
+    pageSize: number;
+    sortBy: string;
+    sortOrder: 'asc' | 'desc';
+    search?: string;
+    userType?: string;
+    isActive?: boolean;
+  }): Promise<{users: User[], total: number}> {
+    const { page, pageSize, sortBy, sortOrder, search, userType, isActive } = options;
+    
+    let filteredUsers = Array.from(this.users.values()).filter(user => {
+      let match = true;
+      
+      if (search) {
+        const searchLower = search.toLowerCase();
+        match = match && (
+          user.username.toLowerCase().includes(searchLower) ||
+          user.email.toLowerCase().includes(searchLower) ||
+          user.firstName.toLowerCase().includes(searchLower) ||
+          user.lastName.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      if (userType) {
+        match = match && user.userType === userType;
+      }
+      
+      if (isActive !== undefined) {
+        match = match && !user.blocked === isActive;
+      }
+      
+      return match;
+    });
+    
+    // Sort users
+    filteredUsers.sort((a, b) => {
+      const aValue = a[sortBy as keyof User];
+      const bValue = b[sortBy as keyof User];
+      
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortOrder === 'asc' 
+          ? aValue.localeCompare(bValue) 
+          : bValue.localeCompare(aValue);
+      } else if (aValue instanceof Date && bValue instanceof Date) {
+        return sortOrder === 'asc' 
+          ? aValue.getTime() - bValue.getTime() 
+          : bValue.getTime() - aValue.getTime();
+      } else if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+      } else if (typeof aValue === 'boolean' && typeof bValue === 'boolean') {
+        return sortOrder === 'asc' 
+          ? (aValue ? 1 : 0) - (bValue ? 1 : 0) 
+          : (bValue ? 1 : 0) - (aValue ? 1 : 0);
+      }
+      
+      return 0;
+    });
+    
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    
+    return {
+      users: filteredUsers.slice(start, end),
+      total: filteredUsers.length
+    };
+  }
+  
+  async getUserActivityLogs(userId: number, options: {page: number, pageSize: number}): Promise<{activityLogs: any[], total: number}> {
+    // In a real implementation, we would query user activity from various tables
+    // For this in-memory implementation, we'll return empty results
+    return {
+      activityLogs: [],
+      total: 0
+    };
+  }
+  
+  async resetUserPassword(userId: number, newPassword: string): Promise<boolean> {
+    const user = await this.getUser(userId);
+    if (!user) return false;
+    
+    const updated = {
+      ...user,
+      password: newPassword
+    };
+    
+    this.users.set(userId, updated);
+    return true;
+  }
+  
+  async getUserStats(): Promise<{total: number, professionals: number, companies: number, active: number, inactive: number}> {
+    const users = Array.from(this.users.values());
+    
+    return {
+      total: users.length,
+      professionals: users.filter(u => u.userType === 'professional').length,
+      companies: users.filter(u => u.userType === 'company').length,
+      active: users.filter(u => !u.blocked).length,
+      inactive: users.filter(u => u.blocked).length
+    };
+  }
+  
+  async getNewUsersCount(since: Date): Promise<number> {
+    return Array.from(this.users.values())
+      .filter(user => user.createdAt >= since)
+      .length;
+  }
+  
+  async getActiveUsersCount(since: Date): Promise<number> {
+    return Array.from(this.users.values())
+      .filter(user => user.lastActiveAt && user.lastActiveAt >= since)
+      .length;
+  }
+  
+  async getUserSubscription(userId: number): Promise<any> {
+    const user = await this.getUser(userId);
+    if (!user) return null;
+    
+    if (!user.stripeSubscriptionId) return null;
+    
+    // In a real implementation, we would fetch subscription details from Stripe
+    return {
+      id: user.stripeSubscriptionId,
+      tier: user.subscriptionTier,
+      status: user.subscriptionStatus,
+      startDate: new Date(),
+      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+    };
+  }
+  
+  async getUserTransactions(userId: number): Promise<any[]> {
+    // In a real implementation, we would fetch transaction history from Stripe
+    return [];
   }
 }
 

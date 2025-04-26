@@ -1,402 +1,391 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getQueryFn, apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
-import { PageContent } from '@shared/schema';
-
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, getQueryFn } from "@/lib/queryClient";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
+  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from "@/components/ui/tabs";
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, Eye, Search, X, MoreHorizontal, AlertCircle, Edit, FileText, Plus, Trash } from 'lucide-react';
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { Edit, Trash, Eye, FileText, ExternalLink, Plus, Search } from "lucide-react";
 
-export function ContentPanel() {
+// Interface for content pages
+interface Page {
+  id: number;
+  slug: string;
+  title: string;
+  content: string;
+  metaDescription?: string;
+  published: boolean;
+  createdAt: string;
+  updatedAt?: string;
+  createdBy: number;
+  lastEditedBy?: number;
+}
+
+export default function ContentPanel() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
-  const [selectedContent, setSelectedContent] = useState<PageContent | null>(null);
-  const [newContent, setNewContent] = useState<Partial<PageContent>>({
-    title: '',
-    slug: '',
-    content: '',
-    description: '',
-    published: true,
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [selectedPage, setSelectedPage] = useState<Page | null>(null);
+  const [newPage, setNewPage] = useState<Partial<Page>>({
+    title: "",
+    slug: "",
+    content: "",
+    metaDescription: "",
+    published: false
+  });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [publishedFilter, setPublishedFilter] = useState<boolean | null>(null);
+
+  // Fetch all pages
+  const { data: pages = [], isLoading } = useQuery({
+    queryKey: ['/api/admin/pages'],
+    queryFn: getQueryFn<Page[]>({ on401: "throw" }),
   });
 
-  // Fetch content
-  const {
-    data: contents = [],
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['/api/admin/page-contents'],
-    queryFn: getQueryFn<PageContent[]>({ on401: 'throw' }),
+  // Apply filters
+  const filteredPages = pages.filter(page => {
+    const matchesSearch = searchQuery === "" || 
+      page.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      page.slug.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesPublished = publishedFilter === null || 
+      page.published === publishedFilter;
+    
+    return matchesSearch && matchesPublished;
   });
 
-  // Filter content based on search query
-  const filteredContents = searchQuery
-    ? contents.filter(
-        (content) =>
-          content.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          content.slug?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          content.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : contents;
+  const handleViewDetails = (page: Page) => {
+    setSelectedPage(page);
+    setShowDetailsDialog(true);
+  };
 
-  // Create content mutation
-  const createContentMutation = useMutation({
-    mutationFn: async (contentData: Partial<PageContent>) => {
-      const response = await apiRequest('POST', '/api/admin/page-contents', contentData);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/page-contents'] });
+  const handleEdit = (page: Page) => {
+    setSelectedPage({...page});
+    setShowDialog(true);
+  };
+
+  const handleCreate = () => {
+    setNewPage({
+      title: "",
+      slug: "",
+      content: "",
+      metaDescription: "",
+      published: false
+    });
+    setShowCreateDialog(true);
+  };
+
+  const handleSave = async () => {
+    if (!selectedPage) return;
+    
+    try {
+      await apiRequest("PATCH", `/api/admin/pages/${selectedPage.id}`, selectedPage);
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/pages'] });
+      toast({
+        title: "Page Updated",
+        description: `Page "${selectedPage.title}" has been updated.`,
+      });
+      setShowDialog(false);
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: error instanceof Error ? error.message : "Failed to update page",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSaveNew = async () => {
+    try {
+      await apiRequest("POST", "/api/admin/pages", newPage);
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/pages'] });
+      toast({
+        title: "Page Created",
+        description: `Page "${newPage.title}" has been created.`,
+      });
       setShowCreateDialog(false);
-      setNewContent({
-        title: '',
-        slug: '',
-        content: '',
-        description: '',
-        published: true,
-      });
+    } catch (error) {
       toast({
-        title: 'Content Created',
-        description: 'New page content has been created successfully.',
+        title: "Creation Failed",
+        description: error instanceof Error ? error.message : "Failed to create page",
+        variant: "destructive",
       });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Creation Failed',
-        description: error.message || 'Failed to create new content',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Update content mutation
-  const updateContentMutation = useMutation({
-    mutationFn: async (contentData: PageContent) => {
-      const response = await apiRequest('PATCH', `/api/admin/page-contents/${contentData.id}`, contentData);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/page-contents'] });
-      setShowEditDialog(false);
-      toast({
-        title: 'Content Updated',
-        description: 'Page content has been updated successfully.',
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Update Failed',
-        description: error.message || 'Failed to update content',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Delete content mutation
-  const deleteContentMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await apiRequest('DELETE', `/api/admin/page-contents/${id}`);
-      return response.status === 204 ? {} : response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/page-contents'] });
-      setShowDeleteDialog(false);
-      setSelectedContent(null);
-      toast({
-        title: 'Content Deleted',
-        description: 'Page content has been deleted successfully.',
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Delete Failed',
-        description: error.message || 'Failed to delete content',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const handleCreateContent = () => {
-    // Validate fields
-    if (!newContent.title || !newContent.slug || !newContent.content) {
-      toast({
-        title: 'Validation Error',
-        description: 'Title, slug, and content are required fields.',
-        variant: 'destructive',
-      });
-      return;
     }
-
-    createContentMutation.mutate(newContent);
   };
 
-  const handleEditContent = () => {
-    if (!selectedContent) return;
-
-    // Validate fields
-    if (!selectedContent.title || !selectedContent.slug || !selectedContent.content) {
+  const handleDelete = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this page? This action cannot be undone.")) return;
+    
+    try {
+      await apiRequest("DELETE", `/api/admin/pages/${id}`);
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/pages'] });
       toast({
-        title: 'Validation Error',
-        description: 'Title, slug, and content are required fields.',
-        variant: 'destructive',
+        title: "Page Deleted",
+        description: "The page has been deleted successfully.",
       });
-      return;
+    } catch (error) {
+      toast({
+        title: "Delete Failed",
+        description: error instanceof Error ? error.message : "Failed to delete page",
+        variant: "destructive",
+      });
     }
-
-    updateContentMutation.mutate(selectedContent);
   };
 
-  if (error) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col items-center justify-center text-center p-6">
-            <AlertCircle className="h-10 w-10 text-destructive mb-2" />
-            <h3 className="text-lg font-semibold">Error Loading Content</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {error instanceof Error ? error.message : 'Could not load page content data'}
-            </p>
-            <Button 
-              variant="outline" 
-              className="mt-4"
-              onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/admin/page-contents'] })}
-            >
-              Retry
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const togglePublished = async (page: Page) => {
+    try {
+      await apiRequest("PATCH", `/api/admin/pages/${page.id}`, {
+        ...page,
+        published: !page.published
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/pages'] });
+      toast({
+        title: page.published ? "Page Unpublished" : "Page Published",
+        description: `"${page.title}" is now ${page.published ? "unpublished" : "published"}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: error instanceof Error ? error.message : "Failed to update page status",
+        variant: "destructive",
+      });
+    }
+  };
 
-  // Function to convert slug to URL
-  const getPageUrl = (slug: string) => {
-    return `/page/${slug}`;
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    }).format(date);
+  };
+
+  // Generate a slug from title
+  const generateSlug = (title: string) => {
+    return title
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-')     // Replace spaces with hyphens
+      .replace(/-+/g, '-');     // Remove consecutive hyphens
   };
 
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-center">
+        <div className="flex items-center justify-between">
           <div>
-            <CardTitle>Page Content Management</CardTitle>
-            <CardDescription>Create and manage content pages</CardDescription>
+            <CardTitle className="text-xl font-bold">Content Management</CardTitle>
+            <CardDescription>
+              Manage website pages and static content
+            </CardDescription>
           </div>
-          <Button onClick={() => setShowCreateDialog(true)} className="flex items-center gap-1">
-            <Plus className="h-4 w-4" /> Add New Page
+          <Button onClick={handleCreate}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Page
           </Button>
         </div>
-        <div className="flex items-center mt-4 gap-2">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <div className="flex items-center gap-4 mt-4">
+          <div className="relative w-full sm:max-w-xs">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search pages..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-8"
             />
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-0 top-0 h-9 w-9"
-                onClick={() => setSearchQuery('')}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
           </div>
+          <div className="flex items-center space-x-2">
+            <Label htmlFor="published-all" className="cursor-pointer">All</Label>
+            <Input 
+              id="published-all" 
+              type="radio" 
+              className="w-4 h-4" 
+              checked={publishedFilter === null}
+              onChange={() => setPublishedFilter(null)}
+            />
+            
+            <Label htmlFor="published-yes" className="cursor-pointer">Published</Label>
+            <Input 
+              id="published-yes" 
+              type="radio" 
+              className="w-4 h-4" 
+              checked={publishedFilter === true}
+              onChange={() => setPublishedFilter(true)}
+            />
+            
+            <Label htmlFor="published-no" className="cursor-pointer">Unpublished</Label>
+            <Input 
+              id="published-no" 
+              type="radio" 
+              className="w-4 h-4" 
+              checked={publishedFilter === false}
+              onChange={() => setPublishedFilter(false)}
+            />
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              setSearchQuery("");
+              setPublishedFilter(null);
+            }}
+          >
+            Reset
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="flex justify-center items-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <div className="flex justify-center p-8">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
           </div>
         ) : (
           <div className="rounded-md border">
             <Table>
+              <TableCaption>List of {filteredPages.length} pages</TableCaption>
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
                   <TableHead>Slug</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead className="text-center">Published</TableHead>
                   <TableHead>Created</TableHead>
-                  <TableHead>Updated</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>Last Updated</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredContents.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
-                      No content pages found
+                {filteredPages.map((page) => (
+                  <TableRow key={page.id}>
+                    <TableCell className="font-medium">{page.title}</TableCell>
+                    <TableCell>/{page.slug}</TableCell>
+                    <TableCell className="text-center">
+                      <Switch 
+                        checked={page.published} 
+                        onCheckedChange={() => togglePublished(page)}
+                        aria-label="Toggle published status"
+                      />
+                    </TableCell>
+                    <TableCell>{formatDate(page.createdAt)}</TableCell>
+                    <TableCell>{page.updatedAt ? formatDate(page.updatedAt) : "Never"}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => handleViewDetails(page)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(page)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => handleDelete(page.id)}
+                          disabled={page.slug === 'home' || page.slug === 'about' || page.slug === 'terms' || page.slug === 'privacy'}
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                        <a 
+                          href={`/pages/${page.slug}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center h-8 w-8 rounded-md text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </div>
                     </TableCell>
                   </TableRow>
-                ) : (
-                  filteredContents.map((content) => (
-                    <TableRow key={content.id}>
-                      <TableCell className="font-medium">{content.title}</TableCell>
-                      <TableCell className="font-mono text-xs">{content.slug}</TableCell>
-                      <TableCell>
-                        <Badge variant={content.published ? 'default' : 'outline'}>
-                          {content.published ? 'Published' : 'Draft'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {content.createdAt ? new Date(content.createdAt).toLocaleDateString() : 'N/A'}
-                      </TableCell>
-                      <TableCell>
-                        {content.updatedAt ? new Date(content.updatedAt).toLocaleDateString() : 'N/A'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedContent(content);
-                                setShowDetailsDialog(true);
-                              }}
-                            >
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedContent(content);
-                                setShowEditDialog(true);
-                              }}
-                            >
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => window.open(getPageUrl(content.slug), '_blank')}
-                            >
-                              <FileText className="mr-2 h-4 w-4" />
-                              View Page
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => {
-                                setSelectedContent(content);
-                                setShowDeleteDialog(true);
-                              }}
-                            >
-                              <Trash className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                ))}
+                {filteredPages.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      No pages found
+                    </TableCell>
+                  </TableRow>
                 )}
               </TableBody>
             </Table>
           </div>
         )}
+      </CardContent>
 
-        {/* Create Content Dialog */}
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Create New Page</DialogTitle>
-              <DialogDescription>
-                Add a new content page to the website
-              </DialogDescription>
-            </DialogHeader>
+      {/* Edit Page Dialog */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Page</DialogTitle>
+            <DialogDescription>
+              Update page content and settings
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedPage && (
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="title" className="text-right">
-                  Page Title
+                  Title
                 </Label>
                 <Input
                   id="title"
-                  value={newContent.title || ''}
-                  onChange={(e) => setNewContent({ ...newContent, title: e.target.value })}
+                  value={selectedPage.title}
+                  onChange={(e) => setSelectedPage({...selectedPage, title: e.target.value})}
                   className="col-span-3"
-                  placeholder="Enter page title"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="slug" className="text-right">
-                  URL Slug
+                  Slug
                 </Label>
-                <Input
-                  id="slug"
-                  value={newContent.slug || ''}
-                  onChange={(e) => setNewContent({ ...newContent, slug: e.target.value })}
-                  className="col-span-3"
-                  placeholder="enter-url-slug"
-                />
+                <div className="col-span-3 flex items-center">
+                  <span className="mr-2">/</span>
+                  <Input
+                    id="slug"
+                    value={selectedPage.slug}
+                    onChange={(e) => setSelectedPage({...selectedPage, slug: e.target.value})}
+                    className="flex-1"
+                    disabled={selectedPage.slug === 'home' || selectedPage.slug === 'about' || selectedPage.slug === 'terms' || selectedPage.slug === 'privacy'}
+                  />
+                </div>
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="description" className="text-right">
-                  Description
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label htmlFor="metaDescription" className="text-right pt-2">
+                  Meta Description
                 </Label>
-                <Input
-                  id="description"
-                  value={newContent.description || ''}
-                  onChange={(e) => setNewContent({ ...newContent, description: e.target.value })}
+                <Textarea
+                  id="metaDescription"
+                  value={selectedPage.metaDescription || ""}
+                  onChange={(e) => setSelectedPage({...selectedPage, metaDescription: e.target.value})}
                   className="col-span-3"
-                  placeholder="Brief description of the page"
+                  rows={2}
+                  placeholder="Brief description for search engines"
                 />
               </div>
               <div className="grid grid-cols-4 items-start gap-4">
@@ -405,236 +394,215 @@ export function ContentPanel() {
                 </Label>
                 <Textarea
                   id="content"
-                  value={newContent.content || ''}
-                  onChange={(e) => setNewContent({ ...newContent, content: e.target.value })}
-                  className="col-span-3 min-h-[200px]"
-                  placeholder="Enter page content in HTML format"
+                  value={selectedPage.content}
+                  onChange={(e) => setSelectedPage({...selectedPage, content: e.target.value})}
+                  className="col-span-3"
+                  rows={15}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="published" className="text-right">
+                  Published
+                </Label>
+                <div className="flex items-center space-x-2 col-span-3">
+                  <Switch
+                    id="published"
+                    checked={selectedPage.published}
+                    onCheckedChange={(checked) => setSelectedPage({...selectedPage, published: checked})}
+                  />
+                  <Label htmlFor="published" className="cursor-pointer">
+                    {selectedPage.published ? "Public" : "Draft"}
+                  </Label>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button onClick={handleSave}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Page Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Page</DialogTitle>
+            <DialogDescription>
+              Create a new page for your website
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="new-title" className="text-right">
+                Title
+              </Label>
+              <Input
+                id="new-title"
+                value={newPage.title}
+                onChange={(e) => {
+                  const title = e.target.value;
+                  setNewPage({
+                    ...newPage, 
+                    title,
+                    slug: newPage.slug || generateSlug(title)
+                  });
+                }}
+                className="col-span-3"
+                placeholder="Page Title"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="new-slug" className="text-right">
+                Slug
+              </Label>
+              <div className="col-span-3 flex items-center">
+                <span className="mr-2">/</span>
+                <Input
+                  id="new-slug"
+                  value={newPage.slug}
+                  onChange={(e) => setNewPage({...newPage, slug: e.target.value})}
+                  className="flex-1"
+                  placeholder="page-url-slug"
                 />
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCreateContent}
-                disabled={createContentMutation.isPending}
-              >
-                {createContentMutation.isPending && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                Create Page
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="new-metaDescription" className="text-right pt-2">
+                Meta Description
+              </Label>
+              <Textarea
+                id="new-metaDescription"
+                value={newPage.metaDescription || ""}
+                onChange={(e) => setNewPage({...newPage, metaDescription: e.target.value})}
+                className="col-span-3"
+                rows={2}
+                placeholder="Brief description for search engines"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="new-content" className="text-right pt-2">
+                Content
+              </Label>
+              <Textarea
+                id="new-content"
+                value={newPage.content || ""}
+                onChange={(e) => setNewPage({...newPage, content: e.target.value})}
+                className="col-span-3"
+                rows={15}
+                placeholder="Page content goes here..."
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="new-published" className="text-right">
+                Published
+              </Label>
+              <div className="flex items-center space-x-2 col-span-3">
+                <Switch
+                  id="new-published"
+                  checked={newPage.published || false}
+                  onCheckedChange={(checked) => setNewPage({...newPage, published: checked})}
+                />
+                <Label htmlFor="new-published" className="cursor-pointer">
+                  {newPage.published ? "Publish immediately" : "Save as draft"}
+                </Label>
+              </div>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              onClick={handleSaveNew}
+              disabled={!newPage.title || !newPage.slug || !newPage.content}
+            >
+              Create Page
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-        {/* Edit Content Dialog */}
-        {selectedContent && (
-          <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Edit Page</DialogTitle>
-                <DialogDescription>
-                  Edit content for "{selectedContent.title}"
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="edit-title" className="text-right">
-                    Page Title
-                  </Label>
-                  <Input
-                    id="edit-title"
-                    value={selectedContent.title || ''}
-                    onChange={(e) =>
-                      setSelectedContent({ ...selectedContent, title: e.target.value })
-                    }
-                    className="col-span-3"
-                  />
+      {/* Page Details Dialog */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Page Details</DialogTitle>
+            <DialogDescription>
+              Preview of how the page will look
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedPage && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold">{selectedPage.title}</h2>
+                  <p className="text-muted-foreground">/{selectedPage.slug}</p>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="edit-slug" className="text-right">
-                    URL Slug
-                  </Label>
-                  <Input
-                    id="edit-slug"
-                    value={selectedContent.slug || ''}
-                    onChange={(e) =>
-                      setSelectedContent({ ...selectedContent, slug: e.target.value })
-                    }
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="edit-description" className="text-right">
-                    Description
-                  </Label>
-                  <Input
-                    id="edit-description"
-                    value={selectedContent.description || ''}
-                    onChange={(e) =>
-                      setSelectedContent({ ...selectedContent, description: e.target.value })
-                    }
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-start gap-4">
-                  <Label htmlFor="edit-content" className="text-right pt-2">
-                    Content
-                  </Label>
-                  <Textarea
-                    id="edit-content"
-                    value={selectedContent.content || ''}
-                    onChange={(e) =>
-                      setSelectedContent({ ...selectedContent, content: e.target.value })
-                    }
-                    className="col-span-3 min-h-[200px]"
-                  />
+                <Badge variant={selectedPage.published ? "outline" : "secondary"}>
+                  {selectedPage.published ? "Published" : "Draft"}
+                </Badge>
+              </div>
+              
+              <div className="border-t border-b py-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-semibold">Created:</span>{' '}
+                    {formatDate(selectedPage.createdAt)}
+                  </div>
+                  {selectedPage.updatedAt && (
+                    <div>
+                      <span className="font-semibold">Last Updated:</span>{' '}
+                      {formatDate(selectedPage.updatedAt)}
+                    </div>
+                  )}
+                  {selectedPage.metaDescription && (
+                    <div className="col-span-2">
+                      <span className="font-semibold">SEO Description:</span>{' '}
+                      {selectedPage.metaDescription}
+                    </div>
+                  )}
                 </div>
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleEditContent}
-                  disabled={updateContentMutation.isPending}
-                >
-                  {updateContentMutation.isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  Save Changes
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
-
-        {/* Delete Confirmation Dialog */}
-        {selectedContent && (
-          <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Confirm Deletion</DialogTitle>
-                <DialogDescription>
-                  Are you sure you want to delete the page "{selectedContent.title}"? This action
-                  cannot be undone.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => deleteContentMutation.mutate(selectedContent.id)}
-                  disabled={deleteContentMutation.isPending}
-                >
-                  {deleteContentMutation.isPending && (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
-                  Delete
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
-
-        {/* Content Details Dialog */}
-        {selectedContent && (
-          <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>{selectedContent.title}</DialogTitle>
-                <DialogDescription>
-                  Page content details
-                </DialogDescription>
-              </DialogHeader>
-              <Tabs defaultValue="info" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="info">Information</TabsTrigger>
-                  <TabsTrigger value="preview">Content Preview</TabsTrigger>
-                </TabsList>
-                <TabsContent value="info" className="pt-4">
-                  <div className="grid gap-2">
-                    <div className="grid grid-cols-3">
-                      <div className="font-semibold">URL Slug:</div>
-                      <div className="col-span-2 font-mono text-sm">{selectedContent.slug}</div>
-                    </div>
-                    <div className="grid grid-cols-3">
-                      <div className="font-semibold">Status:</div>
-                      <div className="col-span-2">
-                        <Badge variant={selectedContent.published ? 'default' : 'outline'}>
-                          {selectedContent.published ? 'Published' : 'Draft'}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3">
-                      <div className="font-semibold">Created:</div>
-                      <div className="col-span-2">
-                        {selectedContent.createdAt
-                          ? new Date(selectedContent.createdAt).toLocaleString()
-                          : 'N/A'}
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-3">
-                      <div className="font-semibold">Last Updated:</div>
-                      <div className="col-span-2">
-                        {selectedContent.updatedAt
-                          ? new Date(selectedContent.updatedAt).toLocaleString()
-                          : 'N/A'}
-                      </div>
-                    </div>
-                    {selectedContent.description && (
-                      <div className="grid grid-cols-3">
-                        <div className="font-semibold">Description:</div>
-                        <div className="col-span-2">{selectedContent.description}</div>
-                      </div>
-                    )}
-                    <div className="grid grid-cols-3 pt-2">
-                      <div className="font-semibold">Public URL:</div>
-                      <div className="col-span-2">
-                        <a
-                          href={getPageUrl(selectedContent.slug)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline inline-flex items-center"
-                        >
-                          {getPageUrl(selectedContent.slug).replace(/^\//, '')}
-                          <Eye className="ml-1 h-4 w-4" />
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </TabsContent>
-                <TabsContent value="preview" className="pt-4">
-                  <div className="border rounded-md p-4 max-h-[300px] overflow-y-auto">
-                    <div 
-                      dangerouslySetInnerHTML={{ __html: selectedContent.content || '' }} 
-                      className="prose prose-sm max-w-none"
-                    />
-                  </div>
-                </TabsContent>
-              </Tabs>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowDetailsDialog(false)}>
-                  Close
-                </Button>
-                <Button
+              
+              <div>
+                <h3 className="font-semibold mb-2">Content Preview</h3>
+                <div className="border rounded-md p-6 prose max-w-none">
+                  <div dangerouslySetInnerHTML={{ __html: selectedPage.content }} />
+                </div>
+              </div>
+              
+              <div className="border-t pt-4 flex justify-between">
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => handleEdit(selectedPage)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Page
+                  </Button>
+                  <a 
+                    href={`/pages/${selectedPage.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View Page
+                  </a>
+                </div>
+                <Button 
+                  variant={selectedPage.published ? "outline" : "default"} 
                   onClick={() => {
+                    togglePublished(selectedPage);
                     setShowDetailsDialog(false);
-                    setShowEditDialog(true);
                   }}
                 >
-                  <Edit className="mr-2 h-4 w-4" />
-                  Edit
+                  {selectedPage.published ? "Unpublish" : "Publish"}
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
-      </CardContent>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

@@ -79,12 +79,18 @@ function Router() {
       />
       <ProtectedRoute 
         path="/admin" 
-        component={AdminIndex} 
+        component={() => {
+          window.location.href = "/admin/dashboard";
+          return null;
+        }} 
         userTypes={["admin"]} 
       />
       <ProtectedRoute 
-        path="/admin-dashboard" 
-        component={AdminIndex} 
+        path="/admin/dashboard" 
+        component={() => {
+          const Dashboard = require("@/pages/admin/dashboard").default;
+          return <Dashboard />;
+        }}
         userTypes={["admin"]} 
       />
       <ProtectedRoute 

@@ -1,333 +1,571 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getQueryFn, apiRequest } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
-import { ProfessionalProfile } from '@shared/schema';
-
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, getQueryFn } from "@/lib/queryClient";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
   Table,
   TableBody,
+  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Loader2, Eye, Star, Search, X, MoreHorizontal, AlertCircle } from 'lucide-react';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { ProfessionalProfile, Expertise } from "@shared/schema";
+import { Edit, Trash, Eye, Star, ExternalLink, CheckCircle2, XCircle } from "lucide-react";
 
-export function ProfessionalsPanel() {
+export default function ProfessionalsPanel() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [showDialog, setShowDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<ProfessionalProfile | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [verificationFilter, setVerificationFilter] = useState<string>("all");
 
-  // Fetch professional profiles
-  const {
-    data: profiles = [],
-    isLoading,
-    error,
-  } = useQuery({
+  // Fetch all professional profiles
+  const { data: profiles = [], isLoading } = useQuery({
     queryKey: ['/api/admin/professional-profiles'],
-    queryFn: getQueryFn<ProfessionalProfile[]>({ on401: 'throw' }),
+    queryFn: getQueryFn<ProfessionalProfile[]>({ on401: "throw" }),
   });
 
-  // Filter profiles based on search query
-  const filteredProfiles = searchQuery
-    ? profiles.filter(
-        (profile) =>
-          profile.firstName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          profile.lastName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          profile.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          profile.location?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          profile.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (profile.firstName + ' ' + profile.lastName)
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase())
-      )
-    : profiles;
+  // Apply filters
+  const filteredProfiles = profiles.filter(profile => {
+    const matchesSearch = searchQuery === "" || 
+      profile.firstName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      profile.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      profile.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      `${profile.firstName} ${profile.lastName}`.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesVerification = verificationFilter === "all" || 
+      (verificationFilter === "verified" && profile.verified) ||
+      (verificationFilter === "unverified" && !profile.verified);
+    
+    return matchesSearch && matchesVerification;
+  });
 
-  // Toggle featured status mutation
-  const toggleFeaturedMutation = useMutation({
-    mutationFn: async ({ id, featured }: { id: number; featured: boolean }) => {
-      const response = await apiRequest('PATCH', `/api/admin/professional-profiles/${id}`, {
-        featured,
+  const handleViewDetails = async (profile: ProfessionalProfile) => {
+    try {
+      // Fetch expertise for this professional
+      const expertise = await apiRequest("GET", `/api/professional-profiles/${profile.id}/expertise`);
+      const expertiseData = await expertise.json();
+      
+      // Fetch certifications for this professional
+      const certifications = await apiRequest("GET", `/api/professional-profiles/${profile.id}/certifications`);
+      const certificationsData = await certifications.json();
+      
+      // Set selected profile with additional data
+      setSelectedProfile({
+        ...profile,
+        expertise: expertiseData,
+        certifications: certificationsData
       });
-      return response.json();
-    },
-    onSuccess: () => {
+      setShowDetailsDialog(true);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load professional details",
+        variant: "destructive"
+      });
+      console.error(error);
+    }
+  };
+
+  const handleEdit = (profile: ProfessionalProfile) => {
+    setSelectedProfile({...profile});
+    setShowDialog(true);
+  };
+
+  const handleSave = async () => {
+    if (!selectedProfile) return;
+    
+    try {
+      await apiRequest("PATCH", `/api/admin/professional-profiles/${selectedProfile.id}`, selectedProfile);
       queryClient.invalidateQueries({ queryKey: ['/api/admin/professional-profiles'] });
       toast({
-        title: 'Featured Status Updated',
-        description: 'Professional profile featured status has been updated.',
+        title: "Profile Updated",
+        description: `${selectedProfile.firstName} ${selectedProfile.lastName}'s profile has been updated.`,
       });
-    },
-    onError: (error: any) => {
+      setShowDialog(false);
+    } catch (error) {
       toast({
-        title: 'Update Failed',
-        description: error.message || 'Failed to update featured status',
-        variant: 'destructive',
+        title: "Update Failed",
+        description: error instanceof Error ? error.message : "Failed to update professional profile",
+        variant: "destructive",
       });
-    },
-  });
+    }
+  };
 
-  // Toggle verified status mutation
-  const toggleVerifiedMutation = useMutation({
-    mutationFn: async ({ id, verified }: { id: number; verified: boolean }) => {
-      const response = await apiRequest('PATCH', `/api/admin/professional-profiles/${id}`, {
-        verified,
-      });
-      return response.json();
-    },
-    onSuccess: () => {
+  const handleDelete = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this professional profile? This action cannot be undone.")) return;
+    
+    try {
+      await apiRequest("DELETE", `/api/admin/professional-profiles/${id}`);
       queryClient.invalidateQueries({ queryKey: ['/api/admin/professional-profiles'] });
       toast({
-        title: 'Verification Status Updated',
-        description: 'Professional profile verification status has been updated.',
+        title: "Profile Deleted",
+        description: "The professional profile has been deleted successfully.",
       });
-    },
-    onError: (error: any) => {
+    } catch (error) {
       toast({
-        title: 'Update Failed',
-        description: error.message || 'Failed to update verification status',
-        variant: 'destructive',
+        title: "Delete Failed",
+        description: error instanceof Error ? error.message : "Failed to delete professional profile",
+        variant: "destructive",
       });
-    },
-  });
+    }
+  };
 
-  if (error) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col items-center justify-center text-center p-6">
-            <AlertCircle className="h-10 w-10 text-destructive mb-2" />
-            <h3 className="text-lg font-semibold">Error Loading Professionals</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {error instanceof Error ? error.message : 'Could not load professional profiles'}
-            </p>
-            <Button 
-              variant="outline" 
-              className="mt-4"
-              onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/admin/professional-profiles'] })}
-            >
-              Retry
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const toggleVerification = async (profile: ProfessionalProfile) => {
+    try {
+      await apiRequest("PATCH", `/api/admin/professional-profiles/${profile.id}`, {
+        ...profile,
+        verified: !profile.verified
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/professional-profiles'] });
+      toast({
+        title: profile.verified ? "Verification Removed" : "Profile Verified",
+        description: `${profile.firstName} ${profile.lastName}'s profile is now ${profile.verified ? "unverified" : "verified"}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: error instanceof Error ? error.message : "Failed to update verification status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleFeatured = async (profile: ProfessionalProfile) => {
+    try {
+      await apiRequest("PATCH", `/api/admin/professional-profiles/${profile.id}`, {
+        ...profile,
+        featured: !profile.featured
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/professional-profiles'] });
+      toast({
+        title: profile.featured ? "Removed from Featured" : "Added to Featured",
+        description: `${profile.firstName} ${profile.lastName}'s profile is ${profile.featured ? "no longer" : "now"} featured.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: error instanceof Error ? error.message : "Failed to update featured status",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Professional Profiles</CardTitle>
-        <CardDescription>View and manage professional profiles</CardDescription>
-        <div className="flex items-center mt-4 gap-2">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search professionals..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8"
-            />
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute right-0 top-0 h-9 w-9"
-                onClick={() => setSearchQuery('')}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
+        <CardTitle className="text-xl font-bold">Professionals Management</CardTitle>
+        <CardDescription>
+          View and manage professional profiles on the platform
+        </CardDescription>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-4">
+          <Input
+            placeholder="Search professionals..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full sm:max-w-xs"
+          />
+          <div className="flex items-center gap-2">
+            <Select value={verificationFilter} onValueChange={setVerificationFilter}>
+              <SelectTrigger className="w-[170px]">
+                <SelectValue placeholder="Verification Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Profiles</SelectItem>
+                <SelectItem value="verified">Verified Only</SelectItem>
+                <SelectItem value="unverified">Unverified Only</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" onClick={() => {
+              setSearchQuery("");
+              setVerificationFilter("all");
+            }}>
+              Reset
+            </Button>
           </div>
         </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <div className="flex justify-center items-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <div className="flex justify-center p-8">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
           </div>
         ) : (
           <div className="rounded-md border">
             <Table>
+              <TableCaption>List of {filteredProfiles.length} professional(s)</TableCaption>
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Title</TableHead>
                   <TableHead>Location</TableHead>
-                  <TableHead>Featured</TableHead>
-                  <TableHead>Verified</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-center">Rating</TableHead>
+                  <TableHead className="text-center">Verified</TableHead>
+                  <TableHead className="text-center">Featured</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredProfiles.length === 0 ? (
+                {filteredProfiles.map((profile) => (
+                  <TableRow key={profile.id}>
+                    <TableCell className="font-medium">{profile.firstName} {profile.lastName}</TableCell>
+                    <TableCell>{profile.title || "No title"}</TableCell>
+                    <TableCell>{profile.location || "Not specified"}</TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center">
+                        <Star className="h-4 w-4 text-yellow-500 mr-1 fill-yellow-500" />
+                        {profile.rating?.toFixed(1) || "N/A"}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Switch 
+                        checked={profile.verified || false} 
+                        onCheckedChange={() => toggleVerification(profile)}
+                        aria-label="Toggle verification status"
+                      />
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Switch 
+                        checked={profile.featured || false} 
+                        onCheckedChange={() => toggleFeatured(profile)}
+                        aria-label="Toggle featured status"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => handleViewDetails(profile)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(profile)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(profile.id)}>
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filteredProfiles.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       No professionals found
                     </TableCell>
                   </TableRow>
-                ) : (
-                  filteredProfiles.map((profile) => (
-                    <TableRow key={profile.id}>
-                      <TableCell className="font-medium">{profile.firstName} {profile.lastName}</TableCell>
-                      <TableCell>{profile.title || 'N/A'}</TableCell>
-                      <TableCell>{profile.location || 'N/A'}</TableCell>
-                      <TableCell>
-                        <Switch
-                          checked={!!profile.featured}
-                          onCheckedChange={(checked) => 
-                            toggleFeaturedMutation.mutate({ id: profile.id, featured: checked })
-                          }
-                          aria-label="Toggle featured status"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Switch
-                          checked={!!profile.verified}
-                          onCheckedChange={(checked) => 
-                            toggleVerifiedMutation.mutate({ id: profile.id, verified: checked })
-                          }
-                          aria-label="Toggle verification status"
-                        />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedProfile(profile);
-                                setShowDetailsDialog(true);
-                              }}
-                            >
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => window.open(`/professional/${profile.id}`, '_blank')}
-                            >
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Public Profile
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
                 )}
               </TableBody>
             </Table>
           </div>
         )}
+      </CardContent>
 
-        {/* Professional Details Dialog */}
-        {selectedProfile && (
-          <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>{selectedProfile.firstName} {selectedProfile.lastName}</DialogTitle>
-                <DialogDescription>
-                  Professional profile details
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                {selectedProfile.profileImageUrl && (
-                  <div className="flex justify-center mb-4">
-                    <img 
-                      src={selectedProfile.profileImageUrl} 
-                      alt={`${selectedProfile.firstName} ${selectedProfile.lastName}`} 
-                      className="h-24 w-24 rounded-full object-cover"
-                    />
+      {/* Edit Professional Dialog */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Professional Profile</DialogTitle>
+            <DialogDescription>
+              Update professional profile details
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedProfile && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="firstName" className="text-right">
+                  First Name
+                </Label>
+                <Input
+                  id="firstName"
+                  value={selectedProfile.firstName}
+                  onChange={(e) => setSelectedProfile({...selectedProfile, firstName: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="lastName" className="text-right">
+                  Last Name
+                </Label>
+                <Input
+                  id="lastName"
+                  value={selectedProfile.lastName}
+                  onChange={(e) => setSelectedProfile({...selectedProfile, lastName: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="title" className="text-right">
+                  Title
+                </Label>
+                <Input
+                  id="title"
+                  value={selectedProfile.title || ""}
+                  onChange={(e) => setSelectedProfile({...selectedProfile, title: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="location" className="text-right">
+                  Location
+                </Label>
+                <Input
+                  id="location"
+                  value={selectedProfile.location || ""}
+                  onChange={(e) => setSelectedProfile({...selectedProfile, location: e.target.value})}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-start gap-4">
+                <Label htmlFor="bio" className="text-right pt-2">
+                  Bio
+                </Label>
+                <Textarea
+                  id="bio"
+                  value={selectedProfile.bio || ""}
+                  onChange={(e) => setSelectedProfile({...selectedProfile, bio: e.target.value})}
+                  className="col-span-3"
+                  rows={4}
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="verified" className="text-right">
+                  Verified
+                </Label>
+                <div className="flex items-center space-x-2 col-span-3">
+                  <Switch
+                    id="verified"
+                    checked={selectedProfile.verified || false}
+                    onCheckedChange={(checked) => setSelectedProfile({...selectedProfile, verified: checked})}
+                  />
+                  <Label htmlFor="verified" className="cursor-pointer">
+                    {selectedProfile.verified ? "Yes" : "No"}
+                  </Label>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="featured" className="text-right">
+                  Featured
+                </Label>
+                <div className="flex items-center space-x-2 col-span-3">
+                  <Switch
+                    id="featured"
+                    checked={selectedProfile.featured || false}
+                    onCheckedChange={(checked) => setSelectedProfile({...selectedProfile, featured: checked})}
+                  />
+                  <Label htmlFor="featured" className="cursor-pointer">
+                    {selectedProfile.featured ? "Yes" : "No"}
+                  </Label>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button onClick={handleSave}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Professional Details Dialog */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Professional Profile Details</DialogTitle>
+            <DialogDescription>
+              Complete information about the professional
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedProfile && (
+            <div className="space-y-6">
+              <div className="flex flex-col md:flex-row gap-6">
+                <div className="md:w-1/3 space-y-4">
+                  <div className="aspect-square rounded-lg bg-gray-200 flex items-center justify-center overflow-hidden">
+                    {selectedProfile.profileImage ? (
+                      <img 
+                        src={selectedProfile.profileImage} 
+                        alt={`${selectedProfile.firstName} ${selectedProfile.lastName}`}
+                        className="object-cover w-full h-full" 
+                      />
+                    ) : (
+                      <div className="text-4xl font-bold text-gray-400">
+                        {selectedProfile.firstName?.[0]}{selectedProfile.lastName?.[0]}
+                      </div>
+                    )}
                   </div>
-                )}
-                <div className="grid grid-cols-3">
-                  <div className="font-semibold">Title:</div>
-                  <div className="col-span-2">{selectedProfile.title || 'N/A'}</div>
-                </div>
-                <div className="grid grid-cols-3">
-                  <div className="font-semibold">Email:</div>
-                  <div className="col-span-2">{selectedProfile.email || 'N/A'}</div>
-                </div>
-                <div className="grid grid-cols-3">
-                  <div className="font-semibold">Location:</div>
-                  <div className="col-span-2">{selectedProfile.location || 'N/A'}</div>
-                </div>
-                <div className="grid grid-cols-3">
-                  <div className="font-semibold">Experience:</div>
-                  <div className="col-span-2">{selectedProfile.yearsExperience ? `${selectedProfile.yearsExperience} years` : 'N/A'}</div>
-                </div>
-                <div className="grid grid-cols-3">
-                  <div className="font-semibold">Status:</div>
-                  <div className="col-span-2">
-                    <div className="flex space-x-2">
+                  
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-lg">{selectedProfile.firstName} {selectedProfile.lastName}</h3>
+                    <p className="text-muted-foreground">{selectedProfile.title || "No title specified"}</p>
+                    <div className="flex items-center">
+                      <Star className="h-4 w-4 text-yellow-500 mr-1 fill-yellow-500" />
+                      {selectedProfile.rating?.toFixed(1) || "No ratings yet"}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {selectedProfile.verified ? (
+                        <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300 flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" />
+                          Verified
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300 flex items-center gap-1">
+                          <XCircle className="h-3 w-3" />
+                          Unverified
+                        </Badge>
+                      )}
                       {selectedProfile.featured && (
-                        <Badge variant="default" className="bg-amber-500">
+                        <Badge variant="secondary" className="flex items-center gap-1">
+                          <Star className="h-3 w-3" />
                           Featured
                         </Badge>
                       )}
-                      {selectedProfile.verified && (
-                        <Badge variant="default">
-                          Verified
-                        </Badge>
+                    </div>
+                  </div>
+                  
+                  <div className="border rounded-md p-3">
+                    <h4 className="font-medium mb-2">Contact Information</h4>
+                    <div className="space-y-1 text-sm">
+                      <p><span className="font-medium">Location:</span> {selectedProfile.location || "Not specified"}</p>
+                      <p><span className="font-medium">Email:</span> {selectedProfile.email}</p>
+                      <p><span className="font-medium">Phone:</span> {selectedProfile.phone || "Not provided"}</p>
+                      {selectedProfile.website && (
+                        <p className="flex items-center">
+                          <span className="font-medium mr-1">Website:</span> 
+                          <a href={selectedProfile.website} target="_blank" rel="noopener noreferrer" className="text-primary flex items-center">
+                            {selectedProfile.website.replace(/^https?:\/\//, '')}
+                            <ExternalLink className="h-3 w-3 ml-1" />
+                          </a>
+                        </p>
                       )}
-                      {!selectedProfile.featured && !selectedProfile.verified && 'Standard'}
                     </div>
                   </div>
                 </div>
-                {selectedProfile.bio && (
+                
+                <div className="md:w-2/3 space-y-6">
                   <div>
-                    <div className="font-semibold mb-2">Bio:</div>
-                    <div className="text-sm text-muted-foreground">
-                      {selectedProfile.bio}
-                    </div>
+                    <h3 className="font-semibold mb-2">Professional Bio</h3>
+                    <p className="text-muted-foreground whitespace-pre-line">
+                      {selectedProfile.bio || "No bio provided."}
+                    </p>
                   </div>
-                )}
+                  
+                  <div>
+                    <h3 className="font-semibold mb-2">Areas of Expertise</h3>
+                    {selectedProfile.expertise && selectedProfile.expertise.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {selectedProfile.expertise.map((exp: Expertise, index: number) => (
+                          <Badge key={index} variant="secondary">{exp.name}</Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">No expertise specified.</p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold mb-2">Certifications</h3>
+                    {selectedProfile.certifications && selectedProfile.certifications.length > 0 ? (
+                      <div className="space-y-2">
+                        {selectedProfile.certifications.map((cert: any, index: number) => (
+                          <div key={index} className="border rounded-md p-3">
+                            <h4 className="font-medium">{cert.name}</h4>
+                            <p className="text-sm text-muted-foreground">Issued by {cert.issuer}</p>
+                            <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                              <span>Issued: {new Date(cert.issueDate).toLocaleDateString()}</span>
+                              {cert.expiryDate && (
+                                <span>Expires: {new Date(cert.expiryDate).toLocaleDateString()}</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-muted-foreground">No certifications added.</p>
+                    )}
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold mb-2">Experience</h3>
+                    <p className="text-muted-foreground">
+                      {selectedProfile.yearsOfExperience ? 
+                        `${selectedProfile.yearsOfExperience} years of experience` : 
+                        "Experience details not provided."}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-semibold mb-2">Rate</h3>
+                    <p className="text-muted-foreground">
+                      {selectedProfile.hourlyRate ? 
+                        `$${selectedProfile.hourlyRate}/hour` : 
+                        "Hourly rate not specified."}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowDetailsDialog(false)}>
-                  Close
+              
+              <div className="border-t pt-4 flex justify-between">
+                <Button variant="outline" onClick={() => handleEdit(selectedProfile)}>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Profile
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
-      </CardContent>
+                <div className="flex gap-2">
+                  <Button 
+                    variant={selectedProfile.featured ? "outline" : "default"} 
+                    onClick={() => {
+                      toggleFeatured(selectedProfile);
+                      setShowDetailsDialog(false);
+                    }}
+                  >
+                    {selectedProfile.featured ? "Remove from Featured" : "Feature Profile"}
+                  </Button>
+                  <Button 
+                    variant={selectedProfile.verified ? "outline" : "default"} 
+                    onClick={() => {
+                      toggleVerification(selectedProfile);
+                      setShowDetailsDialog(false);
+                    }}
+                  >
+                    {selectedProfile.verified ? "Remove Verification" : "Verify Profile"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

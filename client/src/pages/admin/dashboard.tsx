@@ -15,12 +15,12 @@ import {
 } from "@/components/ui/card";
 
 // Import admin components
-import UsersPanel from "@/components/admin/users-panel";
-import ProfessionalsPanel from "@/components/admin/professionals-panel";
-import CompaniesPanel from "@/components/admin/companies-panel";
-import JobsPanel from "@/components/admin/jobs-panel";
-import ResourcesPanel from "@/components/admin/resources-panel";
-import ContentPanel from "@/components/admin/content-panel";
+import UsersPanel from "@/components/admin/simplified/users-panel";
+import ProfessionalsPanel from "@/components/admin/simplified/professionals-panel";
+import CompaniesPanel from "@/components/admin/simplified/companies-panel";
+import JobsPanel from "@/components/admin/simplified/jobs-panel";
+import ResourcesPanel from "@/components/admin/simplified/resources-panel";
+import ContentPanel from "@/components/admin/simplified/content-panel";
 
 import { 
   ProfessionalProfile,

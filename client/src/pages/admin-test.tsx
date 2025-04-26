@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import SimpleDashboard from "../components/admin/new/simple-dashboard";
+import DashboardStats from "../components/admin/simplified/dashboard-stats";
 
 export default function AdminTest() {
   const [, setLocation] = useLocation();
@@ -25,8 +25,8 @@ export default function AdminTest() {
         </Card>
         
         <div className="border p-4 rounded-md bg-white">
-          <h2 className="text-xl font-bold mb-4">Simple Dashboard Component</h2>
-          <SimpleDashboard />
+          <h2 className="text-xl font-bold mb-4">Dashboard Statistics Component</h2>
+          <DashboardStats />
         </div>
       </div>
     </div>

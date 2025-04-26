@@ -2,17 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import { getQueryFn } from "@/lib/queryClient";
-import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 // Import admin components
 import UsersPanel from "@/components/admin/simplified/users-panel";
@@ -21,13 +12,7 @@ import CompaniesPanel from "@/components/admin/simplified/companies-panel";
 import JobsPanel from "@/components/admin/simplified/jobs-panel";
 import ResourcesPanel from "@/components/admin/simplified/resources-panel";
 import ContentPanel from "@/components/admin/simplified/content-panel";
-
-import { 
-  ProfessionalProfile,
-  CompanyProfile,
-  JobPosting,
-  Resource,
-} from "@shared/schema";
+import DashboardStats from "@/components/admin/simplified/dashboard-stats";
 
 import { 
   BarChart4,
@@ -35,8 +20,6 @@ import {
   Briefcase,
   Building,
   FileText,
-  Tags,
-  MessageSquare,
   Shield,
 } from "lucide-react";
 
@@ -45,38 +28,6 @@ export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
-  
-  // Fetch data for dashboard stats
-  const { data: profiles = [] } = useQuery({
-    queryKey: ['/api/admin/professional-profiles'],
-    queryFn: getQueryFn<ProfessionalProfile[]>({ on401: "throw" }),
-    enabled: !!user?.isAdmin,
-  });
-  
-  const { data: companies = [] } = useQuery({
-    queryKey: ['/api/admin/company-profiles'],
-    queryFn: getQueryFn<CompanyProfile[]>({ on401: "throw" }),
-    enabled: !!user?.isAdmin,
-  });
-  
-  const { data: jobs = [] } = useQuery({
-    queryKey: ['/api/admin/job-postings'],
-    queryFn: getQueryFn<JobPosting[]>({ on401: "throw" }),
-    enabled: !!user?.isAdmin,
-  });
-  
-  const { data: resources = [] } = useQuery({
-    queryKey: ['/api/admin/resources'],
-    queryFn: getQueryFn<Resource[]>({ on401: "throw" }),
-    enabled: !!user?.isAdmin,
-  });
-
-  // Fetch dashboard statistics 
-  const { data: stats } = useQuery({
-    queryKey: ['/api/admin/dashboard-stats'],
-    queryFn: getQueryFn({ on401: "throw" }),
-    enabled: !!user?.isAdmin,
-  });
 
   // Redirect if not admin
   useEffect(() => {
@@ -143,92 +94,7 @@ export default function AdminDashboard() {
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Platform Statistics</CardTitle>
-                <CardDescription>Key metrics for the platform</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-muted p-4 rounded-lg text-center">
-                    <h3 className="text-3xl font-bold text-primary">
-                      {stats?.totalUsers || 0}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">Total Users</p>
-                  </div>
-                  <div className="bg-muted p-4 rounded-lg text-center">
-                    <h3 className="text-3xl font-bold text-primary">
-                      {stats?.professionals || profiles?.length || 0}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">Active Professionals</p>
-                  </div>
-                  <div className="bg-muted p-4 rounded-lg text-center">
-                    <h3 className="text-3xl font-bold text-primary">
-                      {stats?.companies || companies?.length || 0}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">Registered Companies</p>
-                  </div>
-                  <div className="bg-muted p-4 rounded-lg text-center">
-                    <h3 className="text-3xl font-bold text-primary">
-                      {stats?.jobs || jobs?.length || 0}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">Active Jobs</p>
-                  </div>
-                  <div className="bg-muted p-4 rounded-lg text-center">
-                    <h3 className="text-3xl font-bold text-primary">
-                      {stats?.resources || resources?.length || 0}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">Published Resources</p>
-                  </div>
-                  <div className="bg-muted p-4 rounded-lg text-center">
-                    <h3 className="text-3xl font-bold text-primary">
-                      {stats?.totalApplications || 0}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">Job Applications</p>
-                  </div>
-                  <div className="bg-muted p-4 rounded-lg text-center">
-                    <h3 className="text-3xl font-bold text-primary">
-                      {stats?.completedJobs || 0}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">Completed Jobs</p>
-                  </div>
-                  <div className="bg-muted p-4 rounded-lg text-center">
-                    <h3 className="text-3xl font-bold text-primary">
-                      ${stats?.totalRevenue?.toFixed(2) || "0.00"}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">Total Revenue</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Latest platform events</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {stats?.recentActivity?.length > 0 ? (
-                    stats.recentActivity.map((activity, index) => (
-                      <div key={index} className="border-b pb-3 last:border-b-0">
-                        <p className="font-medium">{activity.type}</p>
-                        <p className="text-sm text-muted-foreground">{activity.description}</p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(activity.timestamp).toLocaleString()}
-                        </p>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-6 text-muted-foreground">
-                      No recent activity found
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <DashboardStats />
         </TabsContent>
 
         <TabsContent value="users" className="mt-6">

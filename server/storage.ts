@@ -1670,6 +1670,21 @@ export class MemStorage implements IStorage {
     return newLoginAttempt;
   }
   
+  // Admin password management
+  async updateAdminPassword(adminId: number, newPassword: string): Promise<boolean> {
+    const admin = this.adminUsers.get(adminId);
+    if (!admin) return false;
+    
+    const updatedAdmin = {
+      ...admin,
+      password: newPassword,
+      updatedAt: new Date()
+    };
+    
+    this.adminUsers.set(adminId, updatedAdmin);
+    return true;
+  }
+  
   // Admin Two-Factor Authentication operations
   async saveAdminTOTPSecret(adminId: number, secret: string): Promise<boolean> {
     this.adminTempTOTPSecrets.set(adminId, secret);

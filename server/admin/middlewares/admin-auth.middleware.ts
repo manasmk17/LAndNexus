@@ -206,16 +206,23 @@ export const generateAdminRefreshToken = (adminUser: AdminUser): string => {
  */
 export const adminAuthRateLimiter = (req: Request, res: Response, next: NextFunction) => {
   // This would normally use Redis or a similar store to track rate limits
-  // For simplicity, we'll use a basic implementation
+  // For simplicity, we'll use a basic implementation - note that this is memory-based
+  // and will be reset when the server restarts.
+  
+  // Create a static Map to persist between requests
+  const rateLimitMap: Map<string, { count: number, resetTime: number }> = 
+    (global as any).adminRateLimitMap || ((global as any).adminRateLimitMap = new Map());
   
   const ip = req.ip;
-  const rateLimitMap = new Map<string, { count: number, resetTime: number }>();
-  
   const now = Date.now();
   const limit = 5; // 5 attempts
   const windowMs = 15 * 60 * 1000; // 15 minutes
   
-  const entry = rateLimitMap.get(ip) || { count: 0, resetTime: now + windowMs };
+  // Get existing entry or create new one
+  let entry = rateLimitMap.get(ip);
+  if (!entry) {
+    entry = { count: 0, resetTime: now + windowMs };
+  }
   
   // Reset if window has expired
   if (entry.resetTime < now) {

@@ -55,7 +55,7 @@ export default function UsersPanel() {
   // Fetch all users
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['/api/users'],
-    queryFn: getQueryFn<User[]>(),
+    queryFn: getQueryFn<User[]>({ on401: "returnNull" }),
   });
 
   // Apply filters

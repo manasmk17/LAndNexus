@@ -238,27 +238,28 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private professionalProfiles: Map<number, ProfessionalProfile>;
-  private expertises: Map<number, Expertise>;
-  private professionalExpertises: Map<number, ProfessionalExpertise>;
-  private certifications: Map<number, Certification>;
-  private companyProfiles: Map<number, CompanyProfile>;
-  private jobPostings: Map<number, JobPosting>;
-  private jobApplications: Map<number, JobApplication>;
-  private resources: Map<number, Resource>;
-  private resourceCategories: Map<number, ResourceCategory>;
-  private forumPosts: Map<number, ForumPost>;
-  private forumComments: Map<number, ForumComment>;
-  private messages: Map<number, Message>;
-  private consultations: Map<number, Consultation>;
-  private skillRecommendations: Map<number, SkillRecommendation>;
-  private pageContents: Map<number, PageContent>;
-  private jobMatches: Map<string, number>; // Format: "jobId-professionalId" -> score
-  private reviews: Map<number, Review>;
-  private notificationTypes: Map<number, NotificationType>;
-  private notifications: Map<number, Notification>;
-  private notificationPreferences: Map<number, NotificationPreference>;
+  // Collection storage
+  users: Map<number, User>;
+  professionalProfiles: Map<number, ProfessionalProfile>;
+  expertises: Map<number, Expertise>;
+  professionalExpertises: Map<number, ProfessionalExpertise>;
+  certifications: Map<number, Certification>;
+  companyProfiles: Map<number, CompanyProfile>;
+  jobPostings: Map<number, JobPosting>;
+  jobApplications: Map<number, JobApplication>;
+  resources: Map<number, Resource>;
+  resourceCategories: Map<number, ResourceCategory>;
+  forumPosts: Map<number, ForumPost>;
+  forumComments: Map<number, ForumComment>;
+  messages: Map<number, Message>;
+  consultations: Map<number, Consultation>;
+  skillRecommendations: Map<number, SkillRecommendation>;
+  pageContents: Map<number, PageContent>;
+  jobMatches: Map<string, number>; // Format: "jobId-professionalId" -> score
+  reviews: Map<number, Review>;
+  notificationTypes: Map<number, NotificationType>;
+  notifications: Map<number, Notification>;
+  notificationPreferences: Map<number, NotificationPreference>;
   
   // Admin data structures
   private adminUsers: Map<number, AdminUser>;
@@ -268,30 +269,33 @@ export class MemStorage implements IStorage {
   private adminLoginAttempts: Map<number, AdminLoginAttempt>;
   private adminTempTOTPSecrets: Map<number, string>; // Temporary storage for TOTP secrets
   
-  private userId: number;
-  private profProfileId: number;
-  private expertiseId: number;
-  private profExpertiseId: number;
-  private certificationId: number;
-  private companyProfileId: number;
-  private jobPostingId: number;
-  private jobApplicationId: number;
-  private resourceId: number;
-  private resourceCategoryId: number;
-  private forumPostId: number;
-  private forumCommentId: number;
-  private messageId: number;
-  private consultationId: number;
-  private skillRecommendationId: number;
-  private pageContentId: number;
+  // Auto-increment counters
+  userId: number;
+  profProfileId: number;
+  expertiseId: number;
+  profExpertiseId: number;
+  certificationId: number;
+  companyProfileId: number;
+  jobPostingId: number;
+  jobApplicationId: number;
+  resourceId: number;
+  resourceCategoryId: number;
+  forumPostId: number;
+  forumCommentId: number;
+  messageId: number;
+  consultationId: number;
+  skillRecommendationId: number;
+  pageContentId: number;
+  reviewId: number;
+  notificationTypeId: number;
+  notificationId: number;
+  notificationPreferenceId: number;
+  
+  // Admin auto-increment counters
   private adminUserId: number;
   private adminActionLogId: number;
   private adminActivityLogId: number;
   private adminLoginAttemptId: number;
-  private reviewId: number;
-  private notificationTypeId: number;
-  private notificationId: number;
-  private notificationPreferenceId: number;
 
   constructor() {
     this.users = new Map();
@@ -2708,8 +2712,8 @@ export class DatabaseStorage implements IStorage {
             id,
             userId: preference.userId,
             typeId: preference.typeId,
-            email: preference.email ?? null,
-            inApp: preference.inApp ?? null
+            email: preference.email !== undefined ? preference.email : true,
+            inApp: preference.inApp !== undefined ? preference.inApp : true
           };
           
           this.notificationPreferences.set(id, newPreference);

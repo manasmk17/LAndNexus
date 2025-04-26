@@ -516,8 +516,8 @@ export const notificationPreferences = pgTable("notification_preferences", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
   typeId: integer("type_id").notNull().references(() => notificationTypes.id),
-  email: boolean("email").default(true),
-  inApp: boolean("in_app").default(true),
+  email: boolean("email").default(true).notNull(),
+  inApp: boolean("in_app").default(true).notNull(),
 }, (table) => {
   return {
     unq: unique().on(table.userId, table.typeId),

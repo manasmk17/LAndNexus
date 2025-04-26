@@ -649,16 +649,6 @@ export function registerAdminRoutes(app: Express) {
     }
   });
   
-  app.get("/api/admin/professional-profiles", async (req, res) => {
-    try {
-      const profiles = await storage.getAllProfessionalProfiles();
-      res.json(profiles);
-    } catch (error) {
-      console.error("Error retrieving professional profiles:", error);
-      res.status(500).json({ message: "Failed to retrieve professional profiles" });
-    }
-  });
-  
   app.get("/api/admin/company-profiles", async (req, res) => {
     try {
       const companies = await storage.getAllCompanyProfiles();

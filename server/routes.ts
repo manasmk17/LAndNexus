@@ -2826,32 +2826,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Admin API Routes
-  app.get("/api/admin/users", isAdmin, async (req, res) => {
-    try {
-      // This is a placeholder since our storage interface doesn't have getAllUsers method
-      // In a real implementation, you would add this method to the storage interface
-      const allUsers = Array.from(Array(10).keys()).map(id => ({
-        id: id + 1,
-        username: `user${id + 1}`,
-        email: `user${id + 1}@example.com`,
-        firstName: `First${id + 1}`,
-        lastName: `Last${id + 1}`,
-        userType: id % 3 === 0 ? "admin" : id % 2 === 0 ? "company" : "professional",
-        isAdmin: id % 3 === 0,
-        createdAt: new Date(Date.now() - (id * 86400000)), // Different dates
-        stripeCustomerId: null,
-        stripeSubscriptionId: null,
-        subscriptionTier: null,
-        subscriptionStatus: null
-      }));
-      
-      res.json(allUsers);
-    } catch (err) {
-      console.error("Error fetching users:", err);
-      res.status(500).json({ message: "Error fetching users" });
-    }
-  });
+  // Admin API Routes - moved to admin-routes.ts
   
   app.put("/api/admin/users/:id", isAdmin, async (req, res) => {
     try {
@@ -3000,15 +2975,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/admin/professional-profiles", isAdmin, async (req, res) => {
-    try {
-      const profiles = await storage.getAllProfessionalProfiles();
-      res.json(profiles);
-    } catch (err) {
-      console.error("Error fetching professional profiles:", err);
-      res.status(500).json({ message: "Error fetching professional profiles" });
-    }
-  });
+  // Admin professional-profiles endpoint moved to admin-routes.ts
   
   app.post("/api/admin/professional-profiles", isAdmin, async (req, res) => {
     try {
@@ -3110,15 +3077,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/admin/company-profiles", isAdmin, async (req, res) => {
-    try {
-      const profiles = await storage.getAllCompanyProfiles();
-      res.json(profiles);
-    } catch (err) {
-      console.error("Error fetching company profiles:", err);
-      res.status(500).json({ message: "Error fetching company profiles" });
-    }
-  });
+  // Admin company-profiles endpoint moved to admin-routes.ts
   
   app.patch("/api/admin/company-profiles/:id/verify", isAdmin, async (req, res) => {
     try {
@@ -3164,15 +3123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/admin/job-postings", isAdmin, async (req, res) => {
-    try {
-      const jobs = await storage.getAllJobPostings();
-      res.json(jobs);
-    } catch (err) {
-      console.error("Error fetching job postings:", err);
-      res.status(500).json({ message: "Error fetching job postings" });
-    }
-  });
+  // Admin job-postings endpoint moved to admin-routes.ts
   
   app.put("/api/admin/job-postings/:id/featured", isAdmin, async (req, res) => {
     try {
@@ -3226,15 +3177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/admin/resources", isAdmin, async (req, res) => {
-    try {
-      const resources = await storage.getAllResources();
-      res.json(resources);
-    } catch (err) {
-      console.error("Error fetching resources:", err);
-      res.status(500).json({ message: "Error fetching resources" });
-    }
-  });
+  // Admin resources endpoint moved to admin-routes.ts
   
   app.put("/api/admin/resources/:id/featured", isAdmin, async (req, res) => {
     try {

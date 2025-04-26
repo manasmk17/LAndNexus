@@ -33,7 +33,7 @@ export default function ProfessionalJobMatches() {
     enabled: !!user,
   });
   
-  // Fetch matched jobs
+  // Fetch matched jobs - allow fetching without authentication for development/testing
   const { 
     data: matches, 
     isLoading: isLoadingMatches,
@@ -47,7 +47,8 @@ export default function ProfessionalJobMatches() {
       }
       return response.json();
     },
-    enabled: !!profile,
+    // Enable even without profile for testing
+    enabled: true,
   });
   
   // Fetch company profiles to get company names
@@ -81,7 +82,7 @@ export default function ProfessionalJobMatches() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {!profile ? (
+        {!profile && user ? (
           <div className="text-center py-4">
             <p className="text-gray-500 mb-4">Create a profile to see job matches</p>
             <Link href="/edit-profile">

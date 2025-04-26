@@ -33,7 +33,7 @@ export default function CompanyProfessionalMatches({ jobId }: { jobId: number })
     enabled: !!user,
   });
   
-  // Fetch matched professionals for a specific job
+  // Fetch matched professionals for a specific job - allow fetching without authentication for development/testing
   const { 
     data: matches, 
     isLoading: isLoadingMatches,
@@ -47,7 +47,8 @@ export default function CompanyProfessionalMatches({ jobId }: { jobId: number })
       }
       return response.json();
     },
-    enabled: !!jobId && !!company,
+    // Enable for testing without requiring company profile
+    enabled: !!jobId,
   });
   
   // Fetch the job details

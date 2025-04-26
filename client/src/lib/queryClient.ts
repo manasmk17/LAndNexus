@@ -454,50 +454,73 @@ export const getQueryFn: <T>(options: {
     }
   };
 
-// Setup global unhandled rejection handler for React Query
+// Setup global unhandled rejection handler for all promises
 window.addEventListener('unhandledrejection', event => {
-  // Only log and prevent default if it's our query or mutation error
+  // Capture the error details for debugging
+  const errorDetails = {
+    message: event.reason?.message || 'Unknown error',
+    name: event.reason?.name || 'UnknownError',
+    stack: event.reason?.stack || 'No stack trace available',
+    source: 'Unhandled Promise Rejection Handler'
+  };
+
+  // Categorize the error type
+  let errorType = 'Unknown';
+  
+  // Check if it's a React Query error
   if (event.reason && (
       event.reason.name === 'QueryError' || 
       event.reason.name === 'MutationError' || 
-      event.reason.name === 'NetworkError' ||
-      (typeof event.reason.message === 'string' && (
-        event.reason.message.includes('Network') ||
-        event.reason.message.includes('Failed to fetch') ||
-        event.reason.message.includes('connection')
-      ))
+      event.reason.name === 'NetworkError'
     )) {
-    console.log('Handled React Query rejection:', event.reason);
-    // Prevent the default browser handling of the error
+    errorType = 'ReactQuery';
+  } 
+  // Check if it's a network error
+  else if (event.reason && typeof event.reason.message === 'string' && (
+    event.reason.message.includes('Network') ||
+    event.reason.message.includes('Failed to fetch') ||
+    event.reason.message.includes('connection') ||
+    event.reason.message.includes('timeout')
+  )) {
+    errorType = 'Network';
+  }
+  // Check if it's an authentication/authorization error
+  else if (event.reason && typeof event.reason.message === 'string' && (
+    event.reason.message.includes('401') ||
+    event.reason.message.includes('403') ||
+    event.reason.message.includes('Unauthorized') ||
+    event.reason.message.includes('Forbidden')
+  )) {
+    errorType = 'Auth';
+  }
+  
+  // Log the error with better categorization
+  console.warn(`Unhandled promise rejection (${errorType}):`, errorDetails);
+  
+  // Always prevent the default browser handling of these errors during development
+  // This prevents the console from getting cluttered
+  if (import.meta.env.DEV) {
     event.preventDefault();
-  } else if (event.reason) {
-    // In development mode, we'll prevent all unhandled rejections from appearing in the console
-    // This improves the developer experience while implementing social login where
-    // we expect some rejections due to missing credentials
-    console.warn('Unhandled promise rejection (not React Query):', event.reason);
-    
-    // If we're in development (not production), suppress all unhandled rejections
-    // to prevent console noise during development/testing
-    // For production, we would want to see these errors
-    if (import.meta.env.DEV) {
-      event.preventDefault();
-    }
   }
 });
 
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: getQueryFn({ on401: "throw" }),
+      queryFn: getQueryFn({ on401: "returnNull" }), // Changed to returnNull for better error handling
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: 3,
-      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
+      staleTime: 60000, // Set to 1 minute instead of Infinity for dev purposes
+      retry: 1, // Reduce retries for faster development feedback
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000)
+      // TypeScript doesn't allow global onError through defaultOptions, but we handle this through
+      // our global unhandled rejection handler above
     },
     mutations: {
-      retry: 2,
-      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000)
+      retry: 1, // Reduce retries for faster development feedback 
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 5000)
+      // TypeScript doesn't allow global onError through defaultOptions, but we handle this through
+      // our global unhandled rejection handler above
     }
   }
 });

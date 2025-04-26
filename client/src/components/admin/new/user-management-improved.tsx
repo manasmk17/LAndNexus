@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -163,9 +163,12 @@ export default function UserManagement() {
     queryKey: ['/api/users'],
     queryFn: getQueryFn({ on401: 'returnNull' }),
     staleTime: 5000, // Short stale time to force refreshes
-    retry: false,
-    // Prevent errors from propagating and causing unhandled rejections
-    onError: (error) => {
+    retry: false
+  });
+
+  // Handle query errors
+  React.useEffect(() => {
+    if (isError && error) {
       console.log(`Error fetching users: ${error.message}`);
       toast({
         title: "Failed to load users",
@@ -173,78 +176,93 @@ export default function UserManagement() {
         variant: "destructive"
       });
     }
-  });
+  }, [isError, error, toast]);
+  
+  // Default user activity (placeholder for when no real data is available)
+  const defaultUserActivity: UserActivity = {
+    postedJobs: 0,
+    completedProjects: 0,
+    totalPayments: 0,
+    lastActive: new Date().toISOString()
+  };
   
   // Fetch user activity
   const {
-    data: userActivity,
-    isLoading: isLoadingActivity
+    data: userActivity = defaultUserActivity,
+    isLoading: isLoadingActivity,
+    error: activityError
   } = useQuery<UserActivity>({
     queryKey: selectedUser ? [`/api/users/${selectedUser.id}/activity`] : ['no-user-activity'],
     queryFn: selectedUser ? 
       getQueryFn({ on401: 'returnNull' }) : 
-      () => Promise.resolve({
-        postedJobs: 0,
-        completedProjects: 0,
-        totalPayments: 0,
-        lastActive: new Date().toISOString()
-      }),
+      () => Promise.resolve(defaultUserActivity),
     enabled: !!selectedUser,
-    retry: false,
-    // Prevent errors from propagating and causing unhandled rejections
-    onError: (error) => {
-      console.log(`Error fetching user activity: ${error.message}`);
+    retry: false
+  });
+
+  // Handle activity query errors
+  React.useEffect(() => {
+    if (activityError) {
+      console.log(`Error fetching user activity: ${activityError.message}`);
       toast({
         title: "Activity data unavailable",
         description: "Unable to load user activity data.",
         variant: "destructive"
       });
     }
-  });
+  }, [activityError, toast]);
   
   // Fetch user transactions
   const {
     data: userTransactions = [],
-    isLoading: isLoadingTransactions
+    isLoading: isLoadingTransactions,
+    error: transactionsError
   } = useQuery<UserTransaction[]>({
     queryKey: selectedUser ? [`/api/users/${selectedUser.id}/transactions`] : ['no-user-transactions'],
     queryFn: selectedUser ? 
       getQueryFn({ on401: 'returnNull' }) : 
       () => Promise.resolve([]),
     enabled: !!selectedUser && activeProfileTab === "transactions",
-    retry: false,
-    // Prevent errors from propagating and causing unhandled rejections
-    onError: (error) => {
-      console.log(`Error fetching user transactions: ${error.message}`);
+    retry: false
+  });
+
+  // Handle transactions query errors
+  React.useEffect(() => {
+    if (transactionsError) {
+      console.log(`Error fetching user transactions: ${transactionsError.message}`);
       toast({
         title: "Transaction data unavailable",
         description: "Unable to load transaction history.",
         variant: "destructive"
       });
     }
-  });
+  }, [transactionsError, toast]);
   
   // Fetch user complaints
   const {
     data: userComplaints = [],
-    isLoading: isLoadingComplaints
+    isLoading: isLoadingComplaints,
+    error: complaintsError
   } = useQuery<UserComplaint[]>({
     queryKey: selectedUser ? [`/api/users/${selectedUser.id}/complaints`] : ['no-user-complaints'],
     queryFn: selectedUser ? 
       getQueryFn({ on401: 'returnNull' }) : 
       () => Promise.resolve([]),
     enabled: !!selectedUser && activeProfileTab === "complaints",
-    retry: false,
-    // Prevent errors from propagating and causing unhandled rejections
-    onError: (error) => {
-      console.log(`Error fetching user complaints: ${error.message}`);
+    retry: false
+  });
+
+  // Handle complaints query errors
+  React.useEffect(() => {
+    if (complaintsError) {
+      console.log(`Error fetching user complaints: ${complaintsError.message}`);
       toast({
         title: "Complaint data unavailable",
         description: "Unable to load user complaints.",
         variant: "destructive"
       });
     }
-  });
+  }, [complaintsError, toast]);
   
   // Block/unblock user mutation
   const blockUserMutation = useMutation({

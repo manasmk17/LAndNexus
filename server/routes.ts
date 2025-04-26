@@ -46,6 +46,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import Stripe from "stripe";
 import memorystore from "memorystore";
+import { setupSocialAuth } from "./social-auth";
 
 // Initialize Stripe with the API key
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -163,6 +164,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize Passport
   app.use(passport.initialize());
   app.use(passport.session());
+
+  // Set up social authentication (Google, LinkedIn)
+  setupSocialAuth(app);
 
   // Configure Passport with a custom callback to support both username and email login
   passport.use(new LocalStrategy(async (identifier, password, done) => {

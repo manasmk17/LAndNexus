@@ -1821,6 +1821,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/professional-profiles/:id/certifications", isAuthenticated, async (req, res) => {
     try {
       const professionalId = parseInt(req.params.id);
+      
+      // Validate professional ID format
+      if (isNaN(professionalId)) {
+        return res.status(400).json({ message: "Invalid profile ID format" });
+      }
+      
       const user = req.user as any;
 
       // Check if profile exists and belongs to user
@@ -1851,6 +1857,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/certifications/:id", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // Validate certification ID format
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid certification ID format" });
+      }
+      
       const user = req.user as any;
 
       // Get the certification directly
@@ -1949,6 +1961,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
+      // Validate professional ID format
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid professional ID format" });
+      }
+      
       // Get the professional profile
       const profile = await storage.getProfessionalProfile(id);
       if (!profile) {
@@ -1984,6 +2001,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.user as any;
       const imageId = parseInt(req.params.imageId);
+      
+      // Validate image ID format
+      if (isNaN(imageId)) {
+        return res.status(400).json({ message: "Invalid image ID format" });
+      }
       
       if (user.userType !== "professional") {
         return res.status(403).json({ message: "Only professionals can delete gallery images" });
@@ -2053,6 +2075,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.user as any;
       const imageId = parseInt(req.params.imageId);
+      
+      // Validate image ID format
+      if (isNaN(imageId)) {
+        return res.status(400).json({ message: "Invalid image ID format" });
+      }
       
       if (user.userType !== "professional") {
         return res.status(403).json({ message: "Only professionals can update profile pictures" });

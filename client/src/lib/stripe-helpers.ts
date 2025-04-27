@@ -3,7 +3,8 @@ import { loadStripe, Stripe } from '@stripe/stripe-js';
 // Add type definitions for the global Stripe object on window
 declare global {
   interface Window {
-    Stripe?: (publicKey: string) => Stripe;
+    // Use a more specific type that doesn't conflict with the imported Stripe type
+    Stripe?: any; // Using any to avoid type conflicts
   }
 }
 
@@ -128,9 +129,17 @@ export function getStripe(): Promise<Stripe | null> {
 
 /**
  * Checks if Stripe is available and the environment is configured correctly
+ * @param {boolean} suppressConsoleError - Whether to suppress console error logging
+ * @returns {boolean} - Whether Stripe is available
  */
-export function isStripeAvailable(): boolean {
-  return !!import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+export function isStripeAvailable(suppressConsoleError = false): boolean {
+  const stripeKeyAvailable = !!import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+  
+  if (!stripeKeyAvailable && !suppressConsoleError) {
+    console.error('Stripe public key is not available. Set the VITE_STRIPE_PUBLIC_KEY environment variable.');
+  }
+  
+  return stripeKeyAvailable;
 }
 
 /**

@@ -136,6 +136,7 @@ export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [adminData, setAdminData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Verify admin authentication on component mount
   useEffect(() => {
@@ -279,7 +280,7 @@ export default function AdminPage() {
   
   return (
     <div className="flex min-h-screen bg-slate-50">
-      {/* Sidebar */}
+      {/* Desktop Sidebar */}
       <div className="w-64 bg-white border-r shadow-sm p-4 hidden md:block">
         <div className="flex items-center gap-2 mb-8">
           <Shield className="h-8 w-8 text-primary" />
@@ -292,105 +293,208 @@ export default function AdminPage() {
         </div>
         
         <nav className="space-y-1">
-          <Button 
-            variant={activeTab === "dashboard" ? "default" : "ghost"} 
-            className="w-full justify-start" 
-            onClick={() => setActiveTab("dashboard")}
-          >
-            <BarChart3 className="h-5 w-5 mr-2" />
-            Dashboard
-          </Button>
+          {/* Desktop menu */}
+          <div onClick={() => setActiveTab("dashboard")} className="cursor-pointer">
+            <div className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-md ${activeTab === "dashboard" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}>
+              <BarChart3 className="h-5 w-5 mr-2" />
+              Dashboard
+            </div>
+          </div>
           
-          <Button 
-            variant={activeTab === "users" ? "default" : "ghost"} 
-            className="w-full justify-start" 
-            onClick={() => setActiveTab("users")}
-          >
-            <Users className="h-5 w-5 mr-2" />
-            Users
-          </Button>
+          <div onClick={() => setActiveTab("users")} className="cursor-pointer">
+            <div className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-md ${activeTab === "users" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}>
+              <Users className="h-5 w-5 mr-2" />
+              Users
+            </div>
+          </div>
           
-          <Button 
-            variant={activeTab === "professionals" ? "default" : "ghost"} 
-            className="w-full justify-start" 
-            onClick={() => setActiveTab("professionals")}
-          >
-            <Award className="h-5 w-5 mr-2" />
-            Professionals
-          </Button>
+          <div onClick={() => setActiveTab("professionals")} className="cursor-pointer">
+            <div className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-md ${activeTab === "professionals" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}>
+              <Award className="h-5 w-5 mr-2" />
+              Professionals
+            </div>
+          </div>
           
-          <Button 
-            variant={activeTab === "companies" ? "default" : "ghost"} 
-            className="w-full justify-start" 
-            onClick={() => setActiveTab("companies")}
-          >
-            <Building className="h-5 w-5 mr-2" />
-            Companies
-          </Button>
+          <div onClick={() => setActiveTab("companies")} className="cursor-pointer">
+            <div className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-md ${activeTab === "companies" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}>
+              <Building className="h-5 w-5 mr-2" />
+              Companies
+            </div>
+          </div>
           
-          <Button 
-            variant={activeTab === "jobs" ? "default" : "ghost"} 
-            className="w-full justify-start" 
-            onClick={() => setActiveTab("jobs")}
-          >
-            <Briefcase className="h-5 w-5 mr-2" />
-            Jobs
-          </Button>
+          <div onClick={() => setActiveTab("jobs")} className="cursor-pointer">
+            <div className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-md ${activeTab === "jobs" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}>
+              <Briefcase className="h-5 w-5 mr-2" />
+              Jobs
+            </div>
+          </div>
           
-          <Button 
-            variant={activeTab === "resources" ? "default" : "ghost"} 
-            className="w-full justify-start" 
-            onClick={() => setActiveTab("resources")}
-          >
-            <BookOpen className="h-5 w-5 mr-2" />
-            Resources
-          </Button>
+          <div onClick={() => setActiveTab("resources")} className="cursor-pointer">
+            <div className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-md ${activeTab === "resources" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}>
+              <BookOpen className="h-5 w-5 mr-2" />
+              Resources
+            </div>
+          </div>
           
-          <Button 
-            variant={activeTab === "finances" ? "default" : "ghost"} 
-            className="w-full justify-start" 
-            onClick={() => setActiveTab("finances")}
-          >
-            <DollarSign className="h-5 w-5 mr-2" />
-            Finances
-          </Button>
+          <div onClick={() => setActiveTab("finances")} className="cursor-pointer">
+            <div className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-md ${activeTab === "finances" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}>
+              <DollarSign className="h-5 w-5 mr-2" />
+              Finances
+            </div>
+          </div>
           
-          <Button 
-            variant={activeTab === "analytics" ? "default" : "ghost"} 
-            className="w-full justify-start" 
-            onClick={() => setActiveTab("analytics")}
-          >
-            <BarChart3 className="h-5 w-5 mr-2" />
-            Analytics
-          </Button>
+          <div onClick={() => setActiveTab("analytics")} className="cursor-pointer">
+            <div className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-md ${activeTab === "analytics" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}>
+              <BarChart3 className="h-5 w-5 mr-2" />
+              Analytics
+            </div>
+          </div>
           
-          <Button 
-            variant={activeTab === "settings" ? "default" : "ghost"} 
-            className="w-full justify-start" 
-            onClick={() => setActiveTab("settings")}
-          >
-            <Settings className="h-5 w-5 mr-2" />
-            Settings
-          </Button>
+          <div onClick={() => setActiveTab("settings")} className="cursor-pointer">
+            <div className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-md ${activeTab === "settings" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}>
+              <Settings className="h-5 w-5 mr-2" />
+              Settings
+            </div>
+          </div>
 
           <hr className="my-4" />
           
-          <Button 
-            variant="ghost" 
-            className="w-full justify-start text-rose-600 hover:text-rose-700 hover:bg-rose-50" 
-            onClick={handleLogout}
-          >
-            <LogOut className="h-5 w-5 mr-2" />
-            Logout
-          </Button>
+          <div onClick={handleLogout} className="cursor-pointer">
+            <div className="flex items-center w-full px-3 py-2 text-sm font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-md">
+              <LogOut className="h-5 w-5 mr-2" />
+              Logout
+            </div>
+          </div>
         </nav>
       </div>
+
+      {/* Mobile Sidebar - Shown when mobileMenuOpen is true */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 md:hidden" onClick={() => setMobileMenuOpen(false)}>
+          <div className="w-64 h-full bg-white p-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-2">
+                <Shield className="h-8 w-8 text-primary" />
+                <h1 className="text-xl font-bold tracking-tight">Admin Panel</h1>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <span className="sr-only">Close menu</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </Button>
+            </div>
+            
+            <nav className="space-y-1">
+              {/* Mobile menu - same items as desktop but with setMobileMenuOpen(false) added */}
+              <div 
+                onClick={() => {
+                  setActiveTab("dashboard");
+                  setMobileMenuOpen(false);
+                }} 
+                className="cursor-pointer"
+              >
+                <div className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-md ${activeTab === "dashboard" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}>
+                  <BarChart3 className="h-5 w-5 mr-2" />
+                  Dashboard
+                </div>
+              </div>
+              
+              <div 
+                onClick={() => {
+                  setActiveTab("users");
+                  setMobileMenuOpen(false);
+                }} 
+                className="cursor-pointer"
+              >
+                <div className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-md ${activeTab === "users" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}>
+                  <Users className="h-5 w-5 mr-2" />
+                  Users
+                </div>
+              </div>
+              
+              <div 
+                onClick={() => {
+                  setActiveTab("professionals");
+                  setMobileMenuOpen(false);
+                }} 
+                className="cursor-pointer"
+              >
+                <div className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-md ${activeTab === "professionals" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}>
+                  <Award className="h-5 w-5 mr-2" />
+                  Professionals
+                </div>
+              </div>
+              
+              <div 
+                onClick={() => {
+                  setActiveTab("companies");
+                  setMobileMenuOpen(false);
+                }} 
+                className="cursor-pointer"
+              >
+                <div className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-md ${activeTab === "companies" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}>
+                  <Building className="h-5 w-5 mr-2" />
+                  Companies
+                </div>
+              </div>
+              
+              <div 
+                onClick={() => {
+                  setActiveTab("jobs");
+                  setMobileMenuOpen(false);
+                }} 
+                className="cursor-pointer"
+              >
+                <div className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-md ${activeTab === "jobs" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}>
+                  <Briefcase className="h-5 w-5 mr-2" />
+                  Jobs
+                </div>
+              </div>
+              
+              <div 
+                onClick={() => {
+                  setActiveTab("resources");
+                  setMobileMenuOpen(false);
+                }} 
+                className="cursor-pointer"
+              >
+                <div className={`flex items-center w-full px-3 py-2 text-sm font-medium rounded-md ${activeTab === "resources" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}>
+                  <BookOpen className="h-5 w-5 mr-2" />
+                  Resources
+                </div>
+              </div>
+              
+              <hr className="my-4" />
+              
+              <div 
+                onClick={() => {
+                  handleLogout();
+                  setMobileMenuOpen(false);
+                }} 
+                className="cursor-pointer"
+              >
+                <div className="flex items-center w-full px-3 py-2 text-sm font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-md">
+                  <LogOut className="h-5 w-5 mr-2" />
+                  Logout
+                </div>
+              </div>
+            </nav>
+          </div>
+        </div>
+      )}
 
       {/* Mobile menu button */}
       <Button 
         variant="outline" 
         size="icon" 
-        className="fixed top-4 left-4 z-50 md:hidden"
+        className="fixed top-4 left-4 z-40 md:hidden"
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
       >
         <List className="h-4 w-4" />
       </Button>

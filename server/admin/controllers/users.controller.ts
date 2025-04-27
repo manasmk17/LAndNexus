@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { storage } from '../../storage';
 import { AdminPermission } from '../types/admin.types';
-import { requirePermission } from '../middlewares/admin-auth.middleware';
+import { hasPermission } from '../middlewares/admin-auth.middleware';
 
 /**
  * Get all users with pagination, filtering, and sorting
@@ -296,7 +296,7 @@ export const getUserSubscription = async (req: Request, res: Response) => {
  * Update user's subscription
  */
 export const updateUserSubscription = [
-  requirePermission(AdminPermission.MANAGE_SUBSCRIPTIONS),
+  hasPermission(AdminPermission.MANAGE_SUBSCRIPTIONS),
   async (req: Request, res: Response) => {
     try {
       const userId = parseInt(req.params.id);

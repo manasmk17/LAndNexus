@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import * as authController from '../controllers/auth.controller';
 import * as usersController from '../controllers/users.controller';
-import { verifyAdminToken, requireRole, requirePermission, adminAuthRateLimiter } from '../middlewares/admin-auth.middleware';
+import { verifyAdminToken, requireRole, hasPermission as requirePermission } from '../middlewares/admin-auth.middleware';
 import { adminActivityLogger } from '../middlewares/activity-logger.middleware';
+import { adminAuthRateLimiter } from '../middlewares/rate-limiter.middleware';
 import { AdminRole, AdminPermission } from '../types/admin.types';
 
 const router = Router();

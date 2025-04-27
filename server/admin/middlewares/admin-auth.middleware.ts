@@ -139,7 +139,8 @@ export const hasPermission = (permission: AdminPermission) => {
       }
       
       // Check if the role has the required permission
-      const rolePermissions = RolePermissions[req.adminUser.role];
+      const adminRole = req.adminUser.role as AdminRole;
+      const rolePermissions = RolePermissions[adminRole] || [];
       
       // Check custom permissions override
       const customPermissions = req.adminUser.customPermissions || [];

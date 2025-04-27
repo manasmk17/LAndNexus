@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { db } from '../../db';
+import { getDB } from '../../db';
 import { users } from '../../../shared/schema';
 
 /**
@@ -139,7 +139,7 @@ async function logActivity(data: {
   
   // When we have a dedicated table, we would insert there
   /* 
-  await db.insert(adminActivityLogs).values({
+  await getDB().insert(adminActivityLogs).values({
     userId: data.userId,
     action: data.action,
     resourceType: data.resourceType,

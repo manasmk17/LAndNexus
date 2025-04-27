@@ -2546,56 +2546,55 @@ export class DatabaseStorage implements IStorage {
 
   // Notification operations
   async getNotificationType(id: number): Promise<NotificationType | undefined> {
-    const [notificationType] = await db?.select()
+    const [notificationType] = await getDB().select()
       .from(notificationTypes)
-      .where(eq(notificationTypes.id, id)) || [];
+      .where(eq(notificationTypes.id, id));
     return notificationType;
   }
   
   async getNotificationTypeByName(name: string): Promise<NotificationType | undefined> {
-    const [notificationType] = await db?.select()
+    const [notificationType] = await getDB().select()
       .from(notificationTypes)
-      .where(eq(notificationTypes.name, name)) || [];
+      .where(eq(notificationTypes.name, name));
     return notificationType;
   }
   
   async getAllNotificationTypes(): Promise<NotificationType[]> {
-    const results = await db?.select().from(notificationTypes) || [];
+    const results = await getDB().select().from(notificationTypes);
     return results;
   }
   
   async createNotificationType(type: InsertNotificationType): Promise<NotificationType> {
-    const [newType] = await db?.insert(notificationTypes)
+    const [newType] = await getDB().insert(notificationTypes)
       .values(type)
-      .returning() || [];
+      .returning();
     return newType;
   }
   
   async getNotification(id: number): Promise<Notification | undefined> {
-    const [notification] = await db?.select()
+    const [notification] = await getDB().select()
       .from(notifications)
-      .where(eq(notifications.id, id)) || [];
+      .where(eq(notifications.id, id));
     return notification;
   }
   
   async getUserNotifications(userId: number): Promise<Notification[]> {
-    const results = await db?.select()
+    const results = await getDB().select()
       .from(notifications)
       .where(eq(notifications.userId, userId))
-      .orderBy(desc(notifications.createdAt)) || [];
+      .orderBy(desc(notifications.createdAt));
     return results;
   }
   
   async getUserUnreadNotifications(userId: number): Promise<Notification[]> {
-    if (!db) return [];
     try {
-      const results = await db.select()
+      const results = await getDB().select()
         .from(notifications)
         .where(and(
           eq(notifications.userId, userId),
           eq(notifications.read, false)
         ))
-        .orderBy(desc(notifications.createdAt)) || [];
+        .orderBy(desc(notifications.createdAt));
       return results;
     } catch (err) {
       console.error("Error getting unread notifications:", err);
@@ -2604,34 +2603,34 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createNotification(notification: InsertNotification): Promise<Notification> {
-    const [newNotification] = await db?.insert(notifications)
+    const [newNotification] = await getDB().insert(notifications)
       .values({
         ...notification,
         read: false
       })
-      .returning() || [];
+      .returning();
     return newNotification;
   }
   
   async markNotificationAsRead(id: number): Promise<boolean> {
-    const [updated] = await db?.update(notifications)
+    const [updated] = await getDB().update(notifications)
       .set({ read: true })
       .where(eq(notifications.id, id))
-      .returning() || [];
+      .returning();
     return !!updated;
   }
   
   async markAllUserNotificationsAsRead(userId: number): Promise<boolean> {
-    await db?.update(notifications)
+    await getDB().update(notifications)
       .set({ read: true })
       .where(eq(notifications.userId, userId));
     return true;
   }
   
   async deleteNotification(id: number): Promise<boolean> {
-    const [deleted] = await db?.delete(notifications)
+    const [deleted] = await getDB().delete(notifications)
       .where(eq(notifications.id, id))
-      .returning() || [];
+      .returning();
     return !!deleted;
   }
   
@@ -2726,8 +2725,8 @@ export class DatabaseStorage implements IStorage {
         id: 0,
         userId: preference.userId,
         typeId: preference.typeId,
-        email: preference.email ?? null,
-        inApp: preference.inApp ?? null
+        email: preference.email !== undefined ? preference.email : true,
+        inApp: preference.inApp !== undefined ? preference.inApp : true
       };
     }
     
@@ -2741,7 +2740,7 @@ export class DatabaseStorage implements IStorage {
             inApp: preference.inApp !== undefined ? preference.inApp : existingPreference.inApp
           })
           .where(eq(notificationPreferences.id, existingPreference.id))
-          .returning() || [];
+          .returning();
         return updated;
       } else {
         // Create new preference with proper default values
@@ -2753,7 +2752,7 @@ export class DatabaseStorage implements IStorage {
         
         const [newPreference] = await getDB().insert(notificationPreferences)
           .values(insertPreference)
-          .returning() || [];
+          .returning();
         return newPreference;
       }
     } catch (error) {

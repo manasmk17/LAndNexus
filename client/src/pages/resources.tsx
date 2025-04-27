@@ -108,24 +108,30 @@ export default function Resources() {
     queryKey: ["/api/users/batch"],
     enabled: !!resources && resources.length > 0,
     queryFn: async () => {
-      // Extract unique author IDs from resources
-      const authorIds = resources
-        ? Array.from(new Set(resources.map(resource => resource.authorId)))
-        : [];
-      
-      if (authorIds.length === 0) return [];
-      
-      // Fetch user details for all authors
-      const response = await fetch(`/api/users/batch?userIds=${JSON.stringify(authorIds)}`, {
-        credentials: "include"
-      });
-      
-      if (!response.ok) {
-        console.error("Error fetching resource authors:", await response.text());
-        return [];
+      try {
+        // Extract unique author IDs from resources
+        const authorIds = resources
+          ? Array.from(new Set(resources.map(resource => resource.authorId)))
+              .filter(id => typeof id === 'number' && !isNaN(id)) // Make sure all IDs are valid numbers
+          : [];
+        
+        if (authorIds.length === 0) return [];
+        
+        // Fetch user details for all authors
+        const response = await fetch(`/api/users/batch?userIds=${JSON.stringify(authorIds)}`, {
+          credentials: "include"
+        });
+        
+        if (!response.ok) {
+          console.error("Error fetching resource authors:", await response.text());
+          return [];
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error("Error processing resource authors:", error);
+        return []; // Return empty array on error
       }
-      
-      return await response.json();
     }
   });
   

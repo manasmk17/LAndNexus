@@ -36,6 +36,8 @@ import SubscriptionSuccess from "@/pages/subscription-success";
 import ProfileSuccess from "@/pages/profile-success";
 import BookConsultation from "@/pages/book-consultation";
 import PageView from "@/pages/page";
+import AdminLogin from "@/pages/admin-login";
+import AdminIndex from "@/pages/admin/index";
 import NotFound from "@/pages/not-found";
 import { AuthProvider } from "@/lib/auth";
 
@@ -58,6 +60,7 @@ function Router() {
       <Route path="/resource/:id" component={ResourceDetail} />
       <Route path="/forum" component={Forum} />
       <Route path="/pages/:slug" component={PageView} />
+      <Route path="/admin-login" component={AdminLogin} />
       {/* Protected routes with user type restrictions */}
       <ProtectedRoute 
         path="/professional-dashboard" 
@@ -121,6 +124,9 @@ function Router() {
         path="/book-consultation/:id" 
         component={BookConsultation} 
       />
+      
+      {/* Admin routes */}
+      <Route path="/admin" component={AdminIndex} />
 
       {/* 404 route */}
       <Route component={NotFound} />

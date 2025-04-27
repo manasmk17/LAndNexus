@@ -2576,6 +2576,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/job-postings/:id/applications", isAuthenticated, async (req, res) => {
     try {
       const jobId = parseInt(req.params.id);
+      
+      // Validate job ID format
+      if (isNaN(jobId)) {
+        return res.status(400).json({ message: "Invalid job posting ID format" });
+      }
+      
       const user = req.user as any;
 
       if (user.userType !== "professional") {
@@ -2618,6 +2624,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/job-postings/:id/applications", isAuthenticated, async (req, res) => {
     try {
       const jobId = parseInt(req.params.id);
+      
+      // Validate job ID format
+      if (isNaN(jobId)) {
+        return res.status(400).json({ message: "Invalid job posting ID format" });
+      }
+      
       const user = req.user as any;
 
       // Check if job exists
@@ -2681,6 +2693,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/applications/:id/status", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // Validate application ID format
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid application ID format" });
+      }
+      
       const user = req.user as any;
 
       // Get application

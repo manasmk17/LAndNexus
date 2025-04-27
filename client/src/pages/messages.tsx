@@ -46,24 +46,43 @@ export default function Messages() {
     queryKey: ["/api/users/batch"],
     enabled: !!messages && messages.length > 0,
     queryFn: async () => {
-      // Extract unique user IDs from messages
-      const userIds = messages ? 
-        Array.from(new Set([
-          ...messages.map(msg => msg.senderId),
-          ...messages.map(msg => msg.receiverId)
-        ])) : [];
-      
-      // Fetch user details based on the IDs
-      const response = await fetch(`/api/users/batch?userIds=${JSON.stringify(userIds)}`, {
-        credentials: "include"
-      });
-      
-      if (!response.ok) {
-        console.error("Error fetching users:", await response.text());
+      try {
+        // Extract unique user IDs from messages, filter out invalid IDs
+        const userIds = messages ? 
+          Array.from(new Set([
+            ...messages.map(msg => msg.senderId),
+            ...messages.map(msg => msg.receiverId)
+          ])).filter(id => typeof id === 'number' && !isNaN(id)) : [];
+        
+        if (userIds.length === 0) {
+          console.log("No valid user IDs to fetch for messages");
+          return [];
+        }
+        
+        console.log("Fetching users for messages:", userIds);
+        
+        // Fetch user details based on the IDs
+        const response = await fetch(`/api/users/batch?userIds=${JSON.stringify(userIds)}`, {
+          credentials: "include"
+        });
+        
+        if (!response.ok) {
+          console.error("Error fetching users for messages:", await response.text());
+          return [];
+        }
+        
+        const data = await response.json();
+        
+        if (!Array.isArray(data)) {
+          console.error("Expected users array but got:", typeof data);
+          return [];
+        }
+        
+        return data;
+      } catch (error) {
+        console.error("Error processing users for messages:", error);
         return [];
       }
-      
-      return await response.json();
     }
   });
   

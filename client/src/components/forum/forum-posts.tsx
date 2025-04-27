@@ -94,7 +94,16 @@ export default function ForumPosts() {
       
       // Use the batch endpoint to get all users at once
       try {
-        const userIdsArray = Array.from(userIds);
+        // Filter out any invalid IDs
+        const userIdsArray = Array.from(userIds).filter(id => typeof id === 'number' && !isNaN(id));
+        
+        if (userIdsArray.length === 0) {
+          console.log("No valid user IDs to fetch for forum");
+          return results;
+        }
+        
+        console.log("Fetching forum users for IDs:", userIdsArray);
+        
         const response = await fetch(`/api/users/batch?userIds=${JSON.stringify(userIdsArray)}`, {
           credentials: "include"
         });
@@ -106,9 +115,16 @@ export default function ForumPosts() {
         
         const users = await response.json();
         
+        if (!Array.isArray(users)) {
+          console.error("Expected users array but got:", typeof users);
+          return results;
+        }
+        
         // Index users by ID for easy lookup
         users.forEach((user: UserType) => {
-          results[user.id] = user;
+          if (user && typeof user.id === 'number') {
+            results[user.id] = user;
+          }
         });
       } catch (error) {
         console.error("Error fetching forum users:", error);

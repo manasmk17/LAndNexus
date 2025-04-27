@@ -7,11 +7,13 @@ async function throwIfResNotOk(res: Response) {
       '/api/subscription-status', // No subscription is a valid state, not an error
       '/api/professionals/me', // Professional profile might not exist yet
       '/api/professionals/me/consultations', // No consultations yet
-      '/api/professionals/me/applications' // No applications yet
+      '/api/professionals/me/applications', // No applications yet
+      '/api/professionals/me/matches' // No matches yet
     ];
     
     // Don't throw for expected 404s
     if (res.status === 404 && expectedNotFoundEndpoints.some(endpoint => res.url.includes(endpoint))) {
+      console.log(`Handling expected 404 for ${res.url}`);
       // Just return the response without throwing, caller will handle it appropriately
       return;
     }
@@ -19,26 +21,53 @@ async function throwIfResNotOk(res: Response) {
     // Special handling for DELETE operations that return 204 No Content
     if (res.status === 204) {
       // 204 is success for DELETE, don't throw
+      console.log(`204 No Content response for ${res.url} - this is expected`);
       return;
     }
     
     let errorText;
+    let errorJson;
+    
     try {
       // Try to parse as JSON first
       const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const errorJson = await res.json();
-        errorText = errorJson.message || errorJson.error || JSON.stringify(errorJson);
+      const contentLength = res.headers.get('content-length');
+      
+      // Check for empty responses to avoid parsing errors
+      if (contentLength === '0' || contentLength === '0') {
+        errorText = `Empty response with status ${res.status}`;
+      } else if (contentType && contentType.includes('application/json')) {
+        try {
+          errorJson = await res.json();
+          errorText = errorJson.message || errorJson.error || JSON.stringify(errorJson);
+        } catch (jsonError) {
+          console.warn(`Failed to parse JSON error response from ${res.url}:`, jsonError);
+          // If JSON parsing fails, try text
+          errorText = await res.text() || res.statusText;
+        }
       } else {
         // Fall back to text
-        errorText = await res.text();
+        errorText = await res.text() || res.statusText;
       }
     } catch (e) {
-      // If we can't get the body, fall back to status text
-      errorText = res.statusText;
+      // If we can't get the body at all, fall back to status text
+      console.warn(`Failed to parse error response from ${res.url}:`, e);
+      errorText = res.statusText || `HTTP Error ${res.status}`;
     }
     
-    throw new Error(`${res.status}: ${errorText}`);
+    // Enhanced logging
+    console.error(`API Error for ${res.url}:`, {
+      status: res.status,
+      statusText: res.statusText,
+      errorText,
+      errorJson
+    });
+    
+    // Create a more specific error message based on status code
+    let errorMessage = `${res.status}: ${errorText}`;
+    
+    // Throw with detailed error
+    throw new Error(errorMessage);
   }
 }
 
@@ -391,14 +420,20 @@ export const getQueryFn: <T>(options: {
     }
     
     try {
+      console.log(`Executing query for ${url} with method ${method}`);
+      
       const res = await fetch(url, {
         method,
         headers,
         credentials: "include",
       });
 
+      // Log response details for debugging
+      console.log(`Query response received for ${url}: ${res.status} ${res.statusText}`);
+
       // Handle unauthorized response (401) with the specified behavior
       if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+        console.log(`Unauthorized (401) response from ${url}, returning null as specified`);
         return null;
       }
       
@@ -414,6 +449,25 @@ export const getQueryFn: <T>(options: {
         if (expectedNotFoundEndpoints.some(endpoint => url.includes(endpoint))) {
           console.log(`Received expected 404 from ${url}, returning null`);
           return null;
+        } else {
+          // For other endpoints, 404 means the resource doesn't exist
+          console.warn(`Resource not found at ${url}`);
+          let errorMsg;
+          
+          try {
+            // Try to get more details about the 404
+            const contentType = res.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+              const errorData = await res.json();
+              errorMsg = errorData.message || 'Resource not found';
+            } else {
+              errorMsg = await res.text() || 'Resource not found';
+            }
+          } catch (e) {
+            errorMsg = 'Resource not found';
+          }
+          
+          throw new Error(`404: ${errorMsg}`);
         }
       }
       
@@ -479,9 +533,28 @@ export const getQueryFn: <T>(options: {
         // Handle JSON parsing errors
         console.error(`JSON parsing error in query function for ${url}:`, error);
         throw new Error(`Invalid response format from server. Please try again later.`);
+      } else if (error.message?.includes("404")) {
+        // Specifically handle 404 errors with more detailed logging
+        console.error(`Resource not found error in query function for ${url}:`, error.message);
+        throw new Error(`The requested resource was not found. Please check that it exists and try again.`);
+      } else if (error.message?.includes("400")) {
+        // Specifically handle 400 errors (bad request)
+        console.error(`Bad request error in query function for ${url}:`, error.message);
+        throw new Error(`Invalid request format: ${error.message}. Please check your inputs and try again.`);
+      } else if (error.message?.includes("500") || error.message?.includes("502") || 
+                error.message?.includes("503") || error.message?.includes("504")) {
+        // Handle server errors
+        console.error(`Server error in query function for ${url}:`, error.message);
+        throw new Error(`Server error: ${error.message}. Our team has been notified and is working on a solution.`);
       } else {
-        // General error handling
-        console.error(`Error in query function for ${url}:`, error);
+        // General error handling with more detailed logging
+        console.error(`Error in query function for ${url}:`, {
+          message: error.message,
+          name: error.name,
+          stack: error.stack,
+          url,
+          method
+        });
         throw error;
       }
     }

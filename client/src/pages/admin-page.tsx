@@ -4,6 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Users,
   Briefcase,
@@ -18,6 +20,7 @@ import {
   Bell,
   List,
   Award,
+  AlertTriangle,
 } from "lucide-react";
 
 // Placeholder for admin components (these would normally be imported)
@@ -129,15 +132,80 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [adminData, setAdminData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Sample summary data for the dashboard
+  // Verify admin authentication on component mount
+  useEffect(() => {
+    const verifyAdmin = async () => {
+      try {
+        setIsLoading(true);
+        const token = localStorage.getItem("adminToken");
+        
+        // If no token is found, redirect to login
+        if (!token) {
+          throw new Error("No admin token found");
+        }
+        
+        // Create headers with JWT token
+        const headers = {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        };
+        
+        // Verify token with backend
+        const response = await fetch("/api/admin/verify-token", {
+          method: "GET",
+          headers
+        });
+        
+        if (!response.ok) {
+          throw new Error("Admin authentication failed");
+        }
+        
+        // Get admin data
+        const adminDataResponse = await fetch("/api/admin/me", {
+          method: "GET",
+          headers
+        });
+        
+        if (adminDataResponse.ok) {
+          const data = await adminDataResponse.json();
+          setAdminData(data);
+        }
+        
+        setIsAuthenticated(true);
+      } catch (err: any) {
+        console.error("Admin authentication error:", err);
+        setError(err.message);
+        
+        // Redirect to login page after a short delay
+        setTimeout(() => {
+          toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "Please login to access the admin panel",
+          });
+          setLocation("/admin-login");
+        }, 1500);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    verifyAdmin();
+  }, [setLocation, toast]);
+
+  // Sample summary data for the dashboard (would be replaced with real data from API)
   const summaryData = {
-    users: 345,
-    professionals: 123,
-    companies: 87,
-    jobs: 156,
-    resources: 89,
-    revenue: "$12,450",
+    users: adminData?.stats?.totalUsers || 0,
+    professionals: adminData?.stats?.totalProfessionals || 0,
+    companies: adminData?.stats?.totalCompanies || 0,
+    jobs: adminData?.stats?.totalJobs || 0,
+    resources: adminData?.stats?.totalResources || 0,
+    revenue: adminData?.stats?.monthlyRevenue || "$0",
   };
 
   const handleLogout = async () => {
@@ -155,6 +223,38 @@ export default function AdminPage() {
     setLocation("/admin-login");
   };
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
+        <div className="h-12 w-12 rounded-full border-4 border-primary border-t-transparent animate-spin mb-4"></div>
+        <h2 className="text-xl font-semibold mb-2">Verifying Admin Access</h2>
+        <p className="text-muted-foreground">Please wait while we authenticate your credentials...</p>
+      </div>
+    );
+  }
+  
+  // Error state
+  if (error && !isAuthenticated) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
+        <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
+          <div className="flex items-center justify-center mb-6 text-rose-500">
+            <AlertTriangle className="h-12 w-12" />
+          </div>
+          <h2 className="text-2xl font-bold text-center mb-4">Authentication Error</h2>
+          <p className="text-center text-muted-foreground mb-6">{error}</p>
+          <Button 
+            className="w-full" 
+            onClick={() => setLocation("/admin-login")}
+          >
+            Return to Login
+          </Button>
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="flex min-h-screen bg-slate-50">
       {/* Sidebar */}
@@ -162,6 +262,11 @@ export default function AdminPage() {
         <div className="flex items-center gap-2 mb-8">
           <Shield className="h-8 w-8 text-primary" />
           <h1 className="text-xl font-bold tracking-tight">Admin Panel</h1>
+          {adminData && (
+            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+              {adminData.role || 'Admin'}
+            </span>
+          )}
         </div>
         
         <nav className="space-y-1">
@@ -284,7 +389,11 @@ export default function AdminPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{summaryData.users}</div>
+                    {adminData ? (
+                      <div className="text-2xl font-bold">{summaryData.users}</div>
+                    ) : (
+                      <Skeleton className="h-8 w-16" />
+                    )}
                   </CardContent>
                 </Card>
                 
@@ -295,7 +404,11 @@ export default function AdminPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{summaryData.professionals}</div>
+                    {adminData ? (
+                      <div className="text-2xl font-bold">{summaryData.professionals}</div>
+                    ) : (
+                      <Skeleton className="h-8 w-16" />
+                    )}
                   </CardContent>
                 </Card>
                 
@@ -306,7 +419,11 @@ export default function AdminPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{summaryData.companies}</div>
+                    {adminData ? (
+                      <div className="text-2xl font-bold">{summaryData.companies}</div>
+                    ) : (
+                      <Skeleton className="h-8 w-16" />
+                    )}
                   </CardContent>
                 </Card>
                 
@@ -317,7 +434,11 @@ export default function AdminPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{summaryData.jobs}</div>
+                    {adminData ? (
+                      <div className="text-2xl font-bold">{summaryData.jobs}</div>
+                    ) : (
+                      <Skeleton className="h-8 w-16" />
+                    )}
                   </CardContent>
                 </Card>
                 
@@ -328,7 +449,11 @@ export default function AdminPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{summaryData.resources}</div>
+                    {adminData ? (
+                      <div className="text-2xl font-bold">{summaryData.resources}</div>
+                    ) : (
+                      <Skeleton className="h-8 w-16" />
+                    )}
                   </CardContent>
                 </Card>
                 
@@ -339,7 +464,11 @@ export default function AdminPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{summaryData.revenue}</div>
+                    {adminData ? (
+                      <div className="text-2xl font-bold">{summaryData.revenue}</div>
+                    ) : (
+                      <Skeleton className="h-8 w-20" />
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -349,9 +478,19 @@ export default function AdminPage() {
                   <CardTitle>Recent Activity</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-center py-8 text-muted-foreground">
-                    Activity feed will be displayed here
-                  </p>
+                  {adminData ? (
+                    <p className="text-center py-8 text-muted-foreground">
+                      Activity feed will be displayed here
+                    </p>
+                  ) : (
+                    <div className="space-y-4">
+                      <Skeleton className="h-12 w-full" />
+                      <Skeleton className="h-12 w-full" />
+                      <Skeleton className="h-12 w-full" />
+                      <Skeleton className="h-12 w-full" />
+                      <Skeleton className="h-12 w-full" />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>

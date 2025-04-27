@@ -26,7 +26,7 @@ export const login = async (req: Request, res: Response) => {
     }
     
     // Check if user is an admin
-    if (!user.is_admin) {
+    if (!user.isAdmin) {
       return res.status(403).json({ message: 'Access denied: Not an admin account' });
     }
     
@@ -43,10 +43,10 @@ export const login = async (req: Request, res: Response) => {
     
     // TODO: Store refresh token or hash in database for validation
     
-    // Update last login
+    // Update last active timestamp
     await db
       .update(users)
-      .set({ last_login: new Date() })
+      .set({ lastActiveAt: new Date() })
       .where(eq(users.id, user.id));
     
     // Return user info and tokens
@@ -58,22 +58,22 @@ export const login = async (req: Request, res: Response) => {
         id: user.id,
         username: user.username,
         email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        role: user.user_type as AdminRole, 
-        lastLogin: user.last_login,
-        createdAt: user.created_at,
-        updatedAt: user.updated_at || user.created_at,
-        isActive: !user.blocked,
-        twoFactorEnabled: Boolean(user.two_factor_enabled),
-        twoFactorSecret: user.two_factor_secret || null,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.userType as AdminRole, 
+        lastLogin: user.lastActiveAt,
+        createdAt: user.createdAt,
+        updatedAt: user.createdAt, // We don't have an updatedAt field, using createdAt instead
+        isActive: user.blocked !== true,
+        twoFactorEnabled: false, // Two-factor is not implemented yet
+        twoFactorSecret: null,
         // Additional founder privileges
-        bypassRestrictions: user.user_type === AdminRole.FOUNDER,
-        accessLevel: user.user_type === AdminRole.FOUNDER ? 100 : 
-                    user.user_type === AdminRole.SUPER_ADMIN ? 80 : 
-                    user.user_type === AdminRole.ADMIN ? 60 : 
-                    user.user_type === AdminRole.MODERATOR ? 40 : 20,
-        canImpersonateUsers: user.user_type === AdminRole.FOUNDER || user.user_type === AdminRole.SUPER_ADMIN
+        bypassRestrictions: user.userType === AdminRole.FOUNDER,
+        accessLevel: user.userType === AdminRole.FOUNDER ? 100 : 
+                    user.userType === AdminRole.SUPER_ADMIN ? 80 : 
+                    user.userType === AdminRole.ADMIN ? 60 : 
+                    user.userType === AdminRole.MODERATOR ? 40 : 20,
+        canImpersonateUsers: user.userType === AdminRole.FOUNDER || user.userType === AdminRole.SUPER_ADMIN
       }
     };
     

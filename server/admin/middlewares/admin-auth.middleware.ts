@@ -73,8 +73,8 @@ export const verifyAdminToken = async (req: Request, res: Response, next: NextFu
       return res.status(401).json({ message: 'Unauthorized: Admin not found' });
     }
     
-    // Using blocked field instead of isActive
-    if (adminUser.blocked) {
+    // Check if account is blocked using the database field
+    if (adminUser.blocked === true) {
       return res.status(403).json({ message: 'Account is disabled' });
     }
     

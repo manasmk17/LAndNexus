@@ -1,8 +1,9 @@
 import { z } from "zod";
 
 // Admin roles with hierarchy:
-// SuperAdmin > Admin > Moderator > Analyst
+// Founder > SuperAdmin > Admin > Moderator > Analyst
 export enum AdminRole {
+  FOUNDER = "founder",
   SUPER_ADMIN = "super_admin",
   ADMIN = "admin",
   MODERATOR = "moderator",
@@ -16,6 +17,7 @@ export enum AdminPermission {
   CREATE_USERS = "create_users",
   UPDATE_USERS = "update_users",
   DELETE_USERS = "delete_users",
+  IMPERSONATE_USERS = "impersonate_users",
   
   // Professional Management
   READ_PROFESSIONALS = "read_professionals",
@@ -46,16 +48,37 @@ export enum AdminPermission {
   VIEW_TRANSACTIONS = "view_transactions",
   PROCESS_REFUNDS = "process_refunds",
   MANAGE_SUBSCRIPTIONS = "manage_subscriptions",
+  OVERRIDE_PAYMENTS = "override_payments",
   
   // Analytics & Settings
   VIEW_ANALYTICS = "view_analytics",
   EXPORT_DATA = "export_data",
-  MANAGE_SETTINGS = "manage_settings"
+  MANAGE_SETTINGS = "manage_settings",
+  
+  // Platform Control (Founder Only)
+  MANAGE_ADMINS = "manage_admins",
+  SYSTEM_CONFIGURATION = "system_configuration",
+  DATABASE_ACCESS = "database_access",
+  AI_CONFIGURATION = "ai_configuration",
+  PLATFORM_MESSAGING = "platform_messaging",
+  VIEW_LOGS = "view_logs",
+  MANAGE_API_KEYS = "manage_api_keys"
 }
 
 // Define the role-permission mappings
 export const RolePermissions: Record<AdminRole, AdminPermission[]> = {
-  [AdminRole.SUPER_ADMIN]: Object.values(AdminPermission), // All permissions
+  // Founder has absolute access to everything
+  [AdminRole.FOUNDER]: Object.values(AdminPermission),
+  
+  // Super Admin has all standard permissions but not some founder-only permissions
+  [AdminRole.SUPER_ADMIN]: Object.values(AdminPermission).filter(
+    perm => ![
+      AdminPermission.DATABASE_ACCESS,
+      AdminPermission.MANAGE_API_KEYS,
+      AdminPermission.SYSTEM_CONFIGURATION
+    ].includes(perm)
+  ),
+  
   [AdminRole.ADMIN]: [
     // User Management (limited)
     AdminPermission.READ_USERS,
@@ -151,6 +174,17 @@ export interface AdminUser {
   twoFactorEnabled: boolean;
   twoFactorSecret: string | null;
   password: string;
+  bypassRestrictions?: boolean; // For founder to bypass all restrictions
+  accessLevel?: number; // 100 = founder
+  canImpersonateUsers?: boolean;
+}
+
+// Founder-specific interface
+export interface FounderUser extends AdminUser {
+  role: AdminRole.FOUNDER;
+  bypassRestrictions: true;
+  accessLevel: 100;
+  canImpersonateUsers: true;
 }
 
 // Admin Action Log Interface

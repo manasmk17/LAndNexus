@@ -338,6 +338,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/:id", async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
+      
+      // Check if userId is a valid number
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID format" });
+      }
+      
       const user = await storage.getUser(userId);
       
       if (!user) {
@@ -358,6 +364,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/users/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
+      
+      // Check if userId is a valid number
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID format" });
+      }
+      
       const updateData = req.body;
       
       // Remove sensitive fields that shouldn't be updated directly
@@ -381,6 +393,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.id);
       
+      // Check if userId is a valid number
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID format" });
+      }
+      
       // Perform user deletion (soft delete if available, or regular delete)
       const success = await storage.deleteUser(userId);
       
@@ -399,6 +416,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/:id/activity", async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
+      
+      // Check if userId is a valid number
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID format" });
+      }
       // This is a mock structure for now as we're using memory storage
       // In a real application, this would fetch login history, actions, etc.
       const activity = {
@@ -425,6 +447,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/:id/transactions", async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
+      
+      // Check if userId is a valid number
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID format" });
+      }
       // This is a mock structure for now
       // In a real application, this would fetch transaction history from Stripe or another payment processor
       const transactions = [
@@ -456,6 +483,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/:id/complaints", async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
+      
+      // Check if userId is a valid number
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID format" });
+      }
       // This is a mock structure for now
       const complaints: Array<{ 
         id: number, 
@@ -665,6 +697,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/consultations/:id/pay", isAuthenticated, async (req, res) => {
     try {
       const consultationId = parseInt(req.params.id);
+      
+      // Check if consultationId is a valid number
+      if (isNaN(consultationId)) {
+        return res.status(400).json({ message: "Invalid consultation ID format" });
+      }
+      
       const { paymentMethodId, amount } = req.body;
 
       // Get consultation to validate

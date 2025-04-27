@@ -156,30 +156,52 @@ export default function AdminPage() {
         };
         
         // Verify token with backend
-        const response = await fetch("/api/admin/auth/verify-token", {
-          method: "GET",
-          headers
-        });
-        
-        if (!response.ok) {
-          throw new Error("Admin authentication failed");
+        try {
+          const response = await fetch("/api/admin/auth/verify-token", {
+            method: "GET",
+            headers
+          });
+          
+          if (!response.ok) {
+            throw new Error("Admin authentication failed: " + response.statusText);
+          }
+        } catch (tokenError) {
+          console.error("Token verification error:", tokenError);
+          throw new Error("Authentication error: Unable to verify admin token");
         }
         
         // Get admin data
-        const adminDataResponse = await fetch("/api/admin/auth/me", {
-          method: "GET",
-          headers
-        });
-        
-        if (adminDataResponse.ok) {
+        try {
+          const adminDataResponse = await fetch("/api/admin/auth/me", {
+            method: "GET",
+            headers
+          });
+          
+          if (!adminDataResponse.ok) {
+            throw new Error("Failed to fetch admin data: " + adminDataResponse.statusText);
+          }
+          
           const data = await adminDataResponse.json();
+          console.log("Admin data received:", data);
           setAdminData(data);
+        } catch (dataError) {
+          console.error("Admin data fetch error:", dataError);
+          toast({
+            variant: "destructive",
+            title: "Data Error",
+            description: "Could not load admin dashboard data. The server may be experiencing issues.",
+          });
+          // We still set isAuthenticated to true since the token was valid
         }
         
         setIsAuthenticated(true);
       } catch (err: any) {
         console.error("Admin authentication error:", err);
         setError(err.message);
+        
+        // Clear any invalid tokens
+        localStorage.removeItem("adminToken");
+        localStorage.removeItem("adminRefreshToken");
         
         // Redirect to login page after a short delay
         setTimeout(() => {

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { db } from '../../db';
+import { getDB } from '../../db';
 import { users } from '../../../shared/schema';
 import bcrypt from 'bcrypt';
 import { AdminRole, AdminAuthResponse, adminLoginSchema } from '../types/admin.types';
@@ -16,7 +16,7 @@ export const login = async (req: Request, res: Response) => {
     const validatedData = adminLoginSchema.parse(req.body);
     
     // Find the user by email
-    const [user] = await db
+    const [user] = await getDB()
       .select()
       .from(users)
       .where(eq(users.email, validatedData.email));
@@ -44,7 +44,7 @@ export const login = async (req: Request, res: Response) => {
     // TODO: Store refresh token or hash in database for validation
     
     // Update last active timestamp
-    await db
+    await getDB()
       .update(users)
       .set({ lastActiveAt: new Date() })
       .where(eq(users.id, user.id));

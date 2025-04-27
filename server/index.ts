@@ -72,6 +72,10 @@ app.use((req, res, next) => {
     '/api/admin/professional-profiles',
     '/api/admin/job-postings',
     '/api/admin/resources',
+    '/api/admin/auth/login',      // Added admin auth routes
+    '/api/admin/auth/logout',     // Added admin auth routes
+    '/api/admin/auth/refresh-token', // Added admin auth routes
+    '/api/admin/founder',         // Added founder routes
     '/api/reviews',
     '/api/notifications',
     '/api/notifications/unread',
@@ -99,7 +103,10 @@ app.use((req, res, next) => {
     { path: '/api/professionals/me/expertise', method: 'POST' },
     { path: '/api/professionals/me/certifications', method: 'POST' },
     { path: '/api/company-profiles', method: 'POST' },
-    { path: '/api/company-profiles/:id', method: 'PUT' }
+    { path: '/api/company-profiles/:id', method: 'PUT' },
+    { path: '/api/admin/auth/login', method: 'POST' },
+    { path: '/api/admin/auth/logout', method: 'POST' },
+    { path: '/api/admin/auth/refresh-token', method: 'POST' }
   ];
   
   // Function to check if a path matches a route pattern

@@ -4,7 +4,10 @@ async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     // List of special case endpoints where 404 responses are expected and not errors
     const expectedNotFoundEndpoints = [
-      '/api/subscription-status' // No subscription is a valid state, not an error
+      '/api/subscription-status', // No subscription is a valid state, not an error
+      '/api/professionals/me', // Professional profile might not exist yet
+      '/api/professionals/me/consultations', // No consultations yet
+      '/api/professionals/me/applications' // No applications yet
     ];
     
     // Don't throw for expected 404s
@@ -394,8 +397,24 @@ export const getQueryFn: <T>(options: {
         credentials: "include",
       });
 
+      // Handle unauthorized response (401) with the specified behavior
       if (unauthorizedBehavior === "returnNull" && res.status === 401) {
         return null;
+      }
+      
+      // Handle 404 for endpoints where it's expected
+      if (res.status === 404) {
+        const expectedNotFoundEndpoints = [
+          '/api/subscription-status',
+          '/api/professionals/me',
+          '/api/professionals/me/consultations',
+          '/api/professionals/me/applications'
+        ];
+        
+        if (expectedNotFoundEndpoints.some(endpoint => url.includes(endpoint))) {
+          console.log(`Received expected 404 from ${url}, returning null`);
+          return null;
+        }
       }
       
       // Enhanced error handling for CSRF-specific errors
@@ -428,7 +447,21 @@ export const getQueryFn: <T>(options: {
       }
 
       await throwIfResNotOk(res);
-      return await res.json();
+      
+      // Handle empty responses (like 204 No Content)
+      if (res.status === 204 || res.headers.get('content-length') === '0') {
+        return null;
+      }
+      
+      // Check if response is JSON before parsing
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return await res.json();
+      } else {
+        // For non-JSON responses, return the text
+        console.warn(`Non-JSON response received from ${url} (${contentType})`);
+        return { text: await res.text() };
+      }
     } catch (error: any) {
       // Create more descriptive error messages for common network issues
       if (

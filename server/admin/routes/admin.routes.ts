@@ -16,6 +16,14 @@ router.post('/auth/login', adminAuthRateLimiter, authController.login);
 router.post('/auth/refresh-token', authController.refreshToken);
 router.post('/auth/logout', authController.logout);
 
+// Token verification endpoint for frontend
+router.get('/auth/verify-token', verifyAdminToken, (req, res) => {
+  res.status(200).json({ valid: true });
+});
+
+// Admin user data endpoint for frontend
+router.get('/auth/me', verifyAdminToken, authController.getProfile);
+
 // Protected routes - require admin token
 router.use(verifyAdminToken);
 

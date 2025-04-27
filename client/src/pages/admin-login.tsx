@@ -45,7 +45,7 @@ export default function AdminLogin() {
   const onSubmit = async (values: AdminLoginFormValues) => {
     setIsLoading(true);
     try {
-      const res = await apiRequest("POST", "/api/admin/login", values);
+      const res = await apiRequest("POST", "/api/admin/auth/login", values);
       if (res.ok) {
         const data = await res.json();
         toast({

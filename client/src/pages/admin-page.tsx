@@ -156,7 +156,7 @@ export default function AdminPage() {
         };
         
         // Verify token with backend
-        const response = await fetch("/api/admin/verify-token", {
+        const response = await fetch("/api/admin/auth/verify-token", {
           method: "GET",
           headers
         });
@@ -166,7 +166,7 @@ export default function AdminPage() {
         }
         
         // Get admin data
-        const adminDataResponse = await fetch("/api/admin/me", {
+        const adminDataResponse = await fetch("/api/admin/auth/me", {
           method: "GET",
           headers
         });

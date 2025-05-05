@@ -668,22 +668,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Handle the event
     switch (event.type) {
-      case 'customer.subscription.updated':
-      case 'customer.subscription.deleted':
-        const subscription = event.data.object as any;
-        // Find the user by their Stripe customer ID
-        const user = await storage.getUserByStripeCustomerId(subscription.customer);
-
-        if (user) {
-          // Update the subscription status
-          const subscriptionTier = user.subscriptionTier || "basic";
-          await storage.updateUserSubscription(
-            user.id, 
-            subscriptionTier, 
-            subscription.status
-          );
+      case 'payment_intent.succeeded':
+        const paymentIntent = event.data.object;
+        console.log(`PaymentIntent ${paymentIntent.id} succeeded.`);
+        
+        // Extract metadata
+        const { userId, tier, type, consultationId } = paymentIntent.metadata || {};
+        
+        if (userId) {
+          if (type === 'subscription') {
+            // Update subscription status for the user
+            await storage.updateUserSubscription(
+              parseInt(userId), 
+              tier || 'basic', 
+              'active'
+            );
+            console.log(`Updated subscription for user ${userId} to ${tier} (active)`);
+          } else if (type === 'consultation' && consultationId) {
+            // Update consultation status
+            await storage.updateConsultationStatus(parseInt(consultationId), 'paid');
+            console.log(`Updated consultation ${consultationId} status to paid`);
+          } else if (type === 'one-time') {
+            // Handle one-time payment
+            console.log(`Processed one-time payment for user ${userId}`);
+          }
         }
         break;
+        
+      case 'payment_intent.payment_failed':
+        const failedPayment = event.data.object;
+        console.log(`Payment failed for PaymentIntent ${failedPayment.id}`);
+        
+        // Could notify the user or update your database here
+        break;
+        
+      case 'customer.subscription.created':
+        const newSubscription = event.data.object;
+        console.log(`New subscription ${newSubscription.id} created`);
+        
+        // Find the user by their Stripe customer ID
+        const newSubUser = await storage.getUserByStripeCustomerId(newSubscription.customer);
+        if (newSubUser) {
+          // Detect subscription tier from price ID or metadata
+          const tierInfo = SUBSCRIPTION_TIERS.find(t => 
+            newSubscription.items?.data?.some(item => 
+              item.price?.id === t.stripePriceId));
+              
+          const subTier = tierInfo?.id || newSubscription.metadata?.tier || 'basic';
+          
+          // Update the subscription status
+          await storage.updateUserSubscription(
+            newSubUser.id, 
+            subTier, 
+            newSubscription.status
+          );
+          
+          // Store Stripe subscription ID
+          await storage.updateStripeSubscriptionId(newSubUser.id, newSubscription.id);
+          
+          console.log(`Created subscription for user ${newSubUser.id}: ${subTier} (${newSubscription.status})`);
+        }
+        break;
+        
+      case 'customer.subscription.updated':
+        const updatedSubscription = event.data.object;
+        console.log(`Subscription ${updatedSubscription.id} updated`);
+        
+        // Find the user by their Stripe customer ID
+        const updatedSubUser = await storage.getUserByStripeCustomerId(updatedSubscription.customer);
+        if (updatedSubUser) {
+          // Update the subscription status
+          const subscriptionTier = updatedSubUser.subscriptionTier || "basic";
+          await storage.updateUserSubscription(
+            updatedSubUser.id, 
+            subscriptionTier, 
+            updatedSubscription.status
+          );
+          console.log(`Updated subscription for user ${updatedSubUser.id}: ${subscriptionTier} (${updatedSubscription.status})`);
+        }
+        break;
+        
+      case 'customer.subscription.deleted':
+        const canceledSubscription = event.data.object;
+        console.log(`Subscription ${canceledSubscription.id} canceled`);
+        
+        // Find the user by their Stripe customer ID
+        const canceledSubUser = await storage.getUserByStripeCustomerId(canceledSubscription.customer);
+        if (canceledSubUser) {
+          // Update the subscription status to canceled
+          await storage.updateUserSubscription(
+            canceledSubUser.id, 
+            'basic', // Reset to basic tier
+            'canceled'
+          );
+          
+          // Clear Stripe subscription ID
+          await storage.updateStripeSubscriptionId(canceledSubUser.id, null);
+          
+          console.log(`Canceled subscription for user ${canceledSubUser.id}`);
+        }
+        break;
+        
+      case 'invoice.payment_succeeded':
+        const successfulInvoice = event.data.object;
+        console.log(`Invoice ${successfulInvoice.id} payment succeeded`);
+        
+        // Handle recurring subscription payment
+        if (successfulInvoice.subscription) {
+          // This could trigger renewal notifications or update subscription renewal date
+          console.log(`Subscription ${successfulInvoice.subscription} renewed`);
+        }
+        break;
+        
+      case 'invoice.payment_failed':
+        const failedInvoice = event.data.object;
+        console.log(`Invoice ${failedInvoice.id} payment failed`);
+        
+        // Handle failed subscription payment - could notify user
+        if (failedInvoice.subscription) {
+          console.log(`Subscription ${failedInvoice.subscription} payment failed`);
+        }
+        break;
+        
       default:
         // Unexpected event type
         console.log(`Unhandled event type ${event.type}`);

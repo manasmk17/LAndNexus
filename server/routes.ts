@@ -59,6 +59,37 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-02-24.acacia" as any,
 });
 
+// Define subscription tiers with Stripe price IDs for webhook handler
+const SUBSCRIPTION_TIERS = [
+  {
+    id: 'basic',
+    name: 'Basic',
+    price: 29,
+    stripePriceId: process.env.STRIPE_BASIC_PRICE_ID,
+    description: 'Essential tools for L&D professionals and companies',
+    features: [
+      'Create basic profile',
+      'Browse job postings',
+      'Access resource library',
+      'Apply to up to 5 jobs monthly'
+    ]
+  },
+  {
+    id: 'premium',
+    name: 'Premium',
+    price: 79,
+    stripePriceId: process.env.STRIPE_PREMIUM_PRICE_ID,
+    description: 'Advanced features for serious L&D professionals and growing organizations',
+    features: [
+      'Featured profile placement',
+      'Unlimited job applications',
+      'Direct messaging',
+      'Access to premium resources',
+      'Priority support'
+    ]
+  }
+];
+
 import { registerAdminRoutes } from './admin/admin';
 
 const MemoryStore = memorystore(session);
@@ -710,11 +741,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const newSubUser = await storage.getUserByStripeCustomerId(newSubscription.customer);
         if (newSubUser) {
           // Detect subscription tier from price ID or metadata
-          const tierInfo = SUBSCRIPTION_TIERS.find(t => 
-            newSubscription.items?.data?.some(item => 
+          const tierInfo = SUBSCRIPTION_TIERS.find((t: any) => 
+            newSubscription.items?.data?.some((item: any) => 
               item.price?.id === t.stripePriceId));
               
-          const subTier = tierInfo?.id || newSubscription.metadata?.tier || 'basic';
+          const subTier = tierInfo?.id || (newSubscription.metadata?.tier as string) || 'basic';
           
           // Update the subscription status
           await storage.updateUserSubscription(

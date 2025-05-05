@@ -101,7 +101,7 @@ export interface IStorage {
   
   // Stripe operations
   updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined>;
-  updateStripeSubscriptionId(userId: number, subscriptionId: string): Promise<User | undefined>;
+  updateStripeSubscriptionId(userId: number, subscriptionId: string | null): Promise<User | undefined>;
   updateUserSubscription(userId: number, tier: string, status: string): Promise<User | undefined>;
   getUserByStripeCustomerId(customerId: string): Promise<User | undefined>;
   
@@ -1190,7 +1190,7 @@ export class MemStorage implements IStorage {
     return updated;
   }
   
-  async updateStripeSubscriptionId(userId: number, subscriptionId: string): Promise<User | undefined> {
+  async updateStripeSubscriptionId(userId: number, subscriptionId: string | null): Promise<User | undefined> {
     const user = await this.getUser(userId);
     if (!user) return undefined;
     

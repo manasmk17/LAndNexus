@@ -151,3 +151,75 @@ export function formatCurrency(amount: number): string {
     currency: 'USD',
   }).format(amount);
 }
+
+/**
+ * Creates a payment intent for a specific amount
+ * @param amount The amount to charge in dollars
+ * @param metadata Optional metadata to associate with the payment
+ * @returns Client secret for the payment intent
+ */
+export async function createPaymentIntent(amount: number, metadata?: Record<string, string>): Promise<string | null> {
+  try {
+    const response = await fetch('/api/create-payment-intent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        amount,
+        ...metadata
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Error creating payment intent');
+    }
+
+    const data = await response.json();
+    return data.clientSecret;
+  } catch (error) {
+    console.error('Error creating payment intent:', error);
+    return null;
+  }
+}
+
+/**
+ * Common Stripe test card numbers for testing payment scenarios
+ */
+export const TEST_CARDS = {
+  success: '4242 4242 4242 4242', // Always succeeds
+  requiresAuth: '4000 0025 0000 3155', // Requires authentication
+  declined: '4000 0000 0000 0002', // Always declined
+};
+
+/**
+ * Helper to build a list of subscription tiers
+ */
+export const SUBSCRIPTION_TIERS = [
+  {
+    id: 'basic',
+    name: 'Basic',
+    price: 29,
+    description: 'Essential tools for L&D professionals and companies',
+    features: [
+      'Create basic profile',
+      'Browse job postings',
+      'Access resource library',
+      'Apply to up to 5 jobs monthly'
+    ]
+  },
+  {
+    id: 'premium',
+    name: 'Premium',
+    price: 79,
+    description: 'Advanced features for serious L&D professionals and growing organizations',
+    features: [
+      'Featured profile placement',
+      'Unlimited job applications',
+      'Direct messaging',
+      'Access to premium resources',
+      'Priority support'
+    ]
+  }
+];

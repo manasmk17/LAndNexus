@@ -529,7 +529,6 @@ export const insertNotificationPreferenceSchema = createInsertSchema(notificatio
 });
 
 export type NotificationPreference = typeof notificationPreferences.$inferSelect;
-export type InsertNotificationPreference = z.infer<typeof insertNotificationPreferenceSchema>;
 
 // ============================================================================
 // NEW SCHEMA TABLES FOR ENHANCED FEATURES

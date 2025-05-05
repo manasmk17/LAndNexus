@@ -7,6 +7,7 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 import * as crypto from "crypto";
+import portfolioProjectsRoutes from "./routes/portfolio-projects.routes";
 import { 
   insertUserSchema, 
   insertProfessionalProfileSchema,
@@ -5291,6 +5292,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
     });
+  });
+  
+  // Portfolio Projects Routes
+  app.use('/api/portfolio-projects', portfolioProjectsRoutes);
+
+  // Serve uploaded files
+  app.get('/api/uploads/:folder/:filename', (req, res) => {
+    const { folder, filename } = req.params;
+    const filePath = path.join(process.cwd(), 'uploads', folder, filename);
+    
+    // Check if the file exists
+    if (fs.existsSync(filePath)) {
+      return res.sendFile(filePath);
+    } else {
+      return res.status(404).json({ error: 'File not found' });
+    }
   });
   
   return httpServer;

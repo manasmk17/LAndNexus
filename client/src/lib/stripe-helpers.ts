@@ -1,10 +1,10 @@
-import { loadStripe, Stripe } from '@stripe/stripe-js';
+import { loadStripe, Stripe, StripeConstructor } from '@stripe/stripe-js';
 
 // Add type definitions for the global Stripe object on window
 declare global {
   interface Window {
-    // Use a more specific type that doesn't conflict with the imported Stripe type
-    Stripe?: any; // Using any to avoid type conflicts
+    // Use a proper type for the Stripe constructor
+    Stripe?: StripeConstructor;
   }
 }
 

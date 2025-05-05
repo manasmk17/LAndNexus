@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { db } from "../db";
+import { getDB } from "../db";
 import { portfolioProjects, insertPortfolioProjectSchema } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 
@@ -47,6 +47,7 @@ const upload = multer({
 router.get("/professional/:professionalId", async (req: Request, res: Response) => {
   try {
     const { professionalId } = req.params;
+    const db = getDB();
     
     const projects = await db
       .select()
@@ -65,6 +66,7 @@ router.get("/professional/:professionalId", async (req: Request, res: Response) 
 router.get("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const db = getDB();
     
     const [project] = await db
       .select()
@@ -105,6 +107,7 @@ router.post("/", upload.array("images", 10), async (req: Request, res: Response)
     };
     
     // Create the project
+    const db = getDB();
     const [newProject] = await db
       .insert(portfolioProjects)
       .values(projectWithImages)
@@ -131,6 +134,7 @@ router.post("/", upload.array("images", 10), async (req: Request, res: Response)
 router.patch("/:id", upload.array("images", 10), async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const db = getDB();
     
     // Check if project exists
     const [existingProject] = await db
@@ -189,6 +193,7 @@ router.patch("/:id", upload.array("images", 10), async (req: Request, res: Respo
 router.delete("/:id", async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    const db = getDB();
     
     // Get the project to access image URLs before deletion
     const [project] = await db
@@ -235,6 +240,7 @@ router.patch("/:id/featured", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Featured status must be a boolean" });
     }
     
+    const db = getDB();
     const [updatedProject] = await db
       .update(portfolioProjects)
       .set({ featured, updatedAt: new Date() })

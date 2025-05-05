@@ -1505,7 +1505,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only professionals can access this endpoint" });
       }
       
-      const profile = await storage.getProfessionalProfileByUserId(user.id);
+      let profile = await storage.getProfessionalProfileByUserId(user.id);
+      
+      // If no profile exists and we're in development mode, create a default profile
+      if (!profile && bypassAuth) {
+        console.log(`Creating default professional profile for dev user ${user.username} (ID: ${user.id})`);
+        
+        // Create a default profile for development purposes
+        profile = await storage.createProfessionalProfile({
+          userId: user.id,
+          firstName: user.firstName || "Dev",
+          lastName: user.lastName || "User",
+          title: "Learning & Development Specialist",
+          bio: "Professional profile for development testing",
+          location: "Development, Test",
+          ratePerHour: 150,
+          yearsExperience: 5,
+          rating: 4,
+          reviewCount: 0,
+          featured: true,
+          verified: true
+        });
+        
+        console.log(`Created default professional profile with ID ${profile.id}`);
+      }
+      
       if (!profile) {
         return res.status(404).json({ message: "Professional profile not found for current user" });
       }
@@ -2685,9 +2709,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Special case for "me" endpoint
       if (req.params.id === "me") {
+        // Get the user's professional profile
         professionalProfile = await storage.getProfessionalProfileByUserId(user.id);
+        
+        // If in development mode and profile doesn't exist, create a default one
+        if (!professionalProfile && bypassAuth) {
+          console.log('DEVELOPMENT MODE: Creating default professional profile for applications endpoint');
+          
+          // Create a default profile for development purposes
+          professionalProfile = await storage.createProfessionalProfile({
+            userId: user.id,
+            firstName: user.firstName || "Dev",
+            lastName: user.lastName || "User",
+            title: "Learning & Development Specialist",
+            bio: "Professional profile for development testing",
+            location: "Development, Test",
+            ratePerHour: 150,
+            yearsExperience: 5,
+            rating: 4,
+            reviewCount: 0,
+            featured: true,
+            verified: true
+          });
+          
+          console.log(`Created default professional profile with ID ${professionalProfile.id}`);
+        }
+        
+        // If still no profile, return 404
         if (!professionalProfile) {
           return res.status(404).json({ message: "Professional profile not found for current user" });
+        }
+        
+        // For development mode, return mock applications
+        if (bypassAuth) {
+          console.log('DEVELOPMENT MODE: Returning mock job applications');
+          return res.json([
+            {
+              id: 101,
+              jobId: 1,
+              professionalId: professionalProfile.id,
+              coverLetter: "I am very interested in this position and believe my skills would be a great fit.",
+              status: "pending",
+              createdAt: new Date().toISOString()
+            },
+            {
+              id: 102,
+              jobId: 2,
+              professionalId: professionalProfile.id,
+              coverLetter: "I have extensive experience in learning and development and am excited about this opportunity.",
+              status: "reviewed",
+              createdAt: new Date(Date.now() - 86400000).toISOString() // Yesterday
+            }
+          ]);
         }
       } else {
         try {
@@ -3928,9 +4001,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Special case for "me" endpoint
       if (req.params.id === "me") {
+        // Get the user's professional profile
         professionalProfile = await storage.getProfessionalProfileByUserId(user.id);
+        
+        // If in development mode and profile doesn't exist, create a default one
+        if (!professionalProfile && bypassAuth) {
+          console.log('DEVELOPMENT MODE: Creating default professional profile for consultations endpoint');
+          
+          // Create a default profile for development purposes
+          professionalProfile = await storage.createProfessionalProfile({
+            userId: user.id,
+            firstName: user.firstName || "Dev",
+            lastName: user.lastName || "User",
+            title: "Learning & Development Specialist",
+            bio: "Professional profile for development testing",
+            location: "Development, Test",
+            ratePerHour: 150,
+            yearsExperience: 5,
+            rating: 4,
+            reviewCount: 0,
+            featured: true,
+            verified: true
+          });
+          
+          console.log(`Created default professional profile with ID ${professionalProfile.id}`);
+        }
+        
+        // If still no profile, return 404
         if (!professionalProfile) {
           return res.status(404).json({ message: "Professional profile not found for current user" });
+        }
+        
+        // For development mode, return mock consultations
+        if (bypassAuth) {
+          console.log('DEVELOPMENT MODE: Returning mock consultations');
+          
+          // Get a real company profile for the mock data
+          const companyProfiles = await storage.getAllCompanyProfiles();
+          const companyId = companyProfiles.length > 0 ? companyProfiles[0].id : 1;
+          
+          return res.json([
+            {
+              id: 201,
+              professionalId: professionalProfile.id,
+              companyId: companyId,
+              startTime: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
+              endTime: new Date(Date.now() + 86400000 + 3600000).toISOString(), // Tomorrow + 1 hour
+              status: "scheduled",
+              notes: "Discuss learning strategy implementation",
+              rate: professionalProfile.ratePerHour || 150,
+              createdAt: new Date().toISOString()
+            },
+            {
+              id: 202,
+              professionalId: professionalProfile.id,
+              companyId: companyId,
+              startTime: new Date(Date.now() - 86400000).toISOString(), // Yesterday
+              endTime: new Date(Date.now() - 86400000 + 3600000).toISOString(), // Yesterday + 1 hour
+              status: "completed",
+              notes: "Initial consultation on training needs",
+              rate: professionalProfile.ratePerHour || 150,
+              createdAt: new Date(Date.now() - 172800000).toISOString() // 2 days ago
+            }
+          ]);
         }
       } else {
         // Regular case with profile ID

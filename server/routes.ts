@@ -5298,14 +5298,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/portfolio-projects', portfolioProjectsRoutes);
 
   // Serve uploaded files
-  app.get('/api/uploads/:folder/:filename', (req, res) => {
-    const { folder, filename } = req.params;
-    const filePath = path.join(process.cwd(), 'uploads', folder, filename);
+  // Handle file uploads with a wildcard path pattern
+  app.get('/api/uploads/*', (req, res) => {
+    // Extract the file path from the URL
+    const relativePath = req.path.replace('/api/uploads/', '');
+    const filePath = path.join(process.cwd(), 'uploads', relativePath);
     
     // Check if the file exists
     if (fs.existsSync(filePath)) {
       return res.sendFile(filePath);
     } else {
+      console.error(`File not found: ${filePath}`);
       return res.status(404).json({ error: 'File not found' });
     }
   });

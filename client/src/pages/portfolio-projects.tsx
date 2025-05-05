@@ -180,7 +180,12 @@ export default function PortfolioProjectsPage() {
             <PortfolioProjectForm 
               professionalId={profile.id}
               onSuccess={handleFormClose}
-              defaultValues={currentProject || undefined}
+              defaultValues={currentProject ? {
+                ...currentProject,
+                // Properly type dates for the form
+                startDate: currentProject.startDate ? new Date(currentProject.startDate) : undefined,
+                endDate: currentProject.endDate ? new Date(currentProject.endDate) : undefined
+              } : undefined}
               projectId={currentProject?.id}
             />
           </div>

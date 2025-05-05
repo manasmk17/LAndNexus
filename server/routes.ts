@@ -1387,7 +1387,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         amount: 100, // $1.00
         currency: "usd",
         metadata: {
-          test: true
+          test: "true"
         }
       });
       

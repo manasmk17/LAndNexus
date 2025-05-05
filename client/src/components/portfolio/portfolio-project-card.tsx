@@ -4,7 +4,7 @@ import { PortfolioProject } from "@shared/schema";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Pencil, Trash2, Eye, ChevronDown, ChevronUp, CalendarDays, Building, Award } from "lucide-react";
+import { Pencil, Trash2, Eye, ChevronDown, ChevronUp, CalendarDays, Building, Award, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -48,6 +48,33 @@ export function PortfolioProjectCard({ project, onEdit }: PortfolioProjectCardPr
       toast({
         title: "Error",
         description: `Failed to delete portfolio project: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const toggleFeatureMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest(
+        "PATCH", 
+        `/api/portfolio-projects/${project.id}/featured`, 
+        { featured: !project.featured }
+      );
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: data.featured ? "Project featured" : "Project unfeatured",
+        description: data.featured 
+          ? "This project will be highlighted on your profile" 
+          : "This project has been removed from featured projects",
+      });
+      queryClient.invalidateQueries({ queryKey: [`/api/portfolio-projects/professional/${project.professionalId}`] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to update featured status: ${error.message}`,
         variant: "destructive",
       });
     }
@@ -159,33 +186,46 @@ export function PortfolioProjectCard({ project, onEdit }: PortfolioProjectCardPr
           </Button>
         </CardContent>
         
-        <CardFooter className="flex justify-end pt-0">
+        <CardFooter className="flex justify-between pt-0">
           <Button
-            variant="ghost"
+            variant={project.featured ? "secondary" : "outline"}
             size="sm"
-            onClick={() => setViewDialogOpen(true)}
+            onClick={() => toggleFeatureMutation.mutate()}
+            disabled={toggleFeatureMutation.isPending}
+            className="mr-auto"
           >
-            <Eye className="h-4 w-4 mr-1" />
-            View
+            <Star className={`h-4 w-4 mr-1 ${project.featured ? "fill-current" : ""}`} />
+            {project.featured ? "Featured" : "Mark as featured"}
           </Button>
           
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onEdit(project)}
-          >
-            <Pencil className="h-4 w-4 mr-1" />
-            Edit
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setDeleteDialogOpen(true)}
-          >
-            <Trash2 className="h-4 w-4 mr-1" />
-            Delete
-          </Button>
+          <div className="flex">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewDialogOpen(true)}
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              View
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onEdit(project)}
+            >
+              <Pencil className="h-4 w-4 mr-1" />
+              Edit
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDeleteDialogOpen(true)}
+            >
+              <Trash2 className="h-4 w-4 mr-1" />
+              Delete
+            </Button>
+          </div>
         </CardFooter>
       </Card>
 

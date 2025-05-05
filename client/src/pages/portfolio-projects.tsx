@@ -181,8 +181,18 @@ export default function PortfolioProjectsPage() {
               professionalId={profile.id}
               onSuccess={handleFormClose}
               defaultValues={currentProject ? {
-                ...currentProject,
-                // Properly type dates for the form
+                // Extract only the properties needed by the form schema
+                title: currentProject.title,
+                professionalId: currentProject.professionalId,
+                description: currentProject.description,
+                industry: currentProject.industry,
+                outcomes: currentProject.outcomes,
+                // Handle nullable fields
+                clientName: currentProject.clientName || undefined,
+                challenges: currentProject.challenges || undefined,
+                solutions: currentProject.solutions || undefined,
+                featured: currentProject.featured || undefined,
+                // Convert dates
                 startDate: currentProject.startDate ? new Date(currentProject.startDate) : undefined,
                 endDate: currentProject.endDate ? new Date(currentProject.endDate) : undefined
               } : undefined}

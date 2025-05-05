@@ -3344,7 +3344,7 @@ export class DatabaseStorage implements IStorage {
     return this.updateUser(userId, { stripeCustomerId: customerId });
   }
 
-  async updateStripeSubscriptionId(userId: number, subscriptionId: string): Promise<User | undefined> {
+  async updateStripeSubscriptionId(userId: number, subscriptionId: string | null): Promise<User | undefined> {
     return this.updateUser(userId, { stripeSubscriptionId: subscriptionId });
   }
 

@@ -1359,6 +1359,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error retrieving subscription status: " + error.message });
     }
   });
+  
+  // Test endpoint for verifying Stripe functionality (development mode only)
+  app.get("/api/test-stripe", async (req, res) => {
+    // Only allow in development mode
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(404).json({ message: "Not found" });
+    }
+    
+    try {
+      // Test Stripe connection by retrieving account info
+      const account = await stripe.accounts.retrieve();
+      
+      // Fetch subscription products and prices
+      const products = await stripe.products.list({
+        active: true,
+        limit: 5,
+      });
+      
+      const prices = await stripe.prices.list({
+        active: true,
+        limit: 10,
+      });
+      
+      // Test creating and immediately canceling a payment intent
+      const testIntent = await stripe.paymentIntents.create({
+        amount: 100, // $1.00
+        currency: "usd",
+        metadata: {
+          test: true
+        }
+      });
+      
+      await stripe.paymentIntents.cancel(testIntent.id);
+      
+      // Return test results
+      res.json({
+        success: true,
+        stripeAccountId: account.id,
+        stripeAccountName: account.business_profile?.name || "Not set",
+        products: products.data.map(p => ({ id: p.id, name: p.name })),
+        prices: prices.data.map(p => ({ 
+          id: p.id, 
+          productId: p.product, 
+          amount: p.unit_amount ? p.unit_amount / 100 : 0,
+          currency: p.currency,
+          recurring: p.recurring ? true : false
+        })),
+        testPaymentIntent: {
+          id: testIntent.id,
+          status: "Created and canceled successfully"
+        },
+        testCards: [
+          { type: "Visa (succeeds)", number: "4242424242424242", exp: "Any future date", cvc: "Any 3 digits" },
+          { type: "Mastercard (3D Secure)", number: "4000002500003155", exp: "Any future date", cvc: "Any 3 digits" },
+          { type: "Visa (declines)", number: "4000000000000002", exp: "Any future date", cvc: "Any 3 digits" }
+        ]
+      });
+    } catch (error: any) {
+      console.error("Stripe test error:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "Stripe test failed: " + error.message,
+        error: error
+      });
+    }
+  });
 
   // Update subscription after payment confirmation
   app.post("/api/update-subscription", isAuthenticated, async (req, res) => {

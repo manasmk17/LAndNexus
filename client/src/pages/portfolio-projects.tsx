@@ -19,18 +19,18 @@ export default function PortfolioProjectsPage() {
   const [currentProject, setCurrentProject] = useState<PortfolioProject | null>(null);
   
   // Get the professional profile ID for the current user
-  const { data: profile, isLoading: profileLoading } = useQuery({
+  const { data: profile = null, isLoading: profileLoading } = useQuery<any>({
     queryKey: [`/api/professional-profiles/user/${user?.id}`],
     enabled: !!user?.id,
   });
   
   // Fetch portfolio projects for the professional
   const { 
-    data: projects, 
+    data: projects = [], 
     isLoading: projectsLoading,
     isError,
     error
-  } = useQuery({
+  } = useQuery<PortfolioProject[]>({
     queryKey: [`/api/portfolio-projects/professional/${profile?.id}`],
     enabled: !!profile?.id,
   });

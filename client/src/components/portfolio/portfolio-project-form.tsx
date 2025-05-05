@@ -46,6 +46,18 @@ export function PortfolioProjectForm({
   const queryClient = useQueryClient();
   const [images, setImages] = useState<File[]>([]);
   
+  // Process default values to handle date conversions
+  const processedDefaults = defaultValues ? {
+    ...defaultValues,
+    // Convert string dates to Date objects if needed
+    startDate: defaultValues.startDate instanceof Date 
+      ? defaultValues.startDate 
+      : defaultValues.startDate ? new Date(defaultValues.startDate) : undefined,
+    endDate: defaultValues.endDate instanceof Date 
+      ? defaultValues.endDate 
+      : defaultValues.endDate ? new Date(defaultValues.endDate) : undefined
+  } : undefined;
+  
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
@@ -57,7 +69,7 @@ export function PortfolioProjectForm({
       clientName: "",
       challenges: "",
       solutions: "",
-      ...defaultValues
+      ...processedDefaults
     }
   });
 
@@ -79,11 +91,8 @@ export function PortfolioProjectForm({
       
       const method = projectId ? "PATCH" : "POST";
       
-      const response = await apiRequest(method, url, formData, {
-        headers: {
-          // Do not set Content-Type - let the browser set it with the boundary
-        }
-      });
+      // Use true for isFormData parameter to handle file uploads correctly
+      const response = await apiRequest(method, url, formData, true);
       
       return response.json();
     },

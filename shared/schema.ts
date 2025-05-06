@@ -548,6 +548,9 @@ export const portfolioProjects = pgTable("portfolio_projects", {
   challenges: text("challenges"),
   solutions: text("solutions"),
   imageUrls: jsonb("image_urls"), // Array of image URLs for the project
+  videoUrls: jsonb("video_urls"), // Array of video URLs (YouTube, Vimeo, etc)
+  videoEmbedCodes: jsonb("video_embed_codes"), // Array of embed codes for videos
+  mediaType: text("media_type").default("image"), // "image", "video", "mixed"
   featured: boolean("featured").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

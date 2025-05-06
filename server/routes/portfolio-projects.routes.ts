@@ -100,17 +100,30 @@ router.post("/", upload.array("images", 10), async (req: Request, res: Response)
       return `/api/uploads/${relativePath.replace(/\\/g, "/")}`;
     });
     
-    // Add image URLs to project data
-    const projectWithImages = {
+    // Extract video data from the request
+    const videoUrls = projectData.videoUrls || [];
+    const videoEmbedCodes = projectData.videoEmbedCodes || [];
+    
+    // Determine media type based on content
+    let mediaType = "image";
+    if (videoUrls.length > 0 || videoEmbedCodes.length > 0) {
+      mediaType = imageUrls.length > 0 ? "mixed" : "video";
+    }
+    
+    // Add media data to project data
+    const projectWithMedia = {
       ...validatedData,
       imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+      videoUrls: videoUrls.length > 0 ? videoUrls : undefined,
+      videoEmbedCodes: videoEmbedCodes.length > 0 ? videoEmbedCodes : undefined,
+      mediaType,
     };
     
     // Create the project
     const db = getDB();
     const [newProject] = await db
       .insert(portfolioProjects)
-      .values(projectWithImages)
+      .values(projectWithMedia)
       .returning();
     
     return res.status(201).json(newProject);
@@ -157,9 +170,19 @@ router.patch("/:id", upload.array("images", 10), async (req: Request, res: Respo
       return `/api/uploads/${relativePath.replace(/\\/g, "/")}`;
     });
     
-    // Combine existing and new images
+    // Combine existing and new images (if no new images were uploaded, keep existing ones)
     const existingImageUrls = existingProject.imageUrls as string[] || [];
     const combinedImageUrls = [...existingImageUrls, ...newImageUrls];
+    
+    // Extract video data from the request
+    const videoUrls = projectData.videoUrls || [];
+    const videoEmbedCodes = projectData.videoEmbedCodes || [];
+    
+    // Determine media type based on content
+    let mediaType = "image";
+    if (videoUrls.length > 0 || videoEmbedCodes.length > 0) {
+      mediaType = combinedImageUrls.length > 0 ? "mixed" : "video";
+    }
     
     // Update the project
     const [updatedProject] = await db
@@ -167,6 +190,9 @@ router.patch("/:id", upload.array("images", 10), async (req: Request, res: Respo
       .set({
         ...validatedData,
         imageUrls: combinedImageUrls.length > 0 ? combinedImageUrls : undefined,
+        videoUrls: videoUrls.length > 0 ? videoUrls : undefined,
+        videoEmbedCodes: videoEmbedCodes.length > 0 ? videoEmbedCodes : undefined,
+        mediaType,
         updatedAt: new Date(),
       })
       .where(eq(portfolioProjects.id, parseInt(id)))

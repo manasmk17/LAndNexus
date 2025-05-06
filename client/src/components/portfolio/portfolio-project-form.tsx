@@ -4,15 +4,18 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { insertPortfolioProjectSchema } from "@shared/schema";
 import { z } from "zod";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload, Youtube, Video } from "lucide-react";
 import { format } from "date-fns";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 // Extend the schema to add client-side validation
 const projectFormSchema = insertPortfolioProjectSchema.extend({
@@ -25,6 +28,7 @@ const projectFormSchema = insertPortfolioProjectSchema.extend({
   clientName: z.string().optional(),
   challenges: z.string().optional(),
   solutions: z.string().optional(),
+  mediaType: z.enum(["image", "video", "mixed"]).default("image"),
 });
 
 type ProjectFormValues = z.infer<typeof projectFormSchema>;
@@ -45,6 +49,11 @@ export function PortfolioProjectForm({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [images, setImages] = useState<File[]>([]);
+  const [videoUrls, setVideoUrls] = useState<string[]>(defaultValues?.videoUrls as string[] || []);
+  const [videoEmbedCodes, setVideoEmbedCodes] = useState<string[]>(defaultValues?.videoEmbedCodes as string[] || []);
+  const [newVideoUrl, setNewVideoUrl] = useState("");
+  const [newEmbedCode, setNewEmbedCode] = useState("");
+  const [mediaTab, setMediaTab] = useState<string>("images");
   
   // Process default values to handle date conversions
   const processedDefaults = defaultValues ? {
@@ -69,6 +78,7 @@ export function PortfolioProjectForm({
       clientName: "",
       challenges: "",
       solutions: "",
+      mediaType: "image",
       ...processedDefaults
     }
   });
@@ -77,8 +87,27 @@ export function PortfolioProjectForm({
     mutationFn: async (data: ProjectFormValues) => {
       const formData = new FormData();
       
+      // Determine media type based on content
+      const hasImages = images.length > 0;
+      const hasVideos = videoUrls.length > 0 || videoEmbedCodes.length > 0;
+      let mediaType = "image";
+      
+      if (hasImages && hasVideos) {
+        mediaType = "mixed";
+      } else if (hasVideos) {
+        mediaType = "video";
+      }
+      
+      // Update the form data with the calculated media type
+      const updatedData = {
+        ...data,
+        mediaType,
+        videoUrls,
+        videoEmbedCodes
+      };
+      
       // Add project data
-      formData.append("project", JSON.stringify(data));
+      formData.append("project", JSON.stringify(updatedData));
       
       // Add images
       images.forEach((image, index) => {
@@ -113,6 +142,8 @@ export function PortfolioProjectForm({
       
       form.reset();
       setImages([]);
+      setVideoUrls([]);
+      setVideoEmbedCodes([]);
     },
     onError: (error: Error) => {
       toast({
@@ -131,6 +162,28 @@ export function PortfolioProjectForm({
     if (e.target.files && e.target.files.length > 0) {
       setImages(Array.from(e.target.files));
     }
+  }
+  
+  function addVideoUrl() {
+    if (newVideoUrl.trim()) {
+      setVideoUrls([...videoUrls, newVideoUrl.trim()]);
+      setNewVideoUrl("");
+    }
+  }
+  
+  function removeVideoUrl(index: number) {
+    setVideoUrls(videoUrls.filter((_, i) => i !== index));
+  }
+  
+  function addEmbedCode() {
+    if (newEmbedCode.trim()) {
+      setVideoEmbedCodes([...videoEmbedCodes, newEmbedCode.trim()]);
+      setNewEmbedCode("");
+    }
+  }
+  
+  function removeEmbedCode(index: number) {
+    setVideoEmbedCodes(videoEmbedCodes.filter((_, i) => i !== index));
   }
 
   return (
@@ -301,21 +354,136 @@ export function PortfolioProjectForm({
               )}
             />
             
-            <div>
-              <FormLabel>Project Images</FormLabel>
-              <div className="mt-2">
-                <Input 
-                  type="file" 
-                  multiple 
-                  accept="image/*" 
-                  onChange={handleImageChange}
-                />
+            <div className="space-y-4">
+              <div className="border rounded-md p-4">
+                <FormLabel className="text-lg font-semibold block mb-4">Project Media</FormLabel>
+                
+                <Tabs value={mediaTab} onValueChange={setMediaTab}>
+                  <TabsList className="grid grid-cols-3 mb-4">
+                    <TabsTrigger value="images" className="flex items-center">
+                      <Upload className="mr-2 h-4 w-4" /> Images
+                    </TabsTrigger>
+                    <TabsTrigger value="videos" className="flex items-center">
+                      <Youtube className="mr-2 h-4 w-4" /> Videos
+                    </TabsTrigger>
+                    <TabsTrigger value="embeds" className="flex items-center">
+                      <Video className="mr-2 h-4 w-4" /> Embed Codes
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="images" className="space-y-4">
+                    <div>
+                      <Input 
+                        type="file" 
+                        multiple 
+                        accept="image/*" 
+                        onChange={handleImageChange}
+                      />
+                      <FormDescription className="mt-1">
+                        Upload project images and screenshots (.jpg, .png, .gif)
+                      </FormDescription>
+                    </div>
+                    {images.length > 0 && (
+                      <div className="p-2 border rounded bg-muted/20">
+                        <p className="text-sm font-medium mb-2">Selected Files:</p>
+                        <ul className="text-sm space-y-1">
+                          {Array.from(images).map((image, index) => (
+                            <li key={index} className="flex items-center">
+                              <span className="truncate">{image.name}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="videos" className="space-y-4">
+                    <div className="flex space-x-2">
+                      <Input 
+                        placeholder="Paste YouTube or Vimeo URL" 
+                        value={newVideoUrl}
+                        onChange={(e) => setNewVideoUrl(e.target.value)}
+                      />
+                      <Button 
+                        type="button" 
+                        onClick={addVideoUrl}
+                        variant="outline"
+                      >
+                        Add
+                      </Button>
+                    </div>
+                    <FormDescription>
+                      Add links to videos hosted on platforms like YouTube or Vimeo
+                    </FormDescription>
+                    
+                    {videoUrls.length > 0 && (
+                      <div className="p-2 border rounded bg-muted/20">
+                        <p className="text-sm font-medium mb-2">Video URLs:</p>
+                        <ul className="text-sm space-y-2">
+                          {videoUrls.map((url, index) => (
+                            <li key={index} className="flex items-center justify-between">
+                              <span className="truncate flex-1">{url}</span>
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => removeVideoUrl(index)}
+                              >
+                                Remove
+                              </Button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </TabsContent>
+                  
+                  <TabsContent value="embeds" className="space-y-4">
+                    <div className="space-y-2">
+                      <Textarea 
+                        placeholder="Paste video embed code from YouTube, Vimeo, or other platforms" 
+                        value={newEmbedCode}
+                        onChange={(e) => setNewEmbedCode(e.target.value)}
+                      />
+                      <div className="flex justify-end">
+                        <Button 
+                          type="button" 
+                          onClick={addEmbedCode}
+                          variant="outline"
+                        >
+                          Add Embed Code
+                        </Button>
+                      </div>
+                    </div>
+                    <FormDescription>
+                      Add embed codes for videos that allow more customization options
+                    </FormDescription>
+                    
+                    {videoEmbedCodes.length > 0 && (
+                      <div className="p-2 border rounded bg-muted/20">
+                        <p className="text-sm font-medium mb-2">Embed Codes:</p>
+                        <ul className="text-sm space-y-2">
+                          {videoEmbedCodes.map((code, index) => (
+                            <li key={index} className="flex items-center justify-between">
+                              <span className="truncate flex-1 font-mono text-xs">
+                                {code.length > 50 ? code.substring(0, 50) + "..." : code}
+                              </span>
+                              <Button 
+                                type="button" 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => removeEmbedCode(index)}
+                              >
+                                Remove
+                              </Button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
               </div>
-              {images.length > 0 && (
-                <div className="mt-2 text-sm text-gray-500">
-                  {images.length} {images.length === 1 ? 'image' : 'images'} selected
-                </div>
-              )}
             </div>
 
             <Button 

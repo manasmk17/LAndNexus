@@ -192,42 +192,83 @@ export default function Subscribe() {
         setLoadingStripe(true);
         setStripeError(false);
         
+        // Debug: Log Stripe key availability
+        const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+        console.log("Stripe key available:", !!stripeKey);
+        if (stripeKey) {
+          console.log("Stripe key format:", stripeKey.substring(0, 7) + "...");
+        }
+        
         // Check if Stripe is available
         if (!isStripeAvailable(true)) {
           console.log("Stripe public key not available - subscription functions disabled");
           setStripeError(true);
           toast({
             title: "Subscription System Unavailable",
-            description: "The subscription system is currently offline. Please try again later.",
+            description: "The subscription system configuration is missing. Please try again later.",
             variant: "destructive",
           });
           return;
         }
         
-        // Try to get Stripe instance
-        const instance = await getStripe();
-        if (!instance) {
-          console.log("Failed to initialize Stripe instance for subscription");
+        // Add the script to the page
+        console.log("Attempting to load Stripe for subscription...");
+        
+        // Create script element for Stripe.js
+        const script = document.createElement('script');
+        script.src = 'https://js.stripe.com/v3/';
+        script.async = true;
+        
+        // When script loads, initialize Stripe instance
+        script.onload = async () => {
+          try {
+            console.log("Stripe.js script loaded for subscription");
+            if (window.Stripe) {
+              const instance = window.Stripe(stripeKey);
+              console.log("Stripe initialized successfully for subscription");
+              setStripeInstance(instance);
+            } else {
+              console.error("Stripe.js loaded but Stripe constructor not available");
+              setStripeError(true);
+            }
+          } catch (err) {
+            console.error("Error initializing Stripe after script load:", err);
+            setStripeError(true);
+          } finally {
+            setLoadingStripe(false);
+          }
+        };
+        
+        // Handle script loading errors
+        script.onerror = () => {
+          console.error("Failed to load Stripe.js script");
           setStripeError(true);
+          setLoadingStripe(false);
           toast({
             title: "Subscription System Unavailable",
-            description: "Unable to initialize subscription processing. Please try again.",
+            description: "Failed to load payment system. Please check your internet connection and try again.",
             variant: "destructive",
           });
-        } else {
-          console.log("Stripe loaded successfully for subscription");
-          setStripeInstance(instance);
-        }
+        };
+        
+        // Add script to document
+        document.head.appendChild(script);
+        
+        // Cleanup for script if component unmounts before loading
+        return () => {
+          if (!script.onload) {
+            document.head.removeChild(script);
+          }
+        };
       } catch (error) {
-        console.error("Error loading Stripe for subscription:", error);
+        console.error("Error during Stripe setup for subscription:", error);
         setStripeError(true);
+        setLoadingStripe(false);
         toast({
-          title: "Subscription System Unavailable",
-          description: "Unable to load subscription processing. Please try again later.",
+          title: "Subscription System Error",
+          description: "An unexpected error occurred. Please try again later.",
           variant: "destructive",
         });
-      } finally {
-        setLoadingStripe(false);
       }
     };
     

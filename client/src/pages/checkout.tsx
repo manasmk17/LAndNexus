@@ -255,39 +255,70 @@ export default function Checkout() {
           setStripeError(true);
           toast({
             title: "Payment System Unavailable",
-            description: "The payment system is currently offline. Please try again later.",
+            description: "The payment system configuration is missing. Please try again later.",
             variant: "destructive",
           });
           return;
         }
         
+        // Add the script to the page
         console.log("Attempting to load Stripe...");
-        // Try to get Stripe instance
-        const instance = await getStripe();
-        console.log("Stripe load result:", !!instance);
         
-        if (!instance) {
-          console.error("Failed to initialize Stripe instance");
+        // Create script element for Stripe.js
+        const script = document.createElement('script');
+        script.src = 'https://js.stripe.com/v3/';
+        script.async = true;
+        
+        // When script loads, initialize Stripe instance
+        script.onload = async () => {
+          try {
+            console.log("Stripe.js script loaded");
+            if (window.Stripe) {
+              const instance = window.Stripe(stripeKey);
+              console.log("Stripe initialized successfully");
+              setStripeInstance(instance);
+            } else {
+              console.error("Stripe.js loaded but Stripe constructor not available");
+              setStripeError(true);
+            }
+          } catch (err) {
+            console.error("Error initializing Stripe after script load:", err);
+            setStripeError(true);
+          } finally {
+            setLoadingStripe(false);
+          }
+        };
+        
+        // Handle script loading errors
+        script.onerror = () => {
+          console.error("Failed to load Stripe.js script");
           setStripeError(true);
+          setLoadingStripe(false);
           toast({
             title: "Payment System Unavailable",
-            description: "Unable to initialize payment processing. Please try again.",
+            description: "Failed to load payment system. Please check your internet connection and try again.",
             variant: "destructive",
           });
-        } else {
-          console.log("Stripe loaded successfully");
-          setStripeInstance(instance);
-        }
+        };
+        
+        // Add script to document
+        document.head.appendChild(script);
+        
+        // Cleanup for script if component unmounts before loading
+        return () => {
+          if (!script.onload) {
+            document.head.removeChild(script);
+          }
+        };
       } catch (error) {
-        console.error("Error loading Stripe:", error);
+        console.error("Error during Stripe setup:", error);
         setStripeError(true);
+        setLoadingStripe(false);
         toast({
-          title: "Payment System Unavailable",
-          description: "Unable to load payment processing. Please try again later.",
+          title: "Payment System Error",
+          description: "An unexpected error occurred. Please try again later.",
           variant: "destructive",
         });
-      } finally {
-        setLoadingStripe(false);
       }
     };
     

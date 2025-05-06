@@ -12,34 +12,6 @@ import { getStripe, isStripeAvailable, formatCurrency, TEST_CARDS, SUBSCRIPTION_
 import { Stripe } from '@stripe/stripe-js';
 import { Loader2, LockIcon, CheckCircle, AlertCircle, CreditCard, CheckIcon, StarIcon, BadgeCheck } from 'lucide-react';
 
-const tiers = [
-  {
-    id: 'basic',
-    name: 'Basic',
-    price: 29,
-    description: 'Essential tools for L&D professionals and companies',
-    features: [
-      'Create basic profile',
-      'Browse job postings',
-      'Access resource library',
-      'Apply to up to 5 jobs monthly'
-    ]
-  },
-  {
-    id: 'premium',
-    name: 'Premium',
-    price: 79,
-    description: 'Advanced features for serious L&D professionals and growing organizations',
-    features: [
-      'Featured profile placement',
-      'Unlimited job applications',
-      'Direct messaging',
-      'Access to premium resources',
-      'Priority support'
-    ]
-  }
-];
-
 type Tier = {
   id: string;
   name: string;

@@ -96,12 +96,17 @@ export function getStripe(): Promise<Stripe | null> {
       return Promise.resolve(null);
     }
     
-    // IMPORTANT: Just use direct loadStripe without fallback to avoid issues with manual mode
-    stripePromise = loadStripe(stripeKey)
-      .catch(error => {
+    try {
+      // Simplified initialization approach
+      console.log("Initializing Stripe with key:", stripeKey.substring(0, 8) + "...");
+      stripePromise = loadStripe(stripeKey).catch(error => {
         console.error('Error loading Stripe:', error);
         return null;
       });
+    } catch (error) {
+      console.error('Exception during Stripe initialization:', error);
+      return Promise.resolve(null);
+    }
   }
   
   return stripePromise;

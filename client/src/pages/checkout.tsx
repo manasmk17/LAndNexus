@@ -242,6 +242,13 @@ export default function Checkout() {
         setLoadingStripe(true);
         setStripeError(false);
         
+        // Debug: Log Stripe key availability
+        const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+        console.log("Stripe key available:", !!stripeKey);
+        if (stripeKey) {
+          console.log("Stripe key format:", stripeKey.substring(0, 7) + "...");
+        }
+        
         // Check if Stripe is available
         if (!isStripeAvailable(true)) {
           console.log("Stripe public key not available - payment functions disabled");
@@ -254,10 +261,13 @@ export default function Checkout() {
           return;
         }
         
+        console.log("Attempting to load Stripe...");
         // Try to get Stripe instance
         const instance = await getStripe();
+        console.log("Stripe load result:", !!instance);
+        
         if (!instance) {
-          console.log("Failed to initialize Stripe instance");
+          console.error("Failed to initialize Stripe instance");
           setStripeError(true);
           toast({
             title: "Payment System Unavailable",

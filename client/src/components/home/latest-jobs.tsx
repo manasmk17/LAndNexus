@@ -5,10 +5,28 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import type { JobPosting } from "@shared/schema";
 
+interface JobWithCompany extends JobPosting {
+  companyData?: {
+    companyName: string;
+  };
+}
+
 export default function LatestJobs() {
-  const { data: jobs, isLoading, error } = useQuery<JobPosting[]>({
+  const { data: jobs, isLoading, error } = useQuery<JobWithCompany[]>({
     queryKey: ["/api/job-postings/latest?limit=2"],
   });
+
+  // Format salary from min/max compensation
+  const formatSalary = (job: JobWithCompany): string | null => {
+    if (job.minCompensation && job.maxCompensation) {
+      return `$${job.minCompensation.toLocaleString()}-${job.maxCompensation.toLocaleString()}`;
+    } else if (job.minCompensation) {
+      return `From $${job.minCompensation.toLocaleString()}`;
+    } else if (job.maxCompensation) {
+      return `Up to $${job.maxCompensation.toLocaleString()}`;
+    }
+    return null;
+  };
 
   return (
     <section className="ld-section bg-gray-50">
@@ -59,7 +77,9 @@ export default function LatestJobs() {
                     <h3 className="text-xl font-bold text-gray-800 group-hover:text-primary transition-colors">
                       {job.title}
                     </h3>
-                    <p className="text-gray-600">{job.companyName || "Company Name"}</p>
+                    <p className="text-gray-600">
+                      {job.companyData?.companyName || "Company Name"}
+                    </p>
                   </div>
                 </div>
                 
@@ -82,10 +102,10 @@ export default function LatestJobs() {
                     </div>
                   )}
                   
-                  {job.salary && (
+                  {formatSalary(job) && (
                     <div className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-700">
                       <DollarSign className="h-3.5 w-3.5 mr-1" />
-                      {job.salary}
+                      {formatSalary(job)}
                     </div>
                   )}
                 </div>

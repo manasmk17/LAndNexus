@@ -62,9 +62,7 @@ function Router() {
       <Route path="/forum" component={Forum} />
       <Route path="/pages/:slug" component={PageView} />
       <Route path="/admin-login" component={AdminLogin} />
-      <Route path="/payment-testing" component={() => <div className="container mx-auto py-8"><PaymentTesting /></div>} />
-      <Route path="/checkout-test" component={() => <div className="container mx-auto py-8"><Checkout /></div>} />
-      <Route path="/subscribe-test" component={() => <div className="container mx-auto py-8"><Subscribe /></div>} />
+      <Route path="/payment-testing" component={PaymentTesting} />
       {/* Protected routes with user type restrictions */}
       <ProtectedRoute 
         path="/professional-dashboard" 

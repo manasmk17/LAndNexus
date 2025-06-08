@@ -5,10 +5,7 @@ import {
   FileText, 
   BookOpen, 
   Video, 
-  MessageSquare,
-  Download,
-  BarChart,
-  PresentationIcon
+  MessageSquare 
 } from "lucide-react";
 import ResourceCard from "./resource-card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,157 +18,84 @@ export default function ResourceHub() {
   });
 
   return (
-    <section className="ld-section bg-gray-50">
+    <section className="py-16 bg-gray-50">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="ld-section-heading">Resource Hub</h2>
-          <p className="ld-section-subheading">
-            Access curated learning materials, templates, and insights from top L&D professionals
-          </p>
-        </div>
+        <h2 className="text-3xl font-heading font-bold text-center mb-4">Resource Hub</h2>
+        <p className="text-gray-600 text-center max-w-2xl mx-auto mb-10">
+          Access curated learning materials, templates, and articles from the L&D community.
+        </p>
         
         {/* Resource Categories */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
-          <Link href="/resources?type=template" className="ld-card flex flex-col items-center py-8 hover:border-primary hover:-translate-y-1 transition-all duration-300">
-            <div className="bg-blue-100 text-primary p-5 rounded-xl mb-4">
-              <FileText className="h-7 w-7" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+          <Link href="/resources?type=templates" className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div className="bg-blue-100 text-primary p-4 rounded-full mb-3">
+              <FileText className="h-6 w-6" />
             </div>
-            <h3 className="text-lg font-medium text-gray-800">Templates</h3>
-            <p className="text-gray-600 text-sm text-center mt-2">
-              Ready-to-use professional templates
-            </p>
+            <h3 className="font-heading font-medium text-center">Templates</h3>
           </Link>
           
-          <Link href="/resources?type=article" className="ld-card flex flex-col items-center py-8 hover:border-primary hover:-translate-y-1 transition-all duration-300">
-            <div className="bg-green-100 text-green-600 p-5 rounded-xl mb-4">
-              <BookOpen className="h-7 w-7" />
+          <Link href="/resources?type=articles" className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div className="bg-teal-100 text-teal-600 p-4 rounded-full mb-3">
+              <BookOpen className="h-6 w-6" />
             </div>
-            <h3 className="text-lg font-medium text-gray-800">Articles</h3>
-            <p className="text-gray-600 text-sm text-center mt-2">
-              In-depth articles and guides
-            </p>
+            <h3 className="font-heading font-medium text-center">Articles</h3>
           </Link>
           
-          <Link href="/resources?type=video" className="ld-card flex flex-col items-center py-8 hover:border-primary hover:-translate-y-1 transition-all duration-300">
-            <div className="bg-amber-100 text-amber-600 p-5 rounded-xl mb-4">
-              <Video className="h-7 w-7" />
+          <Link href="/resources?type=videos" className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div className="bg-amber-100 text-amber-600 p-4 rounded-full mb-3">
+              <Video className="h-6 w-6" />
             </div>
-            <h3 className="text-lg font-medium text-gray-800">Videos</h3>
-            <p className="text-gray-600 text-sm text-center mt-2">
-              Engaging video tutorials
-            </p>
+            <h3 className="font-heading font-medium text-center">Videos</h3>
           </Link>
           
-          <Link href="/resources?type=webinar" className="ld-card flex flex-col items-center py-8 hover:border-primary hover:-translate-y-1 transition-all duration-300">
-            <div className="bg-purple-100 text-purple-600 p-5 rounded-xl mb-4">
-              <PresentationIcon className="h-7 w-7" />
+          <Link href="/forum" className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div className="bg-blue-100 text-primary p-4 rounded-full mb-3">
+              <MessageSquare className="h-6 w-6" />
             </div>
-            <h3 className="text-lg font-medium text-gray-800">Webinars</h3>
-            <p className="text-gray-600 text-sm text-center mt-2">
-              Recorded expert sessions
-            </p>
+            <h3 className="font-heading font-medium text-center">Community</h3>
           </Link>
         </div>
         
         {/* Featured Resources */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-2xl font-bold text-gray-800">Featured Resources</h3>
-            <Link href="/resources" className="text-primary hover:text-primary/80 flex items-center text-sm font-medium">
-              View all resources
-              <ArrowRight className="ml-1 h-4 w-4" />
-            </Link>
-          </div>
-          
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {[...Array(3)].map((_, index) => (
-                <div key={index} className="ld-card">
-                  <Skeleton className="w-full h-48 rounded-lg" />
-                  <div className="p-6 space-y-4">
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-6 w-full" />
-                    <Skeleton className="h-4 w-full" />
-                    <div className="flex justify-between">
-                      <Skeleton className="h-8 w-24" />
-                      <Skeleton className="h-4 w-20" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : error ? (
-            <div className="text-center py-8">
-              <p className="text-red-500">Failed to load resources. Please try again later.</p>
-            </div>
-          ) : resources && resources.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {resources.map((resource) => (
-                <div key={resource.id} className="ld-card group">
-                  <div className="w-full h-48 overflow-hidden rounded-lg mb-4 bg-gray-100 flex items-center justify-center">
-                    {resource.imageUrl ? (
-                      <img 
-                        src={resource.imageUrl} 
-                        alt={resource.title} 
-                        className="w-full h-full object-cover" 
-                      />
-                    ) : (
-                      <div className="text-gray-400">
-                        {resource.resourceType === "article" && <BookOpen className="h-12 w-12" />}
-                        {resource.resourceType === "template" && <FileText className="h-12 w-12" />}
-                        {resource.resourceType === "video" && <Video className="h-12 w-12" />}
-                        {resource.resourceType === "webinar" && <PresentationIcon className="h-12 w-12" />}
-                        {resource.resourceType === "course" && <BarChart className="h-12 w-12" />}
-                        {resource.resourceType === "ebook" && <BookOpen className="h-12 w-12" />}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="mb-3 flex">
-                    <span className={`
-                      ${resource.resourceType === "article" ? "bg-green-100 text-green-800" : ""}
-                      ${resource.resourceType === "template" ? "bg-blue-100 text-blue-800" : ""}
-                      ${resource.resourceType === "video" ? "bg-amber-100 text-amber-800" : ""}
-                      ${resource.resourceType === "webinar" ? "bg-purple-100 text-purple-800" : ""}
-                      ${resource.resourceType === "course" ? "bg-indigo-100 text-indigo-800" : ""}
-                      ${resource.resourceType === "ebook" ? "bg-emerald-100 text-emerald-800" : ""}
-                      px-2.5 py-0.5 rounded-full text-xs font-medium
-                    `}>
-                      {resource.resourceType.charAt(0).toUpperCase() + resource.resourceType.slice(1)}
-                    </span>
-                  </div>
-                  
-                  <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-primary transition-colors">
-                    {resource.title}
-                  </h3>
-                  
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                    {resource.description}
-                  </p>
-                  
-                  <Link href={`/resource/${resource.id}`} className="ld-button-secondary text-sm w-full justify-center">
-                    <Download className="h-4 w-4 mr-2" />
-                    Access Resource
-                  </Link>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No featured resources yet. Check back soon!</p>
-            </div>
-          )}
-        </div>
+        <h3 className="text-2xl font-heading font-bold mb-6">Featured Resources</h3>
         
-        {/* CTA */}
-        <div className="ld-card-featured mt-16 p-10 text-center">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">Ready to share your expertise?</h3>
-          <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-            Contribute to our resource library and establish yourself as a thought leader in the L&D community
-          </p>
-          <Button className="ld-button-primary" asChild>
-            <Link href="/create-resource">
-              Create a Resource
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, index) => (
+              <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden">
+                <Skeleton className="w-full h-48" />
+                <div className="p-6 space-y-4">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-6 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <div className="flex justify-between">
+                    <Skeleton className="h-8 w-24" />
+                    <Skeleton className="h-4 w-20" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <div className="text-center py-8">
+            <p className="text-red-500">Failed to load resources. Please try again later.</p>
+          </div>
+        ) : resources && resources.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {resources.map((resource) => (
+              <ResourceCard key={resource.id} resource={resource} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-500">No featured resources yet. Check back soon!</p>
+          </div>
+        )}
+        
+        <div className="text-center mt-10">
+          <Button className="inline-flex items-center" asChild>
+            <Link href="/resources">
+              Explore All Resources
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>

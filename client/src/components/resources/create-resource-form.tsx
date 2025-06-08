@@ -35,10 +35,6 @@ const createResourceSchema = insertResourceSchema.extend({
   title: z.string().min(5, 'Title must be at least 5 characters'),
   description: z.string().min(20, 'Description must be at least 20 characters'),
   content: z.string().url('Please enter a valid URL'),
-  contentUrl: z.string().url('Please enter a valid URL').optional().or(z.literal("")),
-  resourceType: z.string().min(1, 'Resource type is required'),
-  // Make sure authorId is present and valid
-  authorId: z.number().int().positive('Author ID is required')
 });
 
 type FormValues = z.infer<typeof createResourceSchema>;
@@ -60,27 +56,14 @@ export default function CreateResourceForm() {
       description: '',
       resourceType: 'Article',
       content: '', // Content field is used for URL
-      contentUrl: '', // Additional URL field
       featured: false,
       authorId: user?.id || 0,
       categoryId: undefined,
-      imageUrl: null,
-      filePath: null,
     },
   });
 
   const onSubmit = async (values: FormValues) => {
     try {
-      // Make sure authorId is set from the current user
-      values.authorId = user?.id || 0;
-      
-      // Set contentUrl if it's empty
-      if (!values.contentUrl) {
-        values.contentUrl = values.content;
-      }
-      
-      console.log('Submitting resource with data:', values);
-      
       const response = await apiRequest('POST', '/api/resources', values);
       
       if (response.ok) {
@@ -93,33 +76,12 @@ export default function CreateResourceForm() {
         
         // Redirect to the resource detail page
         navigate(`/resources/${resource.id}`);
-      } else {
-        // Try to get error details from response
-        let errorMessage = 'Failed to create resource';
-        try {
-          const errorData = await response.json();
-          if (errorData.message) {
-            errorMessage = errorData.message;
-          }
-          if (errorData.errors) {
-            console.error('Validation errors:', errorData.errors);
-            errorMessage += ': ' + Object.values(errorData.errors).join(', ');
-          }
-        } catch (e) {
-          console.error('Error parsing error response:', e);
-        }
-        
-        toast({
-          title: 'Error',
-          description: errorMessage,
-          variant: 'destructive',
-        });
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating resource:', error);
       toast({
         title: 'Error',
-        description: error.message || 'Failed to create resource',
+        description: 'Failed to create resource',
         variant: 'destructive',
       });
     }
@@ -223,28 +185,7 @@ export default function CreateResourceForm() {
                     />
                   </FormControl>
                   <FormDescription>
-                    Main URL where users can access the resource
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="contentUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Alternate Content URL (Optional)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="https://example.com/alternate-access" 
-                      type="url"
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Alternative URL for accessing this resource (leave blank to use main URL)
+                    URL where users can access the resource
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

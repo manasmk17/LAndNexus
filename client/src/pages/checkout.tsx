@@ -242,83 +242,42 @@ export default function Checkout() {
         setLoadingStripe(true);
         setStripeError(false);
         
-        // Debug: Log Stripe key availability
-        const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
-        console.log("Stripe key available:", !!stripeKey);
-        if (stripeKey) {
-          console.log("Stripe key format:", stripeKey.substring(0, 7) + "...");
-        }
-        
         // Check if Stripe is available
         if (!isStripeAvailable(true)) {
           console.log("Stripe public key not available - payment functions disabled");
           setStripeError(true);
           toast({
             title: "Payment System Unavailable",
-            description: "The payment system configuration is missing. Please try again later.",
+            description: "The payment system is currently offline. Please try again later.",
             variant: "destructive",
           });
           return;
         }
         
-        // Add the script to the page
-        console.log("Attempting to load Stripe...");
-        
-        // Create script element for Stripe.js
-        const script = document.createElement('script');
-        script.src = 'https://js.stripe.com/v3/';
-        script.async = true;
-        
-        // When script loads, initialize Stripe instance
-        script.onload = async () => {
-          try {
-            console.log("Stripe.js script loaded");
-            if (window.Stripe) {
-              const instance = window.Stripe(stripeKey);
-              console.log("Stripe initialized successfully");
-              setStripeInstance(instance);
-            } else {
-              console.error("Stripe.js loaded but Stripe constructor not available");
-              setStripeError(true);
-            }
-          } catch (err) {
-            console.error("Error initializing Stripe after script load:", err);
-            setStripeError(true);
-          } finally {
-            setLoadingStripe(false);
-          }
-        };
-        
-        // Handle script loading errors
-        script.onerror = () => {
-          console.error("Failed to load Stripe.js script");
+        // Try to get Stripe instance
+        const instance = await getStripe();
+        if (!instance) {
+          console.log("Failed to initialize Stripe instance");
           setStripeError(true);
-          setLoadingStripe(false);
           toast({
             title: "Payment System Unavailable",
-            description: "Failed to load payment system. Please check your internet connection and try again.",
+            description: "Unable to initialize payment processing. Please try again.",
             variant: "destructive",
           });
-        };
-        
-        // Add script to document
-        document.head.appendChild(script);
-        
-        // Cleanup for script if component unmounts before loading
-        return () => {
-          if (!script.onload) {
-            document.head.removeChild(script);
-          }
-        };
+        } else {
+          console.log("Stripe loaded successfully");
+          setStripeInstance(instance);
+        }
       } catch (error) {
-        console.error("Error during Stripe setup:", error);
+        console.error("Error loading Stripe:", error);
         setStripeError(true);
-        setLoadingStripe(false);
         toast({
-          title: "Payment System Error",
-          description: "An unexpected error occurred. Please try again later.",
+          title: "Payment System Unavailable",
+          description: "Unable to load payment processing. Please try again later.",
           variant: "destructive",
         });
+      } finally {
+        setLoadingStripe(false);
       }
     };
     

@@ -57,15 +57,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (response.ok) {
           const userData = await response.json();
           setUser(userData);
+        } else {
+          // If unauthorized (401) or any other status, just set user to null
+          // This is expected for users who aren't logged in
+          setUser(null);
         }
       } catch (err) {
+        // Properly log but don't let the promise reject
         console.error("Auth status check error:", err);
+        // Set user to null on error
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkAuthStatus();
+    // Prevent unhandled rejections by catching errors at this level
+    checkAuthStatus().catch(error => {
+      console.error("Caught auth check error:", error);
+      setIsLoading(false);
+      setUser(null);
+    });
   }, []);
 
   // Login function

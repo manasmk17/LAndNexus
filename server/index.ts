@@ -4,10 +4,32 @@ import { setupVite, serveStatic, log } from "./vite";
 import { initializeDatabase } from "./db";
 import csurf from "csurf";
 import cookieParser from "cookie-parser";
+import helmet from 'helmet';
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+
+// Apply Helmet middleware for secure HTTP headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // For development, can tighten in production
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      connectSrc: ["'self'", "https://api.stripe.com", "https://js.stripe.com"],
+      frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
+      upgradeInsecureRequests: []
+    }
+  },
+  crossOriginEmbedderPolicy: false, // For development compatibility
+  crossOriginResourcePolicy: { policy: "cross-origin" }, // For development compatibility
+}));
+
+// Rate limiting would be added here in production
+
+app.use(express.json({ limit: '2mb' })); // Limit JSON body size
+app.use(express.urlencoded({ extended: false, limit: '2mb' })); // Limit URL-encoded body size
 app.use(cookieParser());
 
 // Configure CSRF protection with detailed error logging
@@ -49,7 +71,12 @@ app.use((req, res, next) => {
     '/api/admin/company-profiles',
     '/api/admin/professional-profiles',
     '/api/admin/job-postings',
-    '/api/admin/resources'
+    '/api/admin/resources',
+    '/api/reviews',
+    '/api/notifications',
+    '/api/notifications/unread',
+    '/api/notifications/read-all',
+    '/api/notification-preferences'
   ];
   
   // We should treat all API routes that start with '/api/me/' as exempt for GET requests
@@ -103,7 +130,13 @@ app.use((req, res, next) => {
     '/api/admin/job-postings/:id/featured',
     '/api/admin/job-postings/:id/status',
     '/api/admin/resources/:id/featured',
-    '/api/admin/resources/:id'
+    '/api/admin/resources/:id',
+    '/api/reviews/:id',
+    '/api/professionals/:id/reviews',
+    '/api/companies/:id/reviews',
+    '/api/consultations/:id/review',
+    '/api/notifications/:id',
+    '/api/notifications/:id/read'
   ];
   
   // Check if the current request path is in the exempt list, matches an ID-based pattern,

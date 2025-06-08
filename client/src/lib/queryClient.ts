@@ -454,26 +454,27 @@ export const getQueryFn: <T>(options: {
     }
   };
 
-// Custom retry function that's smarter about 401 errors
-const customRetry = (failureCount: number, error: any) => {
-  // Don't retry authentication errors
-  if (error?.message?.includes('401') || error?.message?.includes('Unauthorized')) {
-    return false;
+// Setup global unhandled rejection handler for React Query
+window.addEventListener('unhandledrejection', event => {
+  // Only log and prevent default if it's our query or mutation error
+  if (event.reason && (
+      event.reason.name === 'QueryError' || 
+      event.reason.name === 'MutationError' || 
+      event.reason.name === 'NetworkError' ||
+      (typeof event.reason.message === 'string' && (
+        event.reason.message.includes('Network') ||
+        event.reason.message.includes('Failed to fetch') ||
+        event.reason.message.includes('connection')
+      ))
+    )) {
+    console.log('Handled React Query rejection:', event.reason);
+    // Prevent the default browser handling of the error
+    event.preventDefault();
+  } else if (event.reason) {
+    // Log but don't prevent default for other errors
+    console.warn('Unhandled promise rejection (not React Query):', event.reason);
   }
-  
-  // Don't retry CSRF errors beyond first attempt
-  if (error?.message?.includes('CSRF') && failureCount > 0) {
-    return false;
-  }
-  
-  // Retry network errors up to 3 times
-  if (error?.name === 'NetworkError' && failureCount < 3) {
-    return true;
-  }
-  
-  // Retry other errors up to 2 times
-  return failureCount < 2;
-};
+});
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -482,12 +483,12 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: Infinity,
-      retry: customRetry,
-      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+      retry: 3,
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
     },
     mutations: {
-      retry: customRetry,
-      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000),
-    },
+      retry: 2,
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000)
+    }
   }
 });

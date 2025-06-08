@@ -12,47 +12,10 @@ import { useLocation, useRoute } from 'wouter';
 
 // Make sure to call `loadStripe` outside of a component's render to avoid
 // recreating the `Stripe` object on every render.
-let stripePromise: Promise<any> | null = null;
-
-const initializeStripe = async () => {
-  if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-    console.error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
-    return null;
-  }
-  
-  try {
-    console.log('Initializing Stripe with public key...');
-    const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
-    console.log('Stripe initialized successfully');
-    return stripe;
-  } catch (error) {
-    console.error('Error with loadStripe, falling back to manual script loading:', error);
-    
-    // Fallback: Load Stripe manually via script tag
-    return new Promise((resolve, reject) => {
-      if (window.Stripe) {
-        resolve(window.Stripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY));
-        return;
-      }
-      
-      const script = document.createElement('script');
-      script.src = 'https://js.stripe.com/v3/';
-      script.onload = () => {
-        if (window.Stripe) {
-          resolve(window.Stripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY));
-        } else {
-          reject(new Error('Failed to load Stripe.js script'));
-        }
-      };
-      script.onerror = () => reject(new Error('Failed to load Stripe.js script'));
-      document.head.appendChild(script);
-    });
-  }
-};
-
-if (!stripePromise) {
-  stripePromise = initializeStripe();
+if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
 }
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const tiers = [
   {

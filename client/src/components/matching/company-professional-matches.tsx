@@ -33,7 +33,7 @@ export default function CompanyProfessionalMatches({ jobId }: { jobId: number })
     enabled: !!user,
   });
   
-  // Fetch matched professionals for a specific job
+  // Fetch matched professionals for a specific job - allow fetching without authentication for development/testing
   const { 
     data: matches, 
     isLoading: isLoadingMatches,
@@ -47,7 +47,8 @@ export default function CompanyProfessionalMatches({ jobId }: { jobId: number })
       }
       return response.json();
     },
-    enabled: !!jobId && !!company,
+    // Enable for testing without requiring company profile
+    enabled: !!jobId,
   });
   
   // Fetch the job details
@@ -79,7 +80,7 @@ export default function CompanyProfessionalMatches({ jobId }: { jobId: number })
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {!company ? (
+        {!company && user ? (
           <div className="text-center py-4">
             <p className="text-gray-500 mb-4">Complete your company profile to see matches</p>
             <Link href="/company/edit-profile">

@@ -17,7 +17,11 @@ import {
   messages, Message, InsertMessage,
   consultations, Consultation, InsertConsultation,
   skillRecommendations, SkillRecommendation, InsertSkillRecommendation,
-  pageContents, PageContent, InsertPageContent
+  pageContents, PageContent, InsertPageContent,
+  reviews, Review, InsertReview,
+  notifications, Notification, InsertNotification,
+  notificationTypes, NotificationType, InsertNotificationType,
+  notificationPreferences, NotificationPreference, InsertNotificationPreference
 } from "@shared/schema";
 
 export interface IStorage {
@@ -25,6 +29,9 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserBySocialProvider(provider: string, profileId: string): Promise<User | undefined>;
+  linkSocialAccount(userId: number, provider: string, profileId: string): Promise<User | undefined>;
+  createUserFromSocial(user: Partial<InsertUser> & { email: string; username: string; password: string }): Promise<User>;
   getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, userData: Partial<User>): Promise<User | undefined>;
@@ -142,6 +149,35 @@ export interface IStorage {
   createPageContent(content: InsertPageContent): Promise<PageContent>;
   updatePageContent(id: number, content: Partial<InsertPageContent>): Promise<PageContent | undefined>;
   deletePageContent(id: number): Promise<boolean>;
+  
+  // Review operations
+  getReview(id: number): Promise<Review | undefined>;
+  getProfessionalReviews(professionalId: number): Promise<Review[]>;
+  getCompanyReviews(companyId: number): Promise<Review[]>;
+  getConsultationReview(consultationId: number): Promise<Review | undefined>;
+  createReview(review: InsertReview): Promise<Review>;
+  updateReview(id: number, review: Partial<Review>): Promise<Review | undefined>;
+  deleteReview(id: number): Promise<boolean>;
+  updateProfessionalRating(professionalId: number): Promise<boolean>;
+  
+  // Notification operations
+  getNotificationType(id: number): Promise<NotificationType | undefined>;
+  getNotificationTypeByName(name: string): Promise<NotificationType | undefined>;
+  getAllNotificationTypes(): Promise<NotificationType[]>;
+  createNotificationType(type: InsertNotificationType): Promise<NotificationType>;
+  
+  getNotification(id: number): Promise<Notification | undefined>;
+  getUserNotifications(userId: number): Promise<Notification[]>;
+  getUserUnreadNotifications(userId: number): Promise<Notification[]>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  markNotificationAsRead(id: number): Promise<boolean>;
+  markAllUserNotificationsAsRead(userId: number): Promise<boolean>;
+  deleteNotification(id: number): Promise<boolean>;
+  
+  // Notification Preferences operations
+  getUserNotificationPreferences(userId: number): Promise<NotificationPreference[]>;
+  getUserNotificationPreference(userId: number, typeId: number): Promise<NotificationPreference | undefined>;
+  createOrUpdateNotificationPreference(preference: InsertNotificationPreference): Promise<NotificationPreference>;
 }
 
 export class MemStorage implements IStorage {
@@ -162,6 +198,10 @@ export class MemStorage implements IStorage {
   private skillRecommendations: Map<number, SkillRecommendation>;
   private pageContents: Map<number, PageContent>;
   private jobMatches: Map<string, number>; // Format: "jobId-professionalId" -> score
+  private reviews: Map<number, Review>;
+  private notificationTypes: Map<number, NotificationType>;
+  private notifications: Map<number, Notification>;
+  private notificationPreferences: Map<number, NotificationPreference>;
   
   private userId: number;
   private profProfileId: number;
@@ -179,6 +219,10 @@ export class MemStorage implements IStorage {
   private consultationId: number;
   private skillRecommendationId: number;
   private pageContentId: number;
+  private reviewId: number;
+  private notificationTypeId: number;
+  private notificationId: number;
+  private notificationPreferenceId: number;
 
   constructor() {
     this.users = new Map();
@@ -198,6 +242,10 @@ export class MemStorage implements IStorage {
     this.skillRecommendations = new Map();
     this.pageContents = new Map();
     this.jobMatches = new Map();
+    this.reviews = new Map();
+    this.notificationTypes = new Map();
+    this.notifications = new Map();
+    this.notificationPreferences = new Map();
     
     this.userId = 1;
     this.profProfileId = 1;
@@ -215,6 +263,10 @@ export class MemStorage implements IStorage {
     this.consultationId = 1;
     this.skillRecommendationId = 1;
     this.pageContentId = 1;
+    this.reviewId = 1;
+    this.notificationTypeId = 1;
+    this.notificationId = 1;
+    this.notificationPreferenceId = 1;
     
     // Initialize with some expertise areas
     this.initExpertise();
@@ -441,6 +493,64 @@ export class MemStorage implements IStorage {
     return Array.from(this.users.values()).find(
       (user) => user.email === email
     );
+  }
+  
+  async getUserBySocialProvider(provider: string, profileId: string): Promise<User | undefined> {
+    const fieldName = `${provider}Id` as keyof User;
+    return Array.from(this.users.values()).find(
+      (user) => user[fieldName] === profileId
+    );
+  }
+  
+  async linkSocialAccount(userId: number, provider: string, profileId: string): Promise<User | undefined> {
+    const user = await this.getUser(userId);
+    if (!user) return undefined;
+    
+    const fieldName = `${provider}Id` as keyof User;
+    const updatedUser = { ...user, [fieldName]: profileId };
+    this.users.set(userId, updatedUser as User);
+    return updatedUser as User;
+  }
+  
+  async createUserFromSocial(user: Partial<InsertUser> & { email: string; username: string; password: string }): Promise<User> {
+    // Check if username or email already exists
+    const existingUsername = await this.getUserByUsername(user.username);
+    if (existingUsername) {
+      throw new Error("Username already exists");
+    }
+    
+    const existingEmail = await this.getUserByEmail(user.email);
+    if (existingEmail) {
+      throw new Error("Email already exists");
+    }
+    
+    const id = this.userId++;
+    const newUser: User = {
+      id,
+      username: user.username,
+      password: user.password,
+      email: user.email,
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      userType: user.userType || "professional",
+      isAdmin: user.isAdmin || false,
+      createdAt: new Date(),
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      subscriptionTier: null,
+      subscriptionStatus: null,
+      resetToken: null,
+      resetTokenExpiry: null,
+      emailVerified: user.emailVerified || false,
+      emailVerificationToken: null,
+      emailVerificationExpiry: null,
+      profilePhotoUrl: user.profilePhotoUrl || null,
+      googleId: user.googleId || null,
+      linkedinId: user.linkedinId || null,
+    };
+    
+    this.users.set(id, newUser);
+    return newUser;
   }
   
   async getAllUsers(): Promise<User[]> {
@@ -1104,9 +1214,443 @@ export class MemStorage implements IStorage {
   async deletePageContent(id: number): Promise<boolean> {
     return this.pageContents.delete(id);
   }
+  
+  // Review operations
+  async getReview(id: number): Promise<Review | undefined> {
+    return this.reviews.get(id);
+  }
+  
+  async getProfessionalReviews(professionalId: number): Promise<Review[]> {
+    return Array.from(this.reviews.values())
+      .filter(review => review.professionalId === professionalId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+  
+  async getCompanyReviews(companyId: number): Promise<Review[]> {
+    return Array.from(this.reviews.values())
+      .filter(review => review.companyId === companyId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+  
+  async getConsultationReview(consultationId: number): Promise<Review | undefined> {
+    return Array.from(this.reviews.values())
+      .find(review => review.consultationId === consultationId);
+  }
+  
+  async createReview(review: InsertReview): Promise<Review> {
+    const id = this.reviewId++;
+    const newReview: Review = {
+      ...review,
+      id,
+      createdAt: new Date()
+    };
+    this.reviews.set(id, newReview);
+    
+    // Update the professional's rating
+    await this.updateProfessionalRating(review.professionalId);
+    
+    return newReview;
+  }
+  
+  async updateReview(id: number, review: Partial<Review>): Promise<Review | undefined> {
+    const existing = this.reviews.get(id);
+    if (!existing) return undefined;
+    
+    const updated = { ...existing, ...review };
+    this.reviews.set(id, updated);
+    
+    // Update the professional's rating if the rating was changed
+    if (review.rating) {
+      await this.updateProfessionalRating(existing.professionalId);
+    }
+    
+    return updated;
+  }
+  
+  async deleteReview(id: number): Promise<boolean> {
+    const review = this.reviews.get(id);
+    if (!review) return false;
+    
+    const result = this.reviews.delete(id);
+    
+    // Update the professional's rating
+    if (result) {
+      await this.updateProfessionalRating(review.professionalId);
+    }
+    
+    return result;
+  }
+  
+  async updateProfessionalRating(professionalId: number): Promise<boolean> {
+    const professional = await this.getProfessionalProfile(professionalId);
+    if (!professional) return false;
+    
+    const reviews = await this.getProfessionalReviews(professionalId);
+    
+    if (reviews.length === 0) {
+      // Reset rating if no reviews
+      const updated = {
+        ...professional,
+        rating: 0,
+        reviewCount: 0
+      };
+      this.professionalProfiles.set(professionalId, updated);
+      return true;
+    }
+    
+    // Calculate average rating
+    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
+    const averageRating = Math.round(totalRating / reviews.length);
+    
+    const updated = {
+      ...professional,
+      rating: averageRating,
+      reviewCount: reviews.length
+    };
+    
+    this.professionalProfiles.set(professionalId, updated);
+    return true;
+  }
+  
+  // Notification Type operations
+  async getNotificationType(id: number): Promise<NotificationType | undefined> {
+    return this.notificationTypes.get(id);
+  }
+  
+  async getNotificationTypeByName(name: string): Promise<NotificationType | undefined> {
+    return Array.from(this.notificationTypes.values())
+      .find(type => type.name === name);
+  }
+  
+  async getAllNotificationTypes(): Promise<NotificationType[]> {
+    return Array.from(this.notificationTypes.values());
+  }
+  
+  async createNotificationType(type: InsertNotificationType): Promise<NotificationType> {
+    const id = this.notificationTypeId++;
+    const newType: NotificationType = {
+      ...type,
+      id
+    };
+    this.notificationTypes.set(id, newType);
+    return newType;
+  }
+  
+  // Notification operations
+  async getNotification(id: number): Promise<Notification | undefined> {
+    return this.notifications.get(id);
+  }
+  
+  async getUserNotifications(userId: number): Promise<Notification[]> {
+    return Array.from(this.notifications.values())
+      .filter(notification => notification.userId === userId)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+  
+  async getUserUnreadNotifications(userId: number): Promise<Notification[]> {
+    return Array.from(this.notifications.values())
+      .filter(notification => notification.userId === userId && !notification.read)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+  
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const id = this.notificationId++;
+    const newNotification: Notification = {
+      ...notification,
+      id,
+      read: false,
+      createdAt: new Date()
+    };
+    this.notifications.set(id, newNotification);
+    return newNotification;
+  }
+  
+  async markNotificationAsRead(id: number): Promise<boolean> {
+    const notification = this.notifications.get(id);
+    if (!notification) return false;
+    
+    const updated = { ...notification, read: true };
+    this.notifications.set(id, updated);
+    return true;
+  }
+  
+  async markAllUserNotificationsAsRead(userId: number): Promise<boolean> {
+    const userNotifications = await this.getUserNotifications(userId);
+    
+    userNotifications.forEach(notification => {
+      const updated = { ...notification, read: true };
+      this.notifications.set(notification.id, updated);
+    });
+    
+    return true;
+  }
+  
+  async deleteNotification(id: number): Promise<boolean> {
+    return this.notifications.delete(id);
+  }
+  
+  // Notification Preferences operations
+  async getUserNotificationPreferences(userId: number): Promise<NotificationPreference[]> {
+    return Array.from(this.notificationPreferences.values())
+      .filter(pref => pref.userId === userId);
+  }
+  
+  async getUserNotificationPreference(userId: number, typeId: number): Promise<NotificationPreference | undefined> {
+    return Array.from(this.notificationPreferences.values())
+      .find(pref => pref.userId === userId && pref.typeId === typeId);
+  }
+  
+  async createOrUpdateNotificationPreference(preference: InsertNotificationPreference): Promise<NotificationPreference> {
+    // Check if preference already exists
+    const existing = await this.getUserNotificationPreference(preference.userId, preference.typeId);
+    
+    if (existing) {
+      // Update existing preference
+      const updated = { ...existing, ...preference };
+      this.notificationPreferences.set(existing.id, updated);
+      return updated;
+    } else {
+      // Create new preference
+      const id = this.notificationPreferenceId++;
+      const newPreference: NotificationPreference = {
+        ...preference,
+        id
+      };
+      this.notificationPreferences.set(id, newPreference);
+      return newPreference;
+    }
+  }
 }
 
 export class DatabaseStorage implements IStorage {
+  // Review operations
+  async getReview(id: number): Promise<Review | undefined> {
+    const [review] = await db?.select().from(reviews).where(eq(reviews.id, id)) || [];
+    return review;
+  }
+  
+  async getProfessionalReviews(professionalId: number): Promise<Review[]> {
+    const results = await db?.select()
+      .from(reviews)
+      .where(eq(reviews.professionalId, professionalId))
+      .orderBy(desc(reviews.createdAt)) || [];
+    return results;
+  }
+  
+  async getCompanyReviews(companyId: number): Promise<Review[]> {
+    const results = await db?.select()
+      .from(reviews)
+      .where(eq(reviews.companyId, companyId))
+      .orderBy(desc(reviews.createdAt)) || [];
+    return results;
+  }
+  
+  async getConsultationReview(consultationId: number): Promise<Review | undefined> {
+    const [review] = await db?.select()
+      .from(reviews)
+      .where(eq(reviews.consultationId, consultationId)) || [];
+    return review;
+  }
+  
+  async createReview(review: InsertReview): Promise<Review> {
+    const [newReview] = await db?.insert(reviews)
+      .values(review)
+      .returning() || [];
+    
+    // Update the professional's rating
+    await this.updateProfessionalRating(review.professionalId);
+    
+    return newReview;
+  }
+  
+  async updateReview(id: number, reviewData: Partial<Review>): Promise<Review | undefined> {
+    const [updatedReview] = await db?.update(reviews)
+      .set(reviewData)
+      .where(eq(reviews.id, id))
+      .returning() || [];
+    
+    if (updatedReview && reviewData.rating !== undefined) {
+      await this.updateProfessionalRating(updatedReview.professionalId);
+    }
+    
+    return updatedReview;
+  }
+  
+  async deleteReview(id: number): Promise<boolean> {
+    const [deletedReview] = await db?.delete(reviews)
+      .where(eq(reviews.id, id))
+      .returning() || [];
+    
+    if (deletedReview) {
+      await this.updateProfessionalRating(deletedReview.professionalId);
+      return true;
+    }
+    
+    return false;
+  }
+  
+  async updateProfessionalRating(professionalId: number): Promise<boolean> {
+    // Get all reviews for this professional
+    const professionalReviews = await this.getProfessionalReviews(professionalId);
+    
+    if (professionalReviews.length === 0) {
+      // Reset rating if no reviews
+      await db?.update(professionalProfiles)
+        .set({
+          rating: 0,
+          reviewCount: 0
+        })
+        .where(eq(professionalProfiles.id, professionalId));
+      return true;
+    }
+    
+    // Calculate average rating
+    const totalRating = professionalReviews.reduce((sum, review) => sum + review.rating, 0);
+    const averageRating = Math.round(totalRating / professionalReviews.length);
+    
+    // Update the professional profile
+    await db?.update(professionalProfiles)
+      .set({
+        rating: averageRating,
+        reviewCount: professionalReviews.length
+      })
+      .where(eq(professionalProfiles.id, professionalId));
+    
+    return true;
+  }
+
+  // Notification operations
+  async getNotificationType(id: number): Promise<NotificationType | undefined> {
+    const [notificationType] = await db?.select()
+      .from(notificationTypes)
+      .where(eq(notificationTypes.id, id)) || [];
+    return notificationType;
+  }
+  
+  async getNotificationTypeByName(name: string): Promise<NotificationType | undefined> {
+    const [notificationType] = await db?.select()
+      .from(notificationTypes)
+      .where(eq(notificationTypes.name, name)) || [];
+    return notificationType;
+  }
+  
+  async getAllNotificationTypes(): Promise<NotificationType[]> {
+    const results = await db?.select().from(notificationTypes) || [];
+    return results;
+  }
+  
+  async createNotificationType(type: InsertNotificationType): Promise<NotificationType> {
+    const [newType] = await db?.insert(notificationTypes)
+      .values(type)
+      .returning() || [];
+    return newType;
+  }
+  
+  async getNotification(id: number): Promise<Notification | undefined> {
+    const [notification] = await db?.select()
+      .from(notifications)
+      .where(eq(notifications.id, id)) || [];
+    return notification;
+  }
+  
+  async getUserNotifications(userId: number): Promise<Notification[]> {
+    const results = await db?.select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt)) || [];
+    return results;
+  }
+  
+  async getUserUnreadNotifications(userId: number): Promise<Notification[]> {
+    if (!db) return [];
+    try {
+      const results = await db.select()
+        .from(notifications)
+        .where(and(
+          eq(notifications.userId, userId),
+          eq(notifications.read, false)
+        ))
+        .orderBy(desc(notifications.createdAt)) || [];
+      return results;
+    } catch (err) {
+      console.error("Error getting unread notifications:", err);
+      return [];
+    }
+  }
+  
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const [newNotification] = await db?.insert(notifications)
+      .values({
+        ...notification,
+        read: false
+      })
+      .returning() || [];
+    return newNotification;
+  }
+  
+  async markNotificationAsRead(id: number): Promise<boolean> {
+    const [updated] = await db?.update(notifications)
+      .set({ read: true })
+      .where(eq(notifications.id, id))
+      .returning() || [];
+    return !!updated;
+  }
+  
+  async markAllUserNotificationsAsRead(userId: number): Promise<boolean> {
+    await db?.update(notifications)
+      .set({ read: true })
+      .where(eq(notifications.userId, userId));
+    return true;
+  }
+  
+  async deleteNotification(id: number): Promise<boolean> {
+    const [deleted] = await db?.delete(notifications)
+      .where(eq(notifications.id, id))
+      .returning() || [];
+    return !!deleted;
+  }
+  
+  async getUserNotificationPreference(userId: number, typeId: number): Promise<NotificationPreference | undefined> {
+    const [preference] = await db?.select()
+      .from(notificationPreferences)
+      .where(eq(notificationPreferences.userId, userId))
+      .where(eq(notificationPreferences.typeId, typeId)) || [];
+    return preference;
+  }
+  
+  async getUserNotificationPreferences(userId: number): Promise<NotificationPreference[]> {
+    const preferences = await db?.select()
+      .from(notificationPreferences)
+      .where(eq(notificationPreferences.userId, userId)) || [];
+    return preferences;
+  }
+  
+  async createOrUpdateNotificationPreference(preference: InsertNotificationPreference): Promise<NotificationPreference> {
+    // Check if preference already exists
+    const existingPreference = await this.getUserNotificationPreference(
+      preference.userId, 
+      preference.typeId
+    );
+    
+    if (existingPreference) {
+      // Update existing preference
+      const [updated] = await db?.update(notificationPreferences)
+        .set({
+          email: preference.email,
+          inApp: preference.inApp
+        })
+        .where(eq(notificationPreferences.id, existingPreference.id))
+        .returning() || [];
+      return updated;
+    } else {
+      // Create new preference
+      const [newPreference] = await db?.insert(notificationPreferences)
+        .values(preference)
+        .returning() || [];
+      return newPreference;
+    }
+  }
+  
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));

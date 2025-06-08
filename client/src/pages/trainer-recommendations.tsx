@@ -458,18 +458,18 @@ export default function TrainerRecommendations() {
                   <p className="text-slate-600">AI is analyzing trainers...</p>
                 </div>
               </div>
-            ) : recommendationsData?.recommendations?.length > 0 ? (
+            ) : recommendationsData?.recommendations && recommendationsData.recommendations.length > 0 ? (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold text-slate-900">
-                    Found {recommendationsData.totalFound} Recommended Trainers
+                    Found {recommendationsData?.totalFound || 0} Recommended Trainers
                   </h2>
                   <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                     AI-Powered Matching
                   </Badge>
                 </div>
 
-                {recommendationsData.recommendations.map((match) => (
+                {recommendationsData?.recommendations?.map((match) => (
                   <Card key={match.professionalId} className="hover:shadow-lg transition-shadow">
                     <CardContent className="p-6">
                       <div className="flex items-start justify-between mb-4">

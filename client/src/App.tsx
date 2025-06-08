@@ -38,6 +38,7 @@ import Subscribe from "@/pages/subscribe";
 import SubscriptionSuccess from "@/pages/subscription-success";
 import ProfileSuccess from "@/pages/profile-success";
 import BookConsultation from "@/pages/book-consultation";
+import TrainerRecommendations from "@/pages/trainer-recommendations";
 import PageView from "@/pages/page";
 import NotFound from "@/pages/not-found";
 import { AuthProvider } from "@/lib/auth";
@@ -136,6 +137,11 @@ function Router() {
       <ProtectedRoute 
         path="/book-consultation/:id" 
         component={BookConsultation} 
+      />
+      <ProtectedRoute 
+        path="/ai-recommendations" 
+        component={TrainerRecommendations} 
+        userTypes={["company"]}
       />
 
       {/* 404 route */}

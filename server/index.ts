@@ -238,13 +238,26 @@ app.use((req, res, next) => {
   // Serve the app on port 5000 as expected by workflow
   // this serves both the API and the client.
   const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-    keepAliveTimeout: 65000, // Increase keep-alive timeout
-    headersTimeout: 66000, // Increase headers timeout
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+  
+  // Handle server startup with proper error handling
+  const startServer = (retryCount = 0) => {
+    server.listen(port, "0.0.0.0", () => {
+      log(`serving on port ${port}`);
+    }).on('error', (err: any) => {
+      if (err.code === 'EADDRINUSE') {
+        if (retryCount < 3) {
+          console.log(`Port ${port} is busy, retrying in ${1000 * (retryCount + 1)}ms... (attempt ${retryCount + 1}/3)`);
+          setTimeout(() => startServer(retryCount + 1), 1000 * (retryCount + 1));
+        } else {
+          console.error(`Failed to start server after 3 attempts. Port ${port} is still in use.`);
+          process.exit(1);
+        }
+      } else {
+        console.error('Server error:', err);
+        process.exit(1);
+      }
+    });
+  };
+  
+  startServer();
 })();

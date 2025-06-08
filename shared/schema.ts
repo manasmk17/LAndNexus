@@ -19,12 +19,6 @@ export const users = pgTable("users", {
   subscriptionStatus: text("subscription_status"), // "active", "trialing", "past_due", "canceled"
   resetToken: text("reset_token"),
   resetTokenExpiry: timestamp("reset_token_expiry"),
-  emailVerified: boolean("email_verified").default(false),
-  emailVerificationToken: text("email_verification_token"),
-  emailVerificationExpiry: timestamp("email_verification_expiry"),
-  profilePhotoUrl: text("profile_photo_url"),
-  googleId: text("google_id"),
-  linkedinId: text("linkedin_id"),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({

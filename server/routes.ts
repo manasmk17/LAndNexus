@@ -32,7 +32,11 @@ import {
   type Review,
   type Notification,
   type NotificationType,
-  type NotificationPreference
+  type NotificationPreference,
+  type InsertReview,
+  type InsertNotification,
+  type InsertNotificationType,
+  type InsertNotificationPreference
 } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { generateCareerRecommendations } from "./career-recommendations";

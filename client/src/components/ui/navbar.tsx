@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Menu, User, LogOut, MessageSquare, Settings, BookOpen, Award, Briefcase, Users, Home } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { NotificationDropdown } from "@/components/notifications/notification-dropdown";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -125,6 +126,7 @@ export default function Navbar() {
                   </Button>
                   <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-medium text-white">2</span>
                 </Link>
+                <NotificationDropdown />
                 <Link href="/subscribe">
                   <Button variant="ghost" size="sm" className="flex items-center gap-1.5 text-slate-700 hover:text-blue-700 hover:bg-blue-50">
                     <Award className="h-4 w-4" />

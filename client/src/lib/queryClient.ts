@@ -454,6 +454,27 @@ export const getQueryFn: <T>(options: {
     }
   };
 
+// Custom retry function that's smarter about 401 errors
+const customRetry = (failureCount: number, error: any) => {
+  // Don't retry authentication errors
+  if (error?.message?.includes('401') || error?.message?.includes('Unauthorized')) {
+    return false;
+  }
+  
+  // Don't retry CSRF errors beyond first attempt
+  if (error?.message?.includes('CSRF') && failureCount > 0) {
+    return false;
+  }
+  
+  // Retry network errors up to 3 times
+  if (error?.name === 'NetworkError' && failureCount < 3) {
+    return true;
+  }
+  
+  // Retry other errors up to 2 times
+  return failureCount < 2;
+};
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -461,11 +482,11 @@ export const queryClient = new QueryClient({
       refetchInterval: false,
       refetchOnWindowFocus: false,
       staleTime: Infinity,
-      retry: 3,
+      retry: customRetry,
       retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
     },
     mutations: {
-      retry: 2,
+      retry: customRetry,
       retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000),
     },
   }

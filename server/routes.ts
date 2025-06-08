@@ -32,11 +32,7 @@ import {
   type Review,
   type Notification,
   type NotificationType,
-  type NotificationPreference,
-  type InsertReview,
-  type InsertNotification,
-  type InsertNotificationType,
-  type InsertNotificationPreference
+  type NotificationPreference
 } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { generateCareerRecommendations } from "./career-recommendations";
@@ -50,7 +46,6 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import Stripe from "stripe";
 import memorystore from "memorystore";
-import { setupDiagnosticsRoute } from "./system-diagnostics";
 
 // Initialize Stripe with the API key
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -4580,9 +4575,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Server error" });
     }
   });
-
-  // System diagnostics endpoint
-  setupDiagnosticsRoute(app);
 
   // WebSocket server for real-time messaging
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });

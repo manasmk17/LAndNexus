@@ -337,7 +337,7 @@ export type PageContent = typeof pageContents.$inferSelect;
 export type InsertPageContent = z.infer<typeof insertPageContentSchema>;
 
 // Reviews
-const reviews = pgTable("reviews", {
+export const reviews = pgTable("reviews", {
   id: serial("id").primaryKey(),
   professionalId: integer("professional_id").notNull().references(() => professionalProfiles.id),
   companyId: integer("company_id").notNull().references(() => companyProfiles.id),
@@ -357,7 +357,7 @@ export type Review = typeof reviews.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 
 // Notifications
-const notificationTypes = pgTable("notification_types", {
+export const notificationTypes = pgTable("notification_types", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   description: text("description"),
@@ -370,7 +370,7 @@ export const insertNotificationTypeSchema = createInsertSchema(notificationTypes
 export type NotificationType = typeof notificationTypes.$inferSelect;
 export type InsertNotificationType = z.infer<typeof insertNotificationTypeSchema>;
 
-const notifications = pgTable("notifications", {
+export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
   typeId: integer("type_id").notNull().references(() => notificationTypes.id),
@@ -391,7 +391,7 @@ export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
 // User Notification Preferences
-const notificationPreferences = pgTable("notification_preferences", {
+export const notificationPreferences = pgTable("notification_preferences", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
   typeId: integer("type_id").notNull().references(() => notificationTypes.id),
@@ -409,6 +409,3 @@ export const insertNotificationPreferenceSchema = createInsertSchema(notificatio
 
 export type NotificationPreference = typeof notificationPreferences.$inferSelect;
 export type InsertNotificationPreference = z.infer<typeof insertNotificationPreferenceSchema>;
-
-// Export tables for database operations
-export { reviews, notifications, notificationTypes, notificationPreferences };

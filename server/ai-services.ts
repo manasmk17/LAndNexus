@@ -126,118 +126,44 @@ export async function calculateProfileJobMatchScore(
   }
 }
 
-// Enhanced fallback scoring method when AI is not available
+// Fallback scoring method when AI is not available
 function fallbackMatchScore(profile: ProfessionalProfile, job: JobPosting): number {
   let score = 0;
-  let maxScore = 0;
   
-  // Title semantic matching (30% weight)
+  // Title match
   if (profile.title && job.title) {
-    const titleScore = calculateTextSimilarity(profile.title, job.title);
-    score += titleScore * 0.3;
-    maxScore += 0.3;
-  }
-  
-  // Bio/description matching (25% weight)
-  if (profile.bio && job.description) {
-    const bioScore = calculateTextSimilarity(profile.bio, job.description);
-    score += bioScore * 0.25;
-    maxScore += 0.25;
-  }
-  
-  // Location compatibility (15% weight)
-  if (profile.location && job.location) {
-    let locationScore = 0;
-    if (profile.location.toLowerCase() === job.location.toLowerCase()) {
-      locationScore = 1.0;
-    } else if (job.location.toLowerCase().includes('remote') || 
-               profile.location.toLowerCase().includes('remote')) {
-      locationScore = 0.8;
-    } else if (job.remote) {
-      locationScore = 0.7;
+    const profileTitle = profile.title.toLowerCase();
+    const jobTitle = job.title.toLowerCase();
+    if (profileTitle.includes(jobTitle) || jobTitle.includes(profileTitle)) {
+      score += 0.3;
     }
-    score += locationScore * 0.15;
-    maxScore += 0.15;
   }
   
-  // Industry focus alignment (15% weight)
+  // Location match
+  if (profile.location && job.location && profile.location === job.location) {
+    score += 0.2;
+  }
+  
+  // Remote work preference
+  if (job.remote) {
+    score += 0.1;
+  }
+  
+  // Industry match
   if (profile.industryFocus && job.description) {
-    const industryScore = job.description.toLowerCase()
-      .includes(profile.industryFocus.toLowerCase()) ? 1.0 : 0;
-    score += industryScore * 0.15;
-    maxScore += 0.15;
-  }
-  
-  // Experience level matching (10% weight)
-  if (profile.title && job.title) {
-    const experienceScore = calculateExperienceAlignment(profile.title, job.title);
-    score += experienceScore * 0.1;
-    maxScore += 0.1;
-  }
-  
-  // Compensation alignment (5% weight)
-  if (profile.ratePerHour && (job.minCompensation || job.maxCompensation)) {
-    const compensationScore = calculateCompensationMatch(profile.ratePerHour, job.minCompensation, job.maxCompensation);
-    score += compensationScore * 0.05;
-    maxScore += 0.05;
-  }
-  
-  // Normalize score and ensure minimum baseline
-  const normalizedScore = maxScore > 0 ? score / maxScore : 0;
-  return Math.max(0.2, Math.min(1.0, normalizedScore));
-}
-
-function calculateTextSimilarity(text1: string, text2: string): number {
-  const words1 = text1.toLowerCase().split(/\s+/).filter(word => word.length > 2);
-  const words2 = text2.toLowerCase().split(/\s+/).filter(word => word.length > 2);
-  
-  if (words1.length === 0 || words2.length === 0) return 0;
-  
-  const set1 = new Set(words1);
-  const set2 = new Set(words2);
-  const intersectionArray = words1.filter(x => set2.has(x));
-  
-  return intersectionArray.length / Math.max(set1.size, set2.size);
-}
-
-function calculateExperienceAlignment(profileTitle: string, jobTitle: string): number {
-  const seniorityLevels = {
-    'intern': 1, 'junior': 2, 'associate': 3, 'mid': 4, 'senior': 5, 
-    'lead': 6, 'principal': 7, 'director': 8, 'vp': 9, 'chief': 10
-  };
-  
-  const getLevel = (title: string) => {
-    const lower = title.toLowerCase();
-    for (const [level, value] of Object.entries(seniorityLevels)) {
-      if (lower.includes(level)) return value;
+    const industry = profile.industryFocus.toLowerCase();
+    const description = job.description.toLowerCase();
+    if (description.includes(industry)) {
+      score += 0.2;
     }
-    return 4; // Default to mid-level
-  };
-  
-  const profileLevel = getLevel(profileTitle);
-  const jobLevel = getLevel(jobTitle);
-  const levelDiff = Math.abs(profileLevel - jobLevel);
-  
-  // Perfect match = 1.0, 1 level diff = 0.8, 2 levels = 0.6, etc.
-  return Math.max(0, 1 - (levelDiff * 0.2));
-}
-
-function calculateCompensationMatch(profileRate: number, minCompensation: number | null, maxCompensation: number | null): number {
-  if (!minCompensation && !maxCompensation) return 0.5;
-  
-  const min = minCompensation || 0;
-  const max = maxCompensation || minCompensation || profileRate;
-  
-  // Check if profile rate falls within range
-  if (profileRate >= min && profileRate <= max) {
-    return 1.0; // Perfect match
-  } else if (profileRate < min) {
-    // Profile rate is below range
-    const ratio = profileRate / min;
-    return Math.max(0.1, ratio);
-  } else {
-    // Profile rate is above range
-    const ratio = max / profileRate;
-    return Math.max(0.1, ratio);
   }
+  
+  // Rate within compensation range
+  if (profile.ratePerHour && job.minCompensation && job.maxCompensation) {
+    if (profile.ratePerHour >= job.minCompensation && profile.ratePerHour <= job.maxCompensation) {
+      score += 0.2;
+    }
+  }
+  
+  return Math.min(score, 1.0);
 }

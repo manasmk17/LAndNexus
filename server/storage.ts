@@ -1364,8 +1364,7 @@ export class MemStorage implements IStorage {
 export class DatabaseStorage implements IStorage {
   // Review operations
   async getReview(id: number): Promise<Review | undefined> {
-    if (!db) return undefined;
-    const [review] = await db.select().from(reviews).where(eq(reviews.id, id));
+    const [review] = await db?.select().from(reviews).where(eq(reviews.id, id)) || [];
     return review;
   }
   

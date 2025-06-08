@@ -49,11 +49,7 @@ app.use((req, res, next) => {
     '/api/admin/company-profiles',
     '/api/admin/professional-profiles',
     '/api/admin/job-postings',
-    '/api/admin/resources',
-    '/api/reviews',
-    '/api/notifications',
-    '/api/notification-preferences',
-    '/api/system/diagnostics'
+    '/api/admin/resources'
   ];
   
   // We should treat all API routes that start with '/api/me/' as exempt for GET requests

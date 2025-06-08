@@ -1505,31 +1505,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only professionals can access this endpoint" });
       }
       
-      let profile = await storage.getProfessionalProfileByUserId(user.id);
-      
-      // If no profile exists and we're in development mode, create a default profile
-      if (!profile && bypassAuth) {
-        console.log(`Creating default professional profile for dev user ${user.username} (ID: ${user.id})`);
-        
-        // Create a default profile for development purposes
-        profile = await storage.createProfessionalProfile({
-          userId: user.id,
-          firstName: user.firstName || "Dev",
-          lastName: user.lastName || "User",
-          title: "Learning & Development Specialist",
-          bio: "Professional profile for development testing",
-          location: "Development, Test",
-          ratePerHour: 150,
-          yearsExperience: 5,
-          rating: 4,
-          reviewCount: 0,
-          featured: true,
-          verified: true
-        });
-        
-        console.log(`Created default professional profile with ID ${profile.id}`);
-      }
-      
+      const profile = await storage.getProfessionalProfileByUserId(user.id);
       if (!profile) {
         return res.status(404).json({ message: "Professional profile not found for current user" });
       }
@@ -1845,12 +1821,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/professional-profiles/:id/certifications", isAuthenticated, async (req, res) => {
     try {
       const professionalId = parseInt(req.params.id);
-      
-      // Validate professional ID format
-      if (isNaN(professionalId)) {
-        return res.status(400).json({ message: "Invalid profile ID format" });
-      }
-      
       const user = req.user as any;
 
       // Check if profile exists and belongs to user
@@ -1881,12 +1851,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/certifications/:id", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      
-      // Validate certification ID format
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid certification ID format" });
-      }
-      
       const user = req.user as any;
 
       // Get the certification directly
@@ -1985,11 +1949,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
-      // Validate professional ID format
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid professional ID format" });
-      }
-      
       // Get the professional profile
       const profile = await storage.getProfessionalProfile(id);
       if (!profile) {
@@ -2025,11 +1984,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.user as any;
       const imageId = parseInt(req.params.imageId);
-      
-      // Validate image ID format
-      if (isNaN(imageId)) {
-        return res.status(400).json({ message: "Invalid image ID format" });
-      }
       
       if (user.userType !== "professional") {
         return res.status(403).json({ message: "Only professionals can delete gallery images" });
@@ -2099,11 +2053,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.user as any;
       const imageId = parseInt(req.params.imageId);
-      
-      // Validate image ID format
-      if (isNaN(imageId)) {
-        return res.status(400).json({ message: "Invalid image ID format" });
-      }
       
       if (user.userType !== "professional") {
         return res.status(403).json({ message: "Only professionals can update profile pictures" });
@@ -2627,12 +2576,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/job-postings/:id/applications", isAuthenticated, async (req, res) => {
     try {
       const jobId = parseInt(req.params.id);
-      
-      // Validate job ID format
-      if (isNaN(jobId)) {
-        return res.status(400).json({ message: "Invalid job posting ID format" });
-      }
-      
       const user = req.user as any;
 
       if (user.userType !== "professional") {
@@ -2675,12 +2618,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/job-postings/:id/applications", isAuthenticated, async (req, res) => {
     try {
       const jobId = parseInt(req.params.id);
-      
-      // Validate job ID format
-      if (isNaN(jobId)) {
-        return res.status(400).json({ message: "Invalid job posting ID format" });
-      }
-      
       const user = req.user as any;
 
       // Check if job exists
@@ -2709,58 +2646,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Special case for "me" endpoint
       if (req.params.id === "me") {
-        // Get the user's professional profile
         professionalProfile = await storage.getProfessionalProfileByUserId(user.id);
-        
-        // If in development mode and profile doesn't exist, create a default one
-        if (!professionalProfile && bypassAuth) {
-          console.log('DEVELOPMENT MODE: Creating default professional profile for applications endpoint');
-          
-          // Create a default profile for development purposes
-          professionalProfile = await storage.createProfessionalProfile({
-            userId: user.id,
-            firstName: user.firstName || "Dev",
-            lastName: user.lastName || "User",
-            title: "Learning & Development Specialist",
-            bio: "Professional profile for development testing",
-            location: "Development, Test",
-            ratePerHour: 150,
-            yearsExperience: 5,
-            rating: 4,
-            reviewCount: 0,
-            featured: true,
-            verified: true
-          });
-          
-          console.log(`Created default professional profile with ID ${professionalProfile.id}`);
-        }
-        
-        // If still no profile, return 404
         if (!professionalProfile) {
           return res.status(404).json({ message: "Professional profile not found for current user" });
-        }
-        
-        // For development mode, return mock applications
-        if (bypassAuth) {
-          console.log('DEVELOPMENT MODE: Returning mock job applications');
-          return res.json([
-            {
-              id: 101,
-              jobId: 1,
-              professionalId: professionalProfile.id,
-              coverLetter: "I am very interested in this position and believe my skills would be a great fit.",
-              status: "pending",
-              createdAt: new Date().toISOString()
-            },
-            {
-              id: 102,
-              jobId: 2,
-              professionalId: professionalProfile.id,
-              coverLetter: "I have extensive experience in learning and development and am excited about this opportunity.",
-              status: "reviewed",
-              createdAt: new Date(Date.now() - 86400000).toISOString() // Yesterday
-            }
-          ]);
         }
       } else {
         try {
@@ -2793,12 +2681,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/applications/:id/status", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      
-      // Validate application ID format
-      if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid application ID format" });
-      }
-      
       const user = req.user as any;
 
       // Get application
@@ -4001,69 +3883,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Special case for "me" endpoint
       if (req.params.id === "me") {
-        // Get the user's professional profile
         professionalProfile = await storage.getProfessionalProfileByUserId(user.id);
-        
-        // If in development mode and profile doesn't exist, create a default one
-        if (!professionalProfile && bypassAuth) {
-          console.log('DEVELOPMENT MODE: Creating default professional profile for consultations endpoint');
-          
-          // Create a default profile for development purposes
-          professionalProfile = await storage.createProfessionalProfile({
-            userId: user.id,
-            firstName: user.firstName || "Dev",
-            lastName: user.lastName || "User",
-            title: "Learning & Development Specialist",
-            bio: "Professional profile for development testing",
-            location: "Development, Test",
-            ratePerHour: 150,
-            yearsExperience: 5,
-            rating: 4,
-            reviewCount: 0,
-            featured: true,
-            verified: true
-          });
-          
-          console.log(`Created default professional profile with ID ${professionalProfile.id}`);
-        }
-        
-        // If still no profile, return 404
         if (!professionalProfile) {
           return res.status(404).json({ message: "Professional profile not found for current user" });
-        }
-        
-        // For development mode, return mock consultations
-        if (bypassAuth) {
-          console.log('DEVELOPMENT MODE: Returning mock consultations');
-          
-          // Get a real company profile for the mock data
-          const companyProfiles = await storage.getAllCompanyProfiles();
-          const companyId = companyProfiles.length > 0 ? companyProfiles[0].id : 1;
-          
-          return res.json([
-            {
-              id: 201,
-              professionalId: professionalProfile.id,
-              companyId: companyId,
-              startTime: new Date(Date.now() + 86400000).toISOString(), // Tomorrow
-              endTime: new Date(Date.now() + 86400000 + 3600000).toISOString(), // Tomorrow + 1 hour
-              status: "scheduled",
-              notes: "Discuss learning strategy implementation",
-              rate: professionalProfile.ratePerHour || 150,
-              createdAt: new Date().toISOString()
-            },
-            {
-              id: 202,
-              professionalId: professionalProfile.id,
-              companyId: companyId,
-              startTime: new Date(Date.now() - 86400000).toISOString(), // Yesterday
-              endTime: new Date(Date.now() - 86400000 + 3600000).toISOString(), // Yesterday + 1 hour
-              status: "completed",
-              notes: "Initial consultation on training needs",
-              rate: professionalProfile.ratePerHour || 150,
-              createdAt: new Date(Date.now() - 172800000).toISOString() // 2 days ago
-            }
-          ]);
         }
       } else {
         // Regular case with profile ID

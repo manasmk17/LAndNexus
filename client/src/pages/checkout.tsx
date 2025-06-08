@@ -127,38 +127,32 @@ export default function Checkout() {
     const loadStripeInstance = async () => {
       try {
         setLoadingStripe(true);
-        
-        // Check if Stripe is available, using true to suppress console errors
-        if (!isStripeAvailable(true)) {
-          console.log("Stripe public key not available - payment functions disabled");
+        if (!isStripeAvailable()) {
           setStripeError(true);
           toast({
-            title: "Payment system unavailable",
-            description: "The payment system is currently offline. Please try again later or contact support.",
+            title: "Payment unavailable",
+            description: "Stripe payments are not configured. Please contact support.",
             variant: "destructive",
           });
           return;
         }
         
-        // Try to get Stripe instance
         const instance = await getStripe();
         if (!instance) {
-          console.log("Failed to initialize Stripe instance");
           setStripeError(true);
           toast({
-            title: "Payment system unavailable",
-            description: "Unable to initialize payment processing. Please try again later.",
+            title: "Payment unavailable",
+            description: "Unable to load payment processing. Please try again later.",
             variant: "destructive",
           });
         } else {
-          console.log("Stripe loaded successfully");
           setStripeInstance(instance);
         }
       } catch (error) {
         console.error("Error loading Stripe:", error);
         setStripeError(true);
         toast({
-          title: "Payment system unavailable",
+          title: "Payment unavailable",
           description: "Unable to load payment processing. Please try again later.",
           variant: "destructive",
         });

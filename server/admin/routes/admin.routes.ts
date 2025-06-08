@@ -1,9 +1,8 @@
 import { Router } from 'express';
 import * as authController from '../controllers/auth.controller';
 import * as usersController from '../controllers/users.controller';
-import { verifyAdminToken, requireRole, hasPermission as requirePermission } from '../middlewares/admin-auth.middleware';
+import { verifyAdminToken, requireRole, requirePermission, adminAuthRateLimiter } from '../middlewares/admin-auth.middleware';
 import { adminActivityLogger } from '../middlewares/activity-logger.middleware';
-import { adminAuthRateLimiter } from '../middlewares/rate-limiter.middleware';
 import { AdminRole, AdminPermission } from '../types/admin.types';
 
 const router = Router();
@@ -15,14 +14,6 @@ router.use(adminActivityLogger);
 router.post('/auth/login', adminAuthRateLimiter, authController.login);
 router.post('/auth/refresh-token', authController.refreshToken);
 router.post('/auth/logout', authController.logout);
-
-// Token verification endpoint for frontend
-router.get('/auth/verify-token', verifyAdminToken, (req, res) => {
-  res.status(200).json({ valid: true });
-});
-
-// Admin user data endpoint for frontend
-router.get('/auth/me', verifyAdminToken, authController.getProfile);
 
 // Protected routes - require admin token
 router.use(verifyAdminToken);

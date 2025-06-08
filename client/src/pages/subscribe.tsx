@@ -178,39 +178,33 @@ export default function Subscribe() {
     const loadStripeInstance = async () => {
       try {
         setLoadingStripe(true);
-        
-        // Check if Stripe is available, using true to suppress console errors
-        if (!isStripeAvailable(true)) {
-          console.log("Stripe public key not available - subscription functions disabled");
+        if (!isStripeAvailable()) {
           setStripeError(true);
           toast({
-            title: "Subscription system unavailable",
-            description: "The subscription system is currently offline. Please try again later or contact support.",
+            title: "Payment unavailable",
+            description: "Stripe payments are not configured. Please contact support.",
             variant: "destructive",
           });
           return;
         }
         
-        // Try to get Stripe instance
         const instance = await getStripe();
         if (!instance) {
-          console.log("Failed to initialize Stripe instance for subscription");
           setStripeError(true);
           toast({
-            title: "Subscription system unavailable",
-            description: "Unable to initialize subscription processing. Please try again later.",
+            title: "Payment unavailable",
+            description: "Unable to load payment processing. Please try again later.",
             variant: "destructive",
           });
         } else {
-          console.log("Stripe loaded successfully for subscription");
           setStripeInstance(instance);
         }
       } catch (error) {
-        console.error("Error loading Stripe for subscription:", error);
+        console.error("Error loading Stripe:", error);
         setStripeError(true);
         toast({
-          title: "Subscription system unavailable",
-          description: "Unable to load subscription processing. Please try again later.",
+          title: "Payment unavailable",
+          description: "Unable to load payment processing. Please try again later.",
           variant: "destructive",
         });
       } finally {

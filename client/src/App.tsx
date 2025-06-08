@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -135,19 +135,16 @@ function Router() {
 }
 
 function App() {
-  const [location] = useLocation();
-  const isAdminRoute = location === "/admin" || location === "/admin-login";
-  
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <DragAndDropProvider>
           <div className="flex flex-col min-h-screen">
-            {!isAdminRoute && <Navbar />}
-            <main className={`flex-grow ${isAdminRoute ? 'p-0' : ''}`}>
+            <Navbar />
+            <main className="flex-grow">
               <Router />
             </main>
-            {!isAdminRoute && <Footer />}
+            <Footer />
           </div>
           <Toaster />
         </DragAndDropProvider>

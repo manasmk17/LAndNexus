@@ -973,15 +973,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/subscription-status", async (req, res) => {
+  app.get("/api/subscription-status", isAuthenticated, async (req, res) => {
     try {
-      // For testing, return a mock subscription status
-      // This avoids the need for authentication and Stripe API calls
+      const user = req.user as any;
+
+      // If user doesn't have a subscription, return appropriate response
+      if (!user.stripeSubscriptionId) {
+        return res.status(404).json({ message: "No active subscription found" });
+      }
+
+      // Get subscription details from Stripe
+      const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+
+      // Format subscription details
       const response = {
-        tier: "professional",
-        status: "active",
-        // Set next billing date to 30 days from now
-        nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        tier: user.subscriptionTier,
+        status: subscription.status,
+        // Convert timestamp to ISO string for frontend formatting
+        nextBillingDate: new Date(subscription.current_period_end * 1000).toISOString(),
       };
 
       res.json(response);
@@ -2088,51 +2097,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // AI Job Matching
-  app.get("/api/jobs/:jobId/matches", async (req, res) => {
-    try {
-      // For testing purposes, bypass authentication and permission checks
-      const jobId = parseInt(req.params.jobId);
-      if (isNaN(jobId)) {
-        return res.status(400).json({ message: "Invalid job ID format" });
-      }
-      
-      // Verify the job exists
-      const job = await storage.getJobPosting(jobId);
-      if (!job) {
-        return res.status(404).json({ message: "Job posting not found" });
-      }
-      
-      // Call the controller function directly with a simplified request
-      return getMatchingProfessionalsForJob({
-        ...req,
-        params: { jobId: jobId.toString() }
-      } as Request, res);
-    } catch (error: any) {
-      console.error("Error finding matching professionals:", error);
-      res.status(500).json({ message: "Error finding matching professionals" });
-    }
+  app.get("/api/jobs/:jobId/matches", isAuthenticated, async (req, res) => {
+    // This endpoint is a duplicate of the one below and should now use the refactored controller function
+    return getMatchingProfessionalsForJob(req, res); 
   });
   
   // AI Professional Matching with Jobs
-  app.get("/api/professionals/:professionalId/matches", async (req, res) => {
+  app.get("/api/professionals/:professionalId/matches", isAuthenticated, async (req, res) => {
     try {
-      // For testing purposes, we're bypassing the authentication and permission checks
-      const professionalId = parseInt(req.params.professionalId);
-      if (isNaN(professionalId)) {
-        return res.status(400).json({ message: "Invalid professional ID format" });
+      const user = req.user as User;
+      let professionalId: number;
+      
+      // Special case for "me" endpoint
+      if (req.params.professionalId === "me") {
+        const professionalProfile = await storage.getProfessionalProfileByUserId(user.id);
+        if (!professionalProfile) {
+          return res.status(404).json({ message: "Professional profile not found for current user" });
+        }
+        professionalId = professionalProfile.id;
+      } else {
+        try {
+          // Regular case with numeric ID
+          professionalId = parseInt(req.params.professionalId);
+          if (isNaN(professionalId)) {
+            return res.status(400).json({ message: "Invalid professional ID format" });
+          }
+          
+          const professionalProfile = await storage.getProfessionalProfile(professionalId);
+          if (!professionalProfile) {
+            return res.status(404).json({ message: "Professional profile not found" });
+          }
+          
+          // Check if the user is the professional or an admin
+          if (user.id !== professionalProfile.userId && !user.isAdmin) {
+            return res.status(403).json({ message: "You do not have permission to access this resource" });
+          }
+        } catch (err) {
+          console.error("Error retrieving professional profile:", err);
+          return res.status(400).json({ message: "Invalid professional ID" });
+        }
       }
       
-      // Verify the professional exists
-      const professionalProfile = await storage.getProfessionalProfile(professionalId);
-      if (!professionalProfile) {
-        return res.status(404).json({ message: "Professional profile not found" });
-      }
-      
-      // Call the controller function directly with a simplified request object
-      return getMatchingJobsForProfessional({
+      // Use the AI matching controller
+      // Prepare the request object expected by the controller
+      const modifiedReq = {
         ...req,
-        params: { professionalId: professionalId.toString() }
-      } as Request, res);
+        params: { ...req.params, professionalId: professionalId.toString() }
+      };
+      
+      // Call the controller function directly
+      return getMatchingJobsForProfessional(modifiedReq, res);
     } catch (error: any) {
       console.error("Error finding matching jobs:", error);
       res.status(500).json({ message: "Error finding matching jobs" });
@@ -4288,26 +4302,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/reviews", async (req, res) => {
-    // Temporarily bypassing authentication for testing
+  app.post("/api/reviews", isAuthenticated, async (req, res) => {
     try {
-      // Modified for testing without a logged-in user
+      const user = req.user as any;
+      const userProfile = user.userType === "professional" 
+        ? await storage.getProfessionalProfileByUserId(user.id)
+        : await storage.getCompanyProfileByUserId(user.id);
+      
+      if (!userProfile) {
+        return res.status(403).json({ message: "Profile required to post reviews" });
+      }
+      
       const reviewData = insertReviewSchema.parse({
-        professionalId: req.body.professionalId,
-        companyId: req.body.companyId,
-        rating: req.body.rating,
-        comment: req.body.comment,
-        isPublic: req.body.isPublic
+        ...req.body,
+        professionalId: user.userType === "company" ? req.body.professionalId : userProfile.id,
+        companyId: user.userType === "professional" ? req.body.companyId : userProfile.id
       });
       
-      // Skip consultation validation for testing purposes
-      /*
       // If consultationId is provided, check if it exists and user is authorized
       if (reviewData.consultationId) {
         const consultation = await storage.getConsultation(reviewData.consultationId);
         
         if (!consultation) {
           return res.status(404).json({ message: "Consultation not found" });
+        }
+        
+        // Check if user is either the professional or the company
+        const isAuthorized = 
+          (user.userType === "professional" && userProfile.id === consultation.professionalId) ||
+          (user.userType === "company" && userProfile.id === consultation.companyId);
+        
+        if (!isAuthorized) {
+          return res.status(403).json({ message: "Not authorized to review this consultation" });
         }
         
         // Check if consultation is completed
@@ -4321,18 +4347,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Review already exists for this consultation" });
         }
       }
-      */
       
       const review = await storage.createReview(reviewData);
       
-      // Create notification for reviewed user - simplified for testing
-      // Get company user ID
-      const companyUserID = (await storage.getCompanyProfile(reviewData.companyId))?.userId;
-      // Get professional user ID
-      const professionalUserID = (await storage.getProfessionalProfile(reviewData.professionalId))?.userId;
+      // Create notification for reviewed user
+      const targetUserId = user.userType === "professional" 
+        ? (await storage.getCompanyProfile(reviewData.companyId))?.userId
+        : (await storage.getProfessionalProfile(reviewData.professionalId))?.userId;
       
-      // Create notifications for both users involved for testing purposes
-      if (companyUserID || professionalUserID) {
+      if (targetUserId) {
         // Get or create notification type
         let notificationType = await storage.getNotificationTypeByName("new_review");
         if (!notificationType) {
@@ -4342,26 +4365,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
-        // Create notifications for both parties for testing
-        if (professionalUserID) {
-          await storage.createNotification({
-            userId: professionalUserID,
-            typeId: notificationType.id,
-            title: "New Review",
-            message: `You've received a new ${reviewData.rating}-star review`,
-            link: `/reviews/${review.id}`
-          });
-        }
-        
-        if (companyUserID) {
-          await storage.createNotification({
-            userId: companyUserID,
-            typeId: notificationType.id,
-            title: "New Review",
-            message: `You've received a new ${reviewData.rating}-star review`,
-            link: `/reviews/${review.id}`
-          });
-        }
+        // Create notification
+        await storage.createNotification({
+          userId: targetUserId,
+          typeId: notificationType.id,
+          title: "New Review",
+          message: `You've received a new ${reviewData.rating}-star review`,
+          link: `/reviews/${review.id}`
+        });
       }
       
       res.status(201).json(review);
@@ -4450,11 +4461,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Notification Endpoints
-  app.get("/api/notifications/:userId", async (req, res) => {
+  app.get("/api/notifications", isAuthenticated, async (req, res) => {
     try {
-      // Modified for testing without authentication
-      const userId = parseInt(req.params.userId);
-      const notifications = await storage.getUserNotifications(userId);
+      const user = req.user as any;
+      const notifications = await storage.getUserNotifications(user.id);
       
       res.json(notifications);
     } catch (err) {
@@ -4463,11 +4473,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/notifications/:userId/unread", async (req, res) => {
+  app.get("/api/notifications/unread", isAuthenticated, async (req, res) => {
     try {
-      // Modified for testing without authentication
-      const userId = parseInt(req.params.userId);
-      const notifications = await storage.getUserUnreadNotifications(userId);
+      const user = req.user as any;
+      const notifications = await storage.getUserUnreadNotifications(user.id);
       
       res.json(notifications);
     } catch (err) {
@@ -4476,14 +4485,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/notifications/:id/read", async (req, res) => {
+  app.put("/api/notifications/:id/read", isAuthenticated, async (req, res) => {
     try {
-      // Modified for testing without authentication
       const id = parseInt(req.params.id);
       const notification = await storage.getNotification(id);
       
       if (!notification) {
         return res.status(404).json({ message: "Notification not found" });
+      }
+      
+      // Check if notification belongs to user
+      const user = req.user as any;
+      if (notification.userId !== user.id && !user.isAdmin) {
+        return res.status(403).json({ message: "Not authorized to mark this notification as read" });
       }
       
       await storage.markNotificationAsRead(id);

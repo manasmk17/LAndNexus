@@ -49,12 +49,7 @@ app.use((req, res, next) => {
     '/api/admin/company-profiles',
     '/api/admin/professional-profiles',
     '/api/admin/job-postings',
-    '/api/admin/resources',
-    '/api/reviews',
-    '/api/notifications',
-    '/api/notifications/unread',
-    '/api/notifications/read-all',
-    '/api/notification-preferences'
+    '/api/admin/resources'
   ];
   
   // We should treat all API routes that start with '/api/me/' as exempt for GET requests
@@ -108,13 +103,7 @@ app.use((req, res, next) => {
     '/api/admin/job-postings/:id/featured',
     '/api/admin/job-postings/:id/status',
     '/api/admin/resources/:id/featured',
-    '/api/admin/resources/:id',
-    '/api/reviews/:id',
-    '/api/professionals/:id/reviews',
-    '/api/companies/:id/reviews',
-    '/api/consultations/:id/review',
-    '/api/notifications/:id',
-    '/api/notifications/:id/read'
+    '/api/admin/resources/:id'
   ];
   
   // Check if the current request path is in the exempt list, matches an ID-based pattern,
@@ -238,26 +227,13 @@ app.use((req, res, next) => {
   // Serve the app on port 5000 as expected by workflow
   // this serves both the API and the client.
   const port = 5000;
-  
-  // Handle server startup with proper error handling
-  const startServer = (retryCount = 0) => {
-    server.listen(port, "0.0.0.0", () => {
-      log(`serving on port ${port}`);
-    }).on('error', (err: any) => {
-      if (err.code === 'EADDRINUSE') {
-        if (retryCount < 3) {
-          console.log(`Port ${port} is busy, retrying in ${1000 * (retryCount + 1)}ms... (attempt ${retryCount + 1}/3)`);
-          setTimeout(() => startServer(retryCount + 1), 1000 * (retryCount + 1));
-        } else {
-          console.error(`Failed to start server after 3 attempts. Port ${port} is still in use.`);
-          process.exit(1);
-        }
-      } else {
-        console.error('Server error:', err);
-        process.exit(1);
-      }
-    });
-  };
-  
-  startServer();
+  server.listen({
+    port,
+    host: "0.0.0.0",
+    reusePort: true,
+    keepAliveTimeout: 65000, // Increase keep-alive timeout
+    headersTimeout: 66000, // Increase headers timeout
+  }, () => {
+    log(`serving on port ${port}`);
+  });
 })();

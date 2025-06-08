@@ -1501,20 +1501,12 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getUserUnreadNotifications(userId: number): Promise<Notification[]> {
-    if (!db) return [];
-    try {
-      const results = await db.select()
-        .from(notifications)
-        .where(and(
-          eq(notifications.userId, userId),
-          eq(notifications.read, false)
-        ))
-        .orderBy(desc(notifications.createdAt)) || [];
-      return results;
-    } catch (err) {
-      console.error("Error getting unread notifications:", err);
-      return [];
-    }
+    const results = await db?.select()
+      .from(notifications)
+      .where(eq(notifications.userId, userId))
+      .where(eq(notifications.read, false))
+      .orderBy(desc(notifications.createdAt)) || [];
+    return results;
   }
   
   async createNotification(notification: InsertNotification): Promise<Notification> {

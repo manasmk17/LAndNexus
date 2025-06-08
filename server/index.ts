@@ -71,7 +71,11 @@ app.use((req, res, next) => {
     { path: '/api/professionals/me/expertise', method: 'POST' },
     { path: '/api/professionals/me/certifications', method: 'POST' },
     { path: '/api/company-profiles', method: 'POST' },
-    { path: '/api/company-profiles/:id', method: 'PUT' }
+    { path: '/api/company-profiles/:id', method: 'PUT' },
+    { path: '/api/recommendations/sectors', method: 'GET' },
+    { path: '/api/recommendations/realtime', method: 'POST' },
+    { path: '/api/recommendations/trainers', method: 'POST' },
+    { path: '/api/recommendations/feedback', method: 'POST' }
   ];
   
   // Function to check if a path matches a route pattern

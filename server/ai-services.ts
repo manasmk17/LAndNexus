@@ -176,8 +176,8 @@ function fallbackMatchScore(profile: ProfessionalProfile, job: JobPosting): numb
   }
   
   // Compensation alignment (5% weight)
-  if (profile.ratePerHour && job.budget) {
-    const compensationScore = calculateCompensationMatch(profile.ratePerHour, job.budget);
+  if (profile.ratePerHour && (job.minCompensation || job.maxCompensation)) {
+    const compensationScore = calculateCompensationMatch(profile.ratePerHour, job.minCompensation, job.maxCompensation);
     score += compensationScore * 0.05;
     maxScore += 0.05;
   }
@@ -195,9 +195,9 @@ function calculateTextSimilarity(text1: string, text2: string): number {
   
   const set1 = new Set(words1);
   const set2 = new Set(words2);
-  const intersection = new Set([...set1].filter(x => set2.has(x)));
+  const intersectionArray = words1.filter(x => set2.has(x));
   
-  return intersection.size / Math.max(set1.size, set2.size);
+  return intersectionArray.length / Math.max(set1.size, set2.size);
 }
 
 function calculateExperienceAlignment(profileTitle: string, jobTitle: string): number {
@@ -222,13 +222,22 @@ function calculateExperienceAlignment(profileTitle: string, jobTitle: string): n
   return Math.max(0, 1 - (levelDiff * 0.2));
 }
 
-function calculateCompensationMatch(profileRate: number, jobBudget: string): number {
-  const budgetNumbers = jobBudget.match(/\d+/g);
-  if (!budgetNumbers) return 0.5;
+function calculateCompensationMatch(profileRate: number, minCompensation: number | null, maxCompensation: number | null): number {
+  if (!minCompensation && !maxCompensation) return 0.5;
   
-  const maxBudget = Math.max(...budgetNumbers.map(Number));
-  const hourlyRate = maxBudget / 40; // Assume 40-hour week for project budgets
+  const min = minCompensation || 0;
+  const max = maxCompensation || minCompensation || profileRate;
   
-  const ratio = Math.min(profileRate, hourlyRate) / Math.max(profileRate, hourlyRate);
-  return ratio;
+  // Check if profile rate falls within range
+  if (profileRate >= min && profileRate <= max) {
+    return 1.0; // Perfect match
+  } else if (profileRate < min) {
+    // Profile rate is below range
+    const ratio = profileRate / min;
+    return Math.max(0.1, ratio);
+  } else {
+    // Profile rate is above range
+    const ratio = max / profileRate;
+    return Math.max(0.1, ratio);
+  }
 }

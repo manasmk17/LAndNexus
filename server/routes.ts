@@ -40,6 +40,7 @@ import {
   getMatchingJobsForProfessional,
   getMatchingProfessionalsForJob
 } from "./ai-matching";
+import { recommendationEngine } from "./ai-recommendation-engine";
 import { z } from "zod";
 import session from "express-session";
 import passport from "passport";
@@ -80,6 +81,9 @@ async function initializeResourceCategories() {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize resource categories
   await initializeResourceCategories();
+  
+  // Initialize AI recommendation engine
+  await recommendationEngine.initialize();
   
   // Configure multer storage for file uploads
   const storage25MB = multer.diskStorage({
@@ -4572,6 +4576,189 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(preference);
     } catch (err) {
       console.error("Error updating notification preference:", err);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  // AI Recommendation Engine Endpoints
+  app.post("/api/recommendations/trainers", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      if (user.userType !== "company") {
+        return res.status(403).json({ message: "Only companies can request trainer recommendations" });
+      }
+
+      const { 
+        sector, 
+        trainingType, 
+        preferredLanguage, 
+        format, 
+        experienceLevel, 
+        budget, 
+        timeframe, 
+        specificSkills, 
+        location 
+      } = req.body;
+
+      if (!sector || !trainingType) {
+        return res.status(400).json({ message: "Sector and training type are required" });
+      }
+
+      const recommendations = await recommendationEngine.findRecommendedTrainers({
+        sector,
+        trainingType,
+        preferredLanguage: preferredLanguage || 'ENGLISH',
+        format: format || 'HYBRID',
+        experienceLevel: experienceLevel || 'intermediate',
+        budget,
+        timeframe,
+        specificSkills,
+        location
+      });
+
+      // Enhance recommendations with professional details
+      const enhancedRecommendations = await Promise.all(
+        recommendations.map(async (rec) => {
+          const professional = await storage.getProfessionalProfile(rec.professionalId);
+          const expertise = await storage.getProfessionalExpertise(rec.professionalId);
+          const certifications = await storage.getProfessionalCertifications(rec.professionalId);
+          
+          return {
+            ...rec,
+            professional,
+            expertise,
+            certifications
+          };
+        })
+      );
+
+      res.json({
+        recommendations: enhancedRecommendations,
+        totalFound: recommendations.length,
+        searchCriteria: {
+          sector,
+          trainingType,
+          preferredLanguage,
+          format,
+          experienceLevel
+        }
+      });
+    } catch (err) {
+      console.error("Error getting trainer recommendations:", err);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.post("/api/recommendations/realtime", async (req, res) => {
+    try {
+      const partialRequirement = req.body;
+      
+      const recommendations = await recommendationEngine.getRealtimeRecommendations(partialRequirement);
+      
+      // Get basic professional info for real-time suggestions
+      const enhancedRecommendations = await Promise.all(
+        recommendations.slice(0, 3).map(async (rec) => {
+          const professional = await storage.getProfessionalProfile(rec.professionalId);
+          return {
+            professionalId: rec.professionalId,
+            score: rec.score,
+            reasons: rec.reasons.slice(0, 2), // Limit for real-time
+            name: `${professional?.firstName || ''} ${professional?.lastName || ''}`.trim(),
+            title: professional?.title,
+            rating: professional?.rating,
+            ratePerHour: professional?.ratePerHour,
+            location: professional?.location
+          };
+        })
+      );
+
+      res.json({ suggestions: enhancedRecommendations });
+    } catch (err) {
+      console.error("Error getting realtime recommendations:", err);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.post("/api/recommendations/feedback", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { professionalId, bookingSuccess, rating, feedback } = req.body;
+
+      if (!professionalId || bookingSuccess === undefined) {
+        return res.status(400).json({ message: "Professional ID and booking success status are required" });
+      }
+
+      // Get company profile
+      const companyProfile = await storage.getCompanyProfileByUserId(user.id);
+      if (!companyProfile) {
+        return res.status(404).json({ message: "Company profile not found" });
+      }
+
+      await recommendationEngine.learnFromFeedback(
+        professionalId,
+        companyProfile.id,
+        bookingSuccess,
+        rating,
+        feedback
+      );
+
+      res.json({ success: true, message: "Feedback recorded successfully" });
+    } catch (err) {
+      console.error("Error recording recommendation feedback:", err);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.get("/api/recommendations/sectors", async (req, res) => {
+    try {
+      const sectors = [
+        { 
+          id: 'TECHNOLOGY', 
+          name: 'Technology & IT',
+          nameArabic: 'التكنولوجيا وتقنية المعلومات',
+          description: 'Digital transformation, cybersecurity, AI, software development'
+        },
+        { 
+          id: 'FINANCE', 
+          name: 'Finance & Banking',
+          nameArabic: 'التمويل والخدمات المصرفية',
+          description: 'Islamic finance, investment, risk management, compliance'
+        },
+        { 
+          id: 'HEALTHCARE', 
+          name: 'Healthcare',
+          nameArabic: 'الرعاية الصحية',
+          description: 'Medical training, patient care, pharmaceutical'
+        },
+        { 
+          id: 'OIL_GAS', 
+          name: 'Oil & Gas',
+          nameArabic: 'النفط والغاز',
+          description: 'Energy sector, petroleum, petrochemicals'
+        },
+        { 
+          id: 'LEADERSHIP', 
+          name: 'Leadership Development',
+          nameArabic: 'تطوير القيادة',
+          description: 'Executive coaching, management skills, strategic planning'
+        },
+        { 
+          id: 'HOSPITALITY', 
+          name: 'Hospitality & Tourism',
+          nameArabic: 'الضيافة والسياحة',
+          description: 'Customer service, hotel management, event planning'
+        },
+        { 
+          id: 'RETAIL', 
+          name: 'Retail & Sales',
+          nameArabic: 'التجزئة والمبيعات',
+          description: 'Customer experience, sales training, e-commerce'
+        }
+      ];
+
+      res.json({ sectors });
+    } catch (err) {
+      console.error("Error getting sectors:", err);
       res.status(500).json({ message: "Server error" });
     }
   });

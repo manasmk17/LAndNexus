@@ -49,10 +49,7 @@ app.use((req, res, next) => {
     '/api/admin/company-profiles',
     '/api/admin/professional-profiles',
     '/api/admin/job-postings',
-    '/api/admin/resources',
-    '/api/reviews',
-    '/api/notifications',
-    '/api/notification-preferences'
+    '/api/admin/resources'
   ];
   
   // We should treat all API routes that start with '/api/me/' as exempt for GET requests
@@ -71,11 +68,7 @@ app.use((req, res, next) => {
     { path: '/api/professionals/me/expertise', method: 'POST' },
     { path: '/api/professionals/me/certifications', method: 'POST' },
     { path: '/api/company-profiles', method: 'POST' },
-    { path: '/api/company-profiles/:id', method: 'PUT' },
-    { path: '/api/recommendations/sectors', method: 'GET' },
-    { path: '/api/recommendations/realtime', method: 'POST' },
-    { path: '/api/recommendations/trainers', method: 'POST' },
-    { path: '/api/recommendations/feedback', method: 'POST' }
+    { path: '/api/company-profiles/:id', method: 'PUT' }
   ];
   
   // Function to check if a path matches a route pattern
@@ -110,15 +103,7 @@ app.use((req, res, next) => {
     '/api/admin/job-postings/:id/featured',
     '/api/admin/job-postings/:id/status',
     '/api/admin/resources/:id/featured',
-    '/api/admin/resources/:id',
-    '/api/reviews/:id',
-    '/api/professionals/:id/reviews',
-    '/api/companies/:id/reviews',
-    '/api/consultations/:id/review',
-    '/api/notifications/:id',
-    '/api/notifications/:id/read',
-    '/api/notifications/unread',
-    '/api/notifications/read-all'
+    '/api/admin/resources/:id'
   ];
   
   // Check if the current request path is in the exempt list, matches an ID-based pattern,

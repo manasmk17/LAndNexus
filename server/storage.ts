@@ -1,4 +1,4 @@
-import { db, useRealDatabase, pool } from "./db";
+import { db, useRealDatabase } from "./db";
 import { and, asc, desc, eq, or, isNull, not, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import {
@@ -1654,380 +1654,45 @@ export class DatabaseStorage implements IStorage {
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     if (!db) return undefined;
-    
-    try {
-      // Get basic user fields that are guaranteed to exist
-      const query = `
-        SELECT 
-          id, username, password, email, 
-          first_name AS "firstName", last_name AS "lastName", user_type AS "userType", 
-          is_admin AS "isAdmin", created_at AS "createdAt", 
-          stripe_customer_id AS "stripeCustomerId", 
-          stripe_subscription_id AS "stripeSubscriptionId",
-          subscription_tier AS "subscriptionTier", 
-          subscription_status AS "subscriptionStatus", 
-          reset_token AS "resetToken", reset_token_expiry AS "resetTokenExpiry",
-          email_verified AS "emailVerified", 
-          email_verification_token AS "emailVerificationToken", 
-          google_id AS "googleId", linkedin_id AS "linkedinId"
-        FROM users 
-        WHERE id = $1
-      `;
-      
-      const result = await (pool?.query(query, [id]));
-      if (!result?.rows || result.rows.length === 0) return undefined;
-      
-      // Convert returned data to User type
-      const user: any = result.rows[0];
-      
-      // Add default values for potentially missing columns
-      if (!('blocked' in user)) user.blocked = false;
-      if (!('blockReason' in user)) user.blockReason = null;
-      if (!('lastActiveAt' in user)) user.lastActiveAt = null;
-      if (!('deleted' in user)) user.deleted = false; 
-      if (!('deletedAt' in user)) user.deletedAt = null;
-      
-      return user;
-    } catch (error) {
-      console.error("Error fetching user by ID:", error);
-      
-      // Fallback to a basic query when the column error occurs
-      try {
-        const [user] = await db.select({
-          id: users.id,
-          username: users.username,
-          password: users.password,
-          email: users.email, 
-          firstName: users.firstName,
-          lastName: users.lastName,
-          userType: users.userType,
-          isAdmin: users.isAdmin,
-          createdAt: users.createdAt,
-          stripeCustomerId: users.stripeCustomerId,
-          stripeSubscriptionId: users.stripeSubscriptionId
-        }).from(users).where(eq(users.id, id));
-        
-        if (!user) return undefined;
-        
-        // Add missing fields with default values
-        return {
-          ...user,
-          subscriptionTier: null,
-          subscriptionStatus: null,
-          resetToken: null,
-          resetTokenExpiry: null,
-          emailVerified: null,
-          emailVerificationToken: null,
-          googleId: null,
-          linkedinId: null,
-          blocked: false,
-          blockReason: null,
-          lastActiveAt: null,
-          deleted: false,
-          deletedAt: null
-        } as User;
-      } catch (fallbackError) {
-        console.error("Fallback query also failed:", fallbackError);
-        return undefined;
-      }
-    }
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
   
   async getUserByUsername(username: string): Promise<User | undefined> {
     if (!db) return undefined;
-    
-    try {
-      // Get basic user fields that are guaranteed to exist
-      const query = `
-        SELECT 
-          id, username, password, email, 
-          first_name AS "firstName", last_name AS "lastName", user_type AS "userType", 
-          is_admin AS "isAdmin", created_at AS "createdAt", 
-          stripe_customer_id AS "stripeCustomerId", 
-          stripe_subscription_id AS "stripeSubscriptionId",
-          subscription_tier AS "subscriptionTier", 
-          subscription_status AS "subscriptionStatus", 
-          reset_token AS "resetToken", reset_token_expiry AS "resetTokenExpiry",
-          email_verified AS "emailVerified", 
-          email_verification_token AS "emailVerificationToken", 
-          google_id AS "googleId", linkedin_id AS "linkedinId"
-        FROM users 
-        WHERE username = $1
-      `;
-      
-      const result = await (pool?.query(query, [username]));
-      if (!result?.rows || result.rows.length === 0) return undefined;
-      
-      // Convert returned data to User type
-      const user: any = result.rows[0];
-      
-      // Add default values for potentially missing columns
-      if (!('blocked' in user)) user.blocked = false;
-      if (!('blockReason' in user)) user.blockReason = null;
-      if (!('lastActiveAt' in user)) user.lastActiveAt = null;
-      if (!('deleted' in user)) user.deleted = false; 
-      if (!('deletedAt' in user)) user.deletedAt = null;
-      
-      return user;
-    } catch (error) {
-      console.error("Error fetching user by username:", error);
-      
-      // Fallback to a basic query
-      try {
-        const [user] = await db.select({
-          id: users.id,
-          username: users.username,
-          password: users.password,
-          email: users.email, 
-          firstName: users.firstName,
-          lastName: users.lastName,
-          userType: users.userType,
-          isAdmin: users.isAdmin,
-          createdAt: users.createdAt,
-          stripeCustomerId: users.stripeCustomerId,
-          stripeSubscriptionId: users.stripeSubscriptionId
-        }).from(users).where(eq(users.username, username));
-        
-        if (!user) return undefined;
-        
-        // Add missing fields with default values
-        return {
-          ...user,
-          subscriptionTier: null,
-          subscriptionStatus: null,
-          resetToken: null,
-          resetTokenExpiry: null,
-          emailVerified: null,
-          emailVerificationToken: null,
-          googleId: null,
-          linkedinId: null,
-          blocked: false,
-          blockReason: null,
-          lastActiveAt: null,
-          deleted: false,
-          deletedAt: null
-        } as User;
-      } catch (fallbackError) {
-        console.error("Fallback query also failed:", fallbackError);
-        return undefined;
-      }
-    }
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
   
   async getUserByEmail(email: string): Promise<User | undefined> {
     if (!db) return undefined;
-    
-    try {
-      // Get basic user fields that are guaranteed to exist
-      const query = `
-        SELECT 
-          id, username, password, email, 
-          first_name AS "firstName", last_name AS "lastName", user_type AS "userType", 
-          is_admin AS "isAdmin", created_at AS "createdAt", 
-          stripe_customer_id AS "stripeCustomerId", 
-          stripe_subscription_id AS "stripeSubscriptionId",
-          subscription_tier AS "subscriptionTier", 
-          subscription_status AS "subscriptionStatus", 
-          reset_token AS "resetToken", reset_token_expiry AS "resetTokenExpiry",
-          email_verified AS "emailVerified", 
-          email_verification_token AS "emailVerificationToken", 
-          google_id AS "googleId", linkedin_id AS "linkedinId"
-        FROM users 
-        WHERE email = $1
-      `;
-      
-      const result = await (pool?.query(query, [email]));
-      if (!result?.rows || result.rows.length === 0) return undefined;
-      
-      // Convert returned data to User type
-      const user: any = result.rows[0];
-      
-      // Add default values for potentially missing columns
-      if (!('blocked' in user)) user.blocked = false;
-      if (!('blockReason' in user)) user.blockReason = null;
-      if (!('lastActiveAt' in user)) user.lastActiveAt = null;
-      if (!('deleted' in user)) user.deleted = false; 
-      if (!('deletedAt' in user)) user.deletedAt = null;
-      
-      return user;
-    } catch (error) {
-      console.error("Error fetching user by email:", error);
-      
-      // Fallback to a basic query
-      try {
-        const [user] = await db.select({
-          id: users.id,
-          username: users.username,
-          password: users.password,
-          email: users.email, 
-          firstName: users.firstName,
-          lastName: users.lastName,
-          userType: users.userType,
-          isAdmin: users.isAdmin,
-          createdAt: users.createdAt,
-          stripeCustomerId: users.stripeCustomerId,
-          stripeSubscriptionId: users.stripeSubscriptionId
-        }).from(users).where(eq(users.email, email));
-        
-        if (!user) return undefined;
-        
-        // Add missing fields with default values
-        return {
-          ...user,
-          subscriptionTier: null,
-          subscriptionStatus: null,
-          resetToken: null,
-          resetTokenExpiry: null,
-          emailVerified: null,
-          emailVerificationToken: null,
-          googleId: null,
-          linkedinId: null,
-          blocked: false,
-          blockReason: null,
-          lastActiveAt: null,
-          deleted: false,
-          deletedAt: null
-        } as User;
-      } catch (fallbackError) {
-        console.error("Fallback query also failed:", fallbackError);
-        return undefined;
-      }
-    }
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
   }
   
   async getUserBySocialProvider(provider: string, profileId: string): Promise<User | undefined> {
     if (!db) return undefined;
     
-    try {
-      const fieldName = `${provider}Id` as keyof typeof users;
-      
-      // Use raw SQL query to handle potential missing columns
-      const query = `
-        SELECT 
-          id, username, password, email, 
-          first_name AS "firstName", last_name AS "lastName", user_type AS "userType", 
-          is_admin AS "isAdmin", created_at AS "createdAt", 
-          stripe_customer_id AS "stripeCustomerId", 
-          stripe_subscription_id AS "stripeSubscriptionId",
-          subscription_tier AS "subscriptionTier", 
-          subscription_status AS "subscriptionStatus", 
-          reset_token AS "resetToken", reset_token_expiry AS "resetTokenExpiry",
-          email_verified AS "emailVerified", 
-          email_verification_token AS "emailVerificationToken", 
-          google_id AS "googleId", linkedin_id AS "linkedinId"
-        FROM users 
-        WHERE ${provider}_id = $1
-      `;
-      
-      const result = await pool?.query(query, [profileId]);
-      if (!result?.rows || result.rows.length === 0) return undefined;
-      
-      // Convert returned data to User type
-      const user: any = result.rows[0];
-      
-      // Add default values for potentially missing columns
-      if (!('blocked' in user)) user.blocked = false;
-      if (!('blockReason' in user)) user.blockReason = null;
-      if (!('lastActiveAt' in user)) user.lastActiveAt = null;
-      if (!('deleted' in user)) user.deleted = false; 
-      if (!('deletedAt' in user)) user.deletedAt = null;
-      
-      return user;
-    } catch (error) {
-      console.error("Error fetching user by social provider:", error);
-      
-      // Fallback to standard ORM query if raw query fails
-      try {
-        const fieldName = `${provider}Id` as keyof typeof users;
-        const [user] = await db.select({
-          id: users.id,
-          username: users.username,
-          password: users.password,
-          email: users.email, 
-          firstName: users.firstName,
-          lastName: users.lastName,
-          userType: users.userType,
-          isAdmin: users.isAdmin,
-          createdAt: users.createdAt,
-          stripeCustomerId: users.stripeCustomerId,
-          stripeSubscriptionId: users.stripeSubscriptionId,
-          [fieldName]: users[fieldName] as any
-        }).from(users).where(eq(users[fieldName] as any, profileId));
-        
-        if (!user) return undefined;
-        
-        // Add missing fields with default values
-        return {
-          ...user,
-          subscriptionTier: null,
-          subscriptionStatus: null,
-          resetToken: null,
-          resetTokenExpiry: null,
-          emailVerified: null,
-          emailVerificationToken: null,
-          googleId: null,
-          linkedinId: null,
-          blocked: false,
-          blockReason: null,
-          lastActiveAt: null,
-          deleted: false,
-          deletedAt: null
-        } as User;
-      } catch (fallbackError) {
-        console.error("Fallback query also failed:", fallbackError);
-        return undefined;
-      }
-    }
+    const fieldName = `${provider}Id` as keyof typeof users;
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users[fieldName] as any, profileId));
+    
+    return user;
   }
   
   async linkSocialAccount(userId: number, provider: string, profileId: string): Promise<User | undefined> {
     if (!db) return undefined;
     
-    try {
-      const fieldName = `${provider}Id` as keyof typeof users;
-      
-      // First, make sure the user exists
-      const existingUser = await this.getUser(userId);
-      if (!existingUser) {
-        console.error(`User with ID ${userId} not found for social linking`);
-        return undefined;
-      }
-      
-      // Use raw SQL for update to avoid column errors
-      const query = `
-        UPDATE users
-        SET ${provider}_id = $1
-        WHERE id = $2
-        RETURNING id, username, email, 
-                 first_name AS "firstName", last_name AS "lastName", user_type AS "userType", 
-                 is_admin AS "isAdmin", created_at AS "createdAt", 
-                 google_id AS "googleId", linkedin_id AS "linkedinId"
-      `;
-      
-      const result = await pool?.query(query, [profileId, userId]);
-      if (!result?.rows || result.rows.length === 0) return undefined;
-      
-      // Return updated user with default values for any missing fields
-      const updatedUser = await this.getUser(userId);
-      return updatedUser;
-    } catch (error) {
-      console.error(`Error linking ${provider} account:`, error);
-      
-      // Fallback to standard ORM update
-      try {
-        const fieldName = `${provider}Id` as keyof typeof users;
-        const [updatedUser] = await db
-          .update(users)
-          .set({ [fieldName]: profileId })
-          .where(eq(users.id, userId))
-          .returning();
-        
-        return updatedUser;
-      } catch (fallbackError) {
-        console.error("Fallback update also failed:", fallbackError);
-        return undefined;
-      }
-    }
+    const fieldName = `${provider}Id` as keyof typeof users;
+    const [updatedUser] = await db
+      .update(users)
+      .set({ [fieldName]: profileId })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    return updatedUser;
   }
   
   async createUserFromSocial(user: Partial<InsertUser> & { email: string; username: string; password: string }): Promise<User> {
@@ -2126,41 +1791,7 @@ export class DatabaseStorage implements IStorage {
   // These methods are already defined above
   
   async getAllUsers(): Promise<User[]> {
-    if (!db) return [];
-    
-    try {
-      // Use raw SQL to ensure correct column mapping
-      const query = `
-        SELECT 
-          id, username, password, email, 
-          first_name AS "firstName", last_name AS "lastName", user_type AS "userType", 
-          is_admin AS "isAdmin", created_at AS "createdAt", 
-          stripe_customer_id AS "stripeCustomerId", 
-          stripe_subscription_id AS "stripeSubscriptionId",
-          subscription_tier AS "subscriptionTier", 
-          subscription_status AS "subscriptionStatus", 
-          reset_token AS "resetToken", reset_token_expiry AS "resetTokenExpiry",
-          email_verified AS "emailVerified", 
-          email_verification_token AS "emailVerificationToken", 
-          google_id AS "googleId", linkedin_id AS "linkedinId"
-        FROM users
-      `;
-      
-      const result = await (pool?.query(query));
-      if (!result?.rows) return [];
-      
-      return result.rows;
-    } catch (error) {
-      console.error("Error in getAllUsers:", error);
-      
-      // Fallback to standard ORM query if raw query fails
-      try {
-        return await db.select().from(users);
-      } catch (fallbackError) {
-        console.error("Fallback query also failed:", fallbackError);
-        return [];
-      }
-    }
+    return await db.select().from(users);
   }
 
   async createUser(user: InsertUser): Promise<User> {

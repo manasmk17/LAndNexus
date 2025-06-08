@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useStripe, Elements, PaymentElement, useElements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 import { useAuth } from '@/hooks/use-auth';
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -8,8 +9,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useLocation, useRoute } from 'wouter';
-import { getStripe, isStripeAvailable } from '@/lib/stripe-helpers';
-import { Stripe } from '@stripe/stripe-js';
+
+// Make sure to call `loadStripe` outside of a component's render to avoid
+// recreating the `Stripe` object on every render.
+if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
+}
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const tiers = [
   {
@@ -161,9 +167,6 @@ export default function Subscribe() {
   const [selectedTierId, setSelectedTierId] = useState("basic");
   const [loading, setLoading] = useState(false);
   const [match, params] = useRoute('/subscribe/:tierId');
-  const [stripeInstance, setStripeInstance] = useState<Stripe | null>(null);
-  const [loadingStripe, setLoadingStripe] = useState(true);
-  const [stripeError, setStripeError] = useState(false);
   
   useEffect(() => {
     if (match && params.tierId && (params.tierId === 'basic' || params.tierId === 'premium')) {
@@ -172,48 +175,6 @@ export default function Subscribe() {
       localStorage.setItem('selectedSubscriptionTier', params.tierId);
     }
   }, [match, params]);
-
-  // Load Stripe safely
-  useEffect(() => {
-    const loadStripeInstance = async () => {
-      try {
-        setLoadingStripe(true);
-        if (!isStripeAvailable()) {
-          setStripeError(true);
-          toast({
-            title: "Payment unavailable",
-            description: "Stripe payments are not configured. Please contact support.",
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        const instance = await getStripe();
-        if (!instance) {
-          setStripeError(true);
-          toast({
-            title: "Payment unavailable",
-            description: "Unable to load payment processing. Please try again later.",
-            variant: "destructive",
-          });
-        } else {
-          setStripeInstance(instance);
-        }
-      } catch (error) {
-        console.error("Error loading Stripe:", error);
-        setStripeError(true);
-        toast({
-          title: "Payment unavailable",
-          description: "Unable to load payment processing. Please try again later.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoadingStripe(false);
-      }
-    };
-    
-    loadStripeInstance();
-  }, [toast]);
 
   const selectedTier = tiers.find(tier => tier.id === selectedTierId) || tiers[0];
 
@@ -263,16 +224,6 @@ export default function Subscribe() {
     createIntent();
   }, [user, selectedTierId, selectedTier.price, toast]);
 
-  // Show loading state when loading Stripe or payment intent
-  if (loading || loadingStripe) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
-
-  // Show error or authentication required
   if (!user) {
     return (
       <div className="container max-w-4xl mx-auto py-12 px-4">
@@ -281,22 +232,6 @@ export default function Subscribe() {
             <CardTitle className="text-center">Authentication Required</CardTitle>
             <CardDescription className="text-center">
               Please log in to subscribe to a plan
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
-  // Show error message if there is a Stripe error
-  if (stripeError) {
-    return (
-      <div className="container max-w-4xl mx-auto py-12 px-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-center">Payment Unavailable</CardTitle>
-            <CardDescription className="text-center">
-              We're unable to process payments at this time. Please try again later.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -366,8 +301,8 @@ export default function Subscribe() {
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full"></div>
             </div>
-          ) : clientSecret && stripeInstance ? (
-            <Elements stripe={stripeInstance} options={{ clientSecret }}>
+          ) : clientSecret ? (
+            <Elements stripe={stripePromise} options={{ clientSecret }}>
               <SubscriptionForm selectedTier={selectedTier} />
             </Elements>
           ) : (

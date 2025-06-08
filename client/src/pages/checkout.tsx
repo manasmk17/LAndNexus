@@ -1,12 +1,18 @@
 import { useStripe, Elements, PaymentElement, useElements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 import { useEffect, useState } from 'react';
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from 'wouter';
-import { getStripe, isStripeAvailable } from '@/lib/stripe-helpers';
-import { Stripe } from '@stripe/stripe-js';
+
+// Make sure to call `loadStripe` outside of a component's render to avoid
+// recreating the `Stripe` object on every render.
+if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
+}
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 const CheckoutForm = ({ amount }: { amount: number }) => {
   const stripe = useStripe();
@@ -118,81 +124,6 @@ export default function Checkout() {
     );
   }
 
-  const [stripeInstance, setStripeInstance] = useState<Stripe | null>(null);
-  const [loadingStripe, setLoadingStripe] = useState(true);
-  const [stripeError, setStripeError] = useState(false);
-
-  // Load Stripe safely
-  useEffect(() => {
-    const loadStripeInstance = async () => {
-      try {
-        setLoadingStripe(true);
-        if (!isStripeAvailable()) {
-          setStripeError(true);
-          toast({
-            title: "Payment unavailable",
-            description: "Stripe payments are not configured. Please contact support.",
-            variant: "destructive",
-          });
-          return;
-        }
-        
-        const instance = await getStripe();
-        if (!instance) {
-          setStripeError(true);
-          toast({
-            title: "Payment unavailable",
-            description: "Unable to load payment processing. Please try again later.",
-            variant: "destructive",
-          });
-        } else {
-          setStripeInstance(instance);
-        }
-      } catch (error) {
-        console.error("Error loading Stripe:", error);
-        setStripeError(true);
-        toast({
-          title: "Payment unavailable",
-          description: "Unable to load payment processing. Please try again later.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoadingStripe(false);
-      }
-    };
-    
-    loadStripeInstance();
-  }, [toast]);
-
-  // Show loading state when loading Stripe
-  if (isLoading || loadingStripe) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" aria-label="Loading"/>
-      </div>
-    );
-  }
-
-  // Show error message if there is a Stripe error
-  if (stripeError || !clientSecret) {
-    return (
-      <div className="container max-w-md mx-auto py-12">
-        <Card>
-          <CardHeader>
-            <CardTitle>Payment Unavailable</CardTitle>
-            <CardDescription>
-              We're unable to process payments at this time.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="mb-6">Please try again later or contact support if the issue persists.</p>
-            <Button onClick={() => setLocation('/')}>Return to Home</Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="container max-w-md mx-auto py-12">
       <Card>
@@ -215,12 +146,10 @@ export default function Checkout() {
             </div>
           </div>
           
-          {/* Safely wrap the form in <Elements> using our loaded Stripe instance */}
-          {stripeInstance && (
-            <Elements stripe={stripeInstance} options={{ clientSecret }}>
-              <CheckoutForm amount={amount} />
-            </Elements>
-          )}
+          {/* Make SURE to wrap the form in <Elements> which provides the stripe context. */}
+          <Elements stripe={stripePromise} options={{ clientSecret }}>
+            <CheckoutForm amount={amount} />
+          </Elements>
         </CardContent>
         <CardFooter className="flex justify-center text-sm text-muted-foreground">
           <p>Your payment information is encrypted and secure.</p>

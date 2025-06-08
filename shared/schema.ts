@@ -25,12 +25,6 @@ export const users = pgTable("users", {
   profilePhotoUrl: text("profile_photo_url"),
   googleId: text("google_id"),
   linkedinId: text("linkedin_id"),
-  // New fields for admin user management
-  blocked: boolean("blocked").default(false),
-  blockReason: text("block_reason"),
-  lastActiveAt: timestamp("last_active_at"),
-  deleted: boolean("deleted").default(false),
-  deletedAt: timestamp("deleted_at"),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({

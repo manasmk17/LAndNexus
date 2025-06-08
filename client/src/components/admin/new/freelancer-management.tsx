@@ -54,7 +54,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getQueryFn, apiRequest } from "@/lib/queryClient";
-import { invalidateQueries } from "@/lib/cachingHelpers";
 import { ProfessionalProfile } from "@shared/schema";
 
 export default function FreelancerManagement() {
@@ -74,25 +73,16 @@ export default function FreelancerManagement() {
     queryKey: ['/api/professional-profiles'],
     queryFn: getQueryFn({ on401: 'throw' })
   });
-
+  
   // Toggle featured status mutation
   const toggleFeaturedMutation = useMutation({
     mutationFn: async ({ id, featured }: { id: number, featured: boolean }) => {
-      const response = await apiRequest('PATCH', `/api/professional-profiles/${id}`, {
+      return await apiRequest('PATCH', `/api/professional-profiles/${id}`, {
         featured
       });
-      return response;
     },
     onSuccess: () => {
-      // Invalidate multiple related queries
-      invalidateQueries([
-        '/api/professional-profiles',
-        '/api/professional-profiles/featured',
-        '/api/admin/dashboard-stats'
-      ], queryClient);
-      
-      // Force a refetch to ensure updated data
-      queryClient.refetchQueries({ queryKey: ['/api/professional-profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/professional-profiles'] });
     },
     onError: (error: Error) => {
       toast({
@@ -106,21 +96,12 @@ export default function FreelancerManagement() {
   // Toggle verified status mutation
   const toggleVerifiedMutation = useMutation({
     mutationFn: async ({ id, verified }: { id: number, verified: boolean }) => {
-      const response = await apiRequest('PATCH', `/api/professional-profiles/${id}`, {
+      return await apiRequest('PATCH', `/api/professional-profiles/${id}`, {
         verified
       });
-      return response;
     },
     onSuccess: () => {
-      // Invalidate multiple related queries
-      invalidateQueries([
-        '/api/professional-profiles',
-        '/api/professional-profiles/featured',
-        '/api/admin/dashboard-stats'
-      ], queryClient);
-      
-      // Force a refetch to ensure updated data
-      queryClient.refetchQueries({ queryKey: ['/api/professional-profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/professional-profiles'] });
     },
     onError: (error: Error) => {
       toast({
@@ -134,20 +115,10 @@ export default function FreelancerManagement() {
   // Delete professional profile mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest('DELETE', `/api/professional-profiles/${id}`);
-      return response;
+      return await apiRequest('DELETE', `/api/professional-profiles/${id}`);
     },
     onSuccess: () => {
-      // Invalidate multiple related queries
-      invalidateQueries([
-        '/api/professional-profiles',
-        '/api/professional-profiles/featured',
-        '/api/admin/dashboard-stats'
-      ], queryClient);
-      
-      // Force a refetch to ensure updated data
-      queryClient.refetchQueries({ queryKey: ['/api/professional-profiles'] });
-      
+      queryClient.invalidateQueries({ queryKey: ['/api/professional-profiles'] });
       setDeleteDialogOpen(false);
       setFreelancerToDelete(null);
       

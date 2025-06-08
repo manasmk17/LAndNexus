@@ -263,24 +263,14 @@ app.use((req, res, next) => {
 
   // Serve the app on port 5000 as expected by workflow
   // this serves both the API and the client.
-  const startServer = (port: number) => {
-    server.listen({
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-      keepAliveTimeout: 65000, // Increase keep-alive timeout
-      headersTimeout: 66000, // Increase headers timeout
-    }, () => {
-      log(`serving on port ${port}`);
-    }).on('error', (err: any) => {
-      if (err.code === 'EADDRINUSE') {
-        log(`Port ${port} is already in use, trying port ${port + 1}...`);
-        startServer(port + 1);
-      } else {
-        console.error('Server error:', err);
-      }
-    });
-  };
-  
-  startServer(5000);
+  const port = 5000;
+  server.listen({
+    port,
+    host: "0.0.0.0",
+    reusePort: true,
+    keepAliveTimeout: 65000, // Increase keep-alive timeout
+    headersTimeout: 66000, // Increase headers timeout
+  }, () => {
+    log(`serving on port ${port}`);
+  });
 })();

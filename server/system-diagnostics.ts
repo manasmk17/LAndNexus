@@ -13,13 +13,13 @@ export async function runSystemDiagnostics(): Promise<SystemCheck[]> {
 
   // Database connectivity check
   try {
-    await storage.getUsers();
+    await storage.getAllUsers();
     checks.push({
       name: "Database Connection",
       status: "pass",
       message: "Database is accessible and responding"
     });
-  } catch (error) {
+  } catch (error: any) {
     checks.push({
       name: "Database Connection",
       status: "fail",
@@ -73,16 +73,16 @@ export async function runSystemDiagnostics(): Promise<SystemCheck[]> {
 
   // Data integrity checks
   try {
-    const users = await storage.getUsers();
-    const professionals = await storage.getFeaturedProfessionals();
-    const jobs = await storage.getLatestJobPostings();
+    const users = await storage.getAllUsers();
+    const professionals = await storage.getFeaturedProfessionalProfiles();
+    const jobs = await storage.getLatestJobPostings(10);
     
     checks.push({
       name: "Data Integrity",
       status: "pass",
       message: `System has ${users.length} users, ${professionals.length} professionals, ${jobs.length} jobs`
     });
-  } catch (error) {
+  } catch (error: any) {
     checks.push({
       name: "Data Integrity",
       status: "fail",
@@ -93,13 +93,13 @@ export async function runSystemDiagnostics(): Promise<SystemCheck[]> {
   // Schema validation
   try {
     // Test that critical tables are accessible
-    await storage.getResourceCategories();
+    await storage.getAllResourceCategories();
     checks.push({
       name: "Schema Validation",
       status: "pass",
       message: "Database schema is properly configured"
     });
-  } catch (error) {
+  } catch (error: any) {
     checks.push({
       name: "Schema Validation",
       status: "fail",

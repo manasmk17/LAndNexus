@@ -50,6 +50,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import Stripe from "stripe";
 import memorystore from "memorystore";
+import { setupDiagnosticsRoute } from "./system-diagnostics";
 
 // Initialize Stripe with the API key
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -4579,6 +4580,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Server error" });
     }
   });
+
+  // System diagnostics endpoint
+  setupDiagnosticsRoute(app);
 
   // WebSocket server for real-time messaging
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });

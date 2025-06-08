@@ -4,32 +4,10 @@ import { setupVite, serveStatic, log } from "./vite";
 import { initializeDatabase } from "./db";
 import csurf from "csurf";
 import cookieParser from "cookie-parser";
-import helmet from 'helmet';
 
 const app = express();
-
-// Apply Helmet middleware for secure HTTP headers
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // For development, can tighten in production
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "https://api.stripe.com", "https://js.stripe.com"],
-      frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
-      upgradeInsecureRequests: []
-    }
-  },
-  crossOriginEmbedderPolicy: false, // For development compatibility
-  crossOriginResourcePolicy: { policy: "cross-origin" }, // For development compatibility
-}));
-
-// Rate limiting would be added here in production
-
-app.use(express.json({ limit: '2mb' })); // Limit JSON body size
-app.use(express.urlencoded({ extended: false, limit: '2mb' })); // Limit URL-encoded body size
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
 // Configure CSRF protection with detailed error logging

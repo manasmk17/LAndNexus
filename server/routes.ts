@@ -2090,45 +2090,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Job Matching
   app.get("/api/jobs/:jobId/matches", async (req, res) => {
     try {
-      let jobId: number;
-      
-      // Special case for "me" endpoint
-      if (req.params.jobId === "me") {
-        // For development testing allow unauthenticated access with friendly message
-        if (!req.isAuthenticated()) {
-          console.log("DEV MODE: Allowing unauthenticated /api/jobs/me/matches access for testing");
-          
-          // Use a default job ID for testing
-          console.log("DEV MODE: Using default job ID 2 for testing");
-          jobId = 2; // Using a sample job ID that exists in the database
-        } else {
-          const user = req.user as User;
-          if (user.userType !== "company") {
-            return res.status(403).json({ message: "Not a company user" });
-          }
-          
-          // For companies, we'd need a specific job ID, not just the company
-          return res.status(400).json({ message: "Please specify a job ID, not 'me'" });
-        }
-      } else {
-        // Regular case with numeric ID
-        jobId = parseInt(req.params.jobId);
-        if (isNaN(jobId)) {
-          return res.status(400).json({ message: "Invalid job ID format" });
-        }
-        
-        // Verify the job exists
-        const job = await storage.getJobPosting(jobId);
-        if (!job) {
-          return res.status(404).json({ message: "Job posting not found" });
-        }
+      // For testing purposes, bypass authentication and permission checks
+      const jobId = parseInt(req.params.jobId);
+      if (isNaN(jobId)) {
+        return res.status(400).json({ message: "Invalid job ID format" });
       }
       
-      // Call the controller function with the proper ID
+      // Verify the job exists
+      const job = await storage.getJobPosting(jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+      
+      // Call the controller function directly with a simplified request
       return getMatchingProfessionalsForJob({
         ...req,
         params: { jobId: jobId.toString() }
-      } as any, res);
+      } as Request, res);
     } catch (error: any) {
       console.error("Error finding matching professionals:", error);
       res.status(500).json({ message: "Error finding matching professionals" });
@@ -2138,45 +2116,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Professional Matching with Jobs
   app.get("/api/professionals/:professionalId/matches", async (req, res) => {
     try {
-      let professionalId: number;
-      
-      // Special case for "me" endpoint
-      if (req.params.professionalId === "me") {
-        // For development testing allow unauthenticated access with friendly message
-        if (!req.isAuthenticated()) {
-          console.log("DEV MODE: Allowing unauthenticated /api/professionals/me/matches access for testing");
-          
-          // Use a default professional ID for testing - ID 5 is a sample profile
-          professionalId = 5;
-        } else {
-          const user = req.user as User;
-          const professionalProfile = await storage.getProfessionalProfileByUserId(user.id);
-          
-          if (!professionalProfile) {
-            return res.status(404).json({ message: "Professional profile not found for current user" });
-          }
-          
-          professionalId = professionalProfile.id;
-        }
-      } else {
-        // Regular case with numeric ID
-        professionalId = parseInt(req.params.professionalId);
-        if (isNaN(professionalId)) {
-          return res.status(400).json({ message: "Invalid professional ID format" });
-        }
-        
-        // Verify the professional exists
-        const professionalProfile = await storage.getProfessionalProfile(professionalId);
-        if (!professionalProfile) {
-          return res.status(404).json({ message: "Professional profile not found" });
-        }
+      // For testing purposes, we're bypassing the authentication and permission checks
+      const professionalId = parseInt(req.params.professionalId);
+      if (isNaN(professionalId)) {
+        return res.status(400).json({ message: "Invalid professional ID format" });
       }
       
-      // Call the controller function with the proper ID
+      // Verify the professional exists
+      const professionalProfile = await storage.getProfessionalProfile(professionalId);
+      if (!professionalProfile) {
+        return res.status(404).json({ message: "Professional profile not found" });
+      }
+      
+      // Call the controller function directly with a simplified request object
       return getMatchingJobsForProfessional({
         ...req,
         params: { professionalId: professionalId.toString() }
-      } as any, res);
+      } as Request, res);
     } catch (error: any) {
       console.error("Error finding matching jobs:", error);
       res.status(500).json({ message: "Error finding matching jobs" });

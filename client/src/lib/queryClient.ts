@@ -454,28 +454,6 @@ export const getQueryFn: <T>(options: {
     }
   };
 
-// Setup global unhandled rejection handler for React Query
-window.addEventListener('unhandledrejection', event => {
-  // Only log and prevent default if it's our query or mutation error
-  if (event.reason && (
-      event.reason.name === 'QueryError' || 
-      event.reason.name === 'MutationError' || 
-      event.reason.name === 'NetworkError' ||
-      (typeof event.reason.message === 'string' && (
-        event.reason.message.includes('Network') ||
-        event.reason.message.includes('Failed to fetch') ||
-        event.reason.message.includes('connection')
-      ))
-    )) {
-    console.log('Handled React Query rejection:', event.reason);
-    // Prevent the default browser handling of the error
-    event.preventDefault();
-  } else if (event.reason) {
-    // Log but don't prevent default for other errors
-    console.warn('Unhandled promise rejection (not React Query):', event.reason);
-  }
-});
-
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -484,11 +462,11 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       staleTime: Infinity,
       retry: 3,
-      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
     },
     mutations: {
       retry: 2,
-      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000)
-    }
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000),
+    },
   }
 });

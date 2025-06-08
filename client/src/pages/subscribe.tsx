@@ -49,7 +49,7 @@ type Tier = {
 };
 
 // Payment form component for subscription
-const SubscribeForm = ({ 
+const SubscriptionForm = ({ 
   selectedTier, 
   onSubscriptionSuccess 
 }: { 
@@ -507,7 +507,7 @@ export default function Subscribe() {
                 }
               }
             }}>
-              <SubscribeForm 
+              <SubscriptionForm 
                 selectedTier={selectedTier} 
                 onSubscriptionSuccess={handleSubscriptionSuccess} 
               />

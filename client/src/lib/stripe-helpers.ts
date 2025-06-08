@@ -1,10 +1,10 @@
-import { loadStripe, Stripe, StripeConstructor } from '@stripe/stripe-js';
+import { loadStripe, Stripe } from '@stripe/stripe-js';
 
 // Add type definitions for the global Stripe object on window
 declare global {
   interface Window {
-    // Use a proper type for the Stripe constructor
-    Stripe?: StripeConstructor;
+    // Use a more specific type that doesn't conflict with the imported Stripe type
+    Stripe?: any; // Using any to avoid type conflicts
   }
 }
 
@@ -96,12 +96,32 @@ export function getStripe(): Promise<Stripe | null> {
       return Promise.resolve(null);
     }
     
-    // IMPORTANT: Just use direct loadStripe without fallback to avoid issues with manual mode
-    stripePromise = loadStripe(stripeKey)
-      .catch(error => {
-        console.error('Error loading Stripe:', error);
-        return null;
-      });
+    // Use our custom manual script loader as fallback
+    stripePromise = new Promise((resolve) => {
+      try {
+        // First try the standard loadStripe method
+        loadStripe(stripeKey)
+          .then(stripeInstance => {
+            if (stripeInstance) {
+              console.log('Stripe loaded successfully with loadStripe');
+              resolve(stripeInstance);
+            } else {
+              console.warn('loadStripe returned null, falling back to manual script loading');
+              // If it fails, try our manual script loader
+              loadStripeScript(stripeKey).then(resolve);
+            }
+          })
+          .catch(error => {
+            console.error('Error with loadStripe, falling back to manual script loading:', error);
+            // If it fails, try our manual script loader
+            loadStripeScript(stripeKey).then(resolve);
+          });
+      } catch (error) {
+        console.error('Exception loading Stripe.js:', error);
+        // If everything fails, resolve with null
+        resolve(null);
+      }
+    });
   }
   
   return stripePromise;

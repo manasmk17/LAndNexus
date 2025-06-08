@@ -33,7 +33,6 @@ import Messages from "@/pages/messages";
 import Checkout from "@/pages/checkout";
 import Subscribe from "@/pages/subscribe";
 import SubscriptionSuccess from "@/pages/subscription-success";
-import PaymentTesting from "@/pages/payment-testing";
 import ProfileSuccess from "@/pages/profile-success";
 import BookConsultation from "@/pages/book-consultation";
 import PageView from "@/pages/page";
@@ -62,7 +61,6 @@ function Router() {
       <Route path="/forum" component={Forum} />
       <Route path="/pages/:slug" component={PageView} />
       <Route path="/admin-login" component={AdminLogin} />
-      <Route path="/payment-testing" component={PaymentTesting} />
       {/* Protected routes with user type restrictions */}
       <ProtectedRoute 
         path="/professional-dashboard" 

@@ -59,37 +59,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-02-24.acacia" as any,
 });
 
-// Define subscription tiers with Stripe price IDs for webhook handler
-const SUBSCRIPTION_TIERS = [
-  {
-    id: 'basic',
-    name: 'Basic',
-    price: 29,
-    stripePriceId: process.env.STRIPE_BASIC_PRICE_ID,
-    description: 'Essential tools for L&D professionals and companies',
-    features: [
-      'Create basic profile',
-      'Browse job postings',
-      'Access resource library',
-      'Apply to up to 5 jobs monthly'
-    ]
-  },
-  {
-    id: 'premium',
-    name: 'Premium',
-    price: 79,
-    stripePriceId: process.env.STRIPE_PREMIUM_PRICE_ID,
-    description: 'Advanced features for serious L&D professionals and growing organizations',
-    features: [
-      'Featured profile placement',
-      'Unlimited job applications',
-      'Direct messaging',
-      'Access to premium resources',
-      'Priority support'
-    ]
-  }
-];
-
 import { registerAdminRoutes } from './admin/admin';
 
 const MemoryStore = memorystore(session);
@@ -699,128 +668,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     // Handle the event
     switch (event.type) {
-      case 'payment_intent.succeeded':
-        const paymentIntent = event.data.object;
-        console.log(`PaymentIntent ${paymentIntent.id} succeeded.`);
-        
-        // Extract metadata
-        const { userId, tier, type, consultationId } = paymentIntent.metadata || {};
-        
-        if (userId) {
-          if (type === 'subscription') {
-            // Update subscription status for the user
-            await storage.updateUserSubscription(
-              parseInt(userId), 
-              tier || 'basic', 
-              'active'
-            );
-            console.log(`Updated subscription for user ${userId} to ${tier} (active)`);
-          } else if (type === 'consultation' && consultationId) {
-            // Update consultation status
-            await storage.updateConsultationStatus(parseInt(consultationId), 'paid');
-            console.log(`Updated consultation ${consultationId} status to paid`);
-          } else if (type === 'one-time') {
-            // Handle one-time payment
-            console.log(`Processed one-time payment for user ${userId}`);
-          }
-        }
-        break;
-        
-      case 'payment_intent.payment_failed':
-        const failedPayment = event.data.object;
-        console.log(`Payment failed for PaymentIntent ${failedPayment.id}`);
-        
-        // Could notify the user or update your database here
-        break;
-        
-      case 'customer.subscription.created':
-        const newSubscription = event.data.object;
-        console.log(`New subscription ${newSubscription.id} created`);
-        
-        // Find the user by their Stripe customer ID
-        const newSubUser = await storage.getUserByStripeCustomerId(newSubscription.customer);
-        if (newSubUser) {
-          // Detect subscription tier from price ID or metadata
-          const tierInfo = SUBSCRIPTION_TIERS.find((t: any) => 
-            newSubscription.items?.data?.some((item: any) => 
-              item.price?.id === t.stripePriceId));
-              
-          const subTier = tierInfo?.id || (newSubscription.metadata?.tier as string) || 'basic';
-          
-          // Update the subscription status
-          await storage.updateUserSubscription(
-            newSubUser.id, 
-            subTier, 
-            newSubscription.status
-          );
-          
-          // Store Stripe subscription ID
-          await storage.updateStripeSubscriptionId(newSubUser.id, newSubscription.id);
-          
-          console.log(`Created subscription for user ${newSubUser.id}: ${subTier} (${newSubscription.status})`);
-        }
-        break;
-        
       case 'customer.subscription.updated':
-        const updatedSubscription = event.data.object;
-        console.log(`Subscription ${updatedSubscription.id} updated`);
-        
-        // Find the user by their Stripe customer ID
-        const updatedSubUser = await storage.getUserByStripeCustomerId(updatedSubscription.customer);
-        if (updatedSubUser) {
-          // Update the subscription status
-          const subscriptionTier = updatedSubUser.subscriptionTier || "basic";
-          await storage.updateUserSubscription(
-            updatedSubUser.id, 
-            subscriptionTier, 
-            updatedSubscription.status
-          );
-          console.log(`Updated subscription for user ${updatedSubUser.id}: ${subscriptionTier} (${updatedSubscription.status})`);
-        }
-        break;
-        
       case 'customer.subscription.deleted':
-        const canceledSubscription = event.data.object;
-        console.log(`Subscription ${canceledSubscription.id} canceled`);
-        
+        const subscription = event.data.object as any;
         // Find the user by their Stripe customer ID
-        const canceledSubUser = await storage.getUserByStripeCustomerId(canceledSubscription.customer);
-        if (canceledSubUser) {
-          // Update the subscription status to canceled
+        const user = await storage.getUserByStripeCustomerId(subscription.customer);
+
+        if (user) {
+          // Update the subscription status
+          const subscriptionTier = user.subscriptionTier || "basic";
           await storage.updateUserSubscription(
-            canceledSubUser.id, 
-            'basic', // Reset to basic tier
-            'canceled'
+            user.id, 
+            subscriptionTier, 
+            subscription.status
           );
-          
-          // Clear Stripe subscription ID
-          await storage.updateStripeSubscriptionId(canceledSubUser.id, null);
-          
-          console.log(`Canceled subscription for user ${canceledSubUser.id}`);
         }
         break;
-        
-      case 'invoice.payment_succeeded':
-        const successfulInvoice = event.data.object;
-        console.log(`Invoice ${successfulInvoice.id} payment succeeded`);
-        
-        // Handle recurring subscription payment
-        if (successfulInvoice.subscription) {
-          // This could trigger renewal notifications or update subscription renewal date
-          console.log(`Subscription ${successfulInvoice.subscription} renewed`);
-        }
-        break;
-        
-      case 'invoice.payment_failed':
-        const failedInvoice = event.data.object;
-        console.log(`Invoice ${failedInvoice.id} payment failed`);
-        
-        // Handle failed subscription payment - could notify user
-        if (failedInvoice.subscription) {
-          console.log(`Subscription ${failedInvoice.subscription} payment failed`);
-        }
-        break;
-        
       default:
         // Unexpected event type
         console.log(`Unhandled event type ${event.type}`);
@@ -1357,72 +1220,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(response);
     } catch (error: any) {
       res.status(500).json({ message: "Error retrieving subscription status: " + error.message });
-    }
-  });
-  
-  // Test endpoint for verifying Stripe functionality (development mode only)
-  app.get("/api/test-stripe", async (req, res) => {
-    // Only allow in development mode
-    if (process.env.NODE_ENV === 'production') {
-      return res.status(404).json({ message: "Not found" });
-    }
-    
-    try {
-      // Test Stripe connection by retrieving account info
-      const account = await stripe.accounts.retrieve();
-      
-      // Fetch subscription products and prices
-      const products = await stripe.products.list({
-        active: true,
-        limit: 5,
-      });
-      
-      const prices = await stripe.prices.list({
-        active: true,
-        limit: 10,
-      });
-      
-      // Test creating and immediately canceling a payment intent
-      const testIntent = await stripe.paymentIntents.create({
-        amount: 100, // $1.00
-        currency: "usd",
-        metadata: {
-          test: "true"
-        }
-      });
-      
-      await stripe.paymentIntents.cancel(testIntent.id);
-      
-      // Return test results
-      res.json({
-        success: true,
-        stripeAccountId: account.id,
-        stripeAccountName: account.business_profile?.name || "Not set",
-        products: products.data.map(p => ({ id: p.id, name: p.name })),
-        prices: prices.data.map(p => ({ 
-          id: p.id, 
-          productId: p.product, 
-          amount: p.unit_amount ? p.unit_amount / 100 : 0,
-          currency: p.currency,
-          recurring: p.recurring ? true : false
-        })),
-        testPaymentIntent: {
-          id: testIntent.id,
-          status: "Created and canceled successfully"
-        },
-        testCards: [
-          { type: "Visa (succeeds)", number: "4242424242424242", exp: "Any future date", cvc: "Any 3 digits" },
-          { type: "Mastercard (3D Secure)", number: "4000002500003155", exp: "Any future date", cvc: "Any 3 digits" },
-          { type: "Visa (declines)", number: "4000000000000002", exp: "Any future date", cvc: "Any 3 digits" }
-        ]
-      });
-    } catch (error: any) {
-      console.error("Stripe test error:", error);
-      res.status(500).json({ 
-        success: false,
-        message: "Stripe test failed: " + error.message,
-        error: error
-      });
     }
   });
 

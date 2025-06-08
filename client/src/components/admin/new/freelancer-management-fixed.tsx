@@ -82,7 +82,7 @@ export default function FreelancerManagement() {
     error,
     refetch
   } = useQuery<ProfessionalProfile[]>({
-    queryKey: ['/api/admin/professional-profiles'],
+    queryKey: ['/api/professional-profiles'],
     queryFn: getQueryFn({ on401: 'throw' }),
     staleTime: 5000 // Very short stale time to force refreshes
   });
@@ -90,7 +90,7 @@ export default function FreelancerManagement() {
   // Toggle featured status mutation
   const toggleFeaturedMutation = useMutation({
     mutationFn: async ({ id, featured }: { id: number, featured: boolean }) => {
-      const response = await apiRequest('PATCH', `/api/admin/professional-profiles/${id}`, {
+      const response = await apiRequest('PATCH', `/api/professional-profiles/${id}`, {
         featured
       });
       return response;
@@ -98,7 +98,6 @@ export default function FreelancerManagement() {
     onSuccess: () => {
       // Invalidate multiple related queries
       invalidateQueries([
-        '/api/admin/professional-profiles',
         '/api/professional-profiles',
         '/api/professional-profiles/featured',
         '/api/admin/dashboard-stats'
@@ -119,7 +118,7 @@ export default function FreelancerManagement() {
   // Toggle verified status mutation
   const toggleVerifiedMutation = useMutation({
     mutationFn: async ({ id, verified }: { id: number, verified: boolean }) => {
-      const response = await apiRequest('PATCH', `/api/admin/professional-profiles/${id}`, {
+      const response = await apiRequest('PATCH', `/api/professional-profiles/${id}`, {
         verified
       });
       return response;
@@ -127,7 +126,6 @@ export default function FreelancerManagement() {
     onSuccess: () => {
       // Invalidate multiple related queries
       invalidateQueries([
-        '/api/admin/professional-profiles',
         '/api/professional-profiles',
         '/api/professional-profiles/featured',
         '/api/admin/dashboard-stats'
@@ -148,13 +146,12 @@ export default function FreelancerManagement() {
   // Delete professional profile mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await apiRequest('DELETE', `/api/admin/professional-profiles/${id}`);
+      const response = await apiRequest('DELETE', `/api/professional-profiles/${id}`);
       return response;
     },
     onSuccess: () => {
       // Invalidate multiple related queries
       invalidateQueries([
-        '/api/admin/professional-profiles',
         '/api/professional-profiles',
         '/api/professional-profiles/featured',
         '/api/admin/dashboard-stats'

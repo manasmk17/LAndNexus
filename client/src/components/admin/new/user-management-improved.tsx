@@ -638,35 +638,35 @@ export default function UserManagement() {
         </div>
         
         <div className="flex flex-wrap gap-2">
-          <Select value={filterRole || "all"} onValueChange={(value) => setFilterRole(value === "all" ? null : value)}>
+          <Select value={filterRole || ""} onValueChange={(value) => setFilterRole(value || null)}>
             <SelectTrigger className="w-[130px]">
               <SelectValue placeholder="User Type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="">All Types</SelectItem>
               <SelectItem value="professional">Professional</SelectItem>
               <SelectItem value="company">Company</SelectItem>
               <SelectItem value="admin">Admin</SelectItem>
             </SelectContent>
           </Select>
           
-          <Select value={filterStatus || "all"} onValueChange={(value) => setFilterStatus(value === "all" ? null : value)}>
+          <Select value={filterStatus || ""} onValueChange={(value) => setFilterStatus(value || null)}>
             <SelectTrigger className="w-[130px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="">All Status</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="blocked">Blocked</SelectItem>
             </SelectContent>
           </Select>
           
-          <Select value={filterRegistrationDate || "all"} onValueChange={(value) => setFilterRegistrationDate(value === "all" ? null : value)}>
+          <Select value={filterRegistrationDate || ""} onValueChange={(value) => setFilterRegistrationDate(value || null)}>
             <SelectTrigger className="w-[130px]">
               <SelectValue placeholder="Reg. Date" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Dates</SelectItem>
+              <SelectItem value="">All Dates</SelectItem>
               <SelectItem value="today">Today</SelectItem>
               <SelectItem value="this_week">This Week</SelectItem>
               <SelectItem value="this_month">This Month</SelectItem>
@@ -674,12 +674,12 @@ export default function UserManagement() {
             </SelectContent>
           </Select>
           
-          <Select value={filterActivity || "all"} onValueChange={(value) => setFilterActivity(value === "all" ? null : value)}>
+          <Select value={filterActivity || ""} onValueChange={(value) => setFilterActivity(value || null)}>
             <SelectTrigger className="w-[130px]">
               <SelectValue placeholder="Activity" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Activity</SelectItem>
+              <SelectItem value="">All Activity</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="inactive">Inactive</SelectItem>
             </SelectContent>

@@ -9,13 +9,6 @@ export interface AuthUser {
   firstName?: string;
   lastName?: string;
   email?: string;
-  // Add snake_case alternatives to support database column names
-  user_type?: "professional" | "company" | "admin";
-  is_admin?: boolean;
-  first_name?: string;
-  last_name?: string;
-  // Add any other properties that might come from the API
-  [key: string]: any;
 }
 
 interface LoginCredentials {

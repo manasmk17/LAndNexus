@@ -31,27 +31,6 @@ export default function ProfessionalJobMatches() {
   } = useQuery({
     queryKey: ["/api/professionals/me"],
     enabled: !!user,
-    queryFn: async ({ queryKey }) => {
-      try {
-        const response = await fetch(queryKey[0] as string, {
-          credentials: "include"
-        });
-        
-        if (response.status === 401) {
-          // Return null for unauthorized
-          return null;
-        }
-        
-        if (!response.ok) {
-          throw new Error(`Error fetching profile: ${response.statusText}`);
-        }
-        
-        return await response.json();
-      } catch (error) {
-        console.error("Error in query function for /api/professionals/me:", error);
-        return null;
-      }
-    },
   });
   
   // Fetch matched jobs - allow fetching without authentication for development/testing
@@ -61,26 +40,12 @@ export default function ProfessionalJobMatches() {
     error: matchError 
   } = useQuery<MatchResult[]>({
     queryKey: ["/api/professionals/me/matches"],
-    queryFn: async ({ queryKey }) => {
-      try {
-        const response = await fetch(queryKey[0] as string, {
-          credentials: "include"
-        });
-        
-        if (response.status === 401) {
-          // Return empty array for unauthorized
-          return [];
-        }
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch job matches: ${response.statusText}`);
-        }
-        
-        return await response.json();
-      } catch (error) {
-        console.error("Error in query function for /api/professionals/me/matches:", error);
-        return [];
+    queryFn: async () => {
+      const response = await fetch('/api/professionals/me/matches');
+      if (!response.ok) {
+        throw new Error('Failed to fetch job matches');
       }
+      return response.json();
     },
     // Enable even without profile for testing
     enabled: true,
@@ -92,22 +57,6 @@ export default function ProfessionalJobMatches() {
   } = useQuery<CompanyProfile[]>({
     queryKey: ["/api/company-profiles"],
     enabled: !!matches && matches.length > 0,
-    queryFn: async ({ queryKey }) => {
-      try {
-        const response = await fetch(queryKey[0] as string, {
-          credentials: "include"
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Error fetching company profiles: ${response.statusText}`);
-        }
-        
-        return await response.json();
-      } catch (error) {
-        console.error("Error in query function for /api/company-profiles:", error);
-        return [];
-      }
-    },
   });
   
   // Format the match score as a percentage

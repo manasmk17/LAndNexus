@@ -59,7 +59,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-02-24.acacia" as any,
 });
 
-import { registerAdminRoutes } from './admin/admin';
+import { registerAdminRoutes } from "./admin-routes";
 
 const MemoryStore = memorystore(session);
 
@@ -265,27 +265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Check if user is authenticated
-  // For development purposes, create a flag to bypass authentication
-  const isDevelopment = process.env.NODE_ENV !== 'production';
-  const bypassAuth = isDevelopment;
-  
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    // In development mode, allow bypass of authentication
-    if (bypassAuth) {
-      console.log('DEVELOPMENT MODE: Authentication check bypassed');
-      // If no user is set, create a mock user
-      if (!req.user) {
-        req.user = {
-          id: 9999,
-          username: 'dev-user',
-          userType: 'professional',
-          isAdmin: false
-        } as any;
-      }
-      return next();
-    }
-    
-    // Normal authentication check for production
     if (req.isAuthenticated()) {
       return next();
     }
@@ -293,33 +273,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   const isAdmin = (req: Request, res: Response, next: Function) => {
-    // In development mode, allow bypass of admin check
-    if (bypassAuth) {
-      console.log('DEVELOPMENT MODE: Admin check bypassed');
-      // Ensure the user is set and has admin flag
-      if (!req.user) {
-        req.user = {
-          id: 9999,
-          username: 'dev-admin',
-          userType: 'admin',
-          isAdmin: true
-        } as any;
-      } else {
-        // Make sure the user is an admin
-        (req.user as any).isAdmin = true;
-        (req.user as any).userType = 'admin';
-      }
-      return next();
-    }
-    
-    // Normal admin check for production
     if (req.isAuthenticated() && req.user && (req.user as User).isAdmin) {
       return next();
     }
     res.status(403).json({ message: "Forbidden: Admin access required" });
   };
 
-  // Register admin routes
+  // Register admin-specific routes after auth middleware is set up
   registerAdminRoutes(app);
   
   // Add endpoints for /api/users to support the admin dashboard (temporary no auth for development)
@@ -338,12 +298,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/:id", async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
-      
-      // Check if userId is a valid number
-      if (isNaN(userId)) {
-        return res.status(400).json({ message: "Invalid user ID format" });
-      }
-      
       const user = await storage.getUser(userId);
       
       if (!user) {
@@ -364,12 +318,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/users/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
-      
-      // Check if userId is a valid number
-      if (isNaN(userId)) {
-        return res.status(400).json({ message: "Invalid user ID format" });
-      }
-      
       const updateData = req.body;
       
       // Remove sensitive fields that shouldn't be updated directly
@@ -393,11 +341,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.id);
       
-      // Check if userId is a valid number
-      if (isNaN(userId)) {
-        return res.status(400).json({ message: "Invalid user ID format" });
-      }
-      
       // Perform user deletion (soft delete if available, or regular delete)
       const success = await storage.deleteUser(userId);
       
@@ -416,11 +359,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/:id/activity", async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
-      
-      // Check if userId is a valid number
-      if (isNaN(userId)) {
-        return res.status(400).json({ message: "Invalid user ID format" });
-      }
       // This is a mock structure for now as we're using memory storage
       // In a real application, this would fetch login history, actions, etc.
       const activity = {
@@ -447,11 +385,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/:id/transactions", async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
-      
-      // Check if userId is a valid number
-      if (isNaN(userId)) {
-        return res.status(400).json({ message: "Invalid user ID format" });
-      }
       // This is a mock structure for now
       // In a real application, this would fetch transaction history from Stripe or another payment processor
       const transactions = [
@@ -483,11 +416,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users/:id/complaints", async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
-      
-      // Check if userId is a valid number
-      if (isNaN(userId)) {
-        return res.status(400).json({ message: "Invalid user ID format" });
-      }
       // This is a mock structure for now
       const complaints: Array<{ 
         id: number, 
@@ -697,12 +625,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/consultations/:id/pay", isAuthenticated, async (req, res) => {
     try {
       const consultationId = parseInt(req.params.id);
-      
-      // Check if consultationId is a valid number
-      if (isNaN(consultationId)) {
-        return res.status(400).json({ message: "Invalid consultation ID format" });
-      }
-      
       const { paymentMethodId, amount } = req.body;
 
       // Get consultation to validate
@@ -2864,7 +2786,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Admin API Routes - moved to admin-routes.ts
+  // Admin API Routes
+  app.get("/api/admin/users", isAdmin, async (req, res) => {
+    try {
+      // This is a placeholder since our storage interface doesn't have getAllUsers method
+      // In a real implementation, you would add this method to the storage interface
+      const allUsers = Array.from(Array(10).keys()).map(id => ({
+        id: id + 1,
+        username: `user${id + 1}`,
+        email: `user${id + 1}@example.com`,
+        firstName: `First${id + 1}`,
+        lastName: `Last${id + 1}`,
+        userType: id % 3 === 0 ? "admin" : id % 2 === 0 ? "company" : "professional",
+        isAdmin: id % 3 === 0,
+        createdAt: new Date(Date.now() - (id * 86400000)), // Different dates
+        stripeCustomerId: null,
+        stripeSubscriptionId: null,
+        subscriptionTier: null,
+        subscriptionStatus: null
+      }));
+      
+      res.json(allUsers);
+    } catch (err) {
+      console.error("Error fetching users:", err);
+      res.status(500).json({ message: "Error fetching users" });
+    }
+  });
   
   app.put("/api/admin/users/:id", isAdmin, async (req, res) => {
     try {
@@ -3013,7 +2960,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Admin professional-profiles endpoint moved to admin-routes.ts
+  app.get("/api/admin/professional-profiles", isAdmin, async (req, res) => {
+    try {
+      const profiles = await storage.getAllProfessionalProfiles();
+      res.json(profiles);
+    } catch (err) {
+      console.error("Error fetching professional profiles:", err);
+      res.status(500).json({ message: "Error fetching professional profiles" });
+    }
+  });
   
   app.post("/api/admin/professional-profiles", isAdmin, async (req, res) => {
     try {
@@ -3115,7 +3070,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Admin company-profiles endpoint moved to admin-routes.ts
+  app.get("/api/admin/company-profiles", isAdmin, async (req, res) => {
+    try {
+      const profiles = await storage.getAllCompanyProfiles();
+      res.json(profiles);
+    } catch (err) {
+      console.error("Error fetching company profiles:", err);
+      res.status(500).json({ message: "Error fetching company profiles" });
+    }
+  });
   
   app.patch("/api/admin/company-profiles/:id/verify", isAdmin, async (req, res) => {
     try {
@@ -3161,7 +3124,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Admin job-postings endpoint moved to admin-routes.ts
+  app.get("/api/admin/job-postings", isAdmin, async (req, res) => {
+    try {
+      const jobs = await storage.getAllJobPostings();
+      res.json(jobs);
+    } catch (err) {
+      console.error("Error fetching job postings:", err);
+      res.status(500).json({ message: "Error fetching job postings" });
+    }
+  });
   
   app.put("/api/admin/job-postings/:id/featured", isAdmin, async (req, res) => {
     try {
@@ -3215,7 +3186,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Admin resources endpoint moved to admin-routes.ts
+  app.get("/api/admin/resources", isAdmin, async (req, res) => {
+    try {
+      const resources = await storage.getAllResources();
+      res.json(resources);
+    } catch (err) {
+      console.error("Error fetching resources:", err);
+      res.status(500).json({ message: "Error fetching resources" });
+    }
+  });
   
   app.put("/api/admin/resources/:id/featured", isAdmin, async (req, res) => {
     try {

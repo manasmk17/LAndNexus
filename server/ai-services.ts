@@ -6,70 +6,29 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-// Simple deterministic hashing function for text to generate mock embeddings
-function simpleHash(text: string, dimensions = 256): number[] {
-  // Create a deterministic but simple embedding based on string content
-  const embedding = new Array(dimensions).fill(0);
-  
-  if (!text || text.length === 0) return embedding;
-  
-  // Generate values based on character codes
-  for (let i = 0; i < text.length; i++) {
-    const charCode = text.charCodeAt(i);
-    const position = i % dimensions;
-    embedding[position] += charCode / 1000; // Scale down values
-    
-    // Add some cross-influence between dimensions
-    const secondaryPos = (position + (charCode % 50)) % dimensions;
-    embedding[secondaryPos] += charCode / 2000;
-  }
-  
-  // Normalize the values to be between -1 and 1
-  const maxVal = Math.max(...embedding.map(Math.abs));
-  if (maxVal > 0) {
-    for (let i = 0; i < dimensions; i++) {
-      embedding[i] = embedding[i] / maxVal;
-    }
-  }
-  
-  return embedding;
-}
-
 // Generates text embeddings using OpenAI's embedding model
 export async function generateEmbedding(text: string): Promise<number[] | null> {
   try {
     if (!process.env.OPENAI_API_KEY) {
-      console.warn("OpenAI API key not found - using fallback embedding method");
-      return simpleHash(text);
+      console.warn("OpenAI API key not found - embedding generation disabled");
+      return null;
     }
 
     if (!text || text.trim().length === 0) {
       console.warn("Cannot generate embedding for empty text");
-      return simpleHash(""); // Return zero vector
+      return null;
     }
 
-    try {
-      const response = await openai.embeddings.create({
-        model: "text-embedding-3-small",
-        input: text,
-        dimensions: 256, // Smaller dimension for efficiency
-      });
-      
-      return response.data[0].embedding;
-    } catch (apiError: any) {
-      // Handle rate limits and other API-specific errors
-      if (apiError.status === 429) {
-        console.warn("OpenAI API rate limit exceeded - using fallback embedding method");
-        return simpleHash(text);
-      }
-      
-      // Handle other API errors
-      console.error("OpenAI API error:", apiError.message);
-      return simpleHash(text);
-    }
+    const response = await openai.embeddings.create({
+      model: "text-embedding-3-small",
+      input: text,
+      dimensions: 256, // Smaller dimension for efficiency
+    });
+
+    return response.data[0].embedding;
   } catch (error) {
     console.error("Error generating embedding:", error);
-    return simpleHash(text); // Fallback to deterministic method
+    return null;
   }
 }
 
@@ -86,17 +45,10 @@ export async function generateProfileEmbedding(profile: ProfessionalProfile): Pr
       .filter(Boolean)
       .join(" | ");
 
-    // If no meaningful text could be extracted, use fallback
-    if (!textToEmbed || textToEmbed.trim() === "") {
-      console.warn("No meaningful text in profile for embedding, using fallback");
-      return simpleHash(`profile-${profile.id}-${profile.userId}`);
-    }
-
     return await generateEmbedding(textToEmbed);
   } catch (error) {
     console.error("Error generating profile embedding:", error);
-    // Return a deterministic embedding based on profile ID
-    return simpleHash(`profile-${profile.id}-${profile.userId}`);
+    return null;
   }
 }
 
@@ -115,17 +67,10 @@ export async function generateJobEmbedding(job: JobPosting): Promise<number[] | 
       .filter(Boolean)
       .join(" | ");
 
-    // If no meaningful text could be extracted, use fallback
-    if (!textToEmbed || textToEmbed.trim() === "") {
-      console.warn("No meaningful text in job posting for embedding, using fallback");
-      return simpleHash(`job-${job.id}-${job.companyId}`);
-    }
-
     return await generateEmbedding(textToEmbed);
   } catch (error) {
     console.error("Error generating job embedding:", error);
-    // Return a deterministic embedding based on job ID
-    return simpleHash(`job-${job.id}-${job.companyId}`);
+    return null;
   }
 }
 

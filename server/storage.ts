@@ -1,7 +1,6 @@
-import { db, useRealDatabase, pool, getDB } from "./db";
-import { and, asc, desc, eq, or, isNull, not, sql, gt, gte, isNotNull } from "drizzle-orm";
+import { db, useRealDatabase, pool } from "./db";
+import { and, asc, desc, eq, or, isNull, not, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
-import { AdminRole, AdminPermission } from "./admin/types/admin.types";
 import {
   users, User, InsertUser,
   professionalProfiles, ProfessionalProfile, InsertProfessionalProfile,
@@ -22,13 +21,7 @@ import {
   reviews, Review, InsertReview,
   notifications, Notification, InsertNotification,
   notificationTypes, NotificationType, InsertNotificationType,
-  notificationPreferences, NotificationPreference, InsertNotificationPreference,
-  // Admin schema types
-  adminUsers, AdminUser, InsertAdminUser,
-  adminRefreshTokens, AdminRefreshToken, InsertAdminRefreshToken,
-  adminActionLogs, AdminActionLog, InsertAdminActionLog,
-  adminActivityLogs, AdminActivityLog, InsertAdminActivityLog,
-  adminLoginAttempts, AdminLoginAttempt, InsertAdminLoginAttempt
+  notificationPreferences, NotificationPreference, InsertNotificationPreference
 } from "@shared/schema";
 
 export interface IStorage {
@@ -44,60 +37,10 @@ export interface IStorage {
   updateUser(id: number, userData: Partial<User>): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
   
-  // Admin User operations
-  getAdminUserById(id: number): Promise<AdminUser | undefined>;
-  getAdminUserByEmail(email: string): Promise<AdminUser | undefined>;
-  getAdminUserByUsername(username: string): Promise<AdminUser | undefined>;
-  createAdminUser(adminUser: InsertAdminUser): Promise<AdminUser>;
-  updateAdminUser(id: number, userData: Partial<AdminUser>): Promise<AdminUser | undefined>;
-  deleteAdminUser(id: number): Promise<boolean>;
-  getAllAdminUsers(): Promise<AdminUser[]>;
-  
-  // Admin Authentication operations
-  saveAdminRefreshToken(adminId: number, token: string): Promise<boolean>;
-  validateAdminRefreshToken(adminId: number, token: string): Promise<boolean>;
-  rotateAdminRefreshToken(adminId: number, oldToken: string, newToken: string): Promise<boolean>;
-  invalidateAdminRefreshToken(adminId: number, token: string): Promise<boolean>;
-  invalidateAllAdminRefreshTokens(adminId: number): Promise<boolean>;
-  updateAdminLastLogin(adminId: number): Promise<boolean>;
-  logAdminLoginAttempt(loginAttempt: InsertAdminLoginAttempt): Promise<AdminLoginAttempt>;
-  updateAdminPassword(adminId: number, newPassword: string): Promise<boolean>;
-  
-  // Admin Two-Factor Authentication operations
-  saveAdminTOTPSecret(adminId: number, secret: string): Promise<boolean>;
-  getAdminTOTPSecret(adminId: number): Promise<string | undefined>;
-  enableAdminTwoFactor(adminId: number, secret: string): Promise<boolean>;
-  disableAdminTwoFactor(adminId: number): Promise<boolean>;
-  
-  // Admin Logging operations
-  createAdminActionLog(log: InsertAdminActionLog): Promise<AdminActionLog>;
-  createAdminActivityLog(log: InsertAdminActivityLog): Promise<AdminActivityLog>;
-  getAdminActionLogs(adminId: number, page?: number, pageSize?: number): Promise<{logs: AdminActionLog[], total: number}>;
-  
-  // User management from admin perspective
-  getAllUsersWithPagination(options: {
-    page: number;
-    pageSize: number;
-    sortBy: string;
-    sortOrder: 'asc' | 'desc';
-    search?: string;
-    userType?: string;
-    isActive?: boolean;
-  }): Promise<{users: User[], total: number}>;
-  getUserActivityLogs(userId: number, options: {page: number, pageSize: number}): Promise<{activityLogs: any[], total: number}>;
-  resetUserPassword(userId: number, newPassword: string): Promise<boolean>;
-  getUserStats(): Promise<{total: number, professionals: number, companies: number, active: number, inactive: number}>;
-  getNewUsersCount(since: Date): Promise<number>;
-  getActiveUsersCount(since: Date): Promise<number>;
-  getUserSubscription(userId: number): Promise<any>;
-  getUserTransactions(userId: number): Promise<any[]>;
-  
   // Password and account recovery operations
   createResetToken(email: string): Promise<string | null>;
   getUserByResetToken(token: string): Promise<User | undefined>;
   resetPassword(token: string, newPassword: string): Promise<boolean>;
-  
-
   
   // Stripe operations
   updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined>;
@@ -238,64 +181,48 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
-  // Collection storage
-  users: Map<number, User>;
-  professionalProfiles: Map<number, ProfessionalProfile>;
-  expertises: Map<number, Expertise>;
-  professionalExpertises: Map<number, ProfessionalExpertise>;
-  certifications: Map<number, Certification>;
-  companyProfiles: Map<number, CompanyProfile>;
-  jobPostings: Map<number, JobPosting>;
-  jobApplications: Map<number, JobApplication>;
-  resources: Map<number, Resource>;
-  resourceCategories: Map<number, ResourceCategory>;
-  forumPosts: Map<number, ForumPost>;
-  forumComments: Map<number, ForumComment>;
-  messages: Map<number, Message>;
-  consultations: Map<number, Consultation>;
-  skillRecommendations: Map<number, SkillRecommendation>;
-  pageContents: Map<number, PageContent>;
-  jobMatches: Map<string, number>; // Format: "jobId-professionalId" -> score
-  reviews: Map<number, Review>;
-  notificationTypes: Map<number, NotificationType>;
-  notifications: Map<number, Notification>;
-  notificationPreferences: Map<number, NotificationPreference>;
+  private users: Map<number, User>;
+  private professionalProfiles: Map<number, ProfessionalProfile>;
+  private expertises: Map<number, Expertise>;
+  private professionalExpertises: Map<number, ProfessionalExpertise>;
+  private certifications: Map<number, Certification>;
+  private companyProfiles: Map<number, CompanyProfile>;
+  private jobPostings: Map<number, JobPosting>;
+  private jobApplications: Map<number, JobApplication>;
+  private resources: Map<number, Resource>;
+  private resourceCategories: Map<number, ResourceCategory>;
+  private forumPosts: Map<number, ForumPost>;
+  private forumComments: Map<number, ForumComment>;
+  private messages: Map<number, Message>;
+  private consultations: Map<number, Consultation>;
+  private skillRecommendations: Map<number, SkillRecommendation>;
+  private pageContents: Map<number, PageContent>;
+  private jobMatches: Map<string, number>; // Format: "jobId-professionalId" -> score
+  private reviews: Map<number, Review>;
+  private notificationTypes: Map<number, NotificationType>;
+  private notifications: Map<number, Notification>;
+  private notificationPreferences: Map<number, NotificationPreference>;
   
-  // Admin data structures
-  private adminUsers: Map<number, AdminUser>;
-  private adminRefreshTokens: Map<string, AdminRefreshToken>; // Using token as the key
-  private adminActionLogs: Map<number, AdminActionLog>;
-  private adminActivityLogs: Map<number, AdminActivityLog>;
-  private adminLoginAttempts: Map<number, AdminLoginAttempt>;
-  private adminTempTOTPSecrets: Map<number, string>; // Temporary storage for TOTP secrets
-  
-  // Auto-increment counters
-  userId: number;
-  profProfileId: number;
-  expertiseId: number;
-  profExpertiseId: number;
-  certificationId: number;
-  companyProfileId: number;
-  jobPostingId: number;
-  jobApplicationId: number;
-  resourceId: number;
-  resourceCategoryId: number;
-  forumPostId: number;
-  forumCommentId: number;
-  messageId: number;
-  consultationId: number;
-  skillRecommendationId: number;
-  pageContentId: number;
-  reviewId: number;
-  notificationTypeId: number;
-  notificationId: number;
-  notificationPreferenceId: number;
-  
-  // Admin auto-increment counters
-  private adminUserId: number;
-  private adminActionLogId: number;
-  private adminActivityLogId: number;
-  private adminLoginAttemptId: number;
+  private userId: number;
+  private profProfileId: number;
+  private expertiseId: number;
+  private profExpertiseId: number;
+  private certificationId: number;
+  private companyProfileId: number;
+  private jobPostingId: number;
+  private jobApplicationId: number;
+  private resourceId: number;
+  private resourceCategoryId: number;
+  private forumPostId: number;
+  private forumCommentId: number;
+  private messageId: number;
+  private consultationId: number;
+  private skillRecommendationId: number;
+  private pageContentId: number;
+  private reviewId: number;
+  private notificationTypeId: number;
+  private notificationId: number;
+  private notificationPreferenceId: number;
 
   constructor() {
     this.users = new Map();
@@ -320,14 +247,6 @@ export class MemStorage implements IStorage {
     this.notifications = new Map();
     this.notificationPreferences = new Map();
     
-    // Initialize admin data structures
-    this.adminUsers = new Map();
-    this.adminRefreshTokens = new Map();
-    this.adminActionLogs = new Map();
-    this.adminActivityLogs = new Map();
-    this.adminLoginAttempts = new Map();
-    this.adminTempTOTPSecrets = new Map();
-    
     this.userId = 1;
     this.profProfileId = 1;
     this.expertiseId = 1;
@@ -348,10 +267,6 @@ export class MemStorage implements IStorage {
     this.notificationTypeId = 1;
     this.notificationId = 1;
     this.notificationPreferenceId = 1;
-    this.adminUserId = 1;
-    this.adminActionLogId = 1;
-    this.adminActivityLogId = 1;
-    this.adminLoginAttemptId = 1;
     
     // Initialize with some expertise areas
     this.initExpertise();
@@ -1491,963 +1406,23 @@ export class MemStorage implements IStorage {
     
     if (existing) {
       // Update existing preference
-      const updated = { 
-        ...existing,
-        email: preference.email !== undefined ? preference.email : existing.email,
-        inApp: preference.inApp !== undefined ? preference.inApp : existing.inApp,
-      };
+      const updated = { ...existing, ...preference };
       this.notificationPreferences.set(existing.id, updated);
       return updated;
     } else {
       // Create new preference
       const id = this.notificationPreferenceId++;
       const newPreference: NotificationPreference = {
-        id,
-        userId: preference.userId,
-        typeId: preference.typeId,
-        email: preference.email !== undefined ? preference.email : true,
-        inApp: preference.inApp !== undefined ? preference.inApp : true,
+        ...preference,
+        id
       };
       this.notificationPreferences.set(id, newPreference);
       return newPreference;
     }
   }
-  
-  // Admin User operations
-  async getAdminUserById(id: number): Promise<AdminUser | undefined> {
-    return this.adminUsers.get(id);
-  }
-  
-  async getAdminUserByEmail(email: string): Promise<AdminUser | undefined> {
-    return Array.from(this.adminUsers.values()).find(user => user.email === email);
-  }
-  
-  async getAdminUserByUsername(username: string): Promise<AdminUser | undefined> {
-    return Array.from(this.adminUsers.values()).find(user => user.username === username);
-  }
-  
-  async createAdminUser(adminUser: InsertAdminUser): Promise<AdminUser> {
-    const id = this.adminUserId++;
-    const now = new Date();
-    
-    const newAdminUser: AdminUser = {
-      id,
-      username: adminUser.username,
-      email: adminUser.email,
-      password: adminUser.password,
-      firstName: adminUser.firstName,
-      lastName: adminUser.lastName,
-      role: adminUser.role as AdminRole, // Using AdminRole enum
-      customPermissions: adminUser.customPermissions || [],
-      lastLogin: null,
-      createdAt: now,
-      updatedAt: now,
-      isActive: adminUser.isActive !== undefined ? adminUser.isActive : true,
-      twoFactorEnabled: adminUser.twoFactorEnabled !== undefined ? adminUser.twoFactorEnabled : false,
-      twoFactorSecret: adminUser.twoFactorSecret || null,
-    };
-    
-    this.adminUsers.set(id, newAdminUser);
-    return newAdminUser;
-  }
-  
-  async updateAdminUser(id: number, userData: Partial<AdminUser>): Promise<AdminUser | undefined> {
-    const user = this.adminUsers.get(id);
-    if (!user) return undefined;
-    
-    const updatedUser: AdminUser = {
-      ...user,
-      ...userData,
-      updatedAt: new Date()
-    };
-    
-    this.adminUsers.set(id, updatedUser);
-    return updatedUser;
-  }
-  
-  async deleteAdminUser(id: number): Promise<boolean> {
-    return this.adminUsers.delete(id);
-  }
-  
-  async getAllAdminUsers(): Promise<AdminUser[]> {
-    return Array.from(this.adminUsers.values());
-  }
-  
-  // Admin Authentication operations
-  async saveAdminRefreshToken(adminId: number, token: string): Promise<boolean> {
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
-    
-    const refreshToken: AdminRefreshToken = {
-      id: this.adminLoginAttemptId++,
-      adminId,
-      token,
-      expiresAt,
-      createdAt: now,
-      revokedAt: null
-    };
-    
-    this.adminRefreshTokens.set(token, refreshToken);
-    return true;
-  }
-  
-  async validateAdminRefreshToken(adminId: number, token: string): Promise<boolean> {
-    const refreshToken = this.adminRefreshTokens.get(token);
-    if (!refreshToken) return false;
-    
-    const now = new Date();
-    return (
-      refreshToken.adminId === adminId &&
-      refreshToken.revokedAt === null &&
-      refreshToken.expiresAt > now
-    );
-  }
-  
-  async rotateAdminRefreshToken(adminId: number, oldToken: string, newToken: string): Promise<boolean> {
-    const isValid = await this.validateAdminRefreshToken(adminId, oldToken);
-    if (!isValid) return false;
-    
-    // Invalidate old token
-    await this.invalidateAdminRefreshToken(adminId, oldToken);
-    
-    // Create new token
-    return this.saveAdminRefreshToken(adminId, newToken);
-  }
-  
-  async invalidateAdminRefreshToken(adminId: number, token: string): Promise<boolean> {
-    const refreshToken = this.adminRefreshTokens.get(token);
-    if (!refreshToken || refreshToken.adminId !== adminId) return false;
-    
-    const updatedToken = {
-      ...refreshToken,
-      revokedAt: new Date()
-    };
-    
-    this.adminRefreshTokens.set(token, updatedToken);
-    return true;
-  }
-  
-  async invalidateAllAdminRefreshTokens(adminId: number): Promise<boolean> {
-    let success = true;
-    
-    for (const [token, refreshToken] of this.adminRefreshTokens.entries()) {
-      if (refreshToken.adminId === adminId && refreshToken.revokedAt === null) {
-        const updated = {
-          ...refreshToken,
-          revokedAt: new Date()
-        };
-        this.adminRefreshTokens.set(token, updated);
-      }
-    }
-    
-    return success;
-  }
-  
-  async updateAdminLastLogin(adminId: number): Promise<boolean> {
-    const admin = await this.getAdminUserById(adminId);
-    if (!admin) return false;
-    
-    const updated = {
-      ...admin,
-      lastLogin: new Date(),
-      updatedAt: new Date()
-    };
-    
-    this.adminUsers.set(adminId, updated);
-    return true;
-  }
-  
-  async logAdminLoginAttempt(loginAttempt: InsertAdminLoginAttempt): Promise<AdminLoginAttempt> {
-    const id = this.adminLoginAttemptId++;
-    const now = new Date();
-    
-    const newLoginAttempt: AdminLoginAttempt = {
-      id,
-      adminId: loginAttempt.adminId,
-      success: loginAttempt.success,
-      ipAddress: loginAttempt.ipAddress || null,
-      userAgent: loginAttempt.userAgent || null,
-      details: loginAttempt.details || null,
-      timestamp: now
-    };
-    
-    this.adminLoginAttempts.set(id, newLoginAttempt);
-    return newLoginAttempt;
-  }
-  
-  // Admin password management
-  async updateAdminPassword(adminId: number, newPassword: string): Promise<boolean> {
-    const admin = this.adminUsers.get(adminId);
-    if (!admin) return false;
-    
-    const updatedAdmin = {
-      ...admin,
-      password: newPassword,
-      updatedAt: new Date()
-    };
-    
-    this.adminUsers.set(adminId, updatedAdmin);
-    return true;
-  }
-  
-  // Admin Two-Factor Authentication operations
-  async saveAdminTOTPSecret(adminId: number, secret: string): Promise<boolean> {
-    this.adminTempTOTPSecrets.set(adminId, secret);
-    return true;
-  }
-  
-  async getAdminTOTPSecret(adminId: number): Promise<string | undefined> {
-    const admin = await this.getAdminUserById(adminId);
-    
-    // If 2FA is enabled, return the permanent secret
-    if (admin?.twoFactorEnabled && admin.twoFactorSecret) {
-      return admin.twoFactorSecret;
-    }
-    
-    // Otherwise return the temporary secret if available
-    return this.adminTempTOTPSecrets.get(adminId);
-  }
-  
-  async enableAdminTwoFactor(adminId: number, secret: string): Promise<boolean> {
-    const admin = await this.getAdminUserById(adminId);
-    if (!admin) return false;
-    
-    const updated = {
-      ...admin,
-      twoFactorEnabled: true,
-      twoFactorSecret: secret,
-      updatedAt: new Date()
-    };
-    
-    this.adminUsers.set(adminId, updated);
-    
-    // Clear the temporary secret
-    this.adminTempTOTPSecrets.delete(adminId);
-    
-    return true;
-  }
-  
-  async disableAdminTwoFactor(adminId: number): Promise<boolean> {
-    const admin = await this.getAdminUserById(adminId);
-    if (!admin) return false;
-    
-    const updated = {
-      ...admin,
-      twoFactorEnabled: false,
-      twoFactorSecret: null,
-      updatedAt: new Date()
-    };
-    
-    this.adminUsers.set(adminId, updated);
-    return true;
-  }
-  
-  // Admin Logging operations
-  async createAdminActionLog(log: InsertAdminActionLog): Promise<AdminActionLog> {
-    const id = this.adminActionLogId++;
-    
-    const newLog: AdminActionLog = {
-      id,
-      adminId: log.adminId,
-      adminUsername: log.adminUsername,
-      action: log.action,
-      entityType: log.entityType || null,
-      entityId: log.entityId || null,
-      details: log.details || null,
-      ipAddress: log.ipAddress || null,
-      userAgent: log.userAgent || null,
-      timestamp: log.timestamp || new Date()
-    };
-    
-    this.adminActionLogs.set(id, newLog);
-    return newLog;
-  }
-  
-  async createAdminActivityLog(log: InsertAdminActivityLog): Promise<AdminActivityLog> {
-    const id = this.adminActivityLogId++;
-    
-    const newLog: AdminActivityLog = {
-      id,
-      adminId: log.adminId,
-      method: log.method,
-      path: log.path,
-      statusCode: log.statusCode || null,
-      executionTime: log.executionTime || null,
-      ipAddress: log.ipAddress || null,
-      userAgent: log.userAgent || null,
-      timestamp: log.timestamp || new Date()
-    };
-    
-    this.adminActivityLogs.set(id, newLog);
-    return newLog;
-  }
-  
-  async getAdminActionLogs(adminId: number, page: number = 1, pageSize: number = 20): Promise<{logs: AdminActionLog[], total: number}> {
-    const allLogs = Array.from(this.adminActionLogs.values())
-      .filter(log => log.adminId === adminId)
-      .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-    
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    
-    return {
-      logs: allLogs.slice(start, end),
-      total: allLogs.length
-    };
-  }
-  
-  // User management from admin perspective
-  async getAllUsersWithPagination(options: {
-    page: number;
-    pageSize: number;
-    sortBy: string;
-    sortOrder: 'asc' | 'desc';
-    search?: string;
-    userType?: string;
-    isActive?: boolean;
-  }): Promise<{users: User[], total: number}> {
-    const { page, pageSize, sortBy, sortOrder, search, userType, isActive } = options;
-    
-    let filteredUsers = Array.from(this.users.values()).filter(user => {
-      let match = true;
-      
-      if (search) {
-        const searchLower = search.toLowerCase();
-        match = match && (
-          user.username.toLowerCase().includes(searchLower) ||
-          user.email.toLowerCase().includes(searchLower) ||
-          user.firstName.toLowerCase().includes(searchLower) ||
-          user.lastName.toLowerCase().includes(searchLower)
-        );
-      }
-      
-      if (userType) {
-        match = match && user.userType === userType;
-      }
-      
-      if (isActive !== undefined) {
-        match = match && !user.blocked === isActive;
-      }
-      
-      return match;
-    });
-    
-    // Sort users
-    filteredUsers.sort((a, b) => {
-      const aValue = a[sortBy as keyof User];
-      const bValue = b[sortBy as keyof User];
-      
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortOrder === 'asc' 
-          ? aValue.localeCompare(bValue) 
-          : bValue.localeCompare(aValue);
-      } else if (aValue instanceof Date && bValue instanceof Date) {
-        return sortOrder === 'asc' 
-          ? aValue.getTime() - bValue.getTime() 
-          : bValue.getTime() - aValue.getTime();
-      } else if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
-      } else if (typeof aValue === 'boolean' && typeof bValue === 'boolean') {
-        return sortOrder === 'asc' 
-          ? (aValue ? 1 : 0) - (bValue ? 1 : 0) 
-          : (bValue ? 1 : 0) - (aValue ? 1 : 0);
-      }
-      
-      return 0;
-    });
-    
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    
-    return {
-      users: filteredUsers.slice(start, end),
-      total: filteredUsers.length
-    };
-  }
-  
-  async getUserActivityLogs(userId: number, options: {page: number, pageSize: number}): Promise<{activityLogs: any[], total: number}> {
-    // In a real implementation, we would query user activity from various tables
-    // For this in-memory implementation, we'll return empty results
-    return {
-      activityLogs: [],
-      total: 0
-    };
-  }
-  
-  async resetUserPassword(userId: number, newPassword: string): Promise<boolean> {
-    const user = await this.getUser(userId);
-    if (!user) return false;
-    
-    const updated = {
-      ...user,
-      password: newPassword
-    };
-    
-    this.users.set(userId, updated);
-    return true;
-  }
-  
-  async getUserStats(): Promise<{total: number, professionals: number, companies: number, active: number, inactive: number}> {
-    const users = Array.from(this.users.values());
-    
-    return {
-      total: users.length,
-      professionals: users.filter(u => u.userType === 'professional').length,
-      companies: users.filter(u => u.userType === 'company').length,
-      active: users.filter(u => !u.blocked).length,
-      inactive: users.filter(u => u.blocked).length
-    };
-  }
-  
-  async getNewUsersCount(since: Date): Promise<number> {
-    return Array.from(this.users.values())
-      .filter(user => user.createdAt >= since)
-      .length;
-  }
-  
-  async getActiveUsersCount(since: Date): Promise<number> {
-    return Array.from(this.users.values())
-      .filter(user => user.lastActiveAt && user.lastActiveAt >= since)
-      .length;
-  }
-  
-  async getUserSubscription(userId: number): Promise<any> {
-    const user = await this.getUser(userId);
-    if (!user) return null;
-    
-    if (!user.stripeSubscriptionId) return null;
-    
-    // In a real implementation, we would fetch subscription details from Stripe
-    return {
-      id: user.stripeSubscriptionId,
-      tier: user.subscriptionTier,
-      status: user.subscriptionStatus,
-      startDate: new Date(),
-      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-    };
-  }
-  
-  async getUserTransactions(userId: number): Promise<any[]> {
-    // In a real implementation, we would fetch transaction history from Stripe
-    return [];
-  }
 }
 
 export class DatabaseStorage implements IStorage {
-  // Helper method to safely handle database table errors
-  private async safeDbOperation<T>(operation: () => Promise<T>, fallback: T, errorPrefix: string = "Database error"): Promise<T> {
-    try {
-      return await operation();
-    } catch (error: any) {
-      // If the error is about a missing table/relation, return the fallback value
-      if (error.code === '42P01') { // undefined_table
-        console.warn(`${errorPrefix}: table does not exist - ${error.message}`);
-        return fallback;
-      }
-      
-      // For other errors, log them but still return the fallback
-      console.error(`${errorPrefix}:`, error);
-      return fallback;
-    }
-  }
-  // Admin User operations
-  async getAdminUserById(id: number): Promise<AdminUser | undefined> {
-    if (!db) return undefined;
-    
-    try {
-      const [admin] = await db.select()
-        .from(adminUsers)
-        .where(eq(adminUsers.id, id)) || [];
-      
-      return admin;
-    } catch (error: any) {
-      // If the error is about a missing table, return undefined
-      if (error.code === '42P01') { // undefined_table
-        console.warn('Admin tables not yet migrated, running with in-memory storage for admin functions');
-        return undefined;
-      }
-      throw error;
-    }
-  }
-  
-  async getAdminUserByEmail(email: string): Promise<AdminUser | undefined> {
-    if (!db) return undefined;
-    
-    const [admin] = await db.select()
-      .from(adminUsers)
-      .where(eq(adminUsers.email, email)) || [];
-    
-    return admin;
-  }
-  
-  async getAdminUserByUsername(username: string): Promise<AdminUser | undefined> {
-    if (!db) return undefined;
-    
-    const [admin] = await db.select()
-      .from(adminUsers)
-      .where(eq(adminUsers.username, username)) || [];
-    
-    return admin;
-  }
-  
-  async createAdminUser(adminUser: InsertAdminUser): Promise<AdminUser> {
-    if (!db) throw new Error("Database not available");
-    
-    const adminData = {
-      username: adminUser.username,
-      password: adminUser.password,
-      email: adminUser.email,
-      firstName: adminUser.firstName,
-      lastName: adminUser.lastName,
-      role: adminUser.role as AdminRole,
-      customPermissions: adminUser.customPermissions,
-      isActive: adminUser.isActive !== undefined ? adminUser.isActive : true,
-      twoFactorEnabled: adminUser.twoFactorEnabled !== undefined ? adminUser.twoFactorEnabled : false,
-      twoFactorSecret: adminUser.twoFactorSecret,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    
-    const [newAdmin] = await db.insert(adminUsers)
-      .values(adminData)
-      .returning() || [];
-    
-    return newAdmin;
-  }
-  
-  async updateAdminUser(id: number, userData: Partial<AdminUser>): Promise<AdminUser | undefined> {
-    if (!db) return undefined;
-    
-    const [updatedAdmin] = await db.update(adminUsers)
-      .set({
-        ...userData,
-        updatedAt: new Date()
-      })
-      .where(eq(adminUsers.id, id))
-      .returning() || [];
-    
-    return updatedAdmin;
-  }
-  
-  async deleteAdminUser(id: number): Promise<boolean> {
-    if (!db) return false;
-    
-    const [deletedAdmin] = await db.delete(adminUsers)
-      .where(eq(adminUsers.id, id))
-      .returning() || [];
-    
-    return !!deletedAdmin;
-  }
-  
-  async getAllAdminUsers(): Promise<AdminUser[]> {
-    if (!db) return [];
-    
-    const admins = await db.select()
-      .from(adminUsers) || [];
-    
-    return admins;
-  }
-  
-  // Admin Authentication operations
-  async saveAdminRefreshToken(adminId: number, token: string): Promise<boolean> {
-    if (!db) return false;
-    
-    const now = new Date();
-    const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days
-    
-    const [refreshToken] = await db.insert(adminRefreshTokens)
-      .values({
-        adminId,
-        token,
-        expiresAt,
-        createdAt: now,
-        revokedAt: null
-      })
-      .returning() || [];
-    
-    return !!refreshToken;
-  }
-  
-  async validateAdminRefreshToken(adminId: number, token: string): Promise<boolean> {
-    if (!db) return false;
-    
-    const [refreshToken] = await db.select()
-      .from(adminRefreshTokens)
-      .where(and(
-        eq(adminRefreshTokens.adminId, adminId),
-        eq(adminRefreshTokens.token, token),
-        isNull(adminRefreshTokens.revokedAt),
-        gt(adminRefreshTokens.expiresAt, new Date())
-      )) || [];
-    
-    return !!refreshToken;
-  }
-  
-  async rotateAdminRefreshToken(adminId: number, oldToken: string, newToken: string): Promise<boolean> {
-    const isValid = await this.validateAdminRefreshToken(adminId, oldToken);
-    if (!isValid || !db) return false;
-    
-    // Invalidate old token
-    await this.invalidateAdminRefreshToken(adminId, oldToken);
-    
-    // Create new token
-    return this.saveAdminRefreshToken(adminId, newToken);
-  }
-  
-  async invalidateAdminRefreshToken(adminId: number, token: string): Promise<boolean> {
-    if (!db) return false;
-    
-    const [updatedToken] = await db.update(adminRefreshTokens)
-      .set({ revokedAt: new Date() })
-      .where(and(
-        eq(adminRefreshTokens.adminId, adminId),
-        eq(adminRefreshTokens.token, token)
-      ))
-      .returning() || [];
-    
-    return !!updatedToken;
-  }
-  
-  async invalidateAllAdminRefreshTokens(adminId: number): Promise<boolean> {
-    if (!db) return false;
-    
-    const result = await db.update(adminRefreshTokens)
-      .set({ revokedAt: new Date() })
-      .where(and(
-        eq(adminRefreshTokens.adminId, adminId),
-        isNull(adminRefreshTokens.revokedAt)
-      )) || [];
-    
-    return true;
-  }
-  
-  async updateAdminLastLogin(adminId: number): Promise<boolean> {
-    if (!db) return false;
-    
-    const [updatedAdmin] = await db.update(adminUsers)
-      .set({ 
-        lastLogin: new Date(),
-        updatedAt: new Date()
-      })
-      .where(eq(adminUsers.id, adminId))
-      .returning() || [];
-    
-    return !!updatedAdmin;
-  }
-  
-  async logAdminLoginAttempt(loginAttempt: InsertAdminLoginAttempt): Promise<AdminLoginAttempt> {
-    if (!db) throw new Error("Database not available");
-    
-    const attemptData = {
-      adminId: loginAttempt.adminId,
-      success: loginAttempt.success,
-      ipAddress: loginAttempt.ipAddress || null,
-      userAgent: loginAttempt.userAgent || null,
-      details: loginAttempt.details || null,
-      timestamp: new Date()
-    };
-    
-    const [newLoginAttempt] = await db.insert(adminLoginAttempts)
-      .values(attemptData)
-      .returning() || [];
-    
-    return newLoginAttempt;
-  }
-  
-  async updateAdminPassword(adminId: number, newPassword: string): Promise<boolean> {
-    if (!db) return false;
-    
-    const [updatedAdmin] = await db.update(adminUsers)
-      .set({ 
-        password: newPassword,
-        updatedAt: new Date()
-      })
-      .where(eq(adminUsers.id, adminId))
-      .returning() || [];
-    
-    return !!updatedAdmin;
-  }
-  
-  // Admin Two-Factor Authentication operations
-  async saveAdminTOTPSecret(adminId: number, secret: string): Promise<boolean> {
-    // For security, we'll store the temporary TOTP secret directly in the admin user record
-    // with a flag indicating it's not yet verified
-    if (!db) return false;
-    
-    const [updatedAdmin] = await db.update(adminUsers)
-      .set({ 
-        twoFactorSecret: secret,
-        updatedAt: new Date()
-      })
-      .where(eq(adminUsers.id, adminId))
-      .returning() || [];
-    
-    return !!updatedAdmin;
-  }
-  
-  async getAdminTOTPSecret(adminId: number): Promise<string | undefined> {
-    if (!db) return undefined;
-    
-    const [admin] = await db.select()
-      .from(adminUsers)
-      .where(eq(adminUsers.id, adminId)) || [];
-    
-    return admin?.twoFactorSecret || undefined;
-  }
-  
-  async enableAdminTwoFactor(adminId: number, secret: string): Promise<boolean> {
-    if (!db) return false;
-    
-    const [updatedAdmin] = await db.update(adminUsers)
-      .set({ 
-        twoFactorEnabled: true,
-        twoFactorSecret: secret,
-        updatedAt: new Date()
-      })
-      .where(eq(adminUsers.id, adminId))
-      .returning() || [];
-    
-    return !!updatedAdmin;
-  }
-  
-  async disableAdminTwoFactor(adminId: number): Promise<boolean> {
-    if (!db) return false;
-    
-    const [updatedAdmin] = await db.update(adminUsers)
-      .set({ 
-        twoFactorEnabled: false,
-        twoFactorSecret: null,
-        updatedAt: new Date()
-      })
-      .where(eq(adminUsers.id, adminId))
-      .returning() || [];
-    
-    return !!updatedAdmin;
-  }
-  
-  // Admin Logging operations
-  async createAdminActionLog(log: InsertAdminActionLog): Promise<AdminActionLog> {
-    if (!db) throw new Error("Database not available");
-    
-    const [newLog] = await db.insert(adminActionLogs)
-      .values({
-        ...log,
-        timestamp: log.timestamp || new Date()
-      })
-      .returning() || [];
-    
-    return newLog;
-  }
-  
-  async createAdminActivityLog(log: InsertAdminActivityLog): Promise<AdminActivityLog> {
-    if (!db) throw new Error("Database not available");
-    
-    const [newLog] = await db.insert(adminActivityLogs)
-      .values({
-        ...log,
-        timestamp: log.timestamp || new Date()
-      })
-      .returning() || [];
-    
-    return newLog;
-  }
-  
-  async getAdminActionLogs(adminId: number, page: number = 1, pageSize: number = 20): Promise<{logs: AdminActionLog[], total: number}> {
-    if (!db) return { logs: [], total: 0 };
-    
-    // First count total logs
-    const [{ count }] = await db.select({ count: sql`count(*)` })
-      .from(adminActionLogs)
-      .where(eq(adminActionLogs.adminId, adminId)) || [{ count: 0 }];
-    
-    // Then get paginated logs
-    const offset = (page - 1) * pageSize;
-    const logs = await db.select()
-      .from(adminActionLogs)
-      .where(eq(adminActionLogs.adminId, adminId))
-      .orderBy(desc(adminActionLogs.timestamp))
-      .limit(pageSize)
-      .offset(offset) || [];
-    
-    return {
-      logs,
-      total: Number(count)
-    };
-  }
-  
-  // User management from admin perspective
-  async getAllUsersWithPagination(options: {
-    page: number;
-    pageSize: number;
-    sortBy: string;
-    sortOrder: 'asc' | 'desc';
-    search?: string;
-    userType?: string;
-    isActive?: boolean;
-  }): Promise<{users: User[], total: number}> {
-    if (!db) return { users: [], total: 0 };
-    
-    const { page, pageSize, sortBy, sortOrder, search, userType, isActive } = options;
-    const offset = (page - 1) * pageSize;
-    const conditions: SQL<unknown>[] = [];
-    
-    // Apply search filter
-    if (search) {
-      const searchTerm = `%${search.toLowerCase()}%`;
-      conditions.push(
-        sql`(LOWER(${users.username}) LIKE ${searchTerm} OR 
-             LOWER(${users.email}) LIKE ${searchTerm} OR 
-             LOWER(${users.firstName}) LIKE ${searchTerm} OR 
-             LOWER(${users.lastName}) LIKE ${searchTerm})`
-      );
-    }
-    
-    // Apply userType filter
-    if (userType) {
-      conditions.push(eq(users.userType, userType));
-    }
-    
-    // Apply active status filter
-    if (isActive !== undefined) {
-      conditions.push(eq(users.blocked, !isActive));
-    }
-    
-    // Build the WHERE clause
-    const whereClause = conditions.length ? and(...conditions) : undefined;
-    
-    // First count total users
-    const [{ count }] = await db.select({ count: sql`count(*)` })
-      .from(users)
-      .where(whereClause) || [{ count: 0 }];
-    
-    // Build the ORDER BY clause
-    let orderByClause;
-    const column = users[sortBy as keyof typeof users];
-    
-    if (column) {
-      orderByClause = sortOrder === 'asc' ? asc(column) : desc(column);
-    } else {
-      // Default fallback
-      orderByClause = sortOrder === 'asc' ? asc(users.id) : desc(users.id);
-    }
-    
-    // Then get paginated users
-    const userList = await db.select()
-      .from(users)
-      .where(whereClause)
-      .orderBy(orderByClause)
-      .limit(pageSize)
-      .offset(offset) || [];
-    
-    return {
-      users: userList,
-      total: Number(count)
-    };
-  }
-  
-  async getUserActivityLogs(userId: number, options: {page: number, pageSize: number}): Promise<{activityLogs: any[], total: number}> {
-    // In a real implementation, we would collect activity from various tables
-    // For now we'll return empty results
-    return {
-      activityLogs: [],
-      total: 0
-    };
-  }
-  
-  async resetUserPassword(userId: number, newPassword: string): Promise<boolean> {
-    if (!db) return false;
-    
-    const [updatedUser] = await db.update(users)
-      .set({ password: newPassword })
-      .where(eq(users.id, userId))
-      .returning() || [];
-    
-    return !!updatedUser;
-  }
-  
-  async getUserStats(): Promise<{total: number, professionals: number, companies: number, active: number, inactive: number}> {
-    if (!db) return { total: 0, professionals: 0, companies: 0, active: 0, inactive: 0 };
-    
-    const [totalResult] = await db.select({ count: sql`count(*)` })
-      .from(users) || [{ count: 0 }];
-    
-    const [professionalsResult] = await db.select({ count: sql`count(*)` })
-      .from(users)
-      .where(eq(users.userType, 'professional')) || [{ count: 0 }];
-    
-    const [companiesResult] = await db.select({ count: sql`count(*)` })
-      .from(users)
-      .where(eq(users.userType, 'company')) || [{ count: 0 }];
-    
-    const [activeResult] = await db.select({ count: sql`count(*)` })
-      .from(users)
-      .where(eq(users.blocked, false)) || [{ count: 0 }];
-    
-    const [inactiveResult] = await db.select({ count: sql`count(*)` })
-      .from(users)
-      .where(eq(users.blocked, true)) || [{ count: 0 }];
-    
-    return {
-      total: Number(totalResult.count),
-      professionals: Number(professionalsResult.count),
-      companies: Number(companiesResult.count),
-      active: Number(activeResult.count),
-      inactive: Number(inactiveResult.count)
-    };
-  }
-  
-  async getNewUsersCount(since: Date): Promise<number> {
-    if (!db) return 0;
-    
-    const [result] = await db.select({ count: sql`count(*)` })
-      .from(users)
-      .where(gte(users.createdAt, since)) || [{ count: 0 }];
-    
-    return Number(result.count);
-  }
-  
-  async getActiveUsersCount(since: Date): Promise<number> {
-    if (!db) return 0;
-    
-    const [result] = await db.select({ count: sql`count(*)` })
-      .from(users)
-      .where(and(
-        isNotNull(users.lastActiveAt),
-        gte(users.lastActiveAt, since)
-      )) || [{ count: 0 }];
-    
-    return Number(result.count);
-  }
-  
-  async getUserSubscription(userId: number): Promise<any> {
-    if (!db) return null;
-    
-    const [user] = await db.select({
-      id: users.id,
-      stripeCustomerId: users.stripeCustomerId,
-      stripeSubscriptionId: users.stripeSubscriptionId,
-      subscriptionTier: users.subscriptionTier,
-      subscriptionStatus: users.subscriptionStatus
-    })
-    .from(users)
-    .where(eq(users.id, userId)) || [];
-    
-    if (!user || !user.stripeSubscriptionId) return null;
-    
-    // In a real implementation, we would fetch subscription details from Stripe
-    return {
-      id: user.stripeSubscriptionId,
-      tier: user.subscriptionTier,
-      status: user.subscriptionStatus,
-      startDate: new Date(),
-      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-    };
-  }
-  
-  async getUserTransactions(userId: number): Promise<any[]> {
-    // In a real implementation, we would fetch transaction history from Stripe
-    return [];
-  }
   // Review operations
   async getReview(id: number): Promise<Review | undefined> {
     const [review] = await db?.select().from(reviews).where(eq(reviews.id, id)) || [];
@@ -2546,55 +1521,56 @@ export class DatabaseStorage implements IStorage {
 
   // Notification operations
   async getNotificationType(id: number): Promise<NotificationType | undefined> {
-    const [notificationType] = await getDB().select()
+    const [notificationType] = await db?.select()
       .from(notificationTypes)
-      .where(eq(notificationTypes.id, id));
+      .where(eq(notificationTypes.id, id)) || [];
     return notificationType;
   }
   
   async getNotificationTypeByName(name: string): Promise<NotificationType | undefined> {
-    const [notificationType] = await getDB().select()
+    const [notificationType] = await db?.select()
       .from(notificationTypes)
-      .where(eq(notificationTypes.name, name));
+      .where(eq(notificationTypes.name, name)) || [];
     return notificationType;
   }
   
   async getAllNotificationTypes(): Promise<NotificationType[]> {
-    const results = await getDB().select().from(notificationTypes);
+    const results = await db?.select().from(notificationTypes) || [];
     return results;
   }
   
   async createNotificationType(type: InsertNotificationType): Promise<NotificationType> {
-    const [newType] = await getDB().insert(notificationTypes)
+    const [newType] = await db?.insert(notificationTypes)
       .values(type)
-      .returning();
+      .returning() || [];
     return newType;
   }
   
   async getNotification(id: number): Promise<Notification | undefined> {
-    const [notification] = await getDB().select()
+    const [notification] = await db?.select()
       .from(notifications)
-      .where(eq(notifications.id, id));
+      .where(eq(notifications.id, id)) || [];
     return notification;
   }
   
   async getUserNotifications(userId: number): Promise<Notification[]> {
-    const results = await getDB().select()
+    const results = await db?.select()
       .from(notifications)
       .where(eq(notifications.userId, userId))
-      .orderBy(desc(notifications.createdAt));
+      .orderBy(desc(notifications.createdAt)) || [];
     return results;
   }
   
   async getUserUnreadNotifications(userId: number): Promise<Notification[]> {
+    if (!db) return [];
     try {
-      const results = await getDB().select()
+      const results = await db.select()
         .from(notifications)
         .where(and(
           eq(notifications.userId, userId),
           eq(notifications.read, false)
         ))
-        .orderBy(desc(notifications.createdAt));
+        .orderBy(desc(notifications.createdAt)) || [];
       return results;
     } catch (err) {
       console.error("Error getting unread notifications:", err);
@@ -2603,85 +1579,50 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createNotification(notification: InsertNotification): Promise<Notification> {
-    const [newNotification] = await getDB().insert(notifications)
+    const [newNotification] = await db?.insert(notifications)
       .values({
         ...notification,
         read: false
       })
-      .returning();
+      .returning() || [];
     return newNotification;
   }
   
   async markNotificationAsRead(id: number): Promise<boolean> {
-    const [updated] = await getDB().update(notifications)
+    const [updated] = await db?.update(notifications)
       .set({ read: true })
       .where(eq(notifications.id, id))
-      .returning();
+      .returning() || [];
     return !!updated;
   }
   
   async markAllUserNotificationsAsRead(userId: number): Promise<boolean> {
-    await getDB().update(notifications)
+    await db?.update(notifications)
       .set({ read: true })
       .where(eq(notifications.userId, userId));
     return true;
   }
   
   async deleteNotification(id: number): Promise<boolean> {
-    const [deleted] = await getDB().delete(notifications)
+    const [deleted] = await db?.delete(notifications)
       .where(eq(notifications.id, id))
-      .returning();
+      .returning() || [];
     return !!deleted;
   }
   
   async getUserNotificationPreference(userId: number, typeId: number): Promise<NotificationPreference | undefined> {
-    if (!useRealDatabase) {
-      // Only for MemStorage class
-      if (this instanceof MemStorage) {
-        return Array.from(this.notificationPreferences.values())
-          .find((p: NotificationPreference) => p.userId === userId && p.typeId === typeId);
-      }
-      return undefined;
-    }
-
-    try {
-      // Database implementation with proper error handling
-      const result = await getDB().select()
-        .from(notificationPreferences)
-        .where(
-          and(
-            eq(notificationPreferences.userId, userId),
-            eq(notificationPreferences.typeId, typeId)
-          )
-        );
-      
-      return result.length > 0 ? result[0] : undefined;
-    } catch (error) {
-      console.error("Error getting user notification preference:", error);
-      return undefined;
-    }
+    const [preference] = await db?.select()
+      .from(notificationPreferences)
+      .where(eq(notificationPreferences.userId, userId))
+      .where(eq(notificationPreferences.typeId, typeId)) || [];
+    return preference;
   }
   
   async getUserNotificationPreferences(userId: number): Promise<NotificationPreference[]> {
-    if (!useRealDatabase) {
-      // Only for MemStorage class
-      if (this instanceof MemStorage) {
-        return Array.from(this.notificationPreferences.values())
-          .filter((p: NotificationPreference) => p.userId === userId);
-      }
-      return [];
-    }
-    
-    // Database implementation with proper error handling
-    try {
-      const preferences = await getDB().select()
-        .from(notificationPreferences)
-        .where(eq(notificationPreferences.userId, userId));
-      return preferences;
-    } catch (error) {
-      console.error("Error getting user notification preferences:", error);
-      return [];
-    }
+    const preferences = await db?.select()
+      .from(notificationPreferences)
+      .where(eq(notificationPreferences.userId, userId)) || [];
+    return preferences;
   }
   
   async createOrUpdateNotificationPreference(preference: InsertNotificationPreference): Promise<NotificationPreference> {
@@ -2691,73 +1632,22 @@ export class DatabaseStorage implements IStorage {
       preference.typeId
     );
     
-    if (!useRealDatabase) {
-      // Only for MemStorage implementation
-      if (this instanceof MemStorage) {
-        if (existingPreference) {
-          // Update existing preference
-          const updated: NotificationPreference = {
-            ...existingPreference,
-            email: preference.email !== undefined ? preference.email : existingPreference.email,
-            inApp: preference.inApp !== undefined ? preference.inApp : existingPreference.inApp
-          };
-          
-          this.notificationPreferences.set(existingPreference.id, updated);
-          return updated;
-        } else {
-          // Create new preference
-          const id = this.notificationPreferenceId++;
-          const newPreference: NotificationPreference = {
-            id,
-            userId: preference.userId,
-            typeId: preference.typeId,
-            email: preference.email !== undefined ? preference.email : true,
-            inApp: preference.inApp !== undefined ? preference.inApp : true
-          };
-          
-          this.notificationPreferences.set(id, newPreference);
-          return newPreference;
-        }
-      }
-      
-      // If not MemStorage, create a mock notification preference
-      return {
-        id: 0,
-        userId: preference.userId,
-        typeId: preference.typeId,
-        email: preference.email !== undefined ? preference.email : true,
-        inApp: preference.inApp !== undefined ? preference.inApp : true
-      };
-    }
-    
-    // Database implementation
-    try {
-      if (existingPreference) {
-        // Update existing preference
-        const [updated] = await getDB().update(notificationPreferences)
-          .set({
-            email: preference.email !== undefined ? preference.email : existingPreference.email,
-            inApp: preference.inApp !== undefined ? preference.inApp : existingPreference.inApp
-          })
-          .where(eq(notificationPreferences.id, existingPreference.id))
-          .returning();
-        return updated;
-      } else {
-        // Create new preference with proper default values
-        const insertPreference = {
-          ...preference,
-          email: preference.email !== undefined ? preference.email : true,
-          inApp: preference.inApp !== undefined ? preference.inApp : true
-        };
-        
-        const [newPreference] = await getDB().insert(notificationPreferences)
-          .values(insertPreference)
-          .returning();
-        return newPreference;
-      }
-    } catch (error) {
-      console.error("Error creating/updating notification preference:", error);
-      throw error;
+    if (existingPreference) {
+      // Update existing preference
+      const [updated] = await db?.update(notificationPreferences)
+        .set({
+          email: preference.email,
+          inApp: preference.inApp
+        })
+        .where(eq(notificationPreferences.id, existingPreference.id))
+        .returning() || [];
+      return updated;
+    } else {
+      // Create new preference
+      const [newPreference] = await db?.insert(notificationPreferences)
+        .values(preference)
+        .returning() || [];
+      return newPreference;
     }
   }
   

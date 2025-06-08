@@ -1,207 +1,143 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Eye, EyeOff, Lock, Mail, ShieldCheck } from "lucide-react";
-
-// Admin login form schema
-const adminLoginSchema = z.object({
-  email: z
-    .string()
-    .min(1, { message: "Email is required" })
-    .email({ message: "Invalid email address" }),
-  password: z
-    .string()
-    .min(1, { message: "Password is required" }),
-  totpCode: z.string().optional(),
-});
-
-type AdminLoginFormValues = z.infer<typeof adminLoginSchema>;
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Shield, Loader2 } from "lucide-react";
 
 export default function AdminLogin() {
-  const { toast } = useToast();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginError, setLoginError] = useState("");
+  const { login, user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
 
-  // Initialize form
-  const form = useForm<AdminLoginFormValues>({
-    resolver: zodResolver(adminLoginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-      totpCode: "",
-    },
-  });
+  // Redirect if already logged in as admin
+  useEffect(() => {
+    if (user && user.isAdmin) {
+      setLocation("/admin-dashboard");
+    }
+  }, [user, setLocation]);
 
-  // Form submission handler
-  const onSubmit = async (values: AdminLoginFormValues) => {
-    setIsLoading(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!username || !password) {
+      setLoginError("Please enter both username and password");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setLoginError("");
+    
     try {
-      const res = await apiRequest("POST", "/api/admin/login", values);
-      if (res.ok) {
-        const data = await res.json();
-        toast({
-          title: "Login successful",
-          description: "Welcome to the admin dashboard",
-        });
-        
-        // Store the admin token in localStorage
-        localStorage.setItem("adminToken", data.accessToken);
-        localStorage.setItem("adminRefreshToken", data.refreshToken);
-        
-        // Redirect to admin dashboard
-        setLocation("/admin");
-      } else {
-        const errorData = await res.json();
-        toast({
-          variant: "destructive",
-          title: "Login failed",
-          description: errorData.message || "Invalid credentials",
-        });
+      const userData = await login({ username, password });
+      // Check for isAdmin or is_admin property (handling both camelCase and snake_case)
+      const hasAdminPrivileges = userData.isAdmin === true || userData.is_admin === true;
+      
+      console.log("Login response:", JSON.stringify(userData, null, 2));
+      
+      if (!hasAdminPrivileges) {
+        setLoginError("You do not have admin privileges");
+        return;
       }
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Login error",
-        description: error.message || "An error occurred during login",
-      });
+      setLocation("/admin-dashboard");
+    } catch (error) {
+      if (error instanceof Error) {
+        setLoginError(error.message);
+      } else {
+        setLoginError("Login failed. Please check your credentials.");
+      }
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
-  return (
-    <div className="flex items-center justify-center min-h-[80vh]">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold tracking-tight flex items-center justify-center gap-2">
-            <ShieldCheck className="h-6 w-6 text-primary" />
-            Admin Login
-          </CardTitle>
-          <CardDescription>
-            Secure access for system administrators
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                        <Input
-                          className="pl-10"
-                          placeholder="admin@example.com"
-                          {...field}
-                          disabled={isLoading}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                        <Input
-                          className="pl-10"
-                          type={showPassword ? "text" : "password"}
-                          placeholder="••••••••"
-                          {...field}
-                          disabled={isLoading}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-1 top-1"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? (
-                            <EyeOff className="h-5 w-5 text-muted-foreground" />
-                          ) : (
-                            <Eye className="h-5 w-5 text-muted-foreground" />
-                          )}
-                          <span className="sr-only">
-                            {showPassword ? "Hide password" : "Show password"}
-                          </span>
-                        </Button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="totpCode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Two-Factor Code (if enabled)</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="123456"
-                        {...field}
-                        disabled={isLoading}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
+  // If already logged in as admin, useEffect will redirect
+  if (user && (user.isAdmin === true || user.is_admin === true)) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen bg-muted/40">
+      <div className="flex flex-col items-center justify-center flex-1 px-4 py-12">
+        <Card className="w-full max-w-md mx-auto">
+          <CardHeader className="space-y-1 text-center">
+            <div className="flex items-center justify-center mb-2">
+              <Shield className="h-10 w-10 text-primary" />
+            </div>
+            <CardTitle className="text-2xl font-bold">Admin Login</CardTitle>
+            <CardDescription>
+              Enter your credentials to access the admin dashboard
+            </CardDescription>
+            <CardDescription className="mt-2 text-sm text-muted-foreground">
+              Test admin credentials available:<br/>
+              Username: admin1742719383348<br/>
+              Password: admin123
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loginError && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertDescription>{loginError}</AlertDescription>
+              </Alert>
+            )}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  placeholder="Enter your username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  disabled={isSubmitting}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isSubmitting}
+                />
+              </div>
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isLoading}
+                disabled={isSubmitting}
               >
-                {isLoading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></div>
-                    <span>Authenticating...</span>
-                  </div>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
                 ) : (
                   "Sign In"
                 )}
               </Button>
             </form>
-          </Form>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-2">
-          <p className="px-4 text-center text-sm text-muted-foreground">
-            This area is restricted to authorized administrators only.
-          </p>
-          <Button
-            variant="ghost"
-            className="text-xs text-muted-foreground"
-            onClick={() => setLocation("/")}
-          >
-            Return to Main Site
-          </Button>
-        </CardFooter>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

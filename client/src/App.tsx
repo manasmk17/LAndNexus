@@ -16,6 +16,10 @@ import ResetPassword from "@/pages/reset-password";
 import RecoverUsername from "@/pages/recover-username";
 import ProfessionalDashboard from "@/pages/professional-dashboard";
 import CompanyDashboard from "@/pages/company-dashboard";
+import AdminPage from "@/pages/admin-page";
+import AdminTest from "@/pages/admin-test";
+import AdminIndex from "@/pages/admin/index";
+import AdminLogin from "@/pages/admin-login";
 import Professionals from "@/pages/professionals";
 import ProfessionalProfile from "@/pages/professional-profile";
 import CompanyProfile from "@/pages/company-profile";
@@ -36,8 +40,6 @@ import SubscriptionSuccess from "@/pages/subscription-success";
 import ProfileSuccess from "@/pages/profile-success";
 import BookConsultation from "@/pages/book-consultation";
 import PageView from "@/pages/page";
-import AdminLogin from "@/pages/admin-login";
-import AdminIndex from "@/pages/admin/index";
 import NotFound from "@/pages/not-found";
 import { AuthProvider } from "@/lib/auth";
 
@@ -51,6 +53,7 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/recover-username" component={RecoverUsername} />
+      <Route path="/admin-login" component={AdminLogin} />
       <Route path="/professionals" component={Professionals} />
       <Route path="/professional-profile/:id" component={ProfessionalProfile} />
       <Route path="/company-profile/:id" component={CompanyProfile} />
@@ -60,7 +63,9 @@ function Router() {
       <Route path="/resource/:id" component={ResourceDetail} />
       <Route path="/forum" component={Forum} />
       <Route path="/pages/:slug" component={PageView} />
-      <Route path="/admin-login" component={AdminLogin} />
+      <Route path="/admin-test" component={AdminTest} />
+      <Route path="/admin-page" component={AdminPage} />
+
       {/* Protected routes with user type restrictions */}
       <ProtectedRoute 
         path="/professional-dashboard" 
@@ -71,6 +76,16 @@ function Router() {
         path="/company-dashboard" 
         component={CompanyDashboard} 
         userTypes={["company"]} 
+      />
+      <ProtectedRoute 
+        path="/admin" 
+        component={AdminIndex} 
+        userTypes={["admin"]} 
+      />
+      <ProtectedRoute 
+        path="/admin-dashboard" 
+        component={AdminIndex} 
+        userTypes={["admin"]} 
       />
       <ProtectedRoute 
         path="/edit-profile" 
@@ -84,12 +99,12 @@ function Router() {
       <ProtectedRoute 
         path="/manage-resources" 
         component={ManageResources} 
-        userTypes={["professional"]} 
+        userTypes={["professional", "admin"]} 
       />
       <ProtectedRoute 
         path="/create-resource" 
         component={CreateResource} 
-        userTypes={["professional"]} 
+        userTypes={["professional", "admin"]} 
       />
       <ProtectedRoute 
         path="/career-recommendations" 
@@ -124,9 +139,6 @@ function Router() {
         path="/book-consultation/:id" 
         component={BookConsultation} 
       />
-      
-      {/* Admin routes */}
-      <Route path="/admin" component={AdminIndex} />
 
       {/* 404 route */}
       <Route component={NotFound} />
@@ -135,16 +147,41 @@ function Router() {
 }
 
 function App() {
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  useEffect(() => {
+    // Check if current route is admin route or admin login
+    const checkIfAdmin = () => {
+      const currentPath = window.location.pathname;
+      setIsAdmin(currentPath.startsWith('/admin') || currentPath === '/admin-login' || currentPath === '/admin-page');
+    };
+    
+    // Initial check
+    checkIfAdmin();
+    
+    // Set up a listener for path changes
+    const handleLocationChange = () => {
+      checkIfAdmin();
+    };
+    
+    window.addEventListener('popstate', handleLocationChange);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+    };
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <DragAndDropProvider>
           <div className="flex flex-col min-h-screen">
-            <Navbar />
-            <main className="flex-grow">
+            {!isAdmin && <Navbar />}
+            <main className={`flex-grow ${isAdmin ? 'bg-background' : ''}`}>
               <Router />
             </main>
-            <Footer />
+            {!isAdmin && <Footer />}
           </div>
           <Toaster />
         </DragAndDropProvider>

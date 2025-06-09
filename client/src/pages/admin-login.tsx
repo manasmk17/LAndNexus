@@ -40,7 +40,11 @@ export default function AdminLogin() {
         setLoginError("You do not have admin privileges");
         return;
       }
-      setLocation("/admin");
+      
+      // Add a small delay to ensure auth context is updated
+      setTimeout(() => {
+        setLocation("/admin");
+      }, 100);
     } catch (error) {
       if (error instanceof Error) {
         setLoginError(error.message);

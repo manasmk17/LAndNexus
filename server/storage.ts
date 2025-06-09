@@ -29,8 +29,9 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  getUserByGoogleId(googleId: string): Promise<User | undefined>;
-  getUserByLinkedInId(linkedinId: string): Promise<User | undefined>;
+  getUserBySocialProvider(provider: string, profileId: string): Promise<User | undefined>;
+  linkSocialAccount(userId: number, provider: string, profileId: string): Promise<User | undefined>;
+  createUserFromSocial(user: Partial<InsertUser> & { email: string; username: string; password: string }): Promise<User>;
   getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, userData: Partial<User>): Promise<User | undefined>;
@@ -493,17 +494,63 @@ export class MemStorage implements IStorage {
       (user) => user.email === email
     );
   }
-
-  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+  
+  async getUserBySocialProvider(provider: string, profileId: string): Promise<User | undefined> {
+    const fieldName = `${provider}Id` as keyof User;
     return Array.from(this.users.values()).find(
-      (user) => user.googleId === googleId
+      (user) => user[fieldName] === profileId
     );
   }
-
-  async getUserByLinkedInId(linkedinId: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.linkedinId === linkedinId
-    );
+  
+  async linkSocialAccount(userId: number, provider: string, profileId: string): Promise<User | undefined> {
+    const user = await this.getUser(userId);
+    if (!user) return undefined;
+    
+    const fieldName = `${provider}Id` as keyof User;
+    const updatedUser = { ...user, [fieldName]: profileId };
+    this.users.set(userId, updatedUser as User);
+    return updatedUser as User;
+  }
+  
+  async createUserFromSocial(user: Partial<InsertUser> & { email: string; username: string; password: string }): Promise<User> {
+    // Check if username or email already exists
+    const existingUsername = await this.getUserByUsername(user.username);
+    if (existingUsername) {
+      throw new Error("Username already exists");
+    }
+    
+    const existingEmail = await this.getUserByEmail(user.email);
+    if (existingEmail) {
+      throw new Error("Email already exists");
+    }
+    
+    const id = this.userId++;
+    const newUser: User = {
+      id,
+      username: user.username,
+      password: user.password,
+      email: user.email,
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      userType: user.userType || "professional",
+      isAdmin: user.isAdmin || false,
+      createdAt: new Date(),
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
+      subscriptionTier: null,
+      subscriptionStatus: null,
+      resetToken: null,
+      resetTokenExpiry: null,
+      emailVerified: user.emailVerified || false,
+      emailVerificationToken: null,
+      emailVerificationExpiry: null,
+      profilePhotoUrl: user.profilePhotoUrl || null,
+      googleId: user.googleId || null,
+      linkedinId: user.linkedinId || null,
+    };
+    
+    this.users.set(id, newUser);
+    return newUser;
   }
   
   async getAllUsers(): Promise<User[]> {
@@ -522,10 +569,7 @@ export class MemStorage implements IStorage {
       subscriptionTier: null,
       subscriptionStatus: null,
       resetToken: null,
-      resetTokenExpiry: null,
-      googleId: insertUser.googleId || null,
-      linkedinId: insertUser.linkedinId || null,
-      isEmailVerified: insertUser.isEmailVerified || false
+      resetTokenExpiry: null
     };
     this.users.set(id, user);
     return user;
@@ -1613,93 +1657,68 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
-
+  
   async getUserByUsername(username: string): Promise<User | undefined> {
     if (!db) return undefined;
     const [user] = await db.select().from(users).where(eq(users.username, username));
     return user;
   }
-
+  
   async getUserByEmail(email: string): Promise<User | undefined> {
     if (!db) return undefined;
     const [user] = await db.select().from(users).where(eq(users.email, email));
     return user;
   }
-
-  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+  
+  async getUserBySocialProvider(provider: string, profileId: string): Promise<User | undefined> {
     if (!db) return undefined;
-    const [user] = await db.select().from(users).where(eq(users.googleId, googleId));
+    
+    const fieldName = `${provider}Id` as keyof typeof users;
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users[fieldName] as any, profileId));
+    
     return user;
   }
-
-  async getUserByLinkedInId(linkedinId: string): Promise<User | undefined> {
+  
+  async linkSocialAccount(userId: number, provider: string, profileId: string): Promise<User | undefined> {
     if (!db) return undefined;
-    const [user] = await db.select().from(users).where(eq(users.linkedinId, linkedinId));
-    return user;
+    
+    const fieldName = `${provider}Id` as keyof typeof users;
+    const [updatedUser] = await db
+      .update(users)
+      .set({ [fieldName]: profileId })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    return updatedUser;
   }
-
-  async getAllUsers(): Promise<User[]> {
-    if (!db) return [];
-    return await db.select().from(users);
+  
+  async createUserFromSocial(user: Partial<InsertUser> & { email: string; username: string; password: string }): Promise<User> {
+    if (!db) throw new Error("Database connection not available");
+    
+    // Insert the user
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        username: user.username,
+        password: user.password,
+        email: user.email,
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        userType: user.userType || "professional",
+        isAdmin: user.isAdmin || false,
+        emailVerified: user.emailVerified || false,
+        profilePhotoUrl: user.profilePhotoUrl || null,
+        googleId: user.googleId || null,
+        linkedinId: user.linkedinId || null,
+      })
+      .returning();
+    
+    return newUser;
   }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    if (!db) throw new Error('Database not available');
-    const [user] = await db.insert(users).values(insertUser).returning();
-    return user;
-  }
-
-  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
-    if (!db) return undefined;
-    const [user] = await db.update(users).set(userData).where(eq(users.id, id)).returning();
-    return user;
-  }
-
-  async deleteUser(id: number): Promise<boolean> {
-    if (!db) return false;
-    try {
-      console.log(`Storage: Attempting to delete user with ID: ${id}`);
-      
-      // Start a transaction to handle related records
-      return await db.transaction(async (tx) => {
-        // Check for company profiles associated with this user
-        const companyProfileResults = await tx
-          .select({ id: companyProfiles.id })
-          .from(companyProfiles)
-          .where(eq(companyProfiles.userId, id));
-          
-        if (companyProfileResults.length > 0) {
-          console.log(`Cannot delete user ${id}: Found ${companyProfileResults.length} associated company profiles`);
-          throw new Error(`User is associated with company profiles. Please delete those first.`);
-        }
-        
-        // Check for professional profiles associated with this user
-        const professionalProfileResults = await tx
-          .select({ id: professionalProfiles.id })
-          .from(professionalProfiles)
-          .where(eq(professionalProfiles.userId, id));
-          
-        if (professionalProfileResults.length > 0) {
-          console.log(`Cannot delete user ${id}: Found ${professionalProfileResults.length} associated professional profiles`);
-          throw new Error(`User is associated with professional profiles. Please delete those first.`);
-        }
-        
-        // If no dependencies found, proceed with deletion
-        const result = await tx
-          .delete(users)
-          .where(eq(users.id, id))
-          .returning({ id: users.id });
-          
-        const success = result.length > 0;
-        console.log(`User deletion ${success ? 'successful' : 'failed'} for ID: ${id}`);
-        return success;
-      });
-    } catch (error) {
-      console.error("Error deleting user:", error);
-      return false;
-    }
-  }
-
+  
   // Password and account recovery operations
   async createResetToken(email: string): Promise<string | null> {
     try {
@@ -1769,17 +1788,76 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Professional Profile operations  
-  async getProfessionalProfile(id: number): Promise<ProfessionalProfile | undefined> {
-    if (!db) return undefined;
-    const [profile] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.id, id));
-    return profile;
+  // These methods are already defined above
+  
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
   }
 
-  async createProfessionalProfile(profile: InsertProfessionalProfile): Promise<ProfessionalProfile> {
-    if (!db) throw new Error('Database not available');
-    const [newProfile] = await db.insert(professionalProfiles).values(profile).returning();
-    return newProfile;
+  async createUser(user: InsertUser): Promise<User> {
+    // Make sure isAdmin is set to false if not provided
+    const userData = { 
+      ...user,
+      isAdmin: user.isAdmin || false
+    };
+    const [createdUser] = await db.insert(users).values(userData).returning();
+    return createdUser;
+  }
+
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set(userData)
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
+  }
+  
+  async deleteUser(id: number): Promise<boolean> {
+    try {
+      console.log(`Storage: Attempting to delete user with ID: ${id}`);
+      
+      // Start a transaction to handle related records
+      return await db.transaction(async (tx) => {
+        // Check for company profiles associated with this user
+        const companyProfileResults = await tx
+          .select({ id: companyProfiles.id })
+          .from(companyProfiles)
+          .where(eq(companyProfiles.userId, id));
+          
+        if (companyProfileResults.length > 0) {
+          console.log(`Cannot delete user ${id}: Found ${companyProfileResults.length} associated company profiles`);
+          throw new Error(`User is associated with company profiles. Please delete those first.`);
+        }
+        
+        // Check for professional profiles associated with this user
+        const professionalProfileResults = await tx
+          .select({ id: professionalProfiles.id })
+          .from(professionalProfiles)
+          .where(eq(professionalProfiles.userId, id));
+          
+        if (professionalProfileResults.length > 0) {
+          console.log(`Cannot delete user ${id}: Found ${professionalProfileResults.length} associated professional profiles`);
+          throw new Error(`User is associated with professional profiles. Please delete those first.`);
+        }
+        
+        // Check for job postings, resources, etc. associated with this user
+        // Check for other dependencies as needed...
+        
+        // If no dependencies found, proceed with deletion
+        const result = await tx
+          .delete(users)
+          .where(eq(users.id, id))
+          .returning({ id: users.id });
+          
+        const success = result.length > 0;
+        console.log(`User deletion ${success ? 'successful' : 'failed'} for ID: ${id}`);
+        return success;
+      });
+    } catch (error) {
+      console.error(`Error deleting user with ID ${id}:`, error);
+      throw error; // Re-throw to handle in the route
+    }
   }
 
   // Stripe operations
@@ -2655,6 +2733,5 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Use MemStorage for OAuth authentication functionality
-export const storage = new MemStorage();
-// export const storage = useRealDatabase ? new DatabaseStorage() : new MemStorage();
+// Dynamically use MemStorage or DatabaseStorage based on database connection status
+export const storage = useRealDatabase ? new DatabaseStorage() : new MemStorage();

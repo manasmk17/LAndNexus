@@ -44,10 +44,9 @@ import { z } from "zod";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import { Strategy as LinkedInStrategy } from "passport-linkedin-oauth2";
 import Stripe from "stripe";
 import memorystore from "memorystore";
+import { setupSocialAuth } from "./social-auth";
 
 // Initialize Stripe with the API key
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -166,6 +165,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Set up social authentication (Google, LinkedIn)
+  setupSocialAuth(app);
+
   // Configure Passport with a custom callback to support both username and email login
   passport.use(new LocalStrategy(async (identifier, password, done) => {
     try {
@@ -248,99 +250,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return done(err);
     }
   }));
-
-  // Configure Google OAuth Strategy
-  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-    passport.use(new GoogleStrategy({
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "/api/auth/google/callback"
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        // Check if user already exists with this Google ID
-        let user = await storage.getUserByGoogleId(profile.id);
-        
-        if (user) {
-          return done(null, user);
-        }
-        
-        // Check if user exists with this email
-        const email = profile.emails?.[0]?.value;
-        if (email) {
-          user = await storage.getUserByEmail(email);
-          if (user) {
-            // Link Google account to existing user
-            await storage.updateUser(user.id, { googleId: profile.id });
-            return done(null, user);
-          }
-        }
-        
-        // Create new user
-        const newUser = await storage.createUser({
-          username: profile.displayName || profile.emails?.[0]?.value?.split('@')[0] || `google_${profile.id}`,
-          email: email || `${profile.id}@google.oauth`,
-          firstName: profile.name?.givenName || '',
-          lastName: profile.name?.familyName || '',
-          password: crypto.randomBytes(32).toString('hex'), // Random password for OAuth users
-          userType: 'professional', // Default to professional
-          googleId: profile.id,
-          isEmailVerified: true // OAuth emails are pre-verified
-        });
-        
-        return done(null, newUser);
-      } catch (error) {
-        return done(error);
-      }
-    }));
-  }
-
-  // Configure LinkedIn OAuth Strategy
-  if (process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET) {
-    passport.use(new LinkedInStrategy({
-      clientID: process.env.LINKEDIN_CLIENT_ID,
-      clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
-      callbackURL: "/api/auth/linkedin/callback",
-      scope: ['r_emailaddress', 'r_liteprofile']
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        // Check if user already exists with this LinkedIn ID
-        let user = await storage.getUserByLinkedInId(profile.id);
-        
-        if (user) {
-          return done(null, user);
-        }
-        
-        // Check if user exists with this email
-        const email = profile.emails?.[0]?.value;
-        if (email) {
-          user = await storage.getUserByEmail(email);
-          if (user) {
-            // Link LinkedIn account to existing user
-            await storage.updateUser(user.id, { linkedinId: profile.id });
-            return done(null, user);
-          }
-        }
-        
-        // Create new user
-        const newUser = await storage.createUser({
-          username: profile.displayName || profile.emails?.[0]?.value?.split('@')[0] || `linkedin_${profile.id}`,
-          email: email || `${profile.id}@linkedin.oauth`,
-          firstName: profile.name?.givenName || '',
-          lastName: profile.name?.familyName || '',
-          password: crypto.randomBytes(32).toString('hex'), // Random password for OAuth users
-          userType: 'professional', // Default to professional
-          linkedinId: profile.id,
-          isEmailVerified: true // OAuth emails are pre-verified
-        });
-        
-        return done(null, newUser);
-      } catch (error) {
-        return done(error);
-      }
-    }));
-  }
 
   passport.serializeUser((user: any, done) => {
     done(null, user.id);
@@ -736,46 +645,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Logged out" });
     });
   });
-
-  // Google OAuth routes
-  app.get('/api/auth/google',
-    passport.authenticate('google', { scope: ['profile', 'email'] })
-  );
-
-  app.get('/api/auth/google/callback',
-    passport.authenticate('google', { failureRedirect: '/login?error=oauth_failed' }),
-    (req, res) => {
-      // Successful authentication, redirect to dashboard
-      const user = req.user as any;
-      if (user.isAdmin) {
-        res.redirect('/admin-dashboard');
-      } else if (user.userType === 'professional') {
-        res.redirect('/professional-dashboard');
-      } else {
-        res.redirect('/company-dashboard');
-      }
-    }
-  );
-
-  // LinkedIn OAuth routes
-  app.get('/api/auth/linkedin',
-    passport.authenticate('linkedin', { state: 'SOME STATE' })
-  );
-
-  app.get('/api/auth/linkedin/callback',
-    passport.authenticate('linkedin', { failureRedirect: '/login?error=oauth_failed' }),
-    (req, res) => {
-      // Successful authentication, redirect to dashboard
-      const user = req.user as any;
-      if (user.isAdmin) {
-        res.redirect('/admin-dashboard');
-      } else if (user.userType === 'professional') {
-        res.redirect('/professional-dashboard');
-      } else {
-        res.redirect('/company-dashboard');
-      }
-    }
-  );
   
   // Password recovery endpoints
   app.post("/api/auth/forgot-password", async (req, res) => {

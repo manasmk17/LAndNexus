@@ -76,7 +76,11 @@ app.use((req, res, next) => {
     '/api/notifications',
     '/api/notifications/unread',
     '/api/notifications/read-all',
-    '/api/notification-preferences'
+    '/api/notification-preferences',
+    '/api/create-payment-intent',
+    '/api/create-subscription',
+    '/api/update-subscription',
+    '/api/webhook'
   ];
   
   // We should treat all API routes that start with '/api/me/' as exempt for GET requests

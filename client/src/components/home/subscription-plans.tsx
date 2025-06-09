@@ -16,54 +16,50 @@ type PricingPlan = {
 
 const plans: PricingPlan[] = [
   {
-    id: "basic",
-    name: "Basic",
-    price: 29,
+    id: "professional",
+    name: "Professional",
+    price: 19,
     description: "Perfect for individual L&D professionals getting started",
     features: [
-      "Up to 5 job applications per month",
-      "Basic profile creation",
-      "Access to community forum",
-      "Standard customer support",
-      "Resource library access (10 downloads/month)"
+      "Apply to 15 jobs per month",
+      "AI job matching",
+      "50 resource downloads per month",
+      "Direct messaging",
+      "Priority email support"
     ],
     buttonText: "Get Started",
     mostPopular: false
   },
   {
-    id: "pro",
-    name: "Pro",
-    price: 79,
-    description: "Advanced features for experienced professionals and small teams",
+    id: "expert",
+    name: "Expert",
+    price: 49,
+    description: "Advanced features for experienced professionals",
     features: [
       "Unlimited job applications",
-      "Advanced profile with portfolio showcase",
-      "Priority matching algorithm",
-      "Video consultation booking",
-      "Unlimited resource access",
-      "Priority customer support",
-      "Analytics dashboard",
-      "Custom branding options"
+      "Featured profile placement",
+      "Unlimited resource downloads",
+      "Video consultations",
+      "Advanced analytics",
+      "Phone support"
     ],
-    buttonText: "Get Pro",
+    buttonText: "Get Expert",
     mostPopular: true
   },
   {
-    id: "enterprise",
-    name: "Enterprise",
-    price: 199,
-    description: "Complete solution for organizations and training companies",
+    id: "elite",
+    name: "Elite",
+    price: 99,
+    description: "Premium features for top-tier professionals",
     features: [
-      "Everything in Pro",
-      "Multi-user team management",
-      "Custom integrations",
-      "Dedicated account manager",
-      "White-label solutions",
-      "Advanced analytics & reporting",
+      "Everything in Expert",
+      "Personal account manager",
       "API access",
-      "24/7 phone support"
+      "White-label platform",
+      "Custom branding",
+      "24/7 support"
     ],
-    buttonText: "Contact Sales",
+    buttonText: "Get Elite",
     mostPopular: false
   }
 ];

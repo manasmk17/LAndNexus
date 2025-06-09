@@ -69,14 +69,13 @@ const getStatusColor = (status: string) => {
 };
 
 export default function PaymentDashboard() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [selectedTransaction, setSelectedTransaction] = useState<EscrowTransaction | null>(null);
   const [showDetails, setShowDetails] = useState(false);
 
   const { data: transactions, isLoading } = useQuery<EscrowTransaction[]>({
     queryKey: ["/api/payments/transactions"],
-    queryFn: getQueryFn(),
   });
 
   const { data: transactionDetails } = useQuery<{
@@ -84,7 +83,6 @@ export default function PaymentDashboard() {
     history: TransactionHistory[];
   }>({
     queryKey: ["/api/payments/transactions", selectedTransaction?.id],
-    queryFn: getQueryFn(),
     enabled: !!selectedTransaction,
   });
 
@@ -175,7 +173,7 @@ export default function PaymentDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(totalEarnings / 100, i18n.language)}
+              {formatCurrency(totalEarnings / 100)}
             </div>
             <p className="text-xs text-muted-foreground">
               {completedTransactions.length} {t("payment.completedTransactions")}
@@ -190,7 +188,7 @@ export default function PaymentDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(pendingAmount / 100, i18n.language)}
+              {formatCurrency(pendingAmount / 100)}
             </div>
             <p className="text-xs text-muted-foreground">
               {activeTransactions.length} {t("payment.activeTransactions")}

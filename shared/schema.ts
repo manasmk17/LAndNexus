@@ -530,9 +530,10 @@ export type InsertTransactionHistory = z.infer<typeof insertTransactionHistorySc
 // Subscription Plans table
 export const subscriptionPlans = pgTable("subscription_plans", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(), // "Basic", "Pro", "Enterprise"
+  name: text("name").notNull(), // "Professional", "Expert", "Elite", "Startup", "Growth", "Enterprise"
   description: text("description"),
   features: jsonb("features"), // Array of feature descriptions
+  planType: text("plan_type", { enum: ["professional", "company", "free"] }).notNull(), // Target user type
   priceMonthlyUSD: integer("price_monthly_usd").notNull(), // Price in cents
   priceYearlyUSD: integer("price_yearly_usd").notNull(), // Price in cents (with discount)
   priceMonthlyAED: integer("price_monthly_aed").notNull(), // Price in fils
@@ -541,12 +542,29 @@ export const subscriptionPlans = pgTable("subscription_plans", {
   stripePriceIdYearlyUSD: text("stripe_price_id_yearly_usd"),
   stripePriceIdMonthlyAED: text("stripe_price_id_monthly_aed"),
   stripePriceIdYearlyAED: text("stripe_price_id_yearly_aed"),
-  maxJobPostings: integer("max_job_postings"), // null = unlimited
-  maxBookings: integer("max_bookings"), // null = unlimited
-  maxResourcesAccess: integer("max_resources_access"), // null = unlimited
+  
+  // Feature limits
+  maxJobApplications: integer("max_job_applications"), // null = unlimited (for professionals)
+  maxJobPostings: integer("max_job_postings"), // null = unlimited (for companies)
+  maxResourceDownloads: integer("max_resource_downloads"), // null = unlimited
+  maxTeamMembers: integer("max_team_members"), // null = unlimited
+  maxContacts: integer("max_contacts"), // professional contacts for companies
+  
+  // Feature flags
   aiMatchingEnabled: boolean("ai_matching_enabled").default(true),
-  prioritySupport: boolean("priority_support").default(false),
+  priorityMatching: boolean("priority_matching").default(false),
+  featuredPlacement: boolean("featured_placement").default(false),
+  customBranding: boolean("custom_branding").default(false),
+  videoConsultations: boolean("video_consultations").default(false),
+  directMessaging: boolean("direct_messaging").default(false),
   analyticsAccess: boolean("analytics_access").default(false),
+  apiAccess: boolean("api_access").default(false),
+  whiteLabel: boolean("white_label").default(false),
+  dedicatedManager: boolean("dedicated_manager").default(false),
+  
+  // Support level
+  supportLevel: text("support_level", { enum: ["email", "priority_email", "phone", "dedicated", "24_7"] }).default("email"),
+  
   isActive: boolean("is_active").default(true),
   sortOrder: integer("sort_order").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),

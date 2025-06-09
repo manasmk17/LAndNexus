@@ -44,6 +44,7 @@ import { imageHealthMonitor } from "./image-health-monitor";
 import { registerEscrowRoutes } from "./escrow-routes";
 import { registerSubscriptionRoutes } from "./subscription-routes";
 import { subscriptionService } from "./subscription-service";
+import { requireUsageLimit, incrementUserUsage, canUserPerformAction } from "./feature-gate";
 import { z } from "zod";
 import session from "express-session";
 import passport from "passport";

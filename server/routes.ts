@@ -292,6 +292,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register admin-specific routes after auth middleware is set up
   registerAdminRoutes(app);
   
+  // Middleware to automatically authenticate users with persistent auth tokens
+  app.use(async (req, res, next) => {
+    // Skip token authentication if user is already authenticated via session
+    if (req.isAuthenticated()) {
+      return next();
+    }
+
+    // Check for auth token in cookies
+    const authToken = req.cookies.auth_token;
+    if (authToken) {
+      try {
+        const user = await storage.validateAuthToken(authToken);
+        if (user) {
+          // Log in the user automatically
+          req.login(user, (err) => {
+            if (err) {
+              console.error('Error auto-logging in user with token:', err);
+              // Clear invalid token
+              res.clearCookie('auth_token');
+              return next();
+            }
+            console.log(`Auto-authenticated user ${user.username} with persistent token`);
+            return next();
+          });
+          return;
+        } else {
+          // Token is invalid or expired, clear it
+          res.clearCookie('auth_token');
+        }
+      } catch (error) {
+        console.error('Error validating auth token:', error);
+        res.clearCookie('auth_token');
+      }
+    }
+
+    next();
+  });
+  
   // CSRF token refresh endpoint
   app.get('/api/csrf-token', (req: any, res) => {
     if (req.csrfToken) {

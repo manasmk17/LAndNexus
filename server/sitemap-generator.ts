@@ -76,7 +76,7 @@ export class SitemapGenerator {
       professionals.forEach(professional => {
         urls.push({
           loc: `${this.baseUrl}/professional-profile/${professional.id}`,
-          lastmod: professional.createdAt?.toISOString() || new Date().toISOString(),
+          lastmod: new Date().toISOString(),
           changefreq: "monthly",
           priority: "0.7"
         });
@@ -87,7 +87,7 @@ export class SitemapGenerator {
       resources.forEach(resource => {
         urls.push({
           loc: `${this.baseUrl}/resource/${resource.id}`,
-          lastmod: resource.createdAt?.toISOString() || new Date().toISOString(),
+          lastmod: new Date().toISOString(),
           changefreq: "monthly",
           priority: "0.6"
         });

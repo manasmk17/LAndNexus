@@ -82,6 +82,31 @@ async function initializeResourceCategories() {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // SEO Routes - Must be first to avoid frontend routing conflicts
+  app.get("/sitemap.xml", async (req, res) => {
+    try {
+      const { sitemapGenerator } = await import("./sitemap-generator");
+      const sitemap = await sitemapGenerator.generateSitemap();
+      res.setHeader('Content-Type', 'application/xml');
+      res.send(sitemap);
+    } catch (error) {
+      console.error("Error generating sitemap:", error);
+      res.status(500).send("Error generating sitemap");
+    }
+  });
+
+  app.get("/robots.txt", async (req, res) => {
+    try {
+      const { sitemapGenerator } = await import("./sitemap-generator");
+      const robotsTxt = await sitemapGenerator.generateRobotsTxt();
+      res.setHeader('Content-Type', 'text/plain');
+      res.send(robotsTxt);
+    } catch (error) {
+      console.error("Error generating robots.txt:", error);
+      res.status(500).send("Error generating robots.txt");
+    }
+  });
+
   // Initialize resource categories
   await initializeResourceCategories();
   
@@ -4925,6 +4950,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
     });
+  });
+
+  // SEO Routes - Sitemap and Robots.txt
+  app.get("/sitemap.xml", async (req, res) => {
+    try {
+      const { sitemapGenerator } = await import("./sitemap-generator");
+      const sitemap = await sitemapGenerator.generateSitemap();
+      res.setHeader('Content-Type', 'application/xml');
+      res.send(sitemap);
+    } catch (error) {
+      console.error("Error generating sitemap:", error);
+      res.status(500).send("Error generating sitemap");
+    }
+  });
+
+  app.get("/robots.txt", async (req, res) => {
+    try {
+      const { sitemapGenerator } = await import("./sitemap-generator");
+      const robotsTxt = await sitemapGenerator.generateRobotsTxt();
+      res.setHeader('Content-Type', 'text/plain');
+      res.send(robotsTxt);
+    } catch (error) {
+      console.error("Error generating robots.txt:", error);
+      res.status(500).send("Error generating robots.txt");
+    }
   });
   
   return httpServer;

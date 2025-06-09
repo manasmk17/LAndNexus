@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import RegisterForm from "@/components/auth/register-form";
 import { useAuth } from "@/hooks/use-auth";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "@/lib/i18n";
 
 export default function Register() {
   const { t } = useTranslation();

@@ -7,7 +7,7 @@ import { apiRequest, getCsrfToken, secureFileUpload } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "@/lib/i18n";
 
 import {
   Form,

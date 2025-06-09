@@ -11,7 +11,7 @@ export default function About() {
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-6">About L&D Nexus</h1>
             <p className="text-xl text-blue-100 mb-8">
-              The premier marketplace connecting Learning & Development professionals with organizations worldwide
+              The premier marketplace connecting International Certified Professionals and Global Learning & Development Experts with organizations worldwide
             </p>
           </div>
         </div>
@@ -29,10 +29,10 @@ export default function About() {
             <div className="grid md:grid-cols-2 gap-8 items-center">
               <div>
                 <p className="text-lg text-slate-600 mb-6">
-                  L&D Nexus bridges the gap between talented Learning & Development professionals and organizations seeking expert training solutions. Our platform revolutionizes how companies find, engage, and collaborate with L&D experts.
+                  L&D Nexus bridges the gap between talented International Certified Professionals and organizations seeking expert training solutions. Our platform revolutionizes how companies find, engage, and collaborate with Global Learning & Development Experts.
                 </p>
                 <p className="text-lg text-slate-600">
-                  Founded with a vision to transform professional development, we provide cutting-edge tools for AI-powered matching, secure payment processing, and seamless project management.
+                  Founded with a vision to transform professional development, we provide cutting-edge tools for AI-powered matching, secure payment processing, and seamless project management for Certified Professional Trainers.
                 </p>
               </div>
               <div className="bg-gradient-to-br from-blue-50 to-slate-50 p-8 rounded-xl">

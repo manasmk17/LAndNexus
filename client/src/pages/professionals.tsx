@@ -111,7 +111,7 @@ export default function Professionals() {
               Find <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-white">Expert L&D Professionals</span>
             </h1>
             <p className="text-xl text-blue-100 max-w-3xl">
-              Connect with industry-leading trainers and specialists who can elevate your organization's learning and development initiatives.
+              Connect with International Certified Professionals and Global Learning & Development Experts who can elevate your organization's learning and development initiatives.
             </p>
           </div>
         </div>

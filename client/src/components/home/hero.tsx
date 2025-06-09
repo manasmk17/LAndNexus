@@ -26,7 +26,7 @@ export default function Hero() {
               AI-Powered <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-white">Corporate Training Platform</span> for UAE
             </h1>
             <p className="text-lg md:text-xl text-blue-100 mb-8 max-w-2xl">
-              Connect with verified freelance L&D experts and MOHRE-approved trainers. AI trainer matching for bilingual training marketplace and corporate training solutions in UAE.
+              Connect with verified freelance L&D experts and International Certified Professionals. AI trainer matching for bilingual training marketplace and corporate training solutions in UAE.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               {user ? (

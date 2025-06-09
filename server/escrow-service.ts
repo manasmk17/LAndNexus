@@ -75,21 +75,21 @@ export class EscrowService {
     }
   }
 
-  // Calculate platform commission and trainer payout
+  // Calculate platform commission and professional payout
   calculatePayoutAmounts(amount: number, commissionRate: number = 800) {
     const platformCommissionAmount = Math.round((amount * commissionRate) / 10000);
-    const trainerPayoutAmount = amount - platformCommissionAmount;
+    const professionalPayoutAmount = amount - platformCommissionAmount;
     
     return {
       platformCommissionAmount,
-      trainerPayoutAmount
+      professionalPayoutAmount
     };
   }
 
   // Create escrow transaction with payment intent
   async createEscrowTransaction(data: {
     companyId: number;
-    trainerId: number;
+    professionalId: number;
     amount: number;
     currency: string;
     jobPostingId?: number;
@@ -98,20 +98,20 @@ export class EscrowService {
     metadata?: any;
   }) {
     try {
-      const { platformCommissionAmount, trainerPayoutAmount } = this.calculatePayoutAmounts(data.amount);
+      const { platformCommissionAmount, professionalPayoutAmount } = this.calculatePayoutAmounts(data.amount);
 
-      // Get trainer's connect account
+      // Get professional's connect account
       const database = await this.getDb();
-      const [trainer] = await database.select()
+      const [professional] = await database.select()
         .from(users)
-        .where(eq(users.id, data.trainerId));
+        .where(eq(users.id, data.professionalId));
 
-      if (!trainer.stripeConnectAccountId) {
-        throw new Error('Trainer must set up payout account before receiving payments');
+      if (!professional.stripeConnectAccountId) {
+        throw new Error('Professional must set up payout account before receiving payments');
       }
 
       // Create transfer group for this transaction
-      const transferGroupId = `escrow_${Date.now()}_${data.companyId}_${data.trainerId}`;
+      const transferGroupId = `escrow_${Date.now()}_${data.companyId}_${data.professionalId}`;
 
       // Create payment intent with application fee
       const paymentIntent = await stripe.paymentIntents.create({
@@ -119,12 +119,12 @@ export class EscrowService {
         currency: data.currency.toLowerCase(),
         application_fee_amount: platformCommissionAmount,
         transfer_data: {
-          destination: trainer.stripeConnectAccountId,
+          destination: professional.stripeConnectAccountId,
         },
         transfer_group: transferGroupId,
         metadata: {
           companyId: data.companyId.toString(),
-          trainerId: data.trainerId.toString(),
+          professionalId: data.professionalId.toString(),
           jobPostingId: data.jobPostingId?.toString() || '',
           bookingId: data.bookingId?.toString() || '',
           type: 'escrow_transaction'
@@ -135,13 +135,13 @@ export class EscrowService {
       const [escrowTransaction] = await database.insert(escrowTransactions)
         .values({
           companyId: data.companyId,
-          trainerId: data.trainerId,
+          trainerId: data.professionalId,
           jobPostingId: data.jobPostingId,
           bookingId: data.bookingId,
           amount: data.amount,
           currency: data.currency,
           platformCommissionAmount,
-          trainerPayoutAmount,
+          trainerPayoutAmount: professionalPayoutAmount,
           stripePaymentIntentId: paymentIntent.id,
           stripeTransferGroupId: transferGroupId,
           status: 'pending',

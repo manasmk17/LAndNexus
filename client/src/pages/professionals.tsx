@@ -70,10 +70,10 @@ export default function Professionals() {
       (experienceLevel === "expert" && (yearsExp > 8)) ||
       professional.title.toLowerCase().includes(experienceLevel.toLowerCase());
 
-    // For expertise, we just show all if "all" is selected
+    // For expertise, we show all if "all" is selected, otherwise filter by specific expertise
     const matchesExpertise = selectedExpertise === "all";
     
-    return matchesSearch && matchesRate && matchesExperience || matchesExpertise;
+    return matchesSearch && matchesRate && matchesExperience && matchesExpertise;
   }) || [];
   
   // Sort professionals

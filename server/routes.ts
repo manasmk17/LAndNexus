@@ -82,6 +82,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize resource categories
   await initializeResourceCategories();
   
+  // Start image health monitoring
+  setTimeout(() => {
+    imageHealthMonitor.startMonitoring();
+  }, 5000); // Start after 5 seconds to allow server to fully initialize
+  
   // Configure multer storage for file uploads
   const storage25MB = multer.diskStorage({
     destination: function (req, file, cb) {

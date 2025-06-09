@@ -171,7 +171,8 @@ export class ImageHealthMonitor {
 
     } catch (error) {
       report.status = 'broken';
-      console.warn(`Error checking local image: ${imagePath}`, error.message);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.warn(`Error checking local image: ${imagePath}`, errorMessage);
     }
 
     return report;

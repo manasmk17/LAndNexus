@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Facebook, Twitter, Linkedin, Instagram, Mail, MapPin, Phone, ChevronRight, ArrowUpRight } from "lucide-react";
+import { Facebook, Twitter, Linkedin, Instagram, Mail, MapPin, Phone, ChevronRight, ArrowUpRight, Youtube, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Footer() {
@@ -52,15 +52,18 @@ export default function Footer() {
             <div className="space-y-3">
               <div className="flex items-start">
                 <MapPin className="text-blue-400 h-5 w-5 mt-0.5 mr-3 flex-shrink-0" />
-                <span className="text-slate-300">123 Innovation Drive, San Francisco, CA 94103</span>
+                <span className="text-slate-300">71–75 Shelton Street, Covent Garden, London, United Kingdom, WC2H 9JQ</span>
               </div>
               <div className="flex items-start">
                 <Mail className="text-blue-400 h-5 w-5 mt-0.5 mr-3 flex-shrink-0" />
-                <span className="text-slate-300">contact@ldnexus.com</span>
+                <div className="flex flex-col">
+                  <span className="text-slate-300">official.ldnexus@gmail.com</span>
+                  <span className="text-slate-300">official@ldnexus.com</span>
+                </div>
               </div>
               <div className="flex items-start">
-                <Phone className="text-blue-400 h-5 w-5 mt-0.5 mr-3 flex-shrink-0" />
-                <span className="text-slate-300">+1 (555) 123-4567</span>
+                <ExternalLink className="text-blue-400 h-5 w-5 mt-0.5 mr-3 flex-shrink-0" />
+                <span className="text-slate-300">www.ldnexus.com</span>
               </div>
             </div>
           </div>
@@ -183,28 +186,53 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Social Links */}
-        <div className="flex flex-wrap justify-center gap-6 mb-10">
-          <a href="#" className="bg-slate-800 hover:bg-blue-800 text-white p-3 rounded-full transition-colors">
-            <Facebook size={20} />
-          </a>
-          <a href="#" className="bg-slate-800 hover:bg-blue-800 text-white p-3 rounded-full transition-colors">
-            <Twitter size={20} />
-          </a>
-          <a href="#" className="bg-slate-800 hover:bg-blue-800 text-white p-3 rounded-full transition-colors">
-            <Linkedin size={20} />
-          </a>
-          <a href="#" className="bg-slate-800 hover:bg-blue-800 text-white p-3 rounded-full transition-colors">
-            <Instagram size={20} />
-          </a>
+        {/* Social Links & Official Magazine */}
+        <div className="text-center mb-8">
+          <div className="mb-6">
+            <h3 className="text-lg font-bold mb-3 text-white">Follow Us & Stay Connected</h3>
+            <div className="flex flex-wrap justify-center gap-6 mb-4">
+              <a 
+                href="https://www.linkedin.com/company/l-d-nexus/" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="bg-slate-800 hover:bg-blue-800 text-white p-3 rounded-full transition-colors group"
+                title="Follow us on LinkedIn"
+              >
+                <Linkedin size={20} />
+              </a>
+              <a 
+                href="https://youtube.com/@ldnexus?si=uZTNebnLMOL1Bf8e" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="bg-slate-800 hover:bg-red-600 text-white p-3 rounded-full transition-colors group"
+                title="Subscribe to our YouTube channel"
+              >
+                <Youtube size={20} />
+              </a>
+            </div>
+          </div>
+          
+          <div className="bg-gradient-to-r from-blue-900/50 to-slate-800/50 p-4 rounded-lg border border-slate-700/50">
+            <p className="text-slate-300 text-sm mb-2">Official Magazine of L&D Nexus</p>
+            <a 
+              href="https://ldnmag.com" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="text-blue-400 hover:text-blue-300 font-semibold flex items-center justify-center gap-2 transition-colors"
+            >
+              ldnmag.com
+              <ExternalLink size={16} />
+            </a>
+          </div>
         </div>
 
         {/* Bottom Copyright */}
         <div className="border-t border-slate-800 pt-8 mt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-slate-400 text-sm mb-4 md:mb-0">
-              &copy; {new Date().getFullYear()} L&D Nexus. All rights reserved.
-            </p>
+            <div className="text-slate-400 text-sm mb-4 md:mb-0">
+              <p>&copy; {new Date().getFullYear()} L&D Nexus. All rights reserved.</p>
+              <p className="mt-1">Company Registration Number: 16450617</p>
+            </div>
             <div className="flex flex-wrap justify-center gap-6">
               <a href="#" className="text-slate-400 hover:text-white text-sm transition-colors">Privacy Policy</a>
               <a href="#" className="text-slate-400 hover:text-white text-sm transition-colors">Terms of Service</a>

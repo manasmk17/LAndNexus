@@ -5,9 +5,9 @@ export default function HowItWorks() {
     <section className="py-24 bg-gradient-to-b from-white to-slate-50">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4 text-slate-900">How L&D Nexus Works</h2>
+          <h2 className="text-4xl font-bold mb-4 text-slate-900">How Our AI-Powered Training Platform Works</h2>
           <div className="h-1 w-20 bg-blue-600 mx-auto mb-6 rounded-full"></div>
-          <p className="text-lg text-slate-600">Connecting the right talent with the right opportunities through our specialized marketplace for Learning & Development professionals.</p>
+          <p className="text-lg text-slate-600">Connecting UAE companies with verified freelance L&D experts and MOHRE-approved trainers through AI trainer matching technology for seamless corporate training solutions.</p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

@@ -14,7 +14,7 @@ export default function FeaturedProfessionals() {
     <section className="py-16 bg-gray-50">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center mb-10">
-          <h2 className="text-3xl font-heading font-bold">Featured L&D Professionals</h2>
+          <h2 className="text-3xl font-heading font-bold">Featured Verified L&D Experts & MOHRE-Approved Trainers</h2>
           <Link href="/professionals" className="text-primary hover:text-primary-dark flex items-center">
             View all
             <ArrowRight className="ml-1 h-4 w-4" />

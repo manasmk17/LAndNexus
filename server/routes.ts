@@ -202,11 +202,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(
     session({
       secret: process.env.SESSION_SECRET || "L&D-nexus-secret",
-      resave: false,
-      saveUninitialized: false,
+      resave: true,
+      saveUninitialized: true,
       cookie: { 
         secure: false,
-        httpOnly: true,
         maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days by default
       },
       store: new MemoryStore({
@@ -317,15 +316,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Check if user is authenticated
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    console.log(`Authentication check for ${req.method} ${req.path}`);
-    console.log(`Session ID: ${req.sessionID}`);
-    console.log(`Is authenticated: ${req.isAuthenticated()}`);
-    console.log(`User in session: ${req.user ? JSON.stringify({ id: req.user.id, username: req.user.username }) : 'null'}`);
-    
     if (req.isAuthenticated()) {
       return next();
     }
-    res.status(401).json({ message: "Authentication required" });
+    res.status(401).json({ message: "Unauthorized" });
   };
 
   const isAdmin = (req: Request, res: Response, next: Function) => {
@@ -383,26 +377,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // CSRF token refresh endpoint
   app.get('/api/csrf-token', (req: any, res) => {
-    try {
-      if (req.csrfToken && typeof req.csrfToken === 'function') {
-        const token = req.csrfToken();
-        console.log('Refreshing CSRF token for client');
-        // Set token in cookie for forms
-        res.cookie('XSRF-TOKEN', token, {
-          httpOnly: false,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict'
-        });
-        // Also return in response body
-        res.json({ csrfToken: token });
-      } else {
-        console.warn('CSRF token function not available in request');
-        // Return a dummy token for development
-        res.json({ csrfToken: 'development-token' });
-      }
-    } catch (error) {
-      console.error('Error generating CSRF token:', error);
-      res.json({ csrfToken: 'development-token' });
+    if (req.csrfToken) {
+      console.log('Refreshing CSRF token for client');
+      // Set token in cookie for forms
+      res.cookie('XSRF-TOKEN', req.csrfToken(), {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+      });
+      // Also return in response body
+      res.json({ csrfToken: req.csrfToken() });
+    } else {
+      console.warn('CSRF token function not available in request');
+      res.status(500).json({ message: 'CSRF protection not properly initialized' });
     }
   });
 

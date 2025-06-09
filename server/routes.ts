@@ -40,6 +40,7 @@ import {
   getMatchingJobsForProfessional,
   getMatchingProfessionalsForJob
 } from "./ai-matching";
+import { imageHealthMonitor } from "./image-health-monitor";
 import { z } from "zod";
 import session from "express-session";
 import passport from "passport";

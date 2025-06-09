@@ -68,7 +68,7 @@ export function ImageWithFallback({
     
     // Log with source info to help debugging
     if (process.env.NODE_ENV !== 'production') {
-      console.warn(`Image load failed after ${retryCount} retries for: ${imgSrc}, using placeholder`);
+      console.log("Image load error, using placeholder");
     }
   };
 

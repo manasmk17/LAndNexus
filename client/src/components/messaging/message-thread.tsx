@@ -203,7 +203,7 @@ export default function MessageThread({ otherUserId }: MessageThreadProps) {
               companyProfile?.logoUrl ? (
                 <img 
                   src={companyProfile.logoUrl} 
-                  alt={companyProfile.companyName} 
+                  alt={companyProfile.companyName || 'Company logo'} 
                   className="w-full h-full object-cover rounded-full" 
                 />
               ) : (
@@ -213,7 +213,7 @@ export default function MessageThread({ otherUserId }: MessageThreadProps) {
               professionalProfile?.profileImageUrl ? (
                 <img 
                   src={professionalProfile.profileImageUrl} 
-                  alt={professionalProfile.title} 
+                  alt={professionalProfile.title || 'Professional profile'} 
                   className="w-full h-full object-cover rounded-full" 
                 />
               ) : (
@@ -238,7 +238,7 @@ export default function MessageThread({ otherUserId }: MessageThreadProps) {
                     companyProfile?.logoUrl ? (
                       <img 
                         src={companyProfile.logoUrl} 
-                        alt={companyProfile.companyName} 
+                        alt={companyProfile.companyName || 'Company logo'} 
                         className="w-full h-full object-cover rounded-full" 
                       />
                     ) : (
@@ -248,7 +248,7 @@ export default function MessageThread({ otherUserId }: MessageThreadProps) {
                     professionalProfile?.profileImageUrl ? (
                       <img 
                         src={professionalProfile.profileImageUrl} 
-                        alt={professionalProfile.title} 
+                        alt={professionalProfile.title ?? 'Professional profile'} 
                         className="w-full h-full object-cover rounded-full" 
                       />
                     ) : (
@@ -291,11 +291,15 @@ export default function MessageThread({ otherUserId }: MessageThreadProps) {
             placeholder="Type your message..."
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            disabled={isSending}
+            disabled={sendMessageMutation.isPending}
             className="flex-1"
           />
-          <Button type="submit" disabled={isSending || !newMessage.trim()}>
-            {isSending ? (
+          <Button 
+            type="submit" 
+            disabled={sendMessageMutation.isPending || !newMessage.trim()}
+            className="min-w-[44px]"
+          >
+            {sendMessageMutation.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Send className="h-4 w-4" />

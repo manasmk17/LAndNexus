@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { useWebSocket } from "@/hooks/use-websocket";
 import { 
   Card, 
   CardContent,
@@ -21,6 +22,7 @@ import type { Message, User as UserType } from "@shared/schema";
 export default function Messages() {
   const [, setLocation] = useLocation();
   const { user, isLoading: isLoadingAuth } = useAuth();
+  const { isConnected, connectionError } = useWebSocket();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   

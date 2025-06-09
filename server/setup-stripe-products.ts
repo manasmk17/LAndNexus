@@ -114,15 +114,5 @@ export async function setupStripeProducts() {
   }
 }
 
-// Run setup if this file is executed directly
-if (require.main === module) {
-  setupStripeProducts()
-    .then(() => {
-      console.log('✅ Stripe products setup completed');
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error('❌ Stripe products setup failed:', error);
-      process.exit(1);
-    });
-}
+// Export for manual execution
+export default setupStripeProducts;

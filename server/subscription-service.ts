@@ -34,7 +34,15 @@ export class SubscriptionService {
     
     const existingPlans = await database.select().from(subscriptionPlans);
     if (existingPlans.length > 0) {
-      return; // Plans already exist
+      // Check if Stripe price IDs are missing and create them
+      const plansNeedingStripeSetup = existingPlans.filter(plan => 
+        !plan.stripePriceIdMonthlyUSD || !plan.stripePriceIdYearlyUSD
+      );
+      
+      if (plansNeedingStripeSetup.length > 0) {
+        await this.setupStripePrices(plansNeedingStripeSetup);
+      }
+      return;
     }
 
     const defaultPlans = [
@@ -113,8 +121,94 @@ export class SubscriptionService {
       }
     ];
 
-    for (const plan of defaultPlans) {
-      await database.insert(subscriptionPlans).values(plan);
+    const insertedPlans = await database.insert(subscriptionPlans).values(defaultPlans).returning();
+    console.log('✅ Default subscription plans initialized');
+    
+    // Setup Stripe prices for new plans
+    await this.setupStripePrices(insertedPlans);
+  }
+
+  async setupStripePrices(plans: any[]) {
+    const database = await this.getDb();
+    
+    for (const plan of plans) {
+      try {
+        // Create Stripe product
+        const product = await stripe.products.create({
+          name: `L&D Nexus ${plan.name}`,
+          description: plan.description || `${plan.name} subscription plan`,
+          metadata: {
+            planId: plan.id.toString(),
+            planName: plan.name
+          }
+        });
+
+        // Create monthly price USD
+        const monthlyPriceUSD = await stripe.prices.create({
+          product: product.id,
+          unit_amount: plan.priceMonthlyUSD,
+          currency: 'usd',
+          recurring: { interval: 'month' },
+          metadata: {
+            planId: plan.id.toString(),
+            billing: 'monthly',
+            currency: 'USD'
+          }
+        });
+
+        // Create yearly price USD
+        const yearlyPriceUSD = await stripe.prices.create({
+          product: product.id,
+          unit_amount: plan.priceYearlyUSD,
+          currency: 'usd',
+          recurring: { interval: 'year' },
+          metadata: {
+            planId: plan.id.toString(),
+            billing: 'yearly',
+            currency: 'USD'
+          }
+        });
+
+        // Create monthly price AED
+        const monthlyPriceAED = await stripe.prices.create({
+          product: product.id,
+          unit_amount: plan.priceMonthlyAED,
+          currency: 'aed',
+          recurring: { interval: 'month' },
+          metadata: {
+            planId: plan.id.toString(),
+            billing: 'monthly',
+            currency: 'AED'
+          }
+        });
+
+        // Create yearly price AED
+        const yearlyPriceAED = await stripe.prices.create({
+          product: product.id,
+          unit_amount: plan.priceYearlyAED,
+          currency: 'aed',
+          recurring: { interval: 'year' },
+          metadata: {
+            planId: plan.id.toString(),
+            billing: 'yearly',
+            currency: 'AED'
+          }
+        });
+
+        // Update plan with Stripe price IDs
+        await database.update(subscriptionPlans)
+          .set({
+            stripePriceIdMonthlyUSD: monthlyPriceUSD.id,
+            stripePriceIdYearlyUSD: yearlyPriceUSD.id,
+            stripePriceIdMonthlyAED: monthlyPriceAED.id,
+            stripePriceIdYearlyAED: yearlyPriceAED.id
+          })
+          .where(eq(subscriptionPlans.id, plan.id));
+
+        console.log(`✅ Stripe prices created for ${plan.name} plan`);
+      } catch (error) {
+        console.error(`❌ Failed to create Stripe prices for ${plan.name}:`, error);
+      }
     }
   }
 

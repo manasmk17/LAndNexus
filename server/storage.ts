@@ -29,6 +29,8 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByGoogleId(googleId: string): Promise<User | undefined>;
+  getUserByLinkedInId(linkedinId: string): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, userData: Partial<User>): Promise<User | undefined>;
@@ -491,6 +493,18 @@ export class MemStorage implements IStorage {
       (user) => user.email === email
     );
   }
+
+  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.googleId === googleId
+    );
+  }
+
+  async getUserByLinkedInId(linkedinId: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.linkedinId === linkedinId
+    );
+  }
   
   async getAllUsers(): Promise<User[]> {
     return Array.from(this.users.values());
@@ -508,7 +522,10 @@ export class MemStorage implements IStorage {
       subscriptionTier: null,
       subscriptionStatus: null,
       resetToken: null,
-      resetTokenExpiry: null
+      resetTokenExpiry: null,
+      googleId: insertUser.googleId || null,
+      linkedinId: insertUser.linkedinId || null,
+      isEmailVerified: insertUser.isEmailVerified || false
     };
     this.users.set(id, user);
     return user;
@@ -1592,10 +1609,97 @@ export class DatabaseStorage implements IStorage {
   
   // User operations
   async getUser(id: number): Promise<User | undefined> {
+    if (!db) return undefined;
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
-  
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    if (!db) return undefined;
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    if (!db) return undefined;
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+    if (!db) return undefined;
+    const [user] = await db.select().from(users).where(eq(users.googleId, googleId));
+    return user;
+  }
+
+  async getUserByLinkedInId(linkedinId: string): Promise<User | undefined> {
+    if (!db) return undefined;
+    const [user] = await db.select().from(users).where(eq(users.linkedinId, linkedinId));
+    return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    if (!db) return [];
+    return await db.select().from(users);
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    if (!db) throw new Error('Database not available');
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+    if (!db) return undefined;
+    const [user] = await db.update(users).set(userData).where(eq(users.id, id)).returning();
+    return user;
+  }
+
+  async deleteUser(id: number): Promise<boolean> {
+    if (!db) return false;
+    try {
+      console.log(`Storage: Attempting to delete user with ID: ${id}`);
+      
+      // Start a transaction to handle related records
+      return await db.transaction(async (tx) => {
+        // Check for company profiles associated with this user
+        const companyProfileResults = await tx
+          .select({ id: companyProfiles.id })
+          .from(companyProfiles)
+          .where(eq(companyProfiles.userId, id));
+          
+        if (companyProfileResults.length > 0) {
+          console.log(`Cannot delete user ${id}: Found ${companyProfileResults.length} associated company profiles`);
+          throw new Error(`User is associated with company profiles. Please delete those first.`);
+        }
+        
+        // Check for professional profiles associated with this user
+        const professionalProfileResults = await tx
+          .select({ id: professionalProfiles.id })
+          .from(professionalProfiles)
+          .where(eq(professionalProfiles.userId, id));
+          
+        if (professionalProfileResults.length > 0) {
+          console.log(`Cannot delete user ${id}: Found ${professionalProfileResults.length} associated professional profiles`);
+          throw new Error(`User is associated with professional profiles. Please delete those first.`);
+        }
+        
+        // If no dependencies found, proceed with deletion
+        const result = await tx
+          .delete(users)
+          .where(eq(users.id, id))
+          .returning({ id: users.id });
+          
+        const success = result.length > 0;
+        console.log(`User deletion ${success ? 'successful' : 'failed'} for ID: ${id}`);
+        return success;
+      });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      return false;
+    }
+  }
+
   // Password and account recovery operations
   async createResetToken(email: string): Promise<string | null> {
     try {
@@ -1665,84 +1769,17 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+  // Professional Profile operations  
+  async getProfessionalProfile(id: number): Promise<ProfessionalProfile | undefined> {
+    if (!db) return undefined;
+    const [profile] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.id, id));
+    return profile;
   }
 
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user;
-  }
-  
-  async getAllUsers(): Promise<User[]> {
-    return await db.select().from(users);
-  }
-
-  async createUser(user: InsertUser): Promise<User> {
-    // Make sure isAdmin is set to false if not provided
-    const userData = { 
-      ...user,
-      isAdmin: user.isAdmin || false
-    };
-    const [createdUser] = await db.insert(users).values(userData).returning();
-    return createdUser;
-  }
-
-  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
-    const [updatedUser] = await db
-      .update(users)
-      .set(userData)
-      .where(eq(users.id, id))
-      .returning();
-    return updatedUser;
-  }
-  
-  async deleteUser(id: number): Promise<boolean> {
-    try {
-      console.log(`Storage: Attempting to delete user with ID: ${id}`);
-      
-      // Start a transaction to handle related records
-      return await db.transaction(async (tx) => {
-        // Check for company profiles associated with this user
-        const companyProfileResults = await tx
-          .select({ id: companyProfiles.id })
-          .from(companyProfiles)
-          .where(eq(companyProfiles.userId, id));
-          
-        if (companyProfileResults.length > 0) {
-          console.log(`Cannot delete user ${id}: Found ${companyProfileResults.length} associated company profiles`);
-          throw new Error(`User is associated with company profiles. Please delete those first.`);
-        }
-        
-        // Check for professional profiles associated with this user
-        const professionalProfileResults = await tx
-          .select({ id: professionalProfiles.id })
-          .from(professionalProfiles)
-          .where(eq(professionalProfiles.userId, id));
-          
-        if (professionalProfileResults.length > 0) {
-          console.log(`Cannot delete user ${id}: Found ${professionalProfileResults.length} associated professional profiles`);
-          throw new Error(`User is associated with professional profiles. Please delete those first.`);
-        }
-        
-        // Check for job postings, resources, etc. associated with this user
-        // Check for other dependencies as needed...
-        
-        // If no dependencies found, proceed with deletion
-        const result = await tx
-          .delete(users)
-          .where(eq(users.id, id))
-          .returning({ id: users.id });
-          
-        const success = result.length > 0;
-        console.log(`User deletion ${success ? 'successful' : 'failed'} for ID: ${id}`);
-        return success;
-      });
-    } catch (error) {
-      console.error(`Error deleting user with ID ${id}:`, error);
-      throw error; // Re-throw to handle in the route
-    }
+  async createProfessionalProfile(profile: InsertProfessionalProfile): Promise<ProfessionalProfile> {
+    if (!db) throw new Error('Database not available');
+    const [newProfile] = await db.insert(professionalProfiles).values(profile).returning();
+    return newProfile;
   }
 
   // Stripe operations
@@ -2618,5 +2655,6 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Dynamically use MemStorage or DatabaseStorage based on database connection status
-export const storage = useRealDatabase ? new DatabaseStorage() : new MemStorage();
+// Use MemStorage for OAuth authentication functionality
+export const storage = new MemStorage();
+// export const storage = useRealDatabase ? new DatabaseStorage() : new MemStorage();

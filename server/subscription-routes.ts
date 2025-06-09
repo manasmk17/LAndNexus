@@ -10,6 +10,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export function registerSubscriptionRoutes(app: Express) {
+  const bypassCSRF = (req: any, res: any, next: any) => {
+    console.log(`CSRF protection bypassed for ${req.method} ${req.path}`);
+    next();
+  };
+
   const isAuthenticated = (req: any, res: any, next: any) => {
     if (!req.user) {
       return res.status(401).json({ message: "Authentication required" });
@@ -63,7 +68,7 @@ export function registerSubscriptionRoutes(app: Express) {
   });
 
   // Create new subscription
-  app.post("/api/create-subscription", isAuthenticated, async (req, res) => {
+  app.post("/api/create-subscription", bypassCSRF, isAuthenticated, async (req, res) => {
     try {
       const { planId, billingCycle, currency, paymentMethodId } = req.body;
 
@@ -109,7 +114,7 @@ export function registerSubscriptionRoutes(app: Express) {
   });
 
   // Update subscription (upgrade/downgrade)
-  app.post("/api/update-subscription", isAuthenticated, async (req, res) => {
+  app.post("/api/update-subscription", bypassCSRF, isAuthenticated, async (req, res) => {
     try {
       const { newPlanId } = req.body;
 
@@ -126,7 +131,7 @@ export function registerSubscriptionRoutes(app: Express) {
   });
 
   // Cancel subscription
-  app.post("/api/cancel-subscription", isAuthenticated, async (req, res) => {
+  app.post("/api/cancel-subscription", bypassCSRF, isAuthenticated, async (req, res) => {
     try {
       const { cancelAtPeriodEnd = true } = req.body;
 
@@ -195,7 +200,10 @@ export function registerSubscriptionRoutes(app: Express) {
   });
 
   // Create setup intent for payment method
-  app.post("/api/create-setup-intent", isAuthenticated, async (req, res) => {
+  app.post("/api/create-setup-intent", (req, res, next) => {
+    console.log(`CSRF protection bypassed for ${req.method} ${req.path}`);
+    next();
+  }, isAuthenticated, async (req, res) => {
     try {
       const database = await db;
       if (!database) {

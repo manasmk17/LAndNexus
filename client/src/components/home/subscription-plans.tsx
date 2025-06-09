@@ -16,49 +16,55 @@ type PricingPlan = {
 
 const plans: PricingPlan[] = [
   {
-    id: "free",
-    name: "Free",
-    price: 0,
-    description: "Essential tools for L&D professionals",
-    features: [
-      "Create a basic profile",
-      "Browse job listings",
-      "Access public resources",
-      "Join community forum"
-    ],
-    buttonText: "Current Plan",
-    mostPopular: false
-  },
-  {
     id: "basic",
     name: "Basic",
     price: 29,
-    description: "Essential tools for L&D professionals and companies",
+    description: "Perfect for individual L&D professionals getting started",
     features: [
-      "Create enhanced profile",
-      "Browse and apply to job postings",
-      "Access full resource library",
-      "Apply to up to 5 jobs monthly",
-      "Basic analytics dashboard"
+      "Up to 5 job applications per month",
+      "Basic profile creation",
+      "Access to community forum",
+      "Standard customer support",
+      "Resource library access (10 downloads/month)"
     ],
-    buttonText: "Subscribe Now",
+    buttonText: "Get Started",
     mostPopular: false
   },
   {
-    id: "premium",
-    name: "Premium",
+    id: "pro",
+    name: "Pro",
     price: 79,
-    description: "Advanced features for serious L&D experts",
+    description: "Advanced features for experienced professionals and small teams",
     features: [
-      "Featured profile placement",
       "Unlimited job applications",
-      "Premium resource access",
-      "Direct messaging",
-      "Priority support",
-      "Advanced analytics"
+      "Advanced profile with portfolio showcase",
+      "Priority matching algorithm",
+      "Video consultation booking",
+      "Unlimited resource access",
+      "Priority customer support",
+      "Analytics dashboard",
+      "Custom branding options"
     ],
-    buttonText: "Subscribe Now",
+    buttonText: "Get Pro",
     mostPopular: true
+  },
+  {
+    id: "enterprise",
+    name: "Enterprise",
+    price: 199,
+    description: "Complete solution for organizations and training companies",
+    features: [
+      "Everything in Pro",
+      "Multi-user team management",
+      "Custom integrations",
+      "Dedicated account manager",
+      "White-label solutions",
+      "Advanced analytics & reporting",
+      "API access",
+      "24/7 phone support"
+    ],
+    buttonText: "Contact Sales",
+    mostPopular: false
   }
 ];
 
@@ -109,12 +115,12 @@ export default function SubscriptionPlans() {
                 </ul>
               </CardContent>
               <CardFooter>
-                {plan.id === "free" ? (
+                {plan.id === "enterprise" ? (
                   <Button 
                     variant="outline" 
                     className="w-full" 
                     size="lg"
-                    disabled
+                    onClick={() => window.location.href = "/contact"}
                   >
                     {plan.buttonText}
                   </Button>
@@ -126,7 +132,7 @@ export default function SubscriptionPlans() {
                     onClick={!user ? () => window.location.href = "/login" : undefined}
                   >
                     {user ? (
-                      <Link href={`/subscribe/${plan.id}`}>{plan.buttonText}</Link>
+                      <Link href="/subscription-plans">{plan.buttonText}</Link>
                     ) : (
                       plan.buttonText
                     )}

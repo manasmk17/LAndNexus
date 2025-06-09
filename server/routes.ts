@@ -316,7 +316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Register admin-specific routes after auth middleware is set up
-  registerAdminRoutes(app);
+  setupAdminRoutes(app);
   
   // Middleware to automatically authenticate users with persistent auth tokens
   app.use(async (req, res, next) => {
@@ -4963,6 +4963,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
   });
+
+  // Setup admin routes
+  setupAdminRoutes(app);
   
   return httpServer;
 }

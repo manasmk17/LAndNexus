@@ -192,6 +192,16 @@ export interface IStorage {
   // Subscription operations
   getUserSubscription(userId: number): Promise<any>;
   updateUserSubscription(userId: number, subscriptionData: any): Promise<any>;
+  getSubscriptionPlans(): Promise<SubscriptionPlan[]>;
+  
+  // Admin operations
+  getContentAnalytics(): Promise<any>;
+  getRevenueAnalytics(): Promise<any>;
+  getSystemSettings(): Promise<any>;
+  updateSystemSettings(settings: any): Promise<any>;
+  getAuditLogs(limit?: number): Promise<any[]>;
+  exportUserData(): Promise<any[]>;
+  exportRevenueData(): Promise<any[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -1514,6 +1524,67 @@ export class MemStorage implements IStorage {
         isActive: true
       }
     ];
+  }
+
+  // Admin operations
+  async getContentAnalytics(): Promise<any> {
+    return {
+      totalJobs: this.jobPostings.size,
+      totalProfessionals: this.professionalProfiles.size,
+      totalCompanies: this.companyProfiles.size,
+      totalResources: this.resources.size,
+      totalApplications: this.jobApplications.size,
+      pendingApplications: Array.from(this.jobApplications.values()).filter(app => app.status === 'pending').length
+    };
+  }
+
+  async getRevenueAnalytics(): Promise<any> {
+    const activeUsers = Array.from(this.users.values()).filter(u => u.subscriptionTier && u.subscriptionStatus === 'active');
+    return {
+      totalRevenue: 0,
+      monthlyRecurringRevenue: 0,
+      averageRevenuePerUser: 0,
+      churnRate: 0,
+      growthRate: 0,
+      totalSubscriptions: activeUsers.length,
+      activeSubscriptions: activeUsers.length,
+      cancelledSubscriptions: 0
+    };
+  }
+
+  async getSystemSettings(): Promise<any> {
+    return {
+      maintenanceMode: false,
+      registrationEnabled: true,
+      emailNotifications: true,
+      paymentProcessing: true
+    };
+  }
+
+  async updateSystemSettings(settings: any): Promise<any> {
+    return settings;
+  }
+
+  async getAuditLogs(limit = 50): Promise<any[]> {
+    return [];
+  }
+
+  async exportUserData(): Promise<any[]> {
+    return Array.from(this.users.values()).map(user => ({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      userType: user.userType,
+      subscriptionTier: user.subscriptionTier,
+      subscriptionStatus: user.subscriptionStatus,
+      createdAt: user.createdAt
+    }));
+  }
+
+  async exportRevenueData(): Promise<any[]> {
+    return [];
   }
 }
 
@@ -2955,6 +3026,125 @@ export class DatabaseStorage implements IStorage {
       console.error("Error fetching subscription plans:", error);
       return [];
     }
+  }
+
+  // Admin operations
+  async getContentAnalytics(): Promise<any> {
+    if (!db) {
+      throw new Error('Database not initialized');
+    }
+
+    try {
+      const [jobCount] = await db.select({ count: sql<number>`count(*)` }).from(jobPostings);
+      const [profCount] = await db.select({ count: sql<number>`count(*)` }).from(professionalProfiles);
+      const [compCount] = await db.select({ count: sql<number>`count(*)` }).from(companyProfiles);
+      const [resCount] = await db.select({ count: sql<number>`count(*)` }).from(resources);
+      const [appCount] = await db.select({ count: sql<number>`count(*)` }).from(jobApplications);
+      const [pendingCount] = await db.select({ count: sql<number>`count(*)` }).from(jobApplications).where(eq(jobApplications.status, 'pending'));
+
+      return {
+        totalJobs: jobCount.count || 0,
+        totalProfessionals: profCount.count || 0,
+        totalCompanies: compCount.count || 0,
+        totalResources: resCount.count || 0,
+        totalApplications: appCount.count || 0,
+        pendingApplications: pendingCount.count || 0
+      };
+    } catch (error) {
+      console.error("Error fetching content analytics:", error);
+      return {
+        totalJobs: 0,
+        totalProfessionals: 0,
+        totalCompanies: 0,
+        totalResources: 0,
+        totalApplications: 0,
+        pendingApplications: 0
+      };
+    }
+  }
+
+  async getRevenueAnalytics(): Promise<any> {
+    if (!db) {
+      throw new Error('Database not initialized');
+    }
+
+    try {
+      const [activeUsers] = await db.select({ count: sql<number>`count(*)` })
+        .from(users)
+        .where(and(
+          isNull(users.subscriptionTier),
+          eq(users.subscriptionStatus, 'active')
+        ));
+
+      return {
+        totalRevenue: 0,
+        monthlyRecurringRevenue: 0,
+        averageRevenuePerUser: 0,
+        churnRate: 0,
+        growthRate: 0,
+        totalSubscriptions: activeUsers.count || 0,
+        activeSubscriptions: activeUsers.count || 0,
+        cancelledSubscriptions: 0
+      };
+    } catch (error) {
+      console.error("Error fetching revenue analytics:", error);
+      return {
+        totalRevenue: 0,
+        monthlyRecurringRevenue: 0,
+        averageRevenuePerUser: 0,
+        churnRate: 0,
+        growthRate: 0,
+        totalSubscriptions: 0,
+        activeSubscriptions: 0,
+        cancelledSubscriptions: 0
+      };
+    }
+  }
+
+  async getSystemSettings(): Promise<any> {
+    return {
+      maintenanceMode: false,
+      registrationEnabled: true,
+      emailNotifications: true,
+      paymentProcessing: true
+    };
+  }
+
+  async updateSystemSettings(settings: any): Promise<any> {
+    return settings;
+  }
+
+  async getAuditLogs(limit = 50): Promise<any[]> {
+    return [];
+  }
+
+  async exportUserData(): Promise<any[]> {
+    if (!db) {
+      throw new Error('Database not initialized');
+    }
+
+    try {
+      const userData = await db.select({
+        id: users.id,
+        username: users.username,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        userType: users.userType,
+        subscriptionTier: users.subscriptionTier,
+        subscriptionStatus: users.subscriptionStatus,
+        createdAt: users.createdAt
+      }).from(users);
+
+      return userData;
+    } catch (error) {
+      console.error("Error exporting user data:", error);
+      return [];
+    }
+  }
+
+  async exportRevenueData(): Promise<any[]> {
+    return [];
   }
 }
 

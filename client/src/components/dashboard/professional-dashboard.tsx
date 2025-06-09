@@ -20,7 +20,7 @@ import {
   Zap
 } from "lucide-react";
 import { format } from "date-fns";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
 import SubscriptionStatus from "@/components/dashboard/subscription-status";
 import ProfessionalJobMatches from "@/components/matching/professional-job-matches";

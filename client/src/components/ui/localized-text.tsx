@@ -1,5 +1,4 @@
-import { useTranslation } from 'react-i18next';
-import { formatDate, formatCurrency, formatNumber } from '@/lib/i18n';
+import { formatCurrency } from '@/lib/i18n';
 
 interface LocalizedDateProps {
   date: Date | string;
@@ -8,44 +7,31 @@ interface LocalizedDateProps {
 }
 
 export function LocalizedDate({ date, format = 'long', className }: LocalizedDateProps) {
-  const { i18n } = useTranslation();
-  const locale = i18n.language;
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
   
-  const formatDate = (date: Date | string, format: string) => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
+  if (format === 'relative') {
+    const now = new Date();
+    const diffMs = now.getTime() - dateObj.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
     
-    if (format === 'relative') {
-      const now = new Date();
-      const diffMs = now.getTime() - dateObj.getTime();
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-      const diffMinutes = Math.floor(diffMs / (1000 * 60));
-      
-      if (diffMinutes < 60) {
-        return `${diffMinutes} ${locale === 'ar' ? 'دقيقة' : 'minutes ago'}`;
-      } else if (diffHours < 24) {
-        return `${diffHours} ${locale === 'ar' ? 'ساعة' : 'hours ago'}`;
-      } else if (diffDays < 7) {
-        return `${diffDays} ${locale === 'ar' ? 'يوم' : 'days ago'}`;
-      }
+    if (diffMinutes < 60) {
+      return <span className={className}>{diffMinutes} minutes ago</span>;
+    } else if (diffHours < 24) {
+      return <span className={className}>{diffHours} hours ago</span>;
+    } else if (diffDays < 7) {
+      return <span className={className}>{diffDays} days ago</span>;
     }
-    
-    if (locale === 'ar') {
-      const options: Intl.DateTimeFormatOptions = format === 'short' 
-        ? { year: 'numeric', month: '2-digit', day: '2-digit' }
-        : { year: 'numeric', month: 'long', day: 'numeric' };
-      return new Intl.DateTimeFormat('ar-AE', options).format(dateObj);
-    }
-    
-    const options: Intl.DateTimeFormatOptions = format === 'short'
-      ? { year: 'numeric', month: '2-digit', day: '2-digit' }
-      : { year: 'numeric', month: 'long', day: 'numeric' };
-    return new Intl.DateTimeFormat('en-US', options).format(dateObj);
-  };
-
+  }
+  
+  const options: Intl.DateTimeFormatOptions = format === 'short'
+    ? { year: 'numeric', month: '2-digit', day: '2-digit' }
+    : { year: 'numeric', month: 'long', day: 'numeric' };
+  
   return (
     <span className={className}>
-      {formatDate(date, format)}
+      {new Intl.DateTimeFormat('en-US', options).format(dateObj)}
     </span>
   );
 }
@@ -57,10 +43,7 @@ interface LocalizedCurrencyProps {
 }
 
 export function LocalizedCurrency({ amount, className, showSymbol = true }: LocalizedCurrencyProps) {
-  const { i18n } = useTranslation();
-  const locale = i18n.language;
-  
-  const formatted = formatCurrency(amount, locale);
+  const formatted = formatCurrency(amount);
   
   return (
     <span className={className}>
@@ -75,12 +58,9 @@ interface LocalizedNumberProps {
 }
 
 export function LocalizedNumber({ number, className }: LocalizedNumberProps) {
-  const { i18n } = useTranslation();
-  const locale = i18n.language;
-  
   return (
     <span className={className}>
-      {formatNumber(number, locale)}
+      {new Intl.NumberFormat('en-US').format(number)}
     </span>
   );
 }
@@ -93,15 +73,12 @@ interface LocalizedPluralProps {
 }
 
 export function LocalizedPlural({ count, singular, plural, className }: LocalizedPluralProps) {
-  const { t, i18n } = useTranslation();
-  const locale = i18n.language;
-  
-  // Use i18next's built-in pluralization
-  const key = plural ? `${singular}_${plural}` : singular;
+  const pluralForm = plural || `${singular}s`;
+  const text = count === 1 ? singular : pluralForm;
   
   return (
     <span className={className}>
-      {t(key, { count })}
+      {count} {text}
     </span>
   );
 }

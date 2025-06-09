@@ -254,6 +254,92 @@ export class SubscriptionService {
     return customer.id;
   }
 
+  // Create subscription setup intent (for payment collection)
+  async createSubscriptionSetupIntent(data: {
+    userId: number;
+    planId: number;
+    billingCycle: 'monthly' | 'yearly';
+    currency: 'USD' | 'AED';
+  }): Promise<{ clientSecret: string; planDetails: any }> {
+    const database = await this.getDb();
+
+    // Get plan details
+    const [plan] = await database
+      .select()
+      .from(subscriptionPlans)
+      .where(eq(subscriptionPlans.id, data.planId));
+
+    if (!plan) {
+      throw new Error('Subscription plan not found');
+    }
+
+    // Get user details
+    const [user] = await database
+      .select()
+      .from(users)
+      .where(eq(users.id, data.userId));
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Create or get Stripe customer
+    const customerId = await this.createOrGetStripeCustomer(
+      data.userId, 
+      user.email, 
+      `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username
+    );
+
+    // Get appropriate price ID
+    let priceId: string;
+    if (data.currency === 'USD') {
+      priceId = data.billingCycle === 'monthly' 
+        ? plan.stripePriceIdMonthlyUSD! 
+        : plan.stripePriceIdYearlyUSD!;
+    } else {
+      priceId = data.billingCycle === 'monthly' 
+        ? plan.stripePriceIdMonthlyAED! 
+        : plan.stripePriceIdYearlyAED!;
+    }
+
+    // Create subscription with incomplete status
+    const subscription = await stripe.subscriptions.create({
+      customer: customerId,
+      items: [{ price: priceId }],
+      payment_behavior: 'default_incomplete',
+      payment_settings: {
+        save_default_payment_method: 'on_subscription',
+      },
+      expand: ['latest_invoice.payment_intent'],
+      metadata: {
+        userId: data.userId.toString(),
+        planId: data.planId.toString(),
+        billingCycle: data.billingCycle,
+        currency: data.currency
+      }
+    });
+
+    const invoice = subscription.latest_invoice as Stripe.Invoice;
+    const paymentIntent = invoice?.payment_intent as Stripe.PaymentIntent;
+
+    if (!paymentIntent || !paymentIntent.client_secret) {
+      throw new Error('Failed to create payment intent for subscription');
+    }
+
+    return {
+      clientSecret: paymentIntent.client_secret,
+      planDetails: {
+        name: plan.name,
+        description: plan.description,
+        price: data.currency === 'USD' 
+          ? (data.billingCycle === 'monthly' ? plan.priceMonthlyUSD : plan.priceYearlyUSD)
+          : (data.billingCycle === 'monthly' ? plan.priceMonthlyAED : plan.priceYearlyAED),
+        currency: data.currency,
+        billingCycle: data.billingCycle
+      }
+    };
+  }
+
   // Create subscription
   async createSubscription(data: {
     userId: number;

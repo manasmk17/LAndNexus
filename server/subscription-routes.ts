@@ -67,14 +67,14 @@ export function registerSubscriptionRoutes(app: Express) {
     }
   });
 
-  // Create new subscription
+  // Create subscription setup intent
   app.post("/api/create-subscription", bypassCSRF, isAuthenticated, async (req, res) => {
     try {
-      const { planId, billingCycle, currency, paymentMethodId } = req.body;
+      const { planId, billingCycle, currency } = req.body;
 
       if (!planId || !billingCycle || !currency) {
         return res.status(400).json({ 
-          message: "Missing required fields: planId, billingCycle, currency" 
+          message: "Missing required parameters: planId, billingCycle, or currency" 
         });
       }
 
@@ -98,18 +98,17 @@ export function registerSubscriptionRoutes(app: Express) {
         });
       }
 
-      const result = await subscriptionService.createSubscription({
+      const result = await subscriptionService.createSubscriptionSetupIntent({
         userId: req.user.id,
         planId: parseInt(planId),
         billingCycle,
-        currency,
-        paymentMethodId
+        currency
       });
 
       res.json(result);
     } catch (error: any) {
-      console.error("Error creating subscription:", error);
-      res.status(500).json({ message: error.message || "Failed to create subscription" });
+      console.error("Error creating subscription setup:", error);
+      res.status(500).json({ message: error.message || "Failed to create subscription setup" });
     }
   });
 

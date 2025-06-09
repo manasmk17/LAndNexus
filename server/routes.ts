@@ -3661,16 +3661,114 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Main resources endpoint with search and filtering
+  // Main resources endpoint with advanced search and filtering
   app.get("/api/resources", async (req, res) => {
     try {
-      const query = req.query.query as string | undefined;
-      const type = req.query.type as string | undefined;
-      const categoryId = req.query.categoryId ? parseInt(req.query.categoryId as string) : undefined;
+      const {
+        search,
+        query, // Legacy support
+        type,
+        resourceType, // Alternative parameter name
+        categoryId,
+        authorId,
+        featured,
+        sortBy = 'createdAt',
+        sortOrder = 'desc',
+        page = '1',
+        limit = '20'
+      } = req.query;
+
+      // Normalize parameters (support both old and new parameter names)
+      const searchTerm = search || query;
+      const filterType = type || resourceType;
+      const filterCategoryId = categoryId ? parseInt(categoryId as string) : undefined;
+      const filterAuthorId = authorId ? parseInt(authorId as string) : undefined;
+
+      // Get all resources first
+      const allResources = await storage.getAllResources();
       
-      // Use the searchResources method which can handle all filtering criteria
-      const resources = await storage.searchResources(query, type, categoryId);
-      res.json(resources);
+      // Apply filters
+      let filteredResources = allResources;
+
+      if (searchTerm) {
+        const searchLower = (searchTerm as string).toLowerCase();
+        filteredResources = filteredResources.filter(resource =>
+          resource.title?.toLowerCase().includes(searchLower) ||
+          resource.description?.toLowerCase().includes(searchLower) ||
+          resource.content?.toLowerCase().includes(searchLower)
+        );
+      }
+
+      if (filterType) {
+        filteredResources = filteredResources.filter(resource => 
+          resource.resourceType === filterType
+        );
+      }
+
+      if (filterCategoryId) {
+        filteredResources = filteredResources.filter(resource => 
+          resource.categoryId === filterCategoryId
+        );
+      }
+
+      if (filterAuthorId) {
+        filteredResources = filteredResources.filter(resource => 
+          resource.authorId === filterAuthorId
+        );
+      }
+
+      if (featured === 'true') {
+        filteredResources = filteredResources.filter(resource => 
+          resource.featured === true
+        );
+      }
+
+      // Apply sorting
+      filteredResources.sort((a, b) => {
+        let aValue: any, bValue: any;
+        
+        switch (sortBy) {
+          case 'title':
+            aValue = a.title || '';
+            bValue = b.title || '';
+            break;
+          case 'type':
+            aValue = a.resourceType || '';
+            bValue = b.resourceType || '';
+            break;
+          case 'author':
+            aValue = a.authorId || 0;
+            bValue = b.authorId || 0;
+            break;
+          case 'createdAt':
+          default:
+            aValue = new Date(a.createdAt || 0);
+            bValue = new Date(b.createdAt || 0);
+            break;
+        }
+
+        if (sortOrder === 'desc') {
+          return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+        } else {
+          return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+        }
+      });
+
+      // Apply pagination
+      const pageNum = parseInt(page as string);
+      const limitNum = parseInt(limit as string);
+      const startIndex = (pageNum - 1) * limitNum;
+      const endIndex = startIndex + limitNum;
+      
+      const paginatedResources = filteredResources.slice(startIndex, endIndex);
+
+      res.json({
+        resources: paginatedResources,
+        total: filteredResources.length,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(filteredResources.length / limitNum)
+      });
     } catch (err) {
       console.error("Error fetching resources:", err);
       res.status(500).json({ message: "Error fetching resources" });

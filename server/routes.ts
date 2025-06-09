@@ -3684,7 +3684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/messages", isAuthenticated, async (req, res) => {
+  app.post("/api/messages", bypassCSRF, isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
 

@@ -3607,19 +3607,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Messaging Routes
+  // Messaging Routes with enhanced error handling and real-time updates
   app.get("/api/messages", isAuthenticated, async (req, res) => {
-    const user = req.user as any;
-    const messages = await storage.getUserMessages(user.id);
-    res.json(messages);
+    try {
+      const user = req.user as any;
+      const messages = await storage.getUserMessages(user.id);
+      res.json(messages || []);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
   });
 
   app.get("/api/messages/:userId", isAuthenticated, async (req, res) => {
-    const user = req.user as any;
-    const otherUserId = parseInt(req.params.userId);
+    try {
+      const user = req.user as any;
+      const otherUserId = parseInt(req.params.userId);
 
-    const conversation = await storage.getConversation(user.id, otherUserId);
-    res.json(conversation);
+      if (isNaN(otherUserId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+
+      // Verify the other user exists and user has permission to view conversation
+      const otherUser = await storage.getUser(otherUserId);
+      if (!otherUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const conversation = await storage.getConversation(user.id, otherUserId);
+      res.json(conversation || []);
+    } catch (error) {
+      console.error("Error fetching conversation:", error);
+      res.status(500).json({ message: "Failed to fetch conversation" });
+    }
   });
 
   app.post("/api/messages", isAuthenticated, async (req, res) => {
@@ -3631,12 +3651,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         senderId: user.id
       });
 
+      // Verify receiver exists
+      const receiver = await storage.getUser(messageData.receiverId);
+      if (!receiver) {
+        return res.status(404).json({ message: "Receiver not found" });
+      }
+
       const message = await storage.createMessage(messageData);
+
+      // Send real-time notification via WebSocket
+      const receiverConnections = connections.get(messageData.receiverId);
+      if (receiverConnections && receiverConnections.length > 0) {
+        receiverConnections.forEach(conn => {
+          if (conn.readyState === WebSocket.OPEN) {
+            conn.send(JSON.stringify({
+              type: 'new_message',
+              data: message
+            }));
+          }
+        });
+      }
+
       res.status(201).json(message);
     } catch (err) {
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid input", errors: err.errors });
       }
+      console.error("Error creating message:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });

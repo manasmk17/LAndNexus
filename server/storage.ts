@@ -192,6 +192,34 @@ export interface IStorage {
   // Subscription operations
   getUserSubscription(userId: number): Promise<any>;
   updateUserSubscription(userId: number, subscriptionData: any): Promise<any>;
+  
+  // Admin operations
+  getTotalUsers(): Promise<number>;
+  getActiveSubscriptionsCount(): Promise<number>;
+  getMonthlyRevenue(): Promise<number>;
+  getPendingContentCount(): Promise<number>;
+  getUsersFromLastMonth(): Promise<number>;
+  getRecentActivity(): Promise<any[]>;
+  getAdminUsers(filters: any): Promise<any[]>;
+  suspendUser(userId: number): Promise<void>;
+  activateUser(userId: number): Promise<void>;
+  makeUserAdmin(userId: number): Promise<void>;
+  getAdminSubscriptions(filters: any): Promise<any[]>;
+  getRevenueMetrics(): Promise<any>;
+  cancelSubscription(subscriptionId: number): Promise<void>;
+  processRefund(subscriptionId: number, amount: number): Promise<void>;
+  getContentForModeration(filters: any): Promise<any[]>;
+  getModerationStats(): Promise<any>;
+  approveContent(contentId: number, adminId: number, reason?: string): Promise<void>;
+  rejectContent(contentId: number, adminId: number, reason: string): Promise<void>;
+  getUserAnalytics(period: string): Promise<any>;
+  getRevenueAnalytics(period: string): Promise<any>;
+  getContentAnalytics(period: string): Promise<any>;
+  getSystemSettings(): Promise<any>;
+  updateSystemSettings(settings: any): Promise<void>;
+  getAuditLogs(filters: any): Promise<any>;
+  exportUserData(format: string): Promise<string>;
+  exportRevenueData(format: string, startDate?: string, endDate?: string): Promise<string>;
 }
 
 export class MemStorage implements IStorage {
@@ -1514,6 +1542,399 @@ export class MemStorage implements IStorage {
         isActive: true
       }
     ];
+  }
+
+  // Admin operations
+  async getTotalUsers(): Promise<number> {
+    return this.users.size;
+  }
+
+  async getActiveSubscriptionsCount(): Promise<number> {
+    return Array.from(this.users.values()).filter(user => 
+      user.subscriptionStatus === 'active'
+    ).length;
+  }
+
+  async getMonthlyRevenue(): Promise<number> {
+    // Mock revenue calculation
+    const activeUsers = await this.getActiveSubscriptionsCount();
+    return activeUsers * 49; // Average subscription price
+  }
+
+  async getPendingContentCount(): Promise<number> {
+    const pendingResources = Array.from(this.resources.values()).filter(r => !r.isApproved).length;
+    const pendingJobs = Array.from(this.jobPostings.values()).filter(j => !j.isApproved).length;
+    return pendingResources + pendingJobs;
+  }
+
+  async getUsersFromLastMonth(): Promise<number> {
+    const lastMonth = new Date();
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    return Array.from(this.users.values()).filter(user => 
+      user.createdAt > lastMonth
+    ).length;
+  }
+
+  async getRecentActivity(): Promise<any[]> {
+    const activities = [];
+    
+    // Recent user registrations
+    const recentUsers = Array.from(this.users.values())
+      .filter(user => {
+        const dayAgo = new Date();
+        dayAgo.setDate(dayAgo.getDate() - 7);
+        return user.createdAt > dayAgo;
+      })
+      .slice(0, 5)
+      .map(user => ({
+        type: 'user_registration',
+        user: `${user.firstName} ${user.lastName}`,
+        timestamp: user.createdAt,
+        details: `New ${user.userType} registered`
+      }));
+
+    activities.push(...recentUsers);
+
+    // Recent content submissions
+    const recentResources = Array.from(this.resources.values())
+      .slice(-3)
+      .map(resource => ({
+        type: 'content_submission',
+        user: 'Content Creator',
+        timestamp: resource.createdAt,
+        details: `New resource: ${resource.title}`
+      }));
+
+    activities.push(...recentResources);
+
+    return activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }
+
+  async getAdminUsers(filters: any): Promise<any[]> {
+    let users = Array.from(this.users.values());
+
+    if (filters.search) {
+      users = users.filter(user => 
+        user.username.toLowerCase().includes(filters.search.toLowerCase()) ||
+        user.email.toLowerCase().includes(filters.search.toLowerCase()) ||
+        `${user.firstName} ${user.lastName}`.toLowerCase().includes(filters.search.toLowerCase())
+      );
+    }
+
+    if (filters.type) {
+      users = users.filter(user => user.userType === filters.type);
+    }
+
+    if (filters.status) {
+      users = users.filter(user => {
+        if (filters.status === 'active') return user.subscriptionStatus === 'active';
+        if (filters.status === 'inactive') return user.subscriptionStatus !== 'active';
+        return true;
+      });
+    }
+
+    return users.map(user => ({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      userType: user.userType,
+      subscriptionStatus: user.subscriptionStatus,
+      subscriptionTier: user.subscriptionTier,
+      createdAt: user.createdAt,
+      isAdmin: user.isAdmin,
+      stripeCustomerId: user.stripeCustomerId
+    }));
+  }
+
+  async suspendUser(userId: number): Promise<void> {
+    const user = this.users.get(userId);
+    if (user) {
+      user.subscriptionStatus = 'suspended';
+      this.users.set(userId, user);
+    }
+  }
+
+  async activateUser(userId: number): Promise<void> {
+    const user = this.users.get(userId);
+    if (user) {
+      user.subscriptionStatus = 'active';
+      this.users.set(userId, user);
+    }
+  }
+
+  async makeUserAdmin(userId: number): Promise<void> {
+    const user = this.users.get(userId);
+    if (user) {
+      user.isAdmin = true;
+      this.users.set(userId, user);
+    }
+  }
+
+  async getAdminSubscriptions(filters: any): Promise<any[]> {
+    let users = Array.from(this.users.values()).filter(user => user.subscriptionTier);
+
+    if (filters.search) {
+      users = users.filter(user => 
+        user.username.toLowerCase().includes(filters.search.toLowerCase()) ||
+        user.email.toLowerCase().includes(filters.search.toLowerCase())
+      );
+    }
+
+    if (filters.status) {
+      users = users.filter(user => user.subscriptionStatus === filters.status);
+    }
+
+    if (filters.plan) {
+      users = users.filter(user => user.subscriptionTier === filters.plan);
+    }
+
+    return users.map(user => ({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      subscriptionTier: user.subscriptionTier,
+      subscriptionStatus: user.subscriptionStatus,
+      stripeCustomerId: user.stripeCustomerId,
+      stripeSubscriptionId: user.stripeSubscriptionId,
+      createdAt: user.createdAt
+    }));
+  }
+
+  async getRevenueMetrics(): Promise<any> {
+    const activeSubscriptions = await this.getActiveSubscriptionsCount();
+    const monthlyRevenue = await this.getMonthlyRevenue();
+    
+    return {
+      totalRevenue: monthlyRevenue * 12,
+      monthlyRecurringRevenue: monthlyRevenue,
+      activeSubscriptions,
+      averageRevenuePerUser: activeSubscriptions > 0 ? monthlyRevenue / activeSubscriptions : 0,
+      revenueGrowth: 15.2 // Mock growth percentage
+    };
+  }
+
+  async cancelSubscription(subscriptionId: number): Promise<void> {
+    const user = Array.from(this.users.values()).find(u => u.id === subscriptionId);
+    if (user) {
+      user.subscriptionStatus = 'cancelled';
+      this.users.set(user.id, user);
+    }
+  }
+
+  async processRefund(subscriptionId: number, amount: number): Promise<void> {
+    // Mock refund processing
+    console.log(`Processing refund of $${amount} for subscription ${subscriptionId}`);
+  }
+
+  async getContentForModeration(filters: any): Promise<any[]> {
+    let content = [];
+
+    // Get resources
+    const resources = Array.from(this.resources.values()).map(resource => ({
+      id: resource.id,
+      type: 'resource',
+      title: resource.title,
+      author: 'Resource Author',
+      status: resource.isApproved ? 'approved' : 'pending',
+      createdAt: resource.createdAt,
+      description: resource.description
+    }));
+
+    // Get job postings
+    const jobs = Array.from(this.jobPostings.values()).map(job => ({
+      id: job.id,
+      type: 'job_posting',
+      title: job.title,
+      author: 'Company',
+      status: job.isApproved ? 'approved' : 'pending',
+      createdAt: job.createdAt,
+      description: job.description
+    }));
+
+    content = [...resources, ...jobs];
+
+    if (filters.type) {
+      content = content.filter(item => item.type === filters.type);
+    }
+
+    if (filters.status) {
+      content = content.filter(item => item.status === filters.status);
+    }
+
+    if (filters.search) {
+      content = content.filter(item => 
+        item.title.toLowerCase().includes(filters.search.toLowerCase())
+      );
+    }
+
+    return content;
+  }
+
+  async getModerationStats(): Promise<any> {
+    const content = await this.getContentForModeration({});
+    const pending = content.filter(item => item.status === 'pending').length;
+    const approved = content.filter(item => item.status === 'approved').length;
+    const total = content.length;
+
+    return {
+      totalContent: total,
+      pendingReview: pending,
+      approved: approved,
+      rejectionRate: total > 0 ? ((total - approved - pending) / total * 100).toFixed(1) : 0
+    };
+  }
+
+  async approveContent(contentId: number, adminId: number, reason?: string): Promise<void> {
+    const resource = this.resources.get(contentId);
+    if (resource) {
+      resource.isApproved = true;
+      this.resources.set(contentId, resource);
+    }
+
+    const job = this.jobPostings.get(contentId);
+    if (job) {
+      job.isApproved = true;
+      this.jobPostings.set(contentId, job);
+    }
+  }
+
+  async rejectContent(contentId: number, adminId: number, reason: string): Promise<void> {
+    const resource = this.resources.get(contentId);
+    if (resource) {
+      resource.isApproved = false;
+      this.resources.set(contentId, resource);
+    }
+
+    const job = this.jobPostings.get(contentId);
+    if (job) {
+      job.isApproved = false;
+      this.jobPostings.set(contentId, job);
+    }
+  }
+
+  async getUserAnalytics(period: string): Promise<any> {
+    const totalUsers = this.users.size;
+    const professionals = Array.from(this.users.values()).filter(u => u.userType === 'professional').length;
+    const companies = Array.from(this.users.values()).filter(u => u.userType === 'company').length;
+
+    return {
+      totalUsers,
+      professionals,
+      companies,
+      growthRate: 12.5, // Mock growth rate
+      activeUsers: Math.floor(totalUsers * 0.8),
+      newUsers: Math.floor(totalUsers * 0.1)
+    };
+  }
+
+  async getRevenueAnalytics(period: string): Promise<any> {
+    const metrics = await this.getRevenueMetrics();
+    
+    return {
+      ...metrics,
+      dailyRevenue: Array.from({length: 30}, (_, i) => ({
+        date: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        revenue: Math.floor(Math.random() * 1000) + 500
+      })).reverse()
+    };
+  }
+
+  async getContentAnalytics(period: string): Promise<any> {
+    const totalResources = this.resources.size;
+    const totalJobs = this.jobPostings.size;
+    
+    return {
+      totalContent: totalResources + totalJobs,
+      resources: totalResources,
+      jobPostings: totalJobs,
+      avgViewsPerResource: 145,
+      topCategories: [
+        { name: 'Technology', count: Math.floor(totalResources * 0.4) },
+        { name: 'Marketing', count: Math.floor(totalResources * 0.3) },
+        { name: 'Finance', count: Math.floor(totalResources * 0.3) }
+      ]
+    };
+  }
+
+  async getSystemSettings(): Promise<any> {
+    return {
+      siteName: 'L&D Nexus',
+      maintenanceMode: false,
+      registrationEnabled: true,
+      emailNotifications: true,
+      automaticApproval: false,
+      maxFileUploadSize: 10485760, // 10MB
+      supportEmail: 'support@ldnexus.com',
+      termsUrl: '/terms',
+      privacyUrl: '/privacy'
+    };
+  }
+
+  async updateSystemSettings(settings: any): Promise<void> {
+    // Mock settings update
+    console.log('System settings updated:', settings);
+  }
+
+  async getAuditLogs(filters: any): Promise<any> {
+    const logs = [
+      {
+        id: 1,
+        timestamp: new Date(),
+        action: 'user_login',
+        userId: 1,
+        details: 'User logged in successfully',
+        ipAddress: '192.168.1.1'
+      },
+      {
+        id: 2,
+        timestamp: new Date(Date.now() - 3600000),
+        action: 'content_approved',
+        userId: 2,
+        details: 'Resource approved by admin',
+        ipAddress: '192.168.1.2'
+      }
+    ];
+
+    return {
+      logs: logs.slice((filters.page - 1) * filters.limit, filters.page * filters.limit),
+      total: logs.length,
+      page: filters.page,
+      totalPages: Math.ceil(logs.length / filters.limit)
+    };
+  }
+
+  async exportUserData(format: string): Promise<string> {
+    const users = Array.from(this.users.values());
+    
+    if (format === 'csv') {
+      const headers = 'ID,Username,Email,First Name,Last Name,User Type,Created At,Subscription Status\n';
+      const rows = users.map(user => 
+        `${user.id},${user.username},${user.email},${user.firstName},${user.lastName},${user.userType},${user.createdAt.toISOString()},${user.subscriptionStatus || 'none'}`
+      ).join('\n');
+      return headers + rows;
+    } else {
+      return JSON.stringify(users, null, 2);
+    }
+  }
+
+  async exportRevenueData(format: string, startDate?: string, endDate?: string): Promise<string> {
+    const revenueData = {
+      totalRevenue: await this.getMonthlyRevenue(),
+      period: { startDate, endDate },
+      subscriptions: await this.getAdminSubscriptions({})
+    };
+
+    if (format === 'csv') {
+      const headers = 'User ID,Email,Subscription Tier,Status,Revenue\n';
+      const rows = revenueData.subscriptions.map(sub => 
+        `${sub.id},${sub.email},${sub.subscriptionTier},${sub.subscriptionStatus},49`
+      ).join('\n');
+      return headers + rows;
+    } else {
+      return JSON.stringify(revenueData, null, 2);
+    }
   }
 }
 

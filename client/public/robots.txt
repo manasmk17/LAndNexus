@@ -1,0 +1,40 @@
+User-agent: *
+Allow: /
+
+# Allow crawling of all public content
+Allow: /
+Allow: /jobs
+Allow: /professionals
+Allow: /resources
+Allow: /about
+Allow: /forum
+Allow: /subscription-plans
+
+# Disallow private/admin areas
+Disallow: /admin*
+Disallow: /admin-*
+Disallow: /edit-profile
+Disallow: /messages
+Disallow: /checkout
+Disallow: /subscribe
+Disallow: /manage-*
+Disallow: /reset-password
+Disallow: /forgot-password
+
+# Allow access to static assets
+Allow: /uploads/
+Allow: /assets/
+Allow: /*.css
+Allow: /*.js
+Allow: /*.png
+Allow: /*.jpg
+Allow: /*.jpeg
+Allow: /*.gif
+Allow: /*.svg
+Allow: /*.webp
+
+# Sitemap location
+Sitemap: https://www.ldnexus.com/sitemap.xml
+
+# Crawl delay for respectful crawling
+Crawl-delay: 1

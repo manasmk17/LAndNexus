@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
+import { SEOMeta } from "@/components/seo/seo-meta";
 import { 
   Card, 
   CardContent,

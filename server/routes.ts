@@ -63,7 +63,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2025-02-24.acacia" as any,
 });
 
-import { setupAdminRoutes } from "./admin-routes";
+import { registerAdminRoutes } from "./admin-routes";
 
 const MemoryStore = memorystore(session);
 

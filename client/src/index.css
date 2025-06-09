@@ -3,6 +3,178 @@
 @tailwind components;
 @tailwind utilities;
 
+/* RTL Support */
+[dir="rtl"] {
+  text-align: right;
+}
+
+[dir="rtl"] .rtl\:text-right {
+  text-align: right;
+}
+
+[dir="rtl"] .rtl\:text-left {
+  text-align: left;
+}
+
+[dir="rtl"] .rtl\:ml-auto {
+  margin-left: auto;
+}
+
+[dir="rtl"] .rtl\:mr-auto {
+  margin-right: auto;
+}
+
+[dir="rtl"] .rtl\:flex-row-reverse {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .rtl\:space-x-reverse > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
+}
+
+/* Custom RTL utilities */
+.me-2 {
+  margin-inline-end: 0.5rem;
+}
+
+.me-4 {
+  margin-inline-end: 1rem;
+}
+
+.ms-2 {
+  margin-inline-start: 0.5rem;
+}
+
+.ms-4 {
+  margin-inline-start: 1rem;
+}
+
+.pe-4 {
+  padding-inline-end: 1rem;
+}
+
+.ps-4 {
+  padding-inline-start: 1rem;
+}
+
+.border-s {
+  border-inline-start-width: 1px;
+}
+
+.border-e {
+  border-inline-end-width: 1px;
+}
+
+/* RTL-aware flex positioning */
+.flex-start {
+  justify-content: flex-start;
+}
+
+[dir="rtl"] .flex-start {
+  justify-content: flex-end;
+}
+
+.flex-end {
+  justify-content: flex-end;
+}
+
+[dir="rtl"] .flex-end {
+  justify-content: flex-start;
+}
+
+/* Form input RTL support */
+[dir="rtl"] input,
+[dir="rtl"] textarea,
+[dir="rtl"] select {
+  text-align: right;
+}
+
+[dir="rtl"] input::placeholder,
+[dir="rtl"] textarea::placeholder {
+  text-align: right;
+}
+
+/* Navigation RTL support */
+[dir="rtl"] .nav-menu {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .dropdown-menu {
+  left: auto;
+  right: 0;
+}
+
+/* Button RTL support */
+[dir="rtl"] .btn-with-icon {
+  flex-direction: row-reverse;
+}
+
+/* Card and layout RTL support */
+[dir="rtl"] .card-header {
+  text-align: right;
+}
+
+[dir="rtl"] .form-label {
+  text-align: right;
+}
+
+/* Typography RTL support */
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] h4,
+[dir="rtl"] h5,
+[dir="rtl"] h6 {
+  text-align: right;
+}
+
+[dir="rtl"] p {
+  text-align: right;
+}
+
+/* Dashboard layout RTL support */
+[dir="rtl"] .dashboard-sidebar {
+  border-right: none;
+  border-left: 1px solid hsl(var(--border));
+}
+
+[dir="rtl"] .dashboard-main {
+  margin-left: 0;
+  margin-right: 250px;
+}
+
+/* Grid RTL support */
+[dir="rtl"] .grid-cols-2 > * {
+  text-align: right;
+}
+
+/* Modal and dialog RTL support */
+[dir="rtl"] .dialog-content {
+  text-align: right;
+}
+
+/* Table RTL support */
+[dir="rtl"] table {
+  direction: rtl;
+}
+
+[dir="rtl"] th,
+[dir="rtl"] td {
+  text-align: right;
+}
+
+/* Responsive RTL adjustments */
+@media (max-width: 768px) {
+  [dir="rtl"] .mobile-menu {
+    right: auto;
+    left: 0;
+  }
+  
+  [dir="rtl"] .mobile-nav {
+    flex-direction: row-reverse;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;

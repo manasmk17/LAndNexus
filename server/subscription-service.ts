@@ -23,7 +23,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 export class SubscriptionService {
   private async getDb() {
     if (!db) {
-      throw new Error('Database not initialized');
+      console.warn('Database not available, subscription service limited');
+      return null;
     }
     return db;
   }
@@ -31,6 +32,10 @@ export class SubscriptionService {
   // Initialize default subscription plans
   async initializeSubscriptionPlans() {
     const database = await this.getDb();
+    if (!database) {
+      console.log('Skipping subscription plans initialization - database not available');
+      return;
+    }
     
     const existingPlans = await database.select().from(subscriptionPlans);
     if (existingPlans.length > 0) {
@@ -215,6 +220,9 @@ export class SubscriptionService {
   // Get all active subscription plans
   async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
     const database = await this.getDb();
+    if (!database) {
+      return [];
+    }
     return await database
       .select()
       .from(subscriptionPlans)
@@ -225,6 +233,9 @@ export class SubscriptionService {
   // Create or retrieve Stripe customer
   async createOrGetStripeCustomer(userId: number, email: string, name: string): Promise<string> {
     const database = await this.getDb();
+    if (!database) {
+      throw new Error('Database required for customer operations');
+    }
     
     // Check if user already has a Stripe customer ID
     const [user] = await database

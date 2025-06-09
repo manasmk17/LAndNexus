@@ -1212,8 +1212,138 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/professional-profiles", async (req, res) => {
-    const profiles = await storage.getAllProfessionalProfiles();
-    res.json(profiles);
+    try {
+      const {
+        search,
+        location,
+        expertise,
+        minRate,
+        maxRate,
+        experienceLevel,
+        featured,
+        verified,
+        sortBy = 'rating',
+        sortOrder = 'desc',
+        page = '1',
+        limit = '20'
+      } = req.query;
+
+      // Get all profiles first
+      const allProfiles = await storage.getAllProfessionalProfiles();
+      
+      // Apply filters
+      let filteredProfiles = allProfiles;
+
+      if (search) {
+        const searchLower = (search as string).toLowerCase();
+        filteredProfiles = filteredProfiles.filter(profile =>
+          profile.firstName?.toLowerCase().includes(searchLower) ||
+          profile.lastName?.toLowerCase().includes(searchLower) ||
+          profile.title?.toLowerCase().includes(searchLower) ||
+          profile.bio?.toLowerCase().includes(searchLower) ||
+          (profile.firstName + ' ' + profile.lastName).toLowerCase().includes(searchLower)
+        );
+      }
+
+      if (location) {
+        const locationLower = (location as string).toLowerCase();
+        filteredProfiles = filteredProfiles.filter(profile =>
+          profile.location?.toLowerCase().includes(locationLower)
+        );
+      }
+
+      if (expertise) {
+        // This would require joining with expertise tables in a real implementation
+        const expertiseLower = (expertise as string).toLowerCase();
+        filteredProfiles = filteredProfiles.filter(profile =>
+          profile.industryFocus?.toLowerCase().includes(expertiseLower) ||
+          profile.bio?.toLowerCase().includes(expertiseLower)
+        );
+      }
+
+      if (minRate) {
+        const minRateNum = parseInt(minRate as string);
+        filteredProfiles = filteredProfiles.filter(profile => 
+          profile.ratePerHour && profile.ratePerHour >= minRateNum
+        );
+      }
+
+      if (maxRate) {
+        const maxRateNum = parseInt(maxRate as string);
+        filteredProfiles = filteredProfiles.filter(profile => 
+          profile.ratePerHour && profile.ratePerHour <= maxRateNum
+        );
+      }
+
+      if (experienceLevel) {
+        const expLevel = parseInt(experienceLevel as string);
+        filteredProfiles = filteredProfiles.filter(profile => 
+          profile.yearsExperience && profile.yearsExperience >= expLevel
+        );
+      }
+
+      if (featured === 'true') {
+        filteredProfiles = filteredProfiles.filter(profile => profile.featured === true);
+      }
+
+      if (verified === 'true') {
+        filteredProfiles = filteredProfiles.filter(profile => profile.verified === true);
+      }
+
+      // Apply sorting
+      filteredProfiles.sort((a, b) => {
+        let aValue: any, bValue: any;
+        
+        switch (sortBy) {
+          case 'name':
+            aValue = (a.firstName || '') + ' ' + (a.lastName || '');
+            bValue = (b.firstName || '') + ' ' + (b.lastName || '');
+            break;
+          case 'location':
+            aValue = a.location || '';
+            bValue = b.location || '';
+            break;
+          case 'rate':
+            aValue = a.ratePerHour || 0;
+            bValue = b.ratePerHour || 0;
+            break;
+          case 'experience':
+            aValue = a.yearsExperience || 0;
+            bValue = b.yearsExperience || 0;
+            break;
+          case 'rating':
+          default:
+            aValue = a.rating || 0;
+            bValue = b.rating || 0;
+            break;
+        }
+
+        if (sortOrder === 'desc') {
+          return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+        } else {
+          return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+        }
+      });
+
+      // Apply pagination
+      const pageNum = parseInt(page as string);
+      const limitNum = parseInt(limit as string);
+      const startIndex = (pageNum - 1) * limitNum;
+      const endIndex = startIndex + limitNum;
+      
+      const paginatedProfiles = filteredProfiles.slice(startIndex, endIndex);
+
+      res.json({
+        profiles: paginatedProfiles,
+        total: filteredProfiles.length,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(filteredProfiles.length / limitNum)
+      });
+    } catch (error) {
+      console.error("Error fetching filtered professional profiles:", error);
+      res.status(500).json({ message: "Failed to fetch professional profiles" });
+    }
   });
 
   app.get("/api/professional-profiles/featured", async (req, res) => {
@@ -2373,8 +2503,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/job-postings", async (req, res) => {
-    const jobs = await storage.getAllJobPostings();
-    res.json(jobs);
+    try {
+      const {
+        search,
+        location,
+        jobType,
+        remote,
+        minCompensation,
+        maxCompensation,
+        compensationUnit,
+        featured,
+        sortBy = 'createdAt',
+        sortOrder = 'desc',
+        page = '1',
+        limit = '20'
+      } = req.query;
+
+      // Get all jobs first
+      const allJobs = await storage.getAllJobPostings();
+      
+      // Apply filters
+      let filteredJobs = allJobs;
+
+      if (search) {
+        const searchLower = (search as string).toLowerCase();
+        filteredJobs = filteredJobs.filter(job =>
+          job.title?.toLowerCase().includes(searchLower) ||
+          job.description?.toLowerCase().includes(searchLower) ||
+          job.requirements?.toLowerCase().includes(searchLower)
+        );
+      }
+
+      if (location) {
+        const locationLower = (location as string).toLowerCase();
+        filteredJobs = filteredJobs.filter(job =>
+          job.location?.toLowerCase().includes(locationLower)
+        );
+      }
+
+      if (jobType) {
+        filteredJobs = filteredJobs.filter(job => job.jobType === jobType);
+      }
+
+      if (remote === 'true') {
+        filteredJobs = filteredJobs.filter(job => job.remote === true);
+      } else if (remote === 'false') {
+        filteredJobs = filteredJobs.filter(job => job.remote === false);
+      }
+
+      if (minCompensation) {
+        const minComp = parseInt(minCompensation as string);
+        filteredJobs = filteredJobs.filter(job => 
+          job.minCompensation && job.minCompensation >= minComp
+        );
+      }
+
+      if (maxCompensation) {
+        const maxComp = parseInt(maxCompensation as string);
+        filteredJobs = filteredJobs.filter(job => 
+          job.maxCompensation && job.maxCompensation <= maxComp
+        );
+      }
+
+      if (compensationUnit) {
+        filteredJobs = filteredJobs.filter(job => job.compensationUnit === compensationUnit);
+      }
+
+      if (featured === 'true') {
+        filteredJobs = filteredJobs.filter(job => job.featured === true);
+      }
+
+      // Apply sorting
+      filteredJobs.sort((a, b) => {
+        let aValue: any, bValue: any;
+        
+        switch (sortBy) {
+          case 'title':
+            aValue = a.title || '';
+            bValue = b.title || '';
+            break;
+          case 'location':
+            aValue = a.location || '';
+            bValue = b.location || '';
+            break;
+          case 'compensation':
+            aValue = a.maxCompensation || 0;
+            bValue = b.maxCompensation || 0;
+            break;
+          case 'createdAt':
+          default:
+            aValue = new Date(a.createdAt || 0);
+            bValue = new Date(b.createdAt || 0);
+            break;
+        }
+
+        if (sortOrder === 'desc') {
+          return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+        } else {
+          return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+        }
+      });
+
+      // Apply pagination
+      const pageNum = parseInt(page as string);
+      const limitNum = parseInt(limit as string);
+      const startIndex = (pageNum - 1) * limitNum;
+      const endIndex = startIndex + limitNum;
+      
+      const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
+
+      res.json({
+        jobs: paginatedJobs,
+        total: filteredJobs.length,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(filteredJobs.length / limitNum)
+      });
+    } catch (error) {
+      console.error("Error fetching filtered job postings:", error);
+      res.status(500).json({ message: "Failed to fetch job postings" });
+    }
   });
 
   app.get("/api/job-postings/latest", async (req, res) => {

@@ -207,6 +207,9 @@ app.use((req, res, next) => {
   await initializeDatabase();
   
   const server = await registerRoutes(app);
+  
+  // Add static file serving for uploaded files - must come after routes
+  app.use('/uploads', express.static('uploads'));
 
   app.use(async (err: any, req: Request, res: Response, _next: NextFunction) => {
     // Special handling for CSRF errors

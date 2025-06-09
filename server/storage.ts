@@ -3,6 +3,7 @@ import { and, asc, desc, eq, or, isNull, not, sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import {
   users, User, InsertUser,
+  authTokens, AuthToken, InsertAuthToken,
   professionalProfiles, ProfessionalProfile, InsertProfessionalProfile,
   expertise, Expertise, InsertExpertise,
   professionalExpertise, ProfessionalExpertise, InsertProfessionalExpertise,
@@ -38,6 +39,14 @@ export interface IStorage {
   createResetToken(email: string): Promise<string | null>;
   getUserByResetToken(token: string): Promise<User | undefined>;
   resetPassword(token: string, newPassword: string): Promise<boolean>;
+  
+  // Authentication token operations for "Remember Me"
+  createAuthToken(userId: number, type: string, expiresAt: Date, userAgent?: string, ipAddress?: string): Promise<AuthToken>;
+  getAuthToken(token: string): Promise<AuthToken | undefined>;
+  validateAuthToken(token: string): Promise<User | undefined>;
+  revokeAuthToken(token: string): Promise<boolean>;
+  revokeAllUserTokens(userId: number): Promise<boolean>;
+  cleanupExpiredTokens(): Promise<number>;
   
   // Stripe operations
   updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined>;

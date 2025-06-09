@@ -23,7 +23,26 @@ export const users = pgTable("users", {
   resetTokenExpiry: timestamp("reset_token_expiry"),
 });
 
+// Authentication tokens for "Remember Me" functionality
+export const authTokens = pgTable("auth_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  token: text("token").notNull().unique(),
+  type: text("type").notNull().default("remember_me"), // "remember_me", "api_token", etc.
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastUsedAt: timestamp("last_used_at"),
+  userAgent: text("user_agent"), // For security tracking
+  ipAddress: text("ip_address"), // For security tracking
+  isRevoked: boolean("is_revoked").default(false).notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAuthTokenSchema = createInsertSchema(authTokens).omit({
   id: true,
   createdAt: true,
 });
@@ -600,3 +619,7 @@ export const insertSubscriptionInvoiceSchema = createInsertSchema(subscriptionIn
 
 export type SubscriptionInvoice = typeof subscriptionInvoices.$inferSelect;
 export type InsertSubscriptionInvoice = z.infer<typeof insertSubscriptionInvoiceSchema>;
+
+// Auth token types
+export type AuthToken = typeof authTokens.$inferSelect;
+export type InsertAuthToken = z.infer<typeof insertAuthTokenSchema>;

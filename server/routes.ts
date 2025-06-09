@@ -2018,49 +2018,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get company profile for the current authenticated user (specific route first)
-  app.get("/api/company-profiles/by-user", isAuthenticated, async (req, res) => {
-    try {
-      const user = req.user as any;
-      
-      if (user.userType !== "company") {
-        return res.status(400).json({ message: "User is not a company" });
-      }
-      
-      const profile = await storage.getCompanyProfileByUserId(user.id);
-      if (!profile) {
-        return res.json(null);
-      }
-      
-      res.json(profile);
-    } catch (err) {
-      console.error("Error fetching company profile by user ID:", err);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Alternative endpoint for company profile
-  app.get("/api/company-profiles/me", isAuthenticated, async (req, res) => {
-    try {
-      const user = req.user as any;
-      
-      if (user.userType !== "company") {
-        return res.status(400).json({ message: "User is not a company" });
-      }
-      
-      const profile = await storage.getCompanyProfileByUserId(user.id);
-      if (!profile) {
-        return res.json(null);
-      }
-      
-      res.json(profile);
-    } catch (err) {
-      console.error("Error fetching company profile by user ID:", err);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Get company profile by specific user ID (for messaging system - parameterized route last)
+  // Get company profile by specific user ID (for messaging system)
   app.get("/api/company-profiles/by-user/:userId", async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);

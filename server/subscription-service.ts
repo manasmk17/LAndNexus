@@ -77,22 +77,20 @@ export class SubscriptionService {
         description: "Perfect for individual L&D professionals getting started",
         planType: "professional",
         features: [
-          "Enhanced profile with portfolio showcase",
-          "Apply to up to 10 jobs per month",
-          "AI-powered job matching",
-          "Full resource library access (25 downloads/month)",
-          "Direct messaging with companies",
-          "Basic consultation booking",
-          "Priority email support",
-          "Basic analytics dashboard"
+          "Everything in Starter",
+          "Apply to 15 jobs per month",
+          "AI job matching",
+          "50 resource downloads per month",
+          "Direct messaging",
+          "Priority email support"
         ],
-        priceMonthlyUSD: 3900, // $39.00
-        priceYearlyUSD: 39000, // $390.00 (17% savings)
-        priceMonthlyAED: 14313, // 143.13 AED
-        priceYearlyAED: 143130, // 1431.30 AED
-        maxJobApplications: 10,
+        priceMonthlyUSD: 1900, // $19.00
+        priceYearlyUSD: 19000, // $190.00 (17% savings)
+        priceMonthlyAED: 7000, // 70 AED
+        priceYearlyAED: 70000, // 700 AED
+        maxJobApplications: 15,
         maxJobPostings: null,
-        maxResourceDownloads: 25,
+        maxResourceDownloads: 50,
         maxTeamMembers: 1,
         maxContacts: null,
         aiMatchingEnabled: true,
@@ -111,17 +109,14 @@ export class SubscriptionService {
           "Unlimited job applications",
           "Featured profile placement",
           "Unlimited resource downloads",
-          "Video consultation booking",
-          "Advanced portfolio tools",
-          "Priority matching algorithm",
-          "Advanced analytics and insights",
-          "Phone support",
-          "Custom profile branding"
+          "Video consultations",
+          "Advanced analytics",
+          "Phone support"
         ],
-        priceMonthlyUSD: 8900, // $89.00
-        priceYearlyUSD: 89000, // $890.00 (17% savings)
-        priceMonthlyAED: 32663, // 326.63 AED
-        priceYearlyAED: 326630, // 3266.30 AED
+        priceMonthlyUSD: 4900, // $49.00
+        priceYearlyUSD: 49000, // $490.00 (17% savings)
+        priceMonthlyAED: 18000, // 180 AED
+        priceYearlyAED: 180000, // 1800 AED
         maxJobApplications: null,
         maxJobPostings: null,
         maxResourceDownloads: null,
@@ -144,17 +139,15 @@ export class SubscriptionService {
         features: [
           "Everything in Expert",
           "Personal account manager",
-          "White-label consultation platform",
-          "API access for integrations",
-          "Advanced reporting suite",
-          "Custom training content uploads",
-          "Mentor program access",
-          "24/7 priority support"
+          "API access",
+          "White-label platform",
+          "Custom branding",
+          "24/7 support"
         ],
-        priceMonthlyUSD: 19900, // $199.00
-        priceYearlyUSD: 199000, // $1990.00 (17% savings)
-        priceMonthlyAED: 73063, // 730.63 AED
-        priceYearlyAED: 730630, // 7306.30 AED
+        priceMonthlyUSD: 9900, // $99.00
+        priceYearlyUSD: 99000, // $990.00 (17% savings)
+        priceMonthlyAED: 36400, // 364 AED
+        priceYearlyAED: 364000, // 3640 AED
         maxJobApplications: null,
         maxJobPostings: null,
         maxResourceDownloads: null,
@@ -179,23 +172,21 @@ export class SubscriptionService {
         description: "Perfect for growing companies and startups",
         planType: "company",
         features: [
-          "Post up to 5 active job listings",
-          "Search professional database",
+          "3 active job postings",
+          "Search 100 professionals per month",
           "Basic company profile",
-          "Standard messaging",
-          "Basic applicant tracking",
-          "Email support",
-          "Access to 50 professional contacts/month"
+          "3 team members",
+          "Email support"
         ],
-        priceMonthlyUSD: 9900, // $99.00
-        priceYearlyUSD: 99000, // $990.00 (17% savings)
-        priceMonthlyAED: 36333, // 363.33 AED
-        priceYearlyAED: 363330, // 3633.30 AED
+        priceMonthlyUSD: 3900, // $39.00
+        priceYearlyUSD: 39000, // $390.00 (17% savings)
+        priceMonthlyAED: 14300, // 143 AED
+        priceYearlyAED: 143000, // 1430 AED
         maxJobApplications: null,
-        maxJobPostings: 5,
-        maxResourceDownloads: 50,
+        maxJobPostings: 3,
+        maxResourceDownloads: 100,
         maxTeamMembers: 3,
-        maxContacts: 50,
+        maxContacts: 100,
         aiMatchingEnabled: true,
         directMessaging: true,
         analyticsAccess: false,
@@ -207,25 +198,22 @@ export class SubscriptionService {
         description: "Advanced features for expanding businesses",
         planType: "company",
         features: [
-          "Post up to 25 active job listings",
-          "AI-powered candidate matching",
-          "Enhanced company profile with branding",
-          "Priority job listing placement",
-          "Advanced search filters",
-          "Team collaboration tools (up to 5 users)",
-          "Basic analytics dashboard",
-          "Phone support",
-          "Access to 200 professional contacts/month"
+          "15 active job postings",
+          "Search 500 professionals per month",
+          "Enhanced branding",
+          "8 team members",
+          "Analytics dashboard",
+          "Phone support"
         ],
-        priceMonthlyUSD: 29900, // $299.00
-        priceYearlyUSD: 299000, // $2990.00 (17% savings)
-        priceMonthlyAED: 109833, // 1098.33 AED
-        priceYearlyAED: 1098330, // 10983.30 AED
+        priceMonthlyUSD: 9900, // $99.00
+        priceYearlyUSD: 99000, // $990.00 (17% savings)
+        priceMonthlyAED: 36400, // 364 AED
+        priceYearlyAED: 364000, // 3640 AED
         maxJobApplications: null,
-        maxJobPostings: 25,
-        maxResourceDownloads: 200,
-        maxTeamMembers: 5,
-        maxContacts: 200,
+        maxJobPostings: 15,
+        maxResourceDownloads: 500,
+        maxTeamMembers: 8,
+        maxContacts: 500,
         aiMatchingEnabled: true,
         priorityMatching: true,
         featuredPlacement: true,
@@ -241,21 +229,16 @@ export class SubscriptionService {
         planType: "company",
         features: [
           "Unlimited job postings",
-          "Advanced AI matching algorithms",
-          "Custom company branding",
+          "Unlimited professional contacts",
+          "Advanced team management",
+          "Custom integrations",
           "Dedicated account manager",
-          "Advanced team management (unlimited users)",
-          "Custom integrations via API",
-          "Advanced analytics and reporting",
-          "Escrow payment management",
-          "White-label solutions",
-          "24/7 priority support",
-          "Unlimited professional contacts"
+          "White-label solutions"
         ],
-        priceMonthlyUSD: 59900, // $599.00
-        priceYearlyUSD: 599000, // $5990.00 (17% savings)
-        priceMonthlyAED: 219833, // 2198.33 AED
-        priceYearlyAED: 2198330, // 21983.30 AED
+        priceMonthlyUSD: 19900, // $199.00
+        priceYearlyUSD: 199000, // $1990.00 (17% savings)
+        priceMonthlyAED: 73100, // 731 AED
+        priceYearlyAED: 731000, // 7310 AED
         maxJobApplications: null,
         maxJobPostings: null,
         maxResourceDownloads: null,

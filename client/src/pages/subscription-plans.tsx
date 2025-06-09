@@ -301,15 +301,15 @@ export default function SubscriptionPlans() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Consultations:</span>
+                      <span>Team Members:</span>
                       <span className="font-medium">
-                        {plan.maxBookings ? `${plan.maxBookings}/month` : 'Unlimited'}
+                        {plan.maxTeamMembers ? `${plan.maxTeamMembers} users` : 'Unlimited'}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Resource Access:</span>
+                      <span>Resource Downloads:</span>
                       <span className="font-medium">
-                        {plan.maxResourcesAccess ? `${plan.maxResourcesAccess}/month` : 'Unlimited'}
+                        {plan.maxResourceDownloads ? `${plan.maxResourceDownloads}/month` : 'Unlimited'}
                       </span>
                     </div>
                   </div>

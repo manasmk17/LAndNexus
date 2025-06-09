@@ -787,7 +787,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/me", isAuthenticated, async (req, res) => {
-    res.json(req.user);
+    // Remove sensitive information from user object
+    const { password, resetToken, resetTokenExpiry, ...safeUserInfo } = req.user as any;
+    res.json(safeUserInfo);
   });
   
   // Get user by ID (for resource cards and other components)

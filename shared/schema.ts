@@ -15,6 +15,8 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),
+  stripeConnectAccountId: text("stripe_connect_account_id"),
+  payoutAccountSetup: boolean("payout_account_setup").default(false),
   subscriptionTier: text("subscription_tier"), // "free", "basic", "premium"
   subscriptionStatus: text("subscription_status"), // "active", "trialing", "past_due", "canceled"
   resetToken: text("reset_token"),
@@ -409,3 +411,99 @@ export const insertNotificationPreferenceSchema = createInsertSchema(notificatio
 
 export type NotificationPreference = typeof notificationPreferences.$inferSelect;
 export type InsertNotificationPreference = z.infer<typeof insertNotificationPreferenceSchema>;
+
+// Escrow Payment System Tables
+export const escrowTransactions = pgTable("escrow_transactions", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => users.id),
+  trainerId: integer("trainer_id").notNull().references(() => users.id),
+  jobPostingId: integer("job_posting_id").references(() => jobPostings.id),
+  bookingId: integer("booking_id").references(() => consultations.id),
+  
+  // Payment details
+  amount: integer("amount").notNull(), // Amount in cents
+  currency: text("currency").notNull().default("USD"), // USD or AED
+  platformCommissionRate: integer("platform_commission_rate").default(800), // 8% in basis points (800 = 8%)
+  platformCommissionAmount: integer("platform_commission_amount").notNull(),
+  trainerPayoutAmount: integer("trainer_payout_amount").notNull(),
+  
+  // Stripe payment details
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  stripeTransferGroupId: text("stripe_transfer_group_id"),
+  stripeApplicationFeeId: text("stripe_application_fee_id"),
+  
+  // Transaction status
+  status: text("status", { 
+    enum: ["pending", "payment_failed", "funds_captured", "in_escrow", "released", "refunded", "disputed", "cancelled"] 
+  }).notNull().default("pending"),
+  
+  // Escrow details
+  escrowReleaseDate: timestamp("escrow_release_date"),
+  autoReleaseAfterDays: integer("auto_release_after_days").default(7),
+  serviceCompletionConfirmed: boolean("service_completion_confirmed").default(false),
+  serviceCompletionDate: timestamp("service_completion_date"),
+  
+  // Dispute management
+  disputeReason: text("dispute_reason"),
+  disputeDetails: text("dispute_details"),
+  disputeResolution: text("dispute_resolution"),
+  disputeResolutionDate: timestamp("dispute_resolution_date"),
+  
+  // Metadata
+  description: text("description"),
+  metadata: jsonb("metadata"), // Additional transaction data
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertEscrowTransactionSchema = createInsertSchema(escrowTransactions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type EscrowTransaction = typeof escrowTransactions.$inferSelect;
+export type InsertEscrowTransaction = z.infer<typeof insertEscrowTransactionSchema>;
+
+// Payment Methods table for storing customer payment methods
+export const paymentMethods = pgTable("payment_methods", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  stripePaymentMethodId: text("stripe_payment_method_id").notNull(),
+  type: text("type").notNull(), // "card", "bank_account", etc.
+  brand: text("brand"), // "visa", "mastercard", etc.
+  last4: text("last4"), // Last 4 digits
+  expiryMonth: integer("expiry_month"),
+  expiryYear: integer("expiry_year"),
+  isDefault: boolean("is_default").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertPaymentMethodSchema = createInsertSchema(paymentMethods).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type PaymentMethod = typeof paymentMethods.$inferSelect;
+export type InsertPaymentMethod = z.infer<typeof insertPaymentMethodSchema>;
+
+// Transaction History for audit trail
+export const transactionHistory = pgTable("transaction_history", {
+  id: serial("id").primaryKey(),
+  escrowTransactionId: integer("escrow_transaction_id").notNull().references(() => escrowTransactions.id),
+  action: text("action").notNull(), // "created", "funded", "captured", "released", "refunded", etc.
+  previousStatus: text("previous_status"),
+  newStatus: text("new_status"),
+  actionBy: integer("action_by").references(() => users.id), // User who performed the action
+  actionReason: text("action_reason"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertTransactionHistorySchema = createInsertSchema(transactionHistory).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type TransactionHistory = typeof transactionHistory.$inferSelect;
+export type InsertTransactionHistory = z.infer<typeof insertTransactionHistorySchema>;

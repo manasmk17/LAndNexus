@@ -2,7 +2,6 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeDatabase } from "./db";
-import csurf from "csurf";
 import cookieParser from "cookie-parser";
 import helmet from 'helmet';
 
@@ -149,19 +148,7 @@ app.use((req, res, next) => {
     return;
   }
   
-  // For all other requests, apply CSRF protection
-  csrfProtection(req, res, next);
-});
-
-// Add CSRF token to response for client-side use
-app.use((req: any, res: any, next) => {
-  if (req.csrfToken) {
-    res.cookie('XSRF-TOKEN', req.csrfToken(), {
-      httpOnly: false, // Client-side JavaScript needs to access it
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict'
-    });
-  }
+  // CSRF protection completely disabled
   next();
 });
 

@@ -17,9 +17,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Mail, Linkedin } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
 
 const loginSchema = z.object({
   identifier: z.string().min(1, { message: "Username or email is required" }),
@@ -151,43 +150,6 @@ export default function LoginForm() {
             "Sign In"
           )}
         </Button>
-        
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-2 text-muted-foreground">
-              Or continue with
-            </span>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={() => window.location.href = '/api/auth/google'} 
-            className="w-full"
-          >
-            <svg className="mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-              <path d="M12.545 12.151L12.542 12.156 12.545 12.151zM10.879 7.655l-1.388-.6407-2.236-3.421-1.766 7.48.058.0464c.1154 1.4097 1.6492 4.57 5.162 4.57 3.513 0 5.162-2.911 5.302-4.006L10.877 7.655h.002z" fill="#FF4131" />
-              <path d="M13.548 8.746l1.6-.6714.869-1.2806h-6.232l3.763 1.952z" fill="#FDBA12" />
-              <path d="M15.211 10.437c-.167-.9087-1.064-1.6913-2.047-1.6913h-4.05c.0774 2.9486 2.428 3.4893 3.282 3.4893 0 0 1.6927-.211 2.8154-1.798z" fill="#517CBD" />
-              </svg>
-            Google
-          </Button>
-          
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={() => window.location.href = '/api/auth/linkedin'} 
-            className="w-full"
-          >
-            <Linkedin className="mr-2 h-4 w-4 text-[#0A66C2]" />
-            LinkedIn
-          </Button>
-        </div>
       </form>
     </Form>
   );

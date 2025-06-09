@@ -616,7 +616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err: any, user: any, info: any) => {
+    passport.authenticate("local", async (err: any, user: any, info: any) => {
       if (err) {
         return next(err);
       }
@@ -624,36 +624,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: info.message });
       }
       
-      // Check if rememberMe is requested
-      const rememberMe = req.body.rememberMe === true;
-      
-      // Configure session based on rememberMe
-      if (rememberMe && req.session) {
-        // Extend session to 30 days if "Remember Me" is checked
-        req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
-        console.log(`Extended session for user ${user.username} to 30 days`);
-      }
-      
-      req.login(user, (err) => {
-        if (err) {
-          return next(err);
+      try {
+        // Check if rememberMe is requested
+        const rememberMe = req.body.rememberMe === true;
+        
+        // Configure session based on rememberMe
+        if (rememberMe && req.session) {
+          // Extend session to 30 days if "Remember Me" is checked
+          req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+          console.log(`Extended session for user ${user.username} to 30 days`);
         }
         
-        // Send more complete user information
-        // Remove password field for security
-        const { password, resetToken, resetTokenExpiry, ...userWithoutSensitiveInfo } = user;
-        
-        console.log(`User ${user.username} logged in successfully. Session ID: ${req.sessionID}`);
-        
-        return res.json(userWithoutSensitiveInfo);
-      });
+        req.login(user, async (err) => {
+          if (err) {
+            return next(err);
+          }
+          
+          try {
+            let authToken = null;
+            
+            // Create persistent auth token if "Remember Me" is selected
+            if (rememberMe) {
+              const expiresAt = new Date();
+              expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
+              
+              authToken = await storage.createAuthToken(
+                user.id,
+                'remember_me',
+                expiresAt,
+                req.get('User-Agent'),
+                req.ip
+              );
+              
+              // Set secure cookie with the auth token
+              res.cookie('auth_token', authToken.token, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+              });
+              
+              console.log(`Created persistent auth token for user ${user.username}`);
+            }
+            
+            // Send more complete user information
+            // Remove password field for security
+            const { password, resetToken, resetTokenExpiry, ...userWithoutSensitiveInfo } = user;
+            
+            console.log(`User ${user.username} logged in successfully. Session ID: ${req.sessionID}`);
+            
+            return res.json({
+              ...userWithoutSensitiveInfo,
+              hasRememberToken: !!authToken
+            });
+          } catch (tokenError) {
+            console.error('Error creating auth token:', tokenError);
+            // Continue with normal login even if token creation fails
+            const { password, resetToken, resetTokenExpiry, ...userWithoutSensitiveInfo } = user;
+            return res.json(userWithoutSensitiveInfo);
+          }
+        });
+      } catch (error) {
+        console.error('Login error:', error);
+        return res.status(500).json({ message: 'Internal server error during login' });
+      }
     })(req, res, next);
   });
 
-  app.post("/api/logout", (req, res) => {
-    req.logout(() => {
-      res.json({ message: "Logged out" });
-    });
+  app.post("/api/logout", async (req, res) => {
+    try {
+      // Revoke auth token if present
+      const authToken = req.cookies.auth_token;
+      if (authToken) {
+        await storage.revokeAuthToken(authToken);
+        res.clearCookie('auth_token');
+        console.log('Revoked persistent auth token on logout');
+      }
+      
+      req.logout(() => {
+        res.json({ message: "Logged out" });
+      });
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Still proceed with logout even if token revocation fails
+      req.logout(() => {
+        res.json({ message: "Logged out" });
+      });
+    }
   });
   
   // Password recovery endpoints

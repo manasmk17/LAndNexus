@@ -188,6 +188,7 @@ export interface IStorage {
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
+  private authTokens: Map<string, AuthToken>;
   private professionalProfiles: Map<number, ProfessionalProfile>;
   private expertises: Map<number, Expertise>;
   private professionalExpertises: Map<number, ProfessionalExpertise>;
@@ -232,6 +233,7 @@ export class MemStorage implements IStorage {
 
   constructor() {
     this.users = new Map();
+    this.authTokens = new Map();
     this.professionalProfiles = new Map();
     this.expertises = new Map();
     this.professionalExpertises = new Map();
@@ -1367,6 +1369,80 @@ export class MemStorage implements IStorage {
       this.notificationPreferences.set(id, newPreference);
       return newPreference;
     }
+  }
+
+  // Authentication token operations for "Remember Me"
+  async createAuthToken(userId: number, type: string, expiresAt: Date, userAgent?: string, ipAddress?: string): Promise<AuthToken> {
+    const crypto = await import('crypto');
+    const token = crypto.randomBytes(32).toString('hex');
+    
+    const authToken: AuthToken = {
+      id: Date.now(), // Simple ID generation for in-memory storage
+      userId,
+      token,
+      type,
+      expiresAt,
+      createdAt: new Date(),
+      lastUsedAt: null,
+      userAgent: userAgent || null,
+      ipAddress: ipAddress || null,
+      isRevoked: false
+    };
+
+    this.authTokens.set(token, authToken);
+    return authToken;
+  }
+
+  async getAuthToken(token: string): Promise<AuthToken | undefined> {
+    return this.authTokens.get(token);
+  }
+
+  async validateAuthToken(token: string): Promise<User | undefined> {
+    const authToken = this.authTokens.get(token);
+    
+    if (!authToken || authToken.isRevoked || authToken.expiresAt < new Date()) {
+      return undefined;
+    }
+
+    // Update last used timestamp
+    authToken.lastUsedAt = new Date();
+    this.authTokens.set(token, authToken);
+
+    return this.users.get(authToken.userId);
+  }
+
+  async revokeAuthToken(token: string): Promise<boolean> {
+    const authToken = this.authTokens.get(token);
+    if (authToken) {
+      authToken.isRevoked = true;
+      this.authTokens.set(token, authToken);
+      return true;
+    }
+    return false;
+  }
+
+  async revokeAllUserTokens(userId: number): Promise<boolean> {
+    for (const [token, authToken] of this.authTokens.entries()) {
+      if (authToken.userId === userId) {
+        authToken.isRevoked = true;
+        this.authTokens.set(token, authToken);
+      }
+    }
+    return true;
+  }
+
+  async cleanupExpiredTokens(): Promise<number> {
+    const now = new Date();
+    let cleanedCount = 0;
+    
+    for (const [token, authToken] of this.authTokens.entries()) {
+      if (authToken.expiresAt < now || authToken.isRevoked) {
+        this.authTokens.delete(token);
+        cleanedCount++;
+      }
+    }
+    
+    return cleanedCount;
   }
 }
 
@@ -2623,6 +2699,136 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error saving job match:", error);
       return false;
+    }
+  }
+
+  // Authentication token operations for "Remember Me"
+  async createAuthToken(userId: number, type: string, expiresAt: Date, userAgent?: string, ipAddress?: string): Promise<AuthToken> {
+    if (!db) {
+      throw new Error('Database not initialized');
+    }
+
+    // Generate a secure random token
+    const crypto = await import('crypto');
+    const token = crypto.randomBytes(32).toString('hex');
+
+    const [authToken] = await db.insert(authTokens).values({
+      userId,
+      token,
+      type,
+      expiresAt,
+      userAgent,
+      ipAddress,
+      isRevoked: false
+    }).returning();
+
+    return authToken;
+  }
+
+  async getAuthToken(token: string): Promise<AuthToken | undefined> {
+    if (!db) {
+      throw new Error('Database not initialized');
+    }
+
+    const [authToken] = await db
+      .select()
+      .from(authTokens)
+      .where(eq(authTokens.token, token));
+
+    return authToken;
+  }
+
+  async validateAuthToken(token: string): Promise<User | undefined> {
+    if (!db) {
+      throw new Error('Database not initialized');
+    }
+
+    try {
+      // Get the auth token with user information
+      const result = await db
+        .select({
+          authToken: authTokens,
+          user: users
+        })
+        .from(authTokens)
+        .innerJoin(users, eq(authTokens.userId, users.id))
+        .where(
+          and(
+            eq(authTokens.token, token),
+            eq(authTokens.isRevoked, false),
+            sql`${authTokens.expiresAt} > NOW()`
+          )
+        );
+
+      if (result.length === 0) {
+        return undefined;
+      }
+
+      const { authToken, user } = result[0];
+
+      // Update last used timestamp
+      await db
+        .update(authTokens)
+        .set({ lastUsedAt: new Date() })
+        .where(eq(authTokens.id, authToken.id));
+
+      return user;
+    } catch (error) {
+      console.error("Error validating auth token:", error);
+      return undefined;
+    }
+  }
+
+  async revokeAuthToken(token: string): Promise<boolean> {
+    if (!db) {
+      throw new Error('Database not initialized');
+    }
+
+    try {
+      await db
+        .update(authTokens)
+        .set({ isRevoked: true })
+        .where(eq(authTokens.token, token));
+
+      return true;
+    } catch (error) {
+      console.error("Error revoking auth token:", error);
+      return false;
+    }
+  }
+
+  async revokeAllUserTokens(userId: number): Promise<boolean> {
+    if (!db) {
+      throw new Error('Database not initialized');
+    }
+
+    try {
+      await db
+        .update(authTokens)
+        .set({ isRevoked: true })
+        .where(eq(authTokens.userId, userId));
+
+      return true;
+    } catch (error) {
+      console.error("Error revoking all user tokens:", error);
+      return false;
+    }
+  }
+
+  async cleanupExpiredTokens(): Promise<number> {
+    if (!db) {
+      throw new Error('Database not initialized');
+    }
+
+    try {
+      await db
+        .delete(authTokens)
+        .where(sql`${authTokens.expiresAt} <= NOW() OR ${authTokens.isRevoked} = true`);
+
+      return 0;
+    } catch (error) {
+      console.error("Error cleaning up expired tokens:", error);
+      return 0;
     }
   }
 }

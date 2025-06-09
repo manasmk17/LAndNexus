@@ -51,11 +51,11 @@ export default function Professionals() {
   
   // Filter and sort professionals
   const filteredProfessionals = professionals?.filter(professional => {
-    // Search by title, bio or location
+    // Search by title, bio or location (with null checks)
     const matchesSearch = !searchTerm || 
-      professional.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      professional.bio.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      professional.location.toLowerCase().includes(searchTerm.toLowerCase());
+      (professional.title && professional.title.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (professional.bio && professional.bio.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (professional.location && professional.location.toLowerCase().includes(searchTerm.toLowerCase()));
     
     // Filter by rate range
     const matchesRate = !professional.ratePerHour || 
@@ -68,7 +68,7 @@ export default function Professionals() {
       (experienceLevel === "mid-level" && (yearsExp > 2 && yearsExp <= 5)) ||
       (experienceLevel === "senior" && (yearsExp > 5 && yearsExp <= 8)) ||
       (experienceLevel === "expert" && (yearsExp > 8)) ||
-      professional.title.toLowerCase().includes(experienceLevel.toLowerCase());
+      (professional.title && professional.title.toLowerCase().includes(experienceLevel.toLowerCase()));
 
     // For expertise, we show all if "all" is selected, otherwise filter by specific expertise
     const matchesExpertise = selectedExpertise === "all";

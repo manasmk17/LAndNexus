@@ -1997,14 +1997,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get company profile by user ID (used by dashboard)
+  // Get company profile for the current authenticated user
   app.get("/api/company-profiles/by-user", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
       
+      if (user.userType !== "company") {
+        return res.status(400).json({ message: "User is not a company" });
+      }
+      
       const profile = await storage.getCompanyProfileByUserId(user.id);
       if (!profile) {
-        // Instead of 404, return null to handle case of newly registered users without profiles yet
+        // Return null to handle case of newly registered companies without profiles yet
         return res.json(null);
       }
       

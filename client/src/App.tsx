@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { DragAndDropProvider } from "@/components/dnd";
 import { useState, useEffect } from "react";
 
-import Navbar from "@/components/ui/navbar";
+import { Navbar } from "@/components/layout/navbar";
 import Footer from "@/components/ui/footer";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import Home from "@/pages/home";

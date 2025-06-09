@@ -6,6 +6,7 @@ import { useLocation } from "wouter";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 import {
   Form,
   FormControl,
@@ -36,6 +37,7 @@ type RegisterFormProps = {
 };
 
 export default function RegisterForm({ initialUserType }: RegisterFormProps) {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const { login } = useAuth();
   const { toast } = useToast();
@@ -76,7 +78,7 @@ export default function RegisterForm({ initialUserType }: RegisterFormProps) {
 
       await login({ username: values.username, password: values.password });
       toast({
-        title: "Registration successful!",
+        title: t("auth.registerSuccess"),
         description: "Welcome to L&D Nexus",
       });
       
@@ -84,7 +86,7 @@ export default function RegisterForm({ initialUserType }: RegisterFormProps) {
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Registration failed",
+        title: t("auth.registerFailed"),
         description: error.message,
       });
     } finally {

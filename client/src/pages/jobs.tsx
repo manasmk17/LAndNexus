@@ -46,7 +46,7 @@ export default function Jobs() {
   });
   
   // Filter jobs based on search and filters
-  const filteredJobs = jobs?.length ? jobs.filter(job => {
+  const filteredJobs = (jobs || []).filter(job => {
     // Filter by search term
     const matchesSearch = !searchTerm || 
       job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -64,7 +64,7 @@ export default function Jobs() {
     const isOpen = job.status === "open";
     
     return matchesSearch && matchesType && matchesRemote && isOpen;
-  }) : [];
+  });
   
   // Sort jobs by created date (newest first)
   const sortedJobs = [...filteredJobs].sort(

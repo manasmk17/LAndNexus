@@ -41,6 +41,7 @@ import ManageSubscription from "@/pages/manage-subscription";
 import ProfileSuccess from "@/pages/profile-success";
 import BookConsultation from "@/pages/book-consultation";
 import PageView from "@/pages/page";
+import About from "@/pages/about";
 import NotFound from "@/pages/not-found";
 import { AuthProvider } from "@/lib/auth";
 
@@ -62,6 +63,7 @@ function Router() {
       <Route path="/resources" component={Resources} />
       <Route path="/resource/:id" component={ResourceDetail} />
       <Route path="/forum" component={Forum} />
+      <Route path="/about" component={About} />
       <Route path="/pages/:slug" component={PageView} />
       <Route path="/admin-test" component={AdminTest} />
       <Route path="/admin-page" component={AdminPage} />

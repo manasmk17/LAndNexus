@@ -114,10 +114,10 @@ export default function Footer() {
             </h3>
             <ul className="space-y-3">
               <li>
-                <a href="#" className="text-slate-300 hover:text-white transition-colors flex items-center group">
+                <Link href="/about" className="text-slate-300 hover:text-white transition-colors flex items-center group">
                   <ChevronRight className="h-3 w-3 mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                   About Us
-                </a>
+                </Link>
               </li>
               <li>
                 <a href="#" className="text-slate-300 hover:text-white transition-colors flex items-center group">

@@ -197,15 +197,21 @@ export function registerSubscriptionRoutes(app: Express) {
   // Create setup intent for payment method
   app.post("/api/create-setup-intent", isAuthenticated, async (req, res) => {
     try {
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-        apiVersion: "2024-12-18.acacia",
-      });
+      const database = await db;
+      if (!database) {
+        throw new Error('Database not initialized');
+      }
+
+      const [user] = await database
+        .select()
+        .from(users)
+        .where(eq(users.id, req.user!.id));
 
       // Get or create Stripe customer
       const customerId = await subscriptionService.createOrGetStripeCustomer(
-        req.user.id,
-        req.user.email,
-        `${req.user.firstName} ${req.user.lastName}`
+        req.user!.id,
+        user.email,
+        `${user.firstName} ${user.lastName}`
       );
 
       const setupIntent = await stripe.setupIntents.create({

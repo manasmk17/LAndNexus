@@ -42,6 +42,8 @@ import {
 } from "./ai-matching";
 import { imageHealthMonitor } from "./image-health-monitor";
 import { registerEscrowRoutes } from "./escrow-routes";
+import { registerSubscriptionRoutes } from "./subscription-routes";
+import { subscriptionService } from "./subscription-service";
 import { z } from "zod";
 import session from "express-session";
 import passport from "passport";
@@ -3969,6 +3971,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create HTTP server here
   // Register escrow payment routes
   registerEscrowRoutes(app);
+  
+  // Register subscription payment routes
+  registerSubscriptionRoutes(app);
+  
+  // Initialize subscription plans
+  await subscriptionService.initializeSubscriptionPlans();
 
   const httpServer = createServer(app);
 

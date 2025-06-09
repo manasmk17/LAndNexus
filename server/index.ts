@@ -206,10 +206,10 @@ app.use((req, res, next) => {
   // Initialize database connection with retry capability
   await initializeDatabase();
   
-  const server = await registerRoutes(app);
-  
-  // Add static file serving for uploaded files - must come after routes
+  // Add static file serving for uploaded files - must come before routes
   app.use('/uploads', express.static('uploads'));
+  
+  const server = await registerRoutes(app);
 
   app.use(async (err: any, req: Request, res: Response, _next: NextFunction) => {
     // Special handling for CSRF errors

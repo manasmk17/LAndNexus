@@ -19,10 +19,6 @@ import CompanyDashboard from "@/pages/company-dashboard";
 import AdminPage from "@/pages/admin-page";
 import AdminTest from "@/pages/admin-test";
 import AdminIndex from "@/pages/admin/index";
-import AdminDashboard from "@/pages/admin/admin-dashboard";
-import UserManagement from "@/pages/admin/user-management";
-import SubscriptionManagement from "@/pages/admin/subscription-management";
-import ContentModeration from "@/pages/admin/content-moderation";
 import AdminLogin from "@/pages/admin-login";
 import Professionals from "@/pages/professionals";
 import ProfessionalProfile from "@/pages/professional-profile";
@@ -85,27 +81,12 @@ function Router() {
       />
       <ProtectedRoute 
         path="/admin" 
-        component={AdminDashboard} 
+        component={AdminIndex} 
         userTypes={["admin"]} 
       />
       <ProtectedRoute 
-        path="/admin/dashboard" 
-        component={AdminDashboard} 
-        userTypes={["admin"]} 
-      />
-      <ProtectedRoute 
-        path="/admin/users" 
-        component={UserManagement} 
-        userTypes={["admin"]} 
-      />
-      <ProtectedRoute 
-        path="/admin/subscriptions" 
-        component={SubscriptionManagement} 
-        userTypes={["admin"]} 
-      />
-      <ProtectedRoute 
-        path="/admin/content" 
-        component={ContentModeration} 
+        path="/admin-dashboard" 
+        component={AdminIndex} 
         userTypes={["admin"]} 
       />
       <ProtectedRoute 

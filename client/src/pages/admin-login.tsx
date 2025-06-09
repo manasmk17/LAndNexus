@@ -19,7 +19,7 @@ export default function AdminLogin() {
   // Redirect if already logged in as admin
   useEffect(() => {
     if (user && user.isAdmin) {
-      setLocation("/admin");
+      setLocation("/admin-dashboard");
     }
   }, [user, setLocation]);
 
@@ -40,7 +40,7 @@ export default function AdminLogin() {
         setLoginError("You do not have admin privileges");
         return;
       }
-      setLocation("/admin");
+      setLocation("/admin-dashboard");
     } catch (error) {
       if (error instanceof Error) {
         setLoginError(error.message);
@@ -81,25 +81,11 @@ export default function AdminLogin() {
             <CardDescription>
               Enter your credentials to access the admin dashboard
             </CardDescription>
-            <div className="mt-4 p-3 bg-muted/50 rounded-md border">
-              <p className="text-sm font-medium text-muted-foreground mb-2">Demo Admin Access:</p>
-              <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-                <span><strong>Email:</strong> admin@test.com</span>
-                <span><strong>Password:</strong> admin123</span>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="w-full mt-2"
-                onClick={() => {
-                  setUsername("admin@test.com");
-                  setPassword("admin123");
-                }}
-              >
-                Fill Demo Credentials
-              </Button>
-            </div>
+            <CardDescription className="mt-2 text-sm text-muted-foreground">
+              Test admin credentials available:<br/>
+              Username: admin1742719383348<br/>
+              Password: admin123
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {loginError && (

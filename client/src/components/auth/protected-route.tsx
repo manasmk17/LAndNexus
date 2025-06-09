@@ -27,7 +27,7 @@ function AuthenticationCheck({
         setLocation(`/login?redirect=${encodeURIComponent(currentPath)}`);
       } else if (adminOnly && !user.isAdmin) {
         setLocation("/");
-      } else if (userTypes.length > 0 && !userTypes.includes(user.userType as any) && !user.isAdmin) {
+      } else if (userTypes.length > 0 && !userTypes.includes(user.userType)) {
         setLocation("/");
       }
     }
@@ -49,7 +49,7 @@ function AuthenticationCheck({
     return null; // Will redirect in useEffect
   }
 
-  if (userTypes.length > 0 && !userTypes.includes(user.userType as any) && !user.isAdmin) {
+  if (userTypes.length > 0 && !userTypes.includes(user.userType)) {
     return null; // Will redirect in useEffect
   }
 

@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { initializeDatabase } from "./db";
+import csurf from "csurf";
 import cookieParser from "cookie-parser";
 import helmet from 'helmet';
 
@@ -32,13 +33,22 @@ app.use(express.urlencoded({ extended: false, limit: '2mb' })); // Limit URL-enc
 app.use(cookieParser());
 
 // Configure CSRF protection with detailed error logging
-// CSRF protection disabled for performance optimization
-app.use((req, res, next) => {
-  // Bypass all CSRF protection to eliminate performance overhead
-  next();
+const csrfProtection = csurf({
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  },
+  ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],
+  // Custom error handler
+  value: (req) => {
+    const token = req.headers['x-csrf-token'] as string;
+    console.log('CSRF Token from request:', token);
+    return token;
+  }
 });
 
-// Legacy CSRF route handler (disabled)
+// Apply CSRF protection to all routes except specific API endpoints that need to be exempt
 app.use((req, res, next) => {
   // These endpoints are specifically exempt from CSRF protection
   const csrfExemptRoutes = [
@@ -148,7 +158,19 @@ app.use((req, res, next) => {
     return;
   }
   
-  // CSRF protection completely disabled
+  // For all other requests, apply CSRF protection
+  csrfProtection(req, res, next);
+});
+
+// Add CSRF token to response for client-side use
+app.use((req: any, res: any, next) => {
+  if (req.csrfToken) {
+    res.cookie('XSRF-TOKEN', req.csrfToken(), {
+      httpOnly: false, // Client-side JavaScript needs to access it
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict'
+    });
+  }
   next();
 });
 

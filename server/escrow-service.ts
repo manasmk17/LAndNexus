@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { db } from './db';
+import { db, initializeDatabase } from './db';
 import { users, escrowTransactions, transactionHistory, paymentMethods } from '@shared/schema';
 import { eq, and, lt } from 'drizzle-orm';
 
@@ -12,6 +12,16 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 });
 
 export class EscrowService {
+  
+  private async getDb() {
+    if (!db) {
+      await initializeDatabase();
+    }
+    if (!db) {
+      throw new Error('Database connection not available');
+    }
+    return db;
+  }
   
   // Create Stripe Connect account for trainers to receive payouts
   async createConnectAccount(userId: number, email: string, country: string = 'US') {

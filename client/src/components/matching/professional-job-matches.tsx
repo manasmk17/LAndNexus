@@ -18,7 +18,10 @@ interface EnhancedJobPosting extends JobPosting {
 
 type MatchResult = {
   job: EnhancedJobPosting;
-  score: number;
+  score: number; // This will be the raw score from storage (0-1)
+  matchScore: number; // This will be the formatted percentage from AI matching controller
+  matchStrength?: string;
+  matchReasons?: string[];
 };
 
 export default function ProfessionalJobMatches() {
@@ -60,8 +63,13 @@ export default function ProfessionalJobMatches() {
   });
   
   // Format the match score as a percentage
-  const formatMatchScore = (score: number) => {
-    return `${Math.round(score * 100)}%`;
+  const formatMatchScore = (match: MatchResult) => {
+    // If we have the pre-formatted matchScore from the AI controller, use it
+    if (match.matchScore !== undefined) {
+      return `${match.matchScore}%`;
+    }
+    // Otherwise, format the raw score (0-1) to percentage
+    return `${Math.round(match.score * 100)}%`;
   };
   
   // Helper to get company name for a job
@@ -116,41 +124,41 @@ export default function ProfessionalJobMatches() {
           </div>
         ) : matches && matches.length > 0 ? (
           <div className="space-y-4">
-            {matches.map(({ job, score }) => (
-              <div key={job.id} className="border rounded-md p-4 hover:bg-gray-50">
+            {matches.map((match) => (
+              <div key={match.job.id} className="border rounded-md p-4 hover:bg-gray-50">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-medium text-lg">{job.title}</h3>
-                    <p className="text-gray-500">{job.companyName || getCompanyName(job.companyId)}</p>
+                    <h3 className="font-medium text-lg">{match.job.title}</h3>
+                    <p className="text-gray-500">{match.job.companyName || getCompanyName(match.job.companyId)}</p>
                     
                     <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-600">
-                      {job.location && (
+                      {match.job.location && (
                         <div className="flex items-center">
                           <MapPin className="h-4 w-4 mr-1" />
-                          <span>{job.location}</span>
+                          <span>{match.job.location}</span>
                         </div>
                       )}
                       
-                      {job.remote && (
+                      {match.job.remote && (
                         <Badge variant="outline" className="bg-blue-50">Remote</Badge>
                       )}
                       
-                      {job.contractType ? (
+                      {match.job.contractType ? (
                         <div className="flex items-center">
                           <CalendarClock className="h-4 w-4 mr-1" />
-                          <span>{job.contractType}</span>
+                          <span>{match.job.contractType}</span>
                         </div>
                       ) : (
                         <div className="flex items-center">
                           <CalendarClock className="h-4 w-4 mr-1" />
-                          <span>{job.jobType}</span>
+                          <span>{match.job.jobType}</span>
                         </div>
                       )}
                       
-                      {job.createdAt && (
+                      {match.job.createdAt && (
                         <div className="flex items-center">
                           <Clock className="h-4 w-4 mr-1" />
-                          <span>Posted {format(new Date(job.createdAt), 'MMM d, yyyy')}</span>
+                          <span>Posted {format(new Date(match.job.createdAt), 'MMM d, yyyy')}</span>
                         </div>
                       )}
                     </div>
@@ -158,9 +166,9 @@ export default function ProfessionalJobMatches() {
                   
                   <div className="flex flex-col items-end">
                     <Badge className="mb-2 bg-emerald-100 text-emerald-800">
-                      {formatMatchScore(score)} Match
+                      {formatMatchScore(match)} Match
                     </Badge>
-                    <Link href={`/jobs/${job.id}`}>
+                    <Link href={`/jobs/${match.job.id}`}>
                       <Button size="sm" className="flex items-center">
                         View Job <ChevronRight className="ml-1 h-4 w-4" />
                       </Button>
@@ -168,16 +176,16 @@ export default function ProfessionalJobMatches() {
                   </div>
                 </div>
                 
-                {job.description && (
+                {match.job.description && (
                   <p className="text-gray-700 mt-3 line-clamp-2">
-                    {job.description}
+                    {match.job.description}
                   </p>
                 )}
                 
-                {job.skills && job.skills.length > 0 ? (
+                {match.job.skills && match.job.skills.length > 0 ? (
                   <div className="mt-3">
                     <div className="flex flex-wrap gap-1">
-                      {job.skills.map((skill, index) => (
+                      {match.job.skills.map((skill, index) => (
                         <Badge key={index} variant="secondary" className="bg-gray-100">
                           {skill}
                         </Badge>
@@ -188,11 +196,11 @@ export default function ProfessionalJobMatches() {
                   <div className="mt-3">
                     <div className="flex flex-wrap gap-1">
                       <Badge variant="secondary" className="bg-gray-100">
-                        {job.jobType}
+                        {match.job.jobType}
                       </Badge>
-                      {job.compensationUnit && (
+                      {match.job.compensationUnit && (
                         <Badge variant="secondary" className="bg-gray-100">
-                          {job.compensationUnit} pay
+                          {match.job.compensationUnit} pay
                         </Badge>
                       )}
                     </div>

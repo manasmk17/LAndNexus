@@ -35,14 +35,19 @@ export default function Professionals() {
   const [experienceLevel, setExperienceLevel] = useState<string>("");
   const [rateRange, setRateRange] = useState<[number, number]>([0, 500]);
   
-  // Fetch all professionals
+  // Fetch all professionals with new paginated format
   const { 
-    data: professionals, 
+    data: professionalsResponse, 
     isLoading: isLoadingProfessionals,
     error: professionalError
-  } = useQuery<ProfessionalProfile[]>({
+  } = useQuery<{profiles: ProfessionalProfile[]} | ProfessionalProfile[]>({
     queryKey: ["/api/professional-profiles"],
   });
+
+  // Handle both old array format and new paginated format
+  const professionals = Array.isArray(professionalsResponse) 
+    ? professionalsResponse 
+    : professionalsResponse?.profiles || [];
   
   // Fetch all expertise areas for filtering
   const { data: expertise } = useQuery<Expertise[]>({

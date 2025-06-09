@@ -20,6 +20,7 @@ import {
   Zap
 } from "lucide-react";
 import { format } from "date-fns";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
 import SubscriptionStatus from "@/components/dashboard/subscription-status";
 import ProfessionalJobMatches from "@/components/matching/professional-job-matches";
@@ -32,6 +33,7 @@ import type {
 } from "@shared/schema";
 
 export default function ProfessionalDashboard() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   
   // Fetch professional profile

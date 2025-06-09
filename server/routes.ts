@@ -2181,6 +2181,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get subscription plans API
+  app.get('/api/subscription-plans', async (req, res) => {
+    try {
+      const plans = await storage.getSubscriptionPlans();
+      res.json(plans);
+    } catch (error) {
+      console.error('Error fetching subscription plans:', error);
+      res.status(500).json({ error: 'Failed to fetch subscription plans' });
+    }
+  });
+
   // Career Recommendations
   app.get("/api/career-recommendations", isAuthenticated, async (req, res) => {
     try {

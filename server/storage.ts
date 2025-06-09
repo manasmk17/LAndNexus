@@ -54,6 +54,9 @@ export interface IStorage {
   updateUserSubscription(userId: number, tier: string, status: string): Promise<User | undefined>;
   getUserByStripeCustomerId(customerId: string): Promise<User | undefined>;
   
+  // Subscription plans operations
+  getSubscriptionPlans(): Promise<SubscriptionPlan[]>;
+  
   // AI Matching operations
   getMatchingJobsForProfessional(professionalId: number, limit?: number): Promise<Array<{job: JobPosting, score: number}>>;
   getMatchingProfessionalsForJob(jobId: number, limit?: number): Promise<Array<{professional: ProfessionalProfile, score: number}>>;
@@ -1447,6 +1450,69 @@ export class MemStorage implements IStorage {
     }
     
     return cleanedCount;
+  }
+
+  // Subscription plans operations
+  async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+    // Return hardcoded subscription plans for in-memory storage
+    return [
+      {
+        id: 21,
+        name: "Starter",
+        description: null,
+        userType: "professional",
+        monthlyPriceUsd: 0,
+        yearlyPriceUsd: 0,
+        monthlyPriceAed: 0,
+        yearlyPriceAed: 0,
+        jobApplicationLimit: 0,
+        teamMemberLimit: null,
+        resourceDownloadLimit: 3,
+        isActive: true
+      },
+      {
+        id: 22,
+        name: "Professional",
+        description: null,
+        userType: "professional",
+        monthlyPriceUsd: 1900,
+        yearlyPriceUsd: 19000,
+        monthlyPriceAed: 7000,
+        yearlyPriceAed: 70000,
+        jobApplicationLimit: 15,
+        teamMemberLimit: null,
+        resourceDownloadLimit: 50,
+        isActive: true
+      },
+      {
+        id: 23,
+        name: "Expert",
+        description: null,
+        userType: "professional",
+        monthlyPriceUsd: 4900,
+        yearlyPriceUsd: 49000,
+        monthlyPriceAed: 18000,
+        yearlyPriceAed: 180000,
+        jobApplicationLimit: null,
+        teamMemberLimit: null,
+        resourceDownloadLimit: null,
+        isActive: true
+      },
+      {
+        id: 24,
+        name: "Elite",
+        description: null,
+        userType: "professional",
+        monthlyPriceUsd: 9900,
+        yearlyPriceUsd: 99000,
+        monthlyPriceAed: 36400,
+        yearlyPriceAed: 364000,
+        jobApplicationLimit: null,
+        teamMemberLimit: null,
+        resourceDownloadLimit: null,
+        isActive: true
+      }
+    ];
   }
 }
 

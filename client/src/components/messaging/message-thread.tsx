@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { useWebSocket } from "@/hooks/use-websocket";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,7 @@ export default function MessageThread({ otherUserId }: MessageThreadProps) {
   const queryClient = useQueryClient();
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const { isConnected, connectionError } = useWebSocket();
 
   // Fetch messages between current user and the selected user
   const { 
@@ -87,6 +89,33 @@ export default function MessageThread({ otherUserId }: MessageThreadProps) {
     }
   }, [messages, user, otherUserId, queryClient]);
 
+  // Message sending mutation with enhanced error handling
+  const sendMessageMutation = useMutation({
+    mutationFn: async (messageData: { content: string; receiverId: number }) => {
+      const response = await apiRequest("POST", "/api/messages", messageData);
+      return response;
+    },
+    onSuccess: () => {
+      setNewMessage("");
+      // Invalidate queries to update UI
+      queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/messages/${otherUserId}`] });
+      
+      toast({
+        title: "Message sent",
+        description: "Your message has been delivered",
+      });
+    },
+    onError: (error: any) => {
+      console.error("Failed to send message:", error);
+      toast({
+        title: "Failed to send message",
+        description: error.message || "Please check your connection and try again",
+        variant: "destructive",
+      });
+    }
+  });
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -100,31 +129,20 @@ export default function MessageThread({ otherUserId }: MessageThreadProps) {
       });
       return;
     }
-    
-    try {
-      setIsSending(true);
-      
-      await apiRequest("POST", "/api/messages", {
-        content: newMessage,
-        receiverId: otherUserId
-      });
-      
-      // Clear input
-      setNewMessage("");
-      
-      // Invalidate queries to update UI
-      queryClient.invalidateQueries({ queryKey: ["/api/messages"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/messages/${otherUserId}`] });
-    } catch (error) {
-      console.error("Failed to send message:", error);
+
+    // Check connection status
+    if (connectionError) {
       toast({
-        title: "Failed to send message",
-        description: "Please try again later",
-        variant: "destructive",
+        title: "Connection issue",
+        description: "Real-time messaging may be affected. Your message will still be sent.",
+        variant: "default",
       });
-    } finally {
-      setIsSending(false);
     }
+    
+    sendMessageMutation.mutate({
+      content: newMessage.trim(),
+      receiverId: otherUserId
+    });
   };
 
   const getDisplayName = () => {

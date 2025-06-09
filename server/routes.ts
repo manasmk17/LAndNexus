@@ -2013,6 +2013,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get company profile by specific user ID (for messaging system)
+  app.get("/api/company-profiles/by-user/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const profile = await storage.getCompanyProfileByUserId(userId);
+      if (!profile) {
+        return res.status(404).json({ message: "Company profile not found for this user" });
+      }
+      
+      res.json(profile);
+    } catch (err) {
+      console.error("Error fetching company profile by user ID:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get professional profile by specific user ID (for messaging system)
+  app.get("/api/professional-profiles/by-user/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const profile = await storage.getProfessionalProfileByUserId(userId);
+      if (!profile) {
+        return res.status(404).json({ message: "Professional profile not found for this user" });
+      }
+      
+      res.json(profile);
+    } catch (err) {
+      console.error("Error fetching professional profile by user ID:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Career Recommendations
   app.get("/api/career-recommendations", isAuthenticated, async (req, res) => {
     try {
@@ -3659,17 +3701,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const message = await storage.createMessage(messageData);
 
-      // Send real-time notification via WebSocket
-      const receiverConnections = connections.get(messageData.receiverId);
-      if (receiverConnections && receiverConnections.length > 0) {
-        receiverConnections.forEach(conn => {
-          if (conn.readyState === WebSocket.OPEN) {
-            conn.send(JSON.stringify({
-              type: 'new_message',
-              data: message
-            }));
-          }
-        });
+      // Send real-time notification via WebSocket if connections exist
+      if (typeof connections !== 'undefined' && connections.has(messageData.receiverId)) {
+        const receiverConnections = connections.get(messageData.receiverId);
+        if (receiverConnections && receiverConnections.length > 0) {
+          receiverConnections.forEach(conn => {
+            if (conn.readyState === WebSocket.OPEN) {
+              conn.send(JSON.stringify({
+                type: 'new_message',
+                data: message
+              }));
+            }
+          });
+        }
       }
 
       res.status(201).json(message);

@@ -27,121 +27,88 @@ type PricingPlan = {
 export default function Pricing() {
   const [pricingType, setPricingType] = useState<"professional" | "company">("professional");
 
-  const professionalPlans: PricingPlan[] = [
-    {
-      name: "Professional",
-      description: "Perfect for individual L&D professionals getting started",
-      price: "$19",
-      features: [
-        "Apply to 15 jobs per month",
-        "AI job matching",
-        "50 resource downloads per month",
-        "Direct messaging",
-        "Priority email support"
-      ],
-      disabledFeatures: [
-        "Video consultations",
-        "Featured placement",
-      ],
-      ctaText: "Get Started",
-      ctaLink: "/subscription-plans",
-      borderColor: "border-gray-300",
-    },
-    {
-      name: "Expert",
-      description: "Advanced features for experienced professionals",
-      price: "$49",
-      features: [
-        "Unlimited job applications",
-        "Featured profile placement",
-        "Unlimited resource downloads",
-        "Video consultations",
-        "Advanced analytics",
-        "Phone support"
-      ],
-      disabledFeatures: [],
-      ctaText: "Get Expert",
-      ctaLink: "/subscription-plans",
-      popular: true,
-      borderColor: "border-primary",
-    },
-    {
-      name: "Elite",
-      description: "Premium features for top-tier professionals",
-      price: "$99",
-      features: [
-        "Everything in Expert",
-        "Personal account manager",
-        "API access",
-        "White-label platform",
-        "Custom branding",
-        "24/7 support"
-      ],
-      disabledFeatures: [],
-      ctaText: "Get Elite",
-      ctaLink: "/subscription-plans",
-      borderColor: "border-teal-500",
-    },
-  ];
+  // Fetch subscription plans from API
+  const { data: allPlans = [], isLoading, error } = useQuery<any[]>({
+    queryKey: ["/api/subscription-plans"],
+    enabled: true
+  });
 
-  const companyPlans: PricingPlan[] = [
-    {
-      name: "Startup",
-      description: "Perfect for growing companies and startups",
-      price: "$39",
+  // Transform database plans to component format
+  const professionalPlans: PricingPlan[] = allPlans
+    .filter(plan => plan.planType === "professional" && plan.name !== "Starter")
+    .map(plan => ({
+      name: plan.name,
+      description: plan.description || `Perfect for ${plan.name.toLowerCase()} professionals`,
+      price: `$${(plan.priceMonthlyUSD / 100).toFixed(0)}`,
       features: [
-        "3 active job postings",
-        "Search 100 professionals per month",
-        "Basic company profile",
-        "3 team members",
-        "Email support"
-      ],
+        plan.maxJobApplications ? `Apply to ${plan.maxJobApplications} jobs per month` : "Unlimited job applications",
+        plan.aiMatchingEnabled !== false ? "AI job matching" : "",
+        plan.maxResourceDownloads ? `${plan.maxResourceDownloads} resource downloads per month` : "Unlimited resource downloads",
+        plan.directMessaging !== false ? "Direct messaging" : "",
+        plan.supportLevel || "Priority email support"
+      ].filter(Boolean),
       disabledFeatures: [
-        "Analytics dashboard",
-        "Enhanced branding",
-      ],
-      ctaText: "Get Started",
+        !plan.videoConsultations ? "Video consultations" : "",
+        !plan.featuredPlacement ? "Featured placement" : "",
+      ].filter(Boolean),
+      ctaText: `Get ${plan.name}`,
       ctaLink: "/subscription-plans",
-      borderColor: "border-gray-300",
-    },
-    {
-      name: "Growth",
-      description: "Advanced features for expanding businesses",
-      price: "$99",
+      popular: plan.name === "Expert",
+      borderColor: plan.name === "Expert" ? "border-primary" : "border-gray-300",
+    }));
+
+  const companyPlans: PricingPlan[] = allPlans
+    .filter(plan => plan.planType === "company")
+    .map(plan => ({
+      name: plan.name,
+      description: plan.description || `Perfect for ${plan.name.toLowerCase()} companies`,
+      price: `$${(plan.priceMonthlyUSD / 100).toFixed(0)}`,
       features: [
-        "15 active job postings",
-        "Search 500 professionals per month",
-        "Enhanced branding",
-        "8 team members",
-        "Analytics dashboard",
-        "Phone support"
-      ],
-      disabledFeatures: [],
-      ctaText: "Get Growth",
+        plan.maxJobPostings ? `${plan.maxJobPostings} active job postings` : "Unlimited job postings",
+        plan.maxContacts ? `Search ${plan.maxContacts} professionals per month` : "Unlimited professional contacts",
+        plan.customBranding ? "Enhanced branding" : "Basic company profile",
+        plan.maxTeamMembers ? `${plan.maxTeamMembers} team members` : "Unlimited team members",
+        plan.supportLevel || "Email support"
+      ].filter(Boolean),
+      disabledFeatures: [
+        !plan.analyticsAccess ? "Analytics dashboard" : "",
+        !plan.customBranding ? "Enhanced branding" : "",
+      ].filter(Boolean),
+      ctaText: plan.name === "Enterprise" ? "Contact Sales" : `Get ${plan.name}`,
       ctaLink: "/subscription-plans",
-      popular: true,
-      borderColor: "border-primary",
-    },
-    {
-      name: "Enterprise",
-      description: "Complete solution for large organizations",
-      price: "$199",
-      features: [
-        "Unlimited job postings",
-        "Unlimited professional contacts",
-        "Advanced team management",
-        "Custom integrations",
-        "Dedicated account manager",
-        "White-label solutions"
-      ],
-      disabledFeatures: [],
-      ctaText: "Contact Sales",
-      ctaLink: "/subscription-plans",
-      borderColor: "border-teal-500",
-    },
-  ];
+      popular: plan.name === "Growth",
+      borderColor: plan.name === "Growth" ? "border-primary" : "border-gray-300",
+    }));
 
   const plans = pricingType === "professional" ? professionalPlans : companyPlans;
+
+  // Show loading state while fetching plans
+  if (isLoading) {
+    return (
+      <section className="py-20 bg-gradient-to-b from-background to-secondary/20">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-2 text-lg">Loading pricing plans...</span>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Show error state if API fails
+  if (error) {
+    return (
+      <section className="py-20 bg-gradient-to-b from-background to-secondary/20">
+        <div className="container mx-auto px-4">
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-destructive mb-4">Unable to Load Pricing</h2>
+            <p className="text-muted-foreground">Please refresh the page or try again later.</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="pricing" className="py-16 bg-white">

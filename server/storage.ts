@@ -22,7 +22,8 @@ import {
   reviews, Review, InsertReview,
   notifications, Notification, InsertNotification,
   notificationTypes, NotificationType, InsertNotificationType,
-  notificationPreferences, NotificationPreference, InsertNotificationPreference
+  notificationPreferences, NotificationPreference, InsertNotificationPreference,
+  subscriptionPlans, SubscriptionPlan
 } from "@shared/schema";
 
 export interface IStorage {
@@ -2938,6 +2939,21 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error updating user subscription:", error);
       return null;
+    }
+  }
+
+  // Subscription plans operations
+  async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+    if (!db) {
+      throw new Error('Database not initialized');
+    }
+
+    try {
+      const plans = await db.select().from(subscriptionPlans).where(eq(subscriptionPlans.isActive, true));
+      return plans;
+    } catch (error) {
+      console.error("Error fetching subscription plans:", error);
+      return [];
     }
   }
 }

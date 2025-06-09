@@ -202,10 +202,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(
     session({
       secret: process.env.SESSION_SECRET || "L&D-nexus-secret",
-      resave: true,
-      saveUninitialized: true,
+      resave: false,
+      saveUninitialized: false,
       cookie: { 
         secure: false,
+        httpOnly: true,
         maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days by default
       },
       store: new MemoryStore({
@@ -316,10 +317,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Check if user is authenticated
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
+    console.log(`Authentication check for ${req.method} ${req.path}`);
+    console.log(`Session ID: ${req.sessionID}`);
+    console.log(`Is authenticated: ${req.isAuthenticated()}`);
+    console.log(`User in session: ${req.user ? JSON.stringify({ id: req.user.id, username: req.user.username }) : 'null'}`);
+    
     if (req.isAuthenticated()) {
       return next();
     }
-    res.status(401).json({ message: "Unauthorized" });
+    res.status(401).json({ message: "Authentication required" });
   };
 
   const isAdmin = (req: Request, res: Response, next: Function) => {

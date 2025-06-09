@@ -102,27 +102,27 @@ export default function RegisterForm({ initialUserType }: RegisterFormProps) {
           name="userType"
           render={({ field }) => (
             <FormItem className="space-y-3">
-              <FormLabel>I am a...</FormLabel>
+              <FormLabel>{t("auth.userType")}</FormLabel>
               <FormControl>
                 <RadioGroup
                   onValueChange={field.onChange}
                   defaultValue={field.value}
-                  className="flex space-x-4"
+                  className="flex space-x-4 rtl:space-x-reverse"
                 >
-                  <FormItem className="flex items-center space-x-2">
+                  <FormItem className="flex items-center space-x-2 rtl:space-x-reverse">
                     <FormControl>
                       <RadioGroupItem value="professional" />
                     </FormControl>
                     <FormLabel className="font-normal">
-                      L&D Professional
+                      {t("auth.professional")}
                     </FormLabel>
                   </FormItem>
-                  <FormItem className="flex items-center space-x-2">
+                  <FormItem className="flex items-center space-x-2 rtl:space-x-reverse">
                     <FormControl>
                       <RadioGroupItem value="company" />
                     </FormControl>
                     <FormLabel className="font-normal">
-                      Company
+                      {t("auth.company")}
                     </FormLabel>
                   </FormItem>
                 </RadioGroup>
@@ -138,7 +138,7 @@ export default function RegisterForm({ initialUserType }: RegisterFormProps) {
             name="firstName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>First Name</FormLabel>
+                <FormLabel>{t("auth.firstName")}</FormLabel>
                 <FormControl>
                   <Input placeholder="John" {...field} />
                 </FormControl>
@@ -151,7 +151,7 @@ export default function RegisterForm({ initialUserType }: RegisterFormProps) {
             name="lastName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Last Name</FormLabel>
+                <FormLabel>{t("auth.lastName")}</FormLabel>
                 <FormControl>
                   <Input placeholder="Doe" {...field} />
                 </FormControl>
@@ -166,7 +166,7 @@ export default function RegisterForm({ initialUserType }: RegisterFormProps) {
           name="username"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Username</FormLabel>
+              <FormLabel>{t("auth.username")}</FormLabel>
               <FormControl>
                 <Input placeholder="johndoe" {...field} />
               </FormControl>
@@ -180,7 +180,7 @@ export default function RegisterForm({ initialUserType }: RegisterFormProps) {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>{t("auth.email")}</FormLabel>
               <FormControl>
                 <Input type="email" placeholder="john.doe@example.com" {...field} />
               </FormControl>
@@ -195,7 +195,7 @@ export default function RegisterForm({ initialUserType }: RegisterFormProps) {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <FormLabel>{t("auth.password")}</FormLabel>
                 <FormControl>
                   <Input type="password" placeholder="********" {...field} />
                 </FormControl>
@@ -208,7 +208,7 @@ export default function RegisterForm({ initialUserType }: RegisterFormProps) {
             name="confirmPassword"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Confirm Password</FormLabel>
+                <FormLabel>{t("auth.confirmPassword")}</FormLabel>
                 <FormControl>
                   <Input type="password" placeholder="********" {...field} />
                 </FormControl>
@@ -218,8 +218,8 @@ export default function RegisterForm({ initialUserType }: RegisterFormProps) {
           />
         </div>
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Creating account..." : "Create Account"}
+        <Button type="submit" className="w-full btn-with-icon" disabled={isSubmitting}>
+          {isSubmitting ? t("auth.registerButton") + "..." : t("auth.registerButton")}
         </Button>
       </form>
     </Form>

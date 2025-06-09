@@ -2,8 +2,10 @@ import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import RegisterForm from "@/components/auth/register-form";
 import { useAuth } from "@/hooks/use-auth";
+import { useTranslation } from "react-i18next";
 
 export default function Register() {
+  const { t } = useTranslation();
   const [location, setLocation] = useLocation();
   const { user } = useAuth();
   
@@ -26,9 +28,9 @@ export default function Register() {
     <div className="container mx-auto px-4 py-12">
       <div className="max-w-md mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">Create an Account</h1>
+          <h1 className="text-3xl font-bold mb-2">{t("auth.register.title")}</h1>
           <p className="text-gray-600">
-            Join L&D Nexus to connect with professionals or find expert trainers
+            {t("auth.register.subtitle")}
           </p>
         </div>
         
@@ -37,9 +39,9 @@ export default function Register() {
           
           <div className="mt-6 text-center">
             <p className="text-gray-600">
-              Already have an account?{" "}
+              {t("auth.alreadyHaveAccount")}{" "}
               <Link href="/login" className="text-primary hover:underline">
-                Sign In
+                {t("nav.login")}
               </Link>
             </p>
           </div>

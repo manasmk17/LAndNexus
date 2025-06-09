@@ -68,7 +68,7 @@ export class SubscriptionService {
         maxTeamMembers: 1,
         maxContacts: 0,
         aiMatchingEnabled: false,
-        supportLevel: "email",
+        supportLevel: "email" as const,
         sortOrder: 0
       },
       // Professional Plans
@@ -276,7 +276,7 @@ export class SubscriptionService {
       }
     ];
 
-    const insertedPlans = await database.insert(subscriptionPlans).values(defaultPlans).returning();
+    const insertedPlans = await database.insert(subscriptionPlans).values(defaultPlans as any).returning();
     console.log('✅ Default subscription plans initialized');
     
     // Setup Stripe prices for new plans

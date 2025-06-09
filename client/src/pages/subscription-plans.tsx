@@ -16,7 +16,8 @@ import {
   MessageCircle,
   Crown,
   Building,
-  ArrowRight
+  ArrowRight,
+  User
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "@/lib/i18n";
@@ -159,6 +160,28 @@ export default function SubscriptionPlans() {
             Unlock your professional potential with our comprehensive L&D platform. 
             Choose the plan that fits your career goals and business needs.
           </p>
+
+          {/* Plan Type Toggle */}
+          <div className="flex items-center justify-center gap-2 mb-8">
+            <Button
+              variant={planType === 'professional' ? 'default' : 'outline'}
+              size="lg"
+              onClick={() => setPlanType('professional')}
+              className="px-8"
+            >
+              <User className="mr-2 h-4 w-4" />
+              For Professionals
+            </Button>
+            <Button
+              variant={planType === 'company' ? 'default' : 'outline'}
+              size="lg"
+              onClick={() => setPlanType('company')}
+              className="px-8"
+            >
+              <Building className="mr-2 h-4 w-4" />
+              For Companies
+            </Button>
+          </div>
 
           {/* Billing Toggle */}
           <div className="flex items-center justify-center gap-4 mb-8">

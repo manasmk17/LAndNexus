@@ -24,7 +24,6 @@ import Professionals from "@/pages/professionals";
 import ProfessionalProfile from "@/pages/professional-profile";
 import EditProfile from "@/pages/edit-profile";
 import Jobs from "@/pages/jobs";
-import EnhancedJobs from "@/pages/enhanced-jobs";
 import PostJob from "@/pages/post-job";
 import JobDetail from "@/pages/job-detail";
 import Resources from "@/pages/resources";
@@ -59,7 +58,6 @@ function Router() {
       <Route path="/professionals" component={Professionals} />
       <Route path="/professional-profile/:id" component={ProfessionalProfile} />
       <Route path="/jobs" component={Jobs} />
-      <Route path="/jobs/advanced" component={EnhancedJobs} />
       <Route path="/job/:id" component={JobDetail} />
       <Route path="/resources" component={Resources} />
       <Route path="/resource/:id" component={ResourceDetail} />

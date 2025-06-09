@@ -36,6 +36,8 @@ import Messages from "@/pages/messages";
 import Checkout from "@/pages/checkout";
 import Subscribe from "@/pages/subscribe";
 import SubscriptionSuccess from "@/pages/subscription-success";
+import SubscriptionPlans from "@/pages/subscription-plans";
+import ManageSubscription from "@/pages/manage-subscription";
 import ProfileSuccess from "@/pages/profile-success";
 import BookConsultation from "@/pages/book-consultation";
 import PageView from "@/pages/page";
@@ -117,6 +119,8 @@ function Router() {
         path="/checkout" 
         component={Checkout} 
       />
+      {/* Subscription routes */}
+      <Route path="/subscription-plans" component={SubscriptionPlans} />
       <ProtectedRoute 
         path="/subscribe" 
         component={Subscribe} 
@@ -128,6 +132,10 @@ function Router() {
       <ProtectedRoute 
         path="/subscription-success" 
         component={SubscriptionSuccess} 
+      />
+      <ProtectedRoute 
+        path="/manage-subscription" 
+        component={ManageSubscription} 
       />
       <ProtectedRoute 
         path="/profile-success" 

@@ -1,190 +1,114 @@
-import { useEffect, useState } from 'react';
-import { useLocation } from 'wouter';
-import { apiRequest } from '@/lib/queryClient';
-import { useAuth } from '@/hooks/use-auth';
-import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle } from 'lucide-react';
+import { useEffect } from "react";
+import { Link, useLocation } from "wouter";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle, ArrowRight, CreditCard, Calendar, Receipt } from "lucide-react";
 
 export default function SubscriptionSuccess() {
-  const [, navigate] = useLocation();
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [subscriptionDetails, setSubscriptionDetails] = useState<{
-    tier: string;
-    status: string;
-    nextBillingDate?: string;
-  } | null>(null);
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-
-    const fetchSubscriptionStatus = async () => {
-      try {
-        const response = await apiRequest('GET', '/api/subscription-status');
-        
-        // Check specifically for 404 which means no subscription (not an error)
-        if (response.status === 404) {
-          console.log("No subscription found on subscription success page");
-          setSubscriptionDetails(null);
-          return;
-        }
-        
-        if (response.ok) {
-          const data = await response.json();
-          setSubscriptionDetails(data);
-        } else {
-          // For other error types
-          let errorMessage = "Could not verify subscription status.";
-          try {
-            const errorData = await response.json();
-            errorMessage = errorData.message || errorMessage;
-          } catch (e) {
-            // If we can't parse JSON, use the status text
-            errorMessage = response.statusText || errorMessage;
-          }
-          
-          toast({
-            title: 'Error',
-            description: errorMessage,
-            variant: 'destructive',
-          });
-        }
-      } catch (error: any) {
-        // Don't show toast for network issues that will auto-retry
-        if (!error.message?.includes("Network connection issue")) {
-          toast({
-            title: 'Error',
-            description: error.message || 'An unexpected error occurred.',
-            variant: 'destructive',
-          });
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // Check if payment was successful from URL params
+    // Clear any checkout state
     const urlParams = new URLSearchParams(window.location.search);
-    const paymentStatus = urlParams.get('payment_status');
     const paymentIntent = urlParams.get('payment_intent');
-    const redirectStatus = urlParams.get('redirect_status');
+    const paymentIntentClientSecret = urlParams.get('payment_intent_client_secret');
     
-    const handleSuccessfulPayment = async () => {
-      // If we have a successful payment or redirect status, update subscription
-      if ((paymentStatus === 'success' || redirectStatus === 'succeeded') && paymentIntent) {
-        try {
-          console.log('Payment success detected, updating subscription status');
-          // Default to basic tier if we don't have specific info
-          const tier = localStorage.getItem('selectedSubscriptionTier') || 'basic';
-          
-          // Update subscription based on the successful payment
-          const updateResponse = await apiRequest('POST', '/api/update-subscription', {
-            tierId: tier,
-            status: 'active',
-            paymentIntentId: paymentIntent
-          });
-          
-          if (updateResponse.ok) {
-            console.log('Subscription updated successfully');
-          } else {
-            console.error('Failed to update subscription');
-          }
-        } catch (error) {
-          console.error('Error updating subscription:', error);
-        }
-      }
-      
-      // Fetch subscription status regardless of payment param
-      fetchSubscriptionStatus();
-    };
-    
-    handleSuccessfulPayment();
-  }, [user, navigate, toast]);
-
-  const handleDashboardClick = () => {
-    if (user?.userType === 'professional') {
-      navigate('/professional-dashboard');
-    } else if (user?.userType === 'company') {
-      navigate('/company-dashboard');
-    } else {
-      navigate('/');
+    if (paymentIntent) {
+      // Payment was successful, clean up URL
+      window.history.replaceState({}, document.title, "/subscription-success");
     }
-  };
+  }, []);
 
   return (
-    <div className="container max-w-2xl mx-auto py-16 px-4">
-      <Card className="text-center">
-        <CardHeader>
-          <div className="mx-auto w-16 h-16 flex items-center justify-center bg-green-100 rounded-full mb-4">
-            <CheckCircle className="h-10 w-10 text-green-600" />
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 py-12">
+      <div className="container mx-auto px-4 max-w-2xl">
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-6">
+            <div className="rounded-full bg-green-100 p-6">
+              <CheckCircle className="h-16 w-16 text-green-600" />
+            </div>
           </div>
-          <CardTitle className="text-2xl">Subscription Complete!</CardTitle>
-          <CardDescription>
-            Thank you for subscribing to the L&D Nexus platform.
-          </CardDescription>
-        </CardHeader>
-        
-        <CardContent>
-          {loading ? (
-            <div className="py-8 flex justify-center">
-              <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-            </div>
-          ) : subscriptionDetails ? (
-            <div className="space-y-4 py-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="font-medium">Subscription Details</p>
-                <div className="mt-2 text-sm">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="text-left text-gray-500">Plan:</div>
-                    <div className="text-right font-medium capitalize">{subscriptionDetails.tier} Plan</div>
-                    
-                    <div className="text-left text-gray-500">Status:</div>
-                    <div className="text-right font-medium capitalize">{subscriptionDetails.status}</div>
-                    
-                    {subscriptionDetails.nextBillingDate && (
-                      <>
-                        <div className="text-left text-gray-500">Next Billing Date:</div>
-                        <div className="text-right font-medium">
-                          {new Date(subscriptionDetails.nextBillingDate).toLocaleDateString(undefined, {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
+          
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            Welcome to Your New Plan!
+          </h1>
+          <p className="text-lg text-gray-600 mb-8">
+            Your subscription has been successfully activated. You now have access to all premium features.
+          </p>
+          
+          <Badge className="bg-green-600 text-white px-6 py-2 text-sm">
+            Subscription Active
+          </Badge>
+        </div>
+
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5" />
+              What happens next?
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="rounded-full bg-blue-100 p-2 mt-1">
+                <CheckCircle className="h-4 w-4 text-blue-600" />
               </div>
-              
-              <p>
-                You now have access to all features included in your subscription plan.
-                Visit your dashboard to explore the platform's capabilities.
-              </p>
+              <div>
+                <h4 className="font-semibold">Instant Access</h4>
+                <p className="text-sm text-gray-600">
+                  All premium features are now available in your dashboard
+                </p>
+              </div>
             </div>
-          ) : (
-            <p className="py-4">
-              Your subscription has been processed successfully. You can now enjoy all the benefits
-              of your subscription plan.
-            </p>
-          )}
-        </CardContent>
-        
-        <CardFooter className="flex flex-col space-y-2">
-          <Button onClick={handleDashboardClick} className="w-full">
-            Go to Dashboard
-          </Button>
-          <Button variant="outline" onClick={() => navigate('/')} className="w-full">
-            Return to Home
-          </Button>
-        </CardFooter>
-      </Card>
+            
+            <div className="flex items-start gap-3">
+              <div className="rounded-full bg-purple-100 p-2 mt-1">
+                <CreditCard className="h-4 w-4 text-purple-600" />
+              </div>
+              <div>
+                <h4 className="font-semibold">Payment Confirmation</h4>
+                <p className="text-sm text-gray-600">
+                  A receipt has been sent to your email address
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-3">
+              <div className="rounded-full bg-green-100 p-2 mt-1">
+                <Calendar className="h-4 w-4 text-green-600" />
+              </div>
+              <div>
+                <h4 className="font-semibold">Automatic Renewal</h4>
+                <p className="text-sm text-gray-600">
+                  Your subscription will renew automatically. Manage it anytime from your dashboard.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Link href="/professional-dashboard">
+            <Button className="w-full bg-blue-600 hover:bg-blue-700">
+              Go to Dashboard
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
+          
+          <Link href="/manage-subscription">
+            <Button variant="outline" className="w-full">
+              Manage Subscription
+            </Button>
+          </Link>
+        </div>
+
+        <div className="text-center mt-8">
+          <p className="text-sm text-gray-500">
+            Need help? Contact our support team anytime.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

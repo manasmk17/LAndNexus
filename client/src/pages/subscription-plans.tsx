@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "@/lib/i18n";
+import { SEOMeta, createPricingSchema } from "@/components/seo/seo-meta";
 
 interface SubscriptionPlan {
   id: number;
@@ -120,6 +121,13 @@ export default function SubscriptionPlans() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12">
+      <SEOMeta
+        title="Subscription Plans | L&D Nexus | International Certified Professionals"
+        description="Choose the perfect subscription plan for your L&D career. Basic at $29/month, Pro at $79/month, Enterprise at $199/month. AI-powered matching, unlimited access, priority support."
+        keywords="L&D subscription plans, professional development pricing, International Certified Trainers subscription, Global Learning Development platform pricing"
+        canonicalUrl="https://www.ldnexus.com/subscription-plans"
+        structuredData={createPricingSchema()}
+      />
       <div className="container mx-auto px-4">
         {/* Header Section */}
         <div className="text-center mb-12">

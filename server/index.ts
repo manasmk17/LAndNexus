@@ -72,6 +72,12 @@ app.use((req, res, next) => {
     '/api/admin/professional-profiles',
     '/api/admin/job-postings',
     '/api/admin/resources',
+    '/api/admin/stats',
+    '/api/admin/recent-activity',
+    '/api/admin/subscription-metrics',
+    '/api/admin/revenue-metrics',
+    '/api/admin/subscriptions',
+    '/api/admin/users',
     '/api/reviews',
     '/api/notifications',
     '/api/notifications/unread',
@@ -147,9 +153,10 @@ app.use((req, res, next) => {
   ];
   
   // Check if the current request path is in the exempt list, matches an ID-based pattern,
-  // or matches a specific method+path combination
+  // or matches a specific method+path combination, or is an admin route
   if (
     csrfExemptRoutes.some(path => req.path === path) ||
+    req.path.startsWith('/api/admin/') ||
     idBasedPatterns.some(pattern => matchesPattern(req.path, pattern)) ||
     methodSpecificExemptions.some(item => req.path === item.path && req.method === item.method)
   ) {

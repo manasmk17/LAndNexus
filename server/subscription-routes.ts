@@ -199,11 +199,90 @@ export function registerSubscriptionRoutes(app: Express) {
     }
   });
 
+  // Setup subscription endpoint for checkout flow
+  app.post("/api/setup-subscription", bypassCSRF, isAuthenticated, async (req, res) => {
+    try {
+      const { planId, billingCycle, currency } = req.body;
+
+      if (!planId || !billingCycle || !currency) {
+        return res.status(400).json({ 
+          message: "Missing required fields: planId, billingCycle, currency" 
+        });
+      }
+
+      const database = await db;
+      if (!database) {
+        throw new Error('Database not initialized');
+      }
+
+      // Get plan details
+      const [plan] = await database
+        .select()
+        .from(subscriptionPlans)
+        .where(eq(subscriptionPlans.id, parseInt(planId)));
+
+      if (!plan) {
+        return res.status(404).json({ message: "Plan not found" });
+      }
+
+      // Get user details
+      const [user] = await database
+        .select()
+        .from(users)
+        .where(eq(users.id, req.user!.id));
+
+      // Create or get Stripe customer
+      const customerId = await subscriptionService.createOrGetStripeCustomer(
+        req.user!.id,
+        user.email,
+        `${user.firstName} ${user.lastName}`
+      );
+
+      // Determine the correct Stripe price ID
+      let stripePriceId: string;
+      if (currency === 'USD') {
+        stripePriceId = billingCycle === 'monthly' 
+          ? plan.stripePriceIdMonthlyUSD! 
+          : plan.stripePriceIdYearlyUSD!;
+      } else {
+        stripePriceId = billingCycle === 'monthly' 
+          ? plan.stripePriceIdMonthlyAED! 
+          : plan.stripePriceIdYearlyAED!;
+      }
+
+      // Create Stripe subscription
+      const subscription = await stripe.subscriptions.create({
+        customer: customerId,
+        items: [{ price: stripePriceId }],
+        payment_behavior: 'default_incomplete',
+        payment_settings: { save_default_payment_method: 'on_subscription' },
+        expand: ['latest_invoice.payment_intent'],
+        metadata: {
+          userId: req.user!.id.toString(),
+          planId: planId.toString()
+        }
+      });
+
+      res.json({
+        subscriptionId: subscription.id,
+        clientSecret: (subscription.latest_invoice as Stripe.Invoice)?.payment_intent?.client_secret,
+        plan: {
+          name: plan.name,
+          price: currency === 'USD' 
+            ? (billingCycle === 'monthly' ? plan.priceMonthlyUSD : plan.priceYearlyUSD)
+            : (billingCycle === 'monthly' ? plan.priceMonthlyAED : plan.priceYearlyAED),
+          currency,
+          billingCycle
+        }
+      });
+    } catch (error: any) {
+      console.error("Error setting up subscription:", error);
+      res.status(500).json({ message: error.message || "Failed to setup subscription" });
+    }
+  });
+
   // Create setup intent for payment method
-  app.post("/api/create-setup-intent", (req, res, next) => {
-    console.log(`CSRF protection bypassed for ${req.method} ${req.path}`);
-    next();
-  }, isAuthenticated, async (req, res) => {
+  app.post("/api/create-setup-intent", bypassCSRF, isAuthenticated, async (req, res) => {
     try {
       const database = await db;
       if (!database) {

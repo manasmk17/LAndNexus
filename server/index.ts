@@ -79,7 +79,10 @@ app.use((req, res, next) => {
     '/api/notification-preferences',
     '/api/create-payment-intent',
     '/api/create-subscription',
+    '/api/setup-subscription',
     '/api/update-subscription',
+    '/api/cancel-subscription',
+    '/api/create-setup-intent',
     '/api/webhook'
   ];
   

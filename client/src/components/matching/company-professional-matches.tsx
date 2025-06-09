@@ -18,7 +18,10 @@ interface ExtendedProfessionalProfile extends ProfessionalProfile {
 
 type MatchResult = {
   professional: ExtendedProfessionalProfile;
-  score: number;
+  score: number; // This will be the raw score from storage (0-1)
+  matchScore: number; // This will be the formatted percentage from AI matching controller
+  matchStrength?: string;
+  matchReasons?: string[];
 };
 
 export default function CompanyProfessionalMatches({ jobId }: { jobId: number }) {
@@ -61,8 +64,13 @@ export default function CompanyProfessionalMatches({ jobId }: { jobId: number })
   });
   
   // Format the match score as a percentage
-  const formatMatchScore = (score: number) => {
-    return `${Math.round(score * 100)}%`;
+  const formatMatchScore = (match: MatchResult) => {
+    // If we have the pre-formatted matchScore from the AI controller, use it
+    if (match.matchScore !== undefined) {
+      return `${match.matchScore}%`;
+    }
+    // Otherwise, format the raw score (0-1) to percentage
+    return `${Math.round(match.score * 100)}%`;
   };
   
   return (
@@ -114,16 +122,16 @@ export default function CompanyProfessionalMatches({ jobId }: { jobId: number })
           </div>
         ) : matches && matches.length > 0 ? (
           <div className="space-y-4">
-            {matches.map(({ professional, score }) => (
-              <div key={professional.id} className="border rounded-md p-4 hover:bg-gray-50">
+            {matches.map((match) => (
+              <div key={match.professional.id} className="border rounded-md p-4 hover:bg-gray-50">
                 <div className="flex justify-between items-start">
                   <div>
                     <div className="flex items-center">
                       <div className="w-10 h-10 rounded-full bg-primary bg-opacity-10 flex items-center justify-center mr-3">
-                        {professional.profileImageUrl ? (
+                        {match.professional.profileImageUrl ? (
                           <img
-                            src={professional.profileImageUrl}
-                            alt={professional.title || 'Profile'}
+                            src={match.professional.profileImageUrl}
+                            alt={match.professional.title || 'Profile'}
                             className="w-full h-full object-cover rounded-full"
                           />
                         ) : (
@@ -131,18 +139,18 @@ export default function CompanyProfessionalMatches({ jobId }: { jobId: number })
                         )}
                       </div>
                       <div>
-                        <h3 className="font-medium text-lg">{professional.title || `${professional.firstName} ${professional.lastName}`}</h3>
+                        <h3 className="font-medium text-lg">{match.professional.title || `${match.professional.firstName} ${match.professional.lastName}`}</h3>
                         <div className="flex items-center text-gray-500">
-                          {professional.location && (
+                          {match.professional.location && (
                             <div className="flex items-center mr-3">
                               <MapPin className="h-3 w-3 mr-1" />
-                              <span className="text-sm">{professional.location}</span>
+                              <span className="text-sm">{match.professional.location}</span>
                             </div>
                           )}
-                          {typeof professional.rating === 'number' && (
+                          {typeof match.professional.rating === 'number' && (
                             <div className="flex items-center">
                               <Star className="h-3 w-3 text-yellow-400 mr-1" />
-                              <span className="text-sm">{(professional.rating / 20).toFixed(1)}</span>
+                              <span className="text-sm">{(match.professional.rating / 20).toFixed(1)}</span>
                             </div>
                           )}
                         </div>
@@ -150,21 +158,21 @@ export default function CompanyProfessionalMatches({ jobId }: { jobId: number })
                     </div>
                     
                     <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-600">
-                      {professional.yearsOfExperience && (
+                      {match.professional.yearsOfExperience && (
                         <Badge variant="outline" className="bg-gray-50 text-gray-700">
-                          {professional.yearsOfExperience}+ years experience
+                          {match.professional.yearsOfExperience}+ years experience
                         </Badge>
                       )}
                       
-                      {professional.industries && professional.industries.length > 0 && (
+                      {match.professional.industries && match.professional.industries.length > 0 && (
                         <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                          {professional.industries[0]}
+                          {match.professional.industries[0]}
                         </Badge>
                       )}
                       
-                      {professional.ratePerHour && (
+                      {match.professional.ratePerHour && (
                         <Badge variant="outline" className="bg-green-50 text-green-700">
-                          ${professional.ratePerHour}/hr
+                          ${match.professional.ratePerHour}/hr
                         </Badge>
                       )}
                     </div>
@@ -172,15 +180,15 @@ export default function CompanyProfessionalMatches({ jobId }: { jobId: number })
                   
                   <div className="flex flex-col items-end">
                     <Badge className="mb-2 bg-emerald-100 text-emerald-800">
-                      {formatMatchScore(score)} Match
+                      {formatMatchScore(match)} Match
                     </Badge>
                     <div className="flex space-x-2">
-                      <Link href={`/messages?user=${professional.userId}`}>
+                      <Link href={`/messages?user=${match.professional.userId}`}>
                         <Button size="sm" variant="outline">
                           <Mail className="h-4 w-4 mr-1" /> Contact
                         </Button>
                       </Link>
-                      <Link href={`/professionals/${professional.id}`}>
+                      <Link href={`/professionals/${match.professional.id}`}>
                         <Button size="sm">
                           View Profile
                         </Button>
@@ -189,20 +197,20 @@ export default function CompanyProfessionalMatches({ jobId }: { jobId: number })
                   </div>
                 </div>
                 
-                {professional.bio && (
+                {match.professional.bio && (
                   <p className="text-gray-700 mt-3 line-clamp-2">
-                    {professional.bio}
+                    {match.professional.bio}
                   </p>
                 )}
                 
-                {professional.expertise && professional.expertise.length > 0 && (
+                {match.professional.expertise && match.professional.expertise.length > 0 && (
                   <div className="mt-3">
                     <div className="flex items-center mb-1">
                       <Lightbulb className="h-4 w-4 mr-1 text-amber-500" />
                       <span className="text-sm font-medium">Key Expertise</span>
                     </div>
                     <div className="flex flex-wrap gap-1">
-                      {professional.expertise.map((skill: string, index: number) => (
+                      {match.professional.expertise.map((skill: string, index: number) => (
                         <Badge key={index} variant="secondary" className="bg-gray-100">
                           {skill}
                         </Badge>

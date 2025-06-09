@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
+import { useTranslation, formatCurrency, formatDate } from "@/lib/i18n";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getQueryFn, apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { formatCurrency, formatDate } from "@/lib/i18n";
 import { DollarSign, Clock, CheckCircle, XCircle, AlertTriangle, RefreshCw } from "lucide-react";
 
 interface EscrowTransaction {
@@ -323,7 +322,7 @@ export default function PaymentDashboard() {
                         )}
                       </div>
                       <div className="text-gray-500">
-                        {formatDate(item.createdAt, i18n.language)}
+                        {formatDate(item.createdAt)}
                       </div>
                     </div>
                   ))}
@@ -345,7 +344,7 @@ interface TransactionCardProps {
 }
 
 function TransactionCard({ transaction, onViewDetails, onReleaseFunds, onRequestRefund }: TransactionCardProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   return (
     <Card>
@@ -353,7 +352,7 @@ function TransactionCard({ transaction, onViewDetails, onReleaseFunds, onRequest
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="text-lg">
-              {formatCurrency(transaction.amount / 100, i18n.language)}
+              {formatCurrency(transaction.amount / 100)}
             </CardTitle>
             <CardDescription>{transaction.description || t("payment.noDescription")}</CardDescription>
           </div>
@@ -366,9 +365,9 @@ function TransactionCard({ transaction, onViewDetails, onReleaseFunds, onRequest
       <CardContent>
         <div className="flex justify-between items-center">
           <div className="text-sm text-gray-600">
-            <p>{t("payment.created")}: {formatDate(transaction.createdAt, i18n.language)}</p>
+            <p>{t("payment.created")}: {formatDate(transaction.createdAt)}</p>
             {transaction.escrowReleaseDate && (
-              <p>{t("payment.autoRelease")}: {formatDate(transaction.escrowReleaseDate, i18n.language)}</p>
+              <p>{t("payment.autoRelease")}: {formatDate(transaction.escrowReleaseDate)}</p>
             )}
           </div>
           <div className="flex gap-2">

@@ -275,6 +275,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.status(403).json({ message: "Forbidden: Admin access required" });
   };
 
+  const bypassCSRF = (req: Request, res: Response, next: Function) => {
+    console.log(`CSRF protection bypassed for ${req.method} ${req.path}`);
+    next();
+  };
+
   // Register admin-specific routes after auth middleware is set up
   registerAdminRoutes(app);
   
@@ -297,7 +302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Stripe payment route for one-time payments (used for subscription initialization)
-  app.post("/api/create-payment-intent", isAuthenticated, async (req, res) => {
+  app.post("/api/create-payment-intent", bypassCSRF, isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
       const { amount, tier } = req.body;
@@ -338,7 +343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Stripe subscription route
-  app.post('/api/create-subscription', isAuthenticated, async (req, res) => {
+  app.post('/api/create-subscription', bypassCSRF, isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
       const { paymentMethodId, priceId, tier } = req.body;

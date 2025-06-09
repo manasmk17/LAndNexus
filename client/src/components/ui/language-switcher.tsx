@@ -1,21 +1,7 @@
-import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Globe } from 'lucide-react';
-
+// Language switcher removed - English only
 export function LanguageSwitcher() {
-  const { i18n, t } = useTranslation();
-
-  const changeLanguage = (lng: string) => {
-    i18n.changeLanguage(lng);
-  };
-
-  const currentLanguage = i18n.language;
+  return null;
+}
 
   return (
     <DropdownMenu>

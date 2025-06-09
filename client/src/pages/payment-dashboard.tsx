@@ -278,7 +278,7 @@ export default function PaymentDashboard() {
                 <div>
                   <h4 className="font-medium mb-2">{t("payment.amount")}</h4>
                   <p className="text-2xl font-bold">
-                    {formatCurrency(transactionDetails.transaction.amount / 100, i18n.language)}
+                    {formatCurrency(transactionDetails.transaction.amount / 100)}
                   </p>
                 </div>
                 <div>
@@ -295,15 +295,15 @@ export default function PaymentDashboard() {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>{t("payment.totalAmount")}:</span>
-                    <span>{formatCurrency(transactionDetails.transaction.amount / 100, i18n.language)}</span>
+                    <span>{formatCurrency(transactionDetails.transaction.amount / 100)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>{t("payment.platformFee")}:</span>
-                    <span>-{formatCurrency(transactionDetails.transaction.platformCommissionAmount / 100, i18n.language)}</span>
+                    <span>-{formatCurrency(transactionDetails.transaction.platformCommissionAmount / 100)}</span>
                   </div>
                   <div className="flex justify-between font-medium">
                     <span>{t("payment.trainerPayout")}:</span>
-                    <span>{formatCurrency(transactionDetails.transaction.trainerPayoutAmount / 100, i18n.language)}</span>
+                    <span>{formatCurrency(transactionDetails.transaction.trainerPayoutAmount / 100)}</span>
                   </div>
                 </div>
               </div>

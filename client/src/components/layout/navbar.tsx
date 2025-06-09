@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
-import { LanguageSwitcher } from "@/components/ui/language-switcher";
+
 import { useAuth } from "@/hooks/use-auth";
 import {
   DropdownMenu,
@@ -80,10 +80,8 @@ export function Navbar() {
             ))}
           </div>
 
-          {/* Right side - Language Switcher and User Menu */}
+          {/* Right side - User Menu */}
           <div className="flex items-center space-x-4">
-            <LanguageSwitcher />
-
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

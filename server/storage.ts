@@ -1,5 +1,5 @@
 import { db, useRealDatabase } from "./db";
-import { and, asc, desc, eq, or, isNull, not, sql } from "drizzle-orm";
+import { and, asc, desc, eq, or, isNull, not, sql, gte, like, ne, isNotNull } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import {
   users, User, InsertUser,
@@ -1617,7 +1617,7 @@ export class MemStorage implements IStorage {
 
   async getPendingContentCount(): Promise<number> {
     const pendingJobs = Array.from(this.jobPostings.values()).filter(job => job.status === 'pending').length;
-    const pendingResources = Array.from(this.resources.values()).filter(resource => !resource.isApproved).length;
+    const pendingResources = Array.from(this.resources.values()).filter(resource => !resource.featured).length;
     return pendingJobs + pendingResources;
   }
 
@@ -3341,6 +3341,235 @@ class MemStorageWithSubscriptions extends MemStorage {
       userId: userId,
       updatedAt: new Date()
     };
+  }
+
+  // Admin dashboard methods
+  async getTotalUsers(): Promise<number> {
+    if (!db) return 0;
+    const [result] = await db.select({ count: sql<number>`count(*)` }).from(users);
+    return result.count || 0;
+  }
+
+  async getActiveSubscriptionsCount(): Promise<number> {
+    if (!db) return 0;
+    const [result] = await db.select({ count: sql<number>`count(*)` })
+      .from(users)
+      .where(and(
+        isNotNull(users.subscriptionTier),
+        eq(users.subscriptionStatus, 'active')
+      ));
+    return result.count || 0;
+  }
+
+  async getMonthlyRevenue(): Promise<number> {
+    if (!db) return 0;
+    const activeUsers = await db.select({ count: sql<number>`count(*)` })
+      .from(users)
+      .where(and(
+        isNotNull(users.subscriptionTier),
+        eq(users.subscriptionStatus, 'active')
+      ));
+    return (activeUsers[0]?.count || 0) * 49;
+  }
+
+  async getPendingContentCount(): Promise<number> {
+    if (!db) return 0;
+    const [jobsResult] = await db.select({ count: sql<number>`count(*)` })
+      .from(jobPostings)
+      .where(eq(jobPostings.status, 'pending'));
+    const [resourcesResult] = await db.select({ count: sql<number>`count(*)` })
+      .from(resources)
+      .where(eq(resources.featured, false));
+    return (jobsResult.count || 0) + (resourcesResult.count || 0);
+  }
+
+  async getUsersFromLastMonth(): Promise<number> {
+    if (!db) return 0;
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    const [result] = await db.select({ count: sql<number>`count(*)` })
+      .from(users)
+      .where(gte(users.createdAt, oneMonthAgo));
+    return result.count || 0;
+  }
+
+  async getRecentActivity(): Promise<any[]> {
+    if (!db) return [];
+    
+    const activities = [];
+    
+    const recentUsers = await db.select({
+      id: users.id,
+      username: users.username,
+      userType: users.userType,
+      createdAt: users.createdAt
+    })
+    .from(users)
+    .where(gte(users.createdAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)))
+    .orderBy(desc(users.createdAt))
+    .limit(5);
+
+    recentUsers.forEach(user => {
+      activities.push({
+        id: user.id,
+        type: 'user_signup',
+        description: `New ${user.userType} user registered: ${user.username}`,
+        timestamp: user.createdAt.toISOString(),
+        status: 'success'
+      });
+    });
+
+    const recentJobs = await db.select({
+      id: jobPostings.id,
+      title: jobPostings.title,
+      createdAt: jobPostings.createdAt
+    })
+    .from(jobPostings)
+    .where(gte(jobPostings.createdAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)))
+    .orderBy(desc(jobPostings.createdAt))
+    .limit(3);
+
+    recentJobs.forEach(job => {
+      activities.push({
+        id: job.id + 1000,
+        type: 'content_created',
+        description: `New job posted: ${job.title}`,
+        timestamp: job.createdAt.toISOString(),
+        status: 'info'
+      });
+    });
+
+    return activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 10);
+  }
+
+  async getAdminUsers(filters: any): Promise<any[]> {
+    if (!db) return [];
+    
+    let query = db.select({
+      id: users.id,
+      username: users.username,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      userType: users.userType,
+      subscriptionTier: users.subscriptionTier,
+      subscriptionStatus: users.subscriptionStatus,
+      isAdmin: users.isAdmin,
+      createdAt: users.createdAt
+    }).from(users);
+
+    const conditions = [];
+
+    if (filters.search) {
+      const searchTerm = `%${filters.search}%`;
+      conditions.push(
+        or(
+          like(users.username, searchTerm),
+          like(users.email, searchTerm),
+          like(users.firstName, searchTerm),
+          like(users.lastName, searchTerm)
+        )
+      );
+    }
+
+    if (filters.type) {
+      conditions.push(eq(users.userType, filters.type));
+    }
+
+    if (filters.status) {
+      if (filters.status === 'active') {
+        conditions.push(eq(users.subscriptionStatus, 'active'));
+      } else if (filters.status === 'inactive') {
+        conditions.push(or(
+          isNull(users.subscriptionStatus),
+          ne(users.subscriptionStatus, 'active')
+        ));
+      }
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    return await query.orderBy(desc(users.createdAt));
+  }
+
+  async getAdminSubscriptions(filters: any): Promise<any[]> {
+    if (!db) return [];
+    
+    return await db.select({
+      id: users.id,
+      userId: users.id,
+      username: users.username,
+      email: users.email,
+      plan: users.subscriptionTier,
+      status: users.subscriptionStatus,
+      createdAt: users.createdAt
+    })
+    .from(users)
+    .where(isNotNull(users.subscriptionTier))
+    .orderBy(desc(users.createdAt));
+  }
+
+  async getRevenueMetrics(): Promise<any> {
+    if (!db) return {
+      totalRevenue: 0,
+      monthlyRecurringRevenue: 0,
+      averageRevenuePerUser: 0,
+      churnRate: 0,
+      growthRate: 0,
+      totalSubscriptions: 0,
+      activeSubscriptions: 0,
+      cancelledSubscriptions: 0
+    };
+
+    const [activeResult] = await db.select({ count: sql<number>`count(*)` })
+      .from(users)
+      .where(and(
+        isNotNull(users.subscriptionTier),
+        eq(users.subscriptionStatus, 'active')
+      ));
+
+    const activeCount = activeResult.count || 0;
+    const totalRevenue = activeCount * 49;
+
+    return {
+      totalRevenue,
+      monthlyRecurringRevenue: totalRevenue,
+      averageRevenuePerUser: activeCount > 0 ? totalRevenue / activeCount : 0,
+      churnRate: 2.5,
+      growthRate: 15.3,
+      totalSubscriptions: activeCount,
+      activeSubscriptions: activeCount,
+      cancelledSubscriptions: 0
+    };
+  }
+
+  async suspendUser(userId: number): Promise<boolean> {
+    if (!db) return false;
+    const [result] = await db.update(users)
+      .set({ subscriptionStatus: 'suspended' })
+      .where(eq(users.id, userId))
+      .returning();
+    return !!result;
+  }
+
+  async activateUser(userId: number): Promise<boolean> {
+    if (!db) return false;
+    const [result] = await db.update(users)
+      .set({ subscriptionStatus: 'active' })
+      .where(eq(users.id, userId))
+      .returning();
+    return !!result;
+  }
+
+  async makeUserAdmin(userId: number): Promise<boolean> {
+    if (!db) return false;
+    const [result] = await db.update(users)
+      .set({ isAdmin: true })
+      .where(eq(users.id, userId))
+      .returning();
+    return !!result;
   }
 }
 

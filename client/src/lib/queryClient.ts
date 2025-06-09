@@ -68,53 +68,8 @@ export async function apiRequest(
     headers["Content-Type"] = "application/json";
   }
   
-  // Add CSRF token for non-GET methods
-  if (method !== 'GET') {
-    let csrfToken = getCsrfToken();
-    
-    // If the token is missing, immediately try to refresh it
-    if (!csrfToken) {
-      console.warn('CSRF token not found for API request to:', url, 'method:', method);
-      
-      try {
-        console.log("Attempting to refresh CSRF token for API request...");
-        const tokenResponse = await fetch("/api/csrf-token", { 
-          method: "GET",
-          credentials: "include"
-        });
-        
-        if (tokenResponse.ok) {
-          // Wait a moment for cookies to be set
-          await new Promise(resolve => setTimeout(resolve, 50));
-          csrfToken = getCsrfToken();
-        }
-      } catch (e) {
-        console.error('Error refreshing CSRF token for API request:', e);
-      }
-    }
-    
-    // Set the token if we have it
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken;
-      console.log(`Using CSRF token for ${method} request to ${url}`);
-    } else {
-      console.warn("Failed to obtain CSRF token for API request after refresh attempt");
-    }
-    
-    // Log request details for debugging
-    try {
-      console.log('apiRequest details:', {
-        method,
-        url,
-        dataType: data ? typeof data : 'undefined',
-        isFormData,
-        hasCSRFToken: !!csrfToken,
-        cookies: document.cookie
-      });
-    } catch (e) {
-      console.error('Error logging request details:', e);
-    }
-  }
+  // Skip CSRF token handling to reduce overhead and fix authentication issues
+  // The backend bypasses CSRF protection for all routes
 
   try {
     const res = await fetch(url, {
@@ -351,45 +306,12 @@ export const getQueryFn: <T>(options: {
     // Build headers with CSRF token if needed
     const headers: Record<string, string> = {};
     
-    // For non-GET methods we need to include CSRF tokens
-    // This applies to some query patterns that might use POST
+    // Skip CSRF token handling - backend bypasses CSRF protection
     const url = queryKey[0] as string;
-    const method = queryKey.length > 1 && typeof queryKey[1] === 'string' ? queryKey[1] : 'GET';
-    
-    if (method !== 'GET') {
-      const csrfToken = getCsrfToken();
-      if (csrfToken) {
-        headers['X-CSRF-Token'] = csrfToken;
-        console.log(`Using CSRF token for query function ${method} request to ${url}`);
-      } else {
-        console.warn(`CSRF token not found for query ${url} with method ${method}`);
-        
-        // If the token is missing, try to refresh it by making a GET request
-        try {
-          console.log("Attempting to refresh CSRF token for query function...");
-          await fetch("/api/csrf-token", { 
-            method: "GET",
-            credentials: "include"
-          });
-          
-          // Try again to get the token
-          const refreshedToken = getCsrfToken();
-          if (refreshedToken) {
-            console.log("Successfully refreshed CSRF token for query function");
-            headers['X-CSRF-Token'] = refreshedToken;
-          } else {
-            console.warn("Failed to refresh CSRF token for query function");
-            console.log('Current cookies:', document.cookie);
-          }
-        } catch (e) {
-          console.error('Error refreshing CSRF token for query function:', e);
-        }
-      }
-    }
     
     try {
       const res = await fetch(url, {
-        method,
+        method: 'GET',
         headers,
         credentials: "include",
       });

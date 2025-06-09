@@ -202,6 +202,20 @@ export interface IStorage {
   getAuditLogs(limit?: number): Promise<any[]>;
   exportUserData(): Promise<any[]>;
   exportRevenueData(): Promise<any[]>;
+  
+  // Admin dashboard methods
+  getTotalUsers(): Promise<number>;
+  getActiveSubscriptionsCount(): Promise<number>;
+  getMonthlyRevenue(): Promise<number>;
+  getPendingContentCount(): Promise<number>;
+  getUsersFromLastMonth(): Promise<number>;
+  getRecentActivity(): Promise<any[]>;
+  getAdminUsers(filters: any): Promise<any[]>;
+  getAdminSubscriptions(filters: any): Promise<any[]>;
+  getRevenueMetrics(): Promise<any>;
+  suspendUser(userId: number): Promise<boolean>;
+  activateUser(userId: number): Promise<boolean>;
+  makeUserAdmin(userId: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -1585,6 +1599,165 @@ export class MemStorage implements IStorage {
 
   async exportRevenueData(): Promise<any[]> {
     return [];
+  }
+
+  // Admin dashboard methods
+  async getTotalUsers(): Promise<number> {
+    return this.users.size;
+  }
+
+  async getActiveSubscriptionsCount(): Promise<number> {
+    return Array.from(this.users.values()).filter(u => u.subscriptionTier && u.subscriptionStatus === 'active').length;
+  }
+
+  async getMonthlyRevenue(): Promise<number> {
+    const activeUsers = Array.from(this.users.values()).filter(u => u.subscriptionTier && u.subscriptionStatus === 'active');
+    return activeUsers.length * 49;
+  }
+
+  async getPendingContentCount(): Promise<number> {
+    const pendingJobs = Array.from(this.jobPostings.values()).filter(job => job.status === 'pending').length;
+    const pendingResources = Array.from(this.resources.values()).filter(resource => !resource.isApproved).length;
+    return pendingJobs + pendingResources;
+  }
+
+  async getUsersFromLastMonth(): Promise<number> {
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    return Array.from(this.users.values()).filter(u => u.createdAt > oneMonthAgo).length;
+  }
+
+  async getRecentActivity(): Promise<any[]> {
+    const activities = [];
+    
+    const recentUsers = Array.from(this.users.values())
+      .filter(u => u.createdAt > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
+      .slice(0, 5);
+    
+    recentUsers.forEach(user => {
+      activities.push({
+        id: user.id,
+        type: 'user_signup',
+        description: `New ${user.userType} user registered: ${user.username}`,
+        timestamp: user.createdAt.toISOString(),
+        status: 'success'
+      });
+    });
+
+    const recentJobs = Array.from(this.jobPostings.values())
+      .filter(job => job.createdAt > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
+      .slice(0, 3);
+    
+    recentJobs.forEach(job => {
+      activities.push({
+        id: job.id + 1000,
+        type: 'content_created',
+        description: `New job posted: ${job.title}`,
+        timestamp: job.createdAt.toISOString(),
+        status: 'info'
+      });
+    });
+
+    return activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 10);
+  }
+
+  async getAdminUsers(filters: any): Promise<any[]> {
+    let filteredUsers = Array.from(this.users.values());
+
+    if (filters.search) {
+      const searchTerm = filters.search.toLowerCase();
+      filteredUsers = filteredUsers.filter(user => 
+        user.username.toLowerCase().includes(searchTerm) ||
+        user.email.toLowerCase().includes(searchTerm) ||
+        (user.firstName && user.firstName.toLowerCase().includes(searchTerm)) ||
+        (user.lastName && user.lastName.toLowerCase().includes(searchTerm))
+      );
+    }
+
+    if (filters.type) {
+      filteredUsers = filteredUsers.filter(user => user.userType === filters.type);
+    }
+
+    if (filters.status) {
+      if (filters.status === 'active') {
+        filteredUsers = filteredUsers.filter(user => user.subscriptionStatus === 'active');
+      } else if (filters.status === 'inactive') {
+        filteredUsers = filteredUsers.filter(user => user.subscriptionStatus !== 'active');
+      }
+    }
+
+    return filteredUsers.map(user => ({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      userType: user.userType,
+      subscriptionTier: user.subscriptionTier,
+      subscriptionStatus: user.subscriptionStatus,
+      isAdmin: user.isAdmin,
+      createdAt: user.createdAt
+    }));
+  }
+
+  async getAdminSubscriptions(filters: any): Promise<any[]> {
+    const activeUsers = Array.from(this.users.values()).filter(u => u.subscriptionTier);
+    
+    return activeUsers.map(user => ({
+      id: user.id,
+      userId: user.id,
+      username: user.username,
+      email: user.email,
+      plan: user.subscriptionTier,
+      status: user.subscriptionStatus,
+      createdAt: user.createdAt
+    }));
+  }
+
+  async getRevenueMetrics(): Promise<any> {
+    const activeSubscriptions = Array.from(this.users.values()).filter(u => u.subscriptionTier && u.subscriptionStatus === 'active');
+    const totalRevenue = activeSubscriptions.length * 49;
+    
+    return {
+      totalRevenue,
+      monthlyRecurringRevenue: totalRevenue,
+      averageRevenuePerUser: activeSubscriptions.length > 0 ? totalRevenue / activeSubscriptions.length : 0,
+      churnRate: 2.5,
+      growthRate: 15.3,
+      totalSubscriptions: activeSubscriptions.length,
+      activeSubscriptions: activeSubscriptions.length,
+      cancelledSubscriptions: 0
+    };
+  }
+
+  async suspendUser(userId: number): Promise<boolean> {
+    const user = this.users.get(userId);
+    if (user) {
+      user.subscriptionStatus = 'suspended';
+      this.users.set(userId, user);
+      return true;
+    }
+    return false;
+  }
+
+  async activateUser(userId: number): Promise<boolean> {
+    const user = this.users.get(userId);
+    if (user) {
+      user.subscriptionStatus = 'active';
+      this.users.set(userId, user);
+      return true;
+    }
+    return false;
+  }
+
+  async makeUserAdmin(userId: number): Promise<boolean> {
+    const user = this.users.get(userId);
+    if (user) {
+      user.isAdmin = true;
+      this.users.set(userId, user);
+      return true;
+    }
+    return false;
   }
 }
 

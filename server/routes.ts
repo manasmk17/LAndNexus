@@ -41,6 +41,7 @@ import {
   getMatchingProfessionalsForJob
 } from "./ai-matching";
 import { imageHealthMonitor } from "./image-health-monitor";
+import { registerEscrowRoutes } from "./escrow-routes";
 import { z } from "zod";
 import session from "express-session";
 import passport from "passport";
@@ -3966,6 +3967,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create HTTP server here
+  // Register escrow payment routes
+  registerEscrowRoutes(app);
+
   const httpServer = createServer(app);
 
   // Get resources by professional ID (fix JSON parsing errors)

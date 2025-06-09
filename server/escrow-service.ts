@@ -46,7 +46,8 @@ export class EscrowService {
       });
 
       // Update user with Stripe Connect account ID
-      await db.update(users)
+      const database = await this.getDb();
+      await database.update(users)
         .set({ stripeConnectAccountId: account.id })
         .where(eq(users.id, userId));
 
@@ -100,7 +101,8 @@ export class EscrowService {
       const { platformCommissionAmount, trainerPayoutAmount } = this.calculatePayoutAmounts(data.amount);
 
       // Get trainer's connect account
-      const [trainer] = await db.select()
+      const database = await this.getDb();
+      const [trainer] = await database.select()
         .from(users)
         .where(eq(users.id, data.trainerId));
 
@@ -130,7 +132,7 @@ export class EscrowService {
       });
 
       // Create escrow transaction record
-      const [escrowTransaction] = await db.insert(escrowTransactions)
+      const [escrowTransaction] = await database.insert(escrowTransactions)
         .values({
           companyId: data.companyId,
           trainerId: data.trainerId,

@@ -58,10 +58,20 @@ export default function SubscriptionPlans() {
   const [isYearly, setIsYearly] = useState(false);
   const [currency, setCurrency] = useState<'USD' | 'AED'>('USD');
 
-  const { data: plans = [], isLoading } = useQuery<SubscriptionPlan[]>({
+  const [planType, setPlanType] = useState<'professional' | 'company'>('professional');
+
+  const { data: allPlans = [], isLoading } = useQuery<SubscriptionPlan[]>({
     queryKey: ["/api/subscription-plans"],
     enabled: true
   });
+
+  // Filter plans based on selected type (excluding free plan from main display)
+  const plans = allPlans.filter(plan => 
+    plan.planType === planType && plan.name !== 'Starter'
+  );
+
+  // Get the free plan separately
+  const freePlan = allPlans.find(plan => plan.name === 'Starter');
 
   const formatPrice = (priceInCents: number, currency: 'USD' | 'AED') => {
     if (currency === 'USD') {

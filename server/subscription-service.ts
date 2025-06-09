@@ -99,7 +99,7 @@ export class SubscriptionService {
         directMessaging: true,
         videoConsultations: false,
         analyticsAccess: true,
-        supportLevel: "priority_email",
+        supportLevel: "priority_email" as const,
         sortOrder: 1
       },
       {

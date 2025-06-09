@@ -1,16 +1,42 @@
 import OpenAI from "openai";
 import type { JobPosting, ProfessionalProfile } from "@shared/schema";
 
-// Initialize OpenAI client with API key
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
+// Initialize OpenAI client with API key validation
+let openai: OpenAI | null = null;
+let apiKeyValid = false;
+
+async function initializeOpenAI(): Promise<boolean> {
+  if (!process.env.OPENAI_API_KEY) {
+    console.warn("OpenAI API key not found - AI features disabled");
+    return false;
+  }
+
+  try {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
+
+    // Test the API key with a minimal request
+    await openai.models.list();
+    apiKeyValid = true;
+    console.log("OpenAI API key validated successfully");
+    return true;
+  } catch (error: any) {
+    console.error("OpenAI API key validation failed:", error.message);
+    apiKeyValid = false;
+    openai = null;
+    return false;
+  }
+}
+
+// Initialize on startup
+initializeOpenAI();
 
 // Generates text embeddings using OpenAI's embedding model
 export async function generateEmbedding(text: string): Promise<number[] | null> {
   try {
-    if (!process.env.OPENAI_API_KEY) {
-      console.warn("OpenAI API key not found - embedding generation disabled");
+    if (!apiKeyValid || !openai) {
+      console.warn("OpenAI API not available - embedding generation disabled");
       return null;
     }
 
@@ -26,8 +52,13 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
     });
 
     return response.data[0].embedding;
-  } catch (error) {
-    console.error("Error generating embedding:", error);
+  } catch (error: any) {
+    console.error("Error generating embedding:", error.message);
+    if (error.status === 401) {
+      console.error("OpenAI API key is invalid or expired");
+      apiKeyValid = false;
+      openai = null;
+    }
     return null;
   }
 }

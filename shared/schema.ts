@@ -507,3 +507,96 @@ export const insertTransactionHistorySchema = createInsertSchema(transactionHist
 
 export type TransactionHistory = typeof transactionHistory.$inferSelect;
 export type InsertTransactionHistory = z.infer<typeof insertTransactionHistorySchema>;
+
+// Subscription Plans table
+export const subscriptionPlans = pgTable("subscription_plans", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // "Basic", "Pro", "Enterprise"
+  description: text("description"),
+  features: jsonb("features"), // Array of feature descriptions
+  priceMonthlyUSD: integer("price_monthly_usd").notNull(), // Price in cents
+  priceYearlyUSD: integer("price_yearly_usd").notNull(), // Price in cents (with discount)
+  priceMonthlyAED: integer("price_monthly_aed").notNull(), // Price in fils
+  priceYearlyAED: integer("price_yearly_aed").notNull(), // Price in fils (with discount)
+  stripePriceIdMonthlyUSD: text("stripe_price_id_monthly_usd"),
+  stripePriceIdYearlyUSD: text("stripe_price_id_yearly_usd"),
+  stripePriceIdMonthlyAED: text("stripe_price_id_monthly_aed"),
+  stripePriceIdYearlyAED: text("stripe_price_id_yearly_aed"),
+  maxJobPostings: integer("max_job_postings"), // null = unlimited
+  maxBookings: integer("max_bookings"), // null = unlimited
+  maxResourcesAccess: integer("max_resources_access"), // null = unlimited
+  aiMatchingEnabled: boolean("ai_matching_enabled").default(true),
+  prioritySupport: boolean("priority_support").default(false),
+  analyticsAccess: boolean("analytics_access").default(false),
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertSubscriptionPlanSchema = createInsertSchema(subscriptionPlans).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
+export type InsertSubscriptionPlan = z.infer<typeof insertSubscriptionPlanSchema>;
+
+// User Subscriptions table
+export const userSubscriptions = pgTable("user_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  planId: integer("plan_id").notNull().references(() => subscriptionPlans.id),
+  stripeSubscriptionId: text("stripe_subscription_id").notNull().unique(),
+  stripeCustomerId: text("stripe_customer_id").notNull(),
+  status: text("status", { 
+    enum: ["trialing", "active", "incomplete", "incomplete_expired", "past_due", "canceled", "unpaid", "paused"] 
+  }).notNull(),
+  billingCycle: text("billing_cycle", { enum: ["monthly", "yearly"] }).notNull(),
+  currency: text("currency", { enum: ["USD", "AED"] }).notNull().default("USD"),
+  currentPeriodStart: timestamp("current_period_start").notNull(),
+  currentPeriodEnd: timestamp("current_period_end").notNull(),
+  trialStart: timestamp("trial_start"),
+  trialEnd: timestamp("trial_end"),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false),
+  canceledAt: timestamp("canceled_at"),
+  endedAt: timestamp("ended_at"),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const insertUserSubscriptionSchema = createInsertSchema(userSubscriptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type UserSubscription = typeof userSubscriptions.$inferSelect;
+export type InsertUserSubscription = z.infer<typeof insertUserSubscriptionSchema>;
+
+// Subscription Invoices table
+export const subscriptionInvoices = pgTable("subscription_invoices", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  subscriptionId: integer("subscription_id").notNull().references(() => userSubscriptions.id),
+  stripeInvoiceId: text("stripe_invoice_id").notNull().unique(),
+  status: text("status", { 
+    enum: ["draft", "open", "paid", "uncollectible", "void"] 
+  }).notNull(),
+  amount: integer("amount").notNull(), // Amount in cents/fils
+  currency: text("currency", { enum: ["USD", "AED"] }).notNull(),
+  billingReason: text("billing_reason"), // "subscription_create", "subscription_cycle", etc.
+  invoiceUrl: text("invoice_url"),
+  invoicePdf: text("invoice_pdf"),
+  dueDate: timestamp("due_date"),
+  paidAt: timestamp("paid_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertSubscriptionInvoiceSchema = createInsertSchema(subscriptionInvoices).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type SubscriptionInvoice = typeof subscriptionInvoices.$inferSelect;
+export type InsertSubscriptionInvoice = z.infer<typeof insertSubscriptionInvoiceSchema>;

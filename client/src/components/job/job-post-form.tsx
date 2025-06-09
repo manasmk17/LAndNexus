@@ -43,6 +43,7 @@ const jobPostingFormSchema = insertJobPostingSchema.extend({
 });
 
 export default function JobPostForm() {
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -78,8 +79,8 @@ export default function JobPostForm() {
   const onSubmit = async (data: z.infer<typeof jobPostingFormSchema>) => {
     if (!companyProfile) {
       toast({
-        title: "Profile required",
-        description: "You need to complete your company profile before posting a job",
+        title: t("form.companyDetails"),
+        description: t("professional.profile.complete"),
         variant: "destructive",
       });
       return;

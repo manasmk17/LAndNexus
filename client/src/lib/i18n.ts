@@ -2,6 +2,47 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
+// Date and currency formatting utilities
+export const formatDate = (date: Date | string, locale: string = 'en') => {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  
+  if (locale === 'ar') {
+    return new Intl.DateTimeFormat('ar-AE', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }).format(dateObj);
+  }
+  
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(dateObj);
+};
+
+export const formatCurrency = (amount: number, locale: string = 'en') => {
+  if (locale === 'ar') {
+    return new Intl.NumberFormat('ar-AE', {
+      style: 'currency',
+      currency: 'AED',
+    }).format(amount);
+  }
+  
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(amount);
+};
+
+export const formatNumber = (number: number, locale: string = 'en') => {
+  if (locale === 'ar') {
+    return new Intl.NumberFormat('ar-AE').format(number);
+  }
+  
+  return new Intl.NumberFormat('en-US').format(number);
+};
+
 const resources = {
   en: {
     translation: {
@@ -628,7 +669,7 @@ i18n
 
     react: {
       useSuspense: false,
-    },
+    }
   });
 
 // Apply RTL direction based on language

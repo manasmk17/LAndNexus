@@ -51,6 +51,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import Stripe from "stripe";
 import memorystore from "memorystore";
+import crypto from "crypto";
 
 // Initialize Stripe with the API key
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -82,6 +83,21 @@ async function initializeResourceCategories() {
   }
 }
 
+// Check admin account status
+async function checkAdminAccount() {
+  try {
+    const existingAdmin = await storage.getUserByEmail("admin@test.com");
+    if (existingAdmin) {
+      console.log("Admin account found: admin@test.com / admin123");
+      console.log("Admin ID:", existingAdmin.id, "Admin status:", existingAdmin.isAdmin);
+    } else {
+      console.log("No admin account found");
+    }
+  } catch (error) {
+    console.error("Error checking admin account:", error);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // SEO Routes - Must be first to avoid frontend routing conflicts
   app.get("/sitemap.xml", async (req, res) => {
@@ -110,6 +126,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Initialize resource categories
   await initializeResourceCategories();
+  
+  // Check admin account status
+  await checkAdminAccount();
   
   // Start image health monitoring
   setTimeout(() => {

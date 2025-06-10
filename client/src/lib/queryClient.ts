@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { sessionManager } from './sessionManager';
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -117,11 +118,10 @@ export async function apiRequest(
   }
 
   try {
-    const res = await fetch(url, {
+    const res = await sessionManager.sessionFetch(url, {
       method,
       headers,
       body: isFormData ? data as FormData : (data ? JSON.stringify(data) : undefined),
-      credentials: "include",
     });
 
     // Enhanced error handling for CSRF-specific errors

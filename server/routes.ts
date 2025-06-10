@@ -184,45 +184,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fileFilter: fileFilterImages
   });
   
-  // Configure session with proper persistence settings
-  app.use(
-    session({
-      secret: process.env.SESSION_SECRET || "L&D-nexus-secret-key-very-long",
-      resave: false,
-      saveUninitialized: false,
-      name: 'connect.sid',
-      cookie: { 
-        secure: false,
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000,
-        sameSite: 'strict',
-        path: '/',
-        domain: undefined
-      },
-      store: new MemoryStore({
-        checkPeriod: 86400000
-      })
-    })
-  );
+  // Configure session middleware with forced persistence
+  app.use(session({
+    secret: process.env.SESSION_SECRET || "L&D-nexus-secret-key-very-long",
+    resave: false,
+    saveUninitialized: false,
+    name: 'connect.sid',
+    cookie: { 
+      secure: false,
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+      sameSite: 'lax',
+      path: '/'
+    },
+    store: new MemoryStore({
+      checkPeriod: 86400000
+    }),
+    // Force session ID consistency
+    genid: function(req) {
+      // Use existing session ID from cookie if available
+      const existingId = req.headers.cookie?.match(/connect\.sid=([^;]+)/)?.[1];
+      if (existingId) {
+        try {
+          // Decode the session ID from the signed cookie
+          const decoded = decodeURIComponent(existingId);
+          if (decoded.startsWith('s:')) {
+            const sessionId = decoded.slice(2).split('.')[0];
+            return sessionId;
+          }
+        } catch (e) {
+          // If decoding fails, generate new ID
+        }
+      }
+      // Generate new session ID if none exists
+      return require('crypto').randomBytes(16).toString('hex');
+    }
+  }));
 
   // Initialize Passport
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Session persistence middleware - ensure session consistency
+  // Session fixing middleware - ensure consistent session across requests
   app.use((req, res, next) => {
-    // Force session to be loaded and saved
-    if (req.session) {
-      req.session.touch();
-    }
+    // Store original session ID for comparison
+    const originalSessionID = req.sessionID;
     
-    // Debug logging for API requests
-    if (req.path.startsWith('/api/')) {
-      console.log(`Request: ${req.method} ${req.path}`);
-      console.log(`Session ID: ${req.sessionID}`);
-      console.log(`Authenticated: ${req.isAuthenticated()}`);
-      console.log(`User in session: ${req.user ? `ID ${req.user.id}` : 'None'}`);
-      console.log(`Session data:`, req.session);
+    // Override session regenerate to maintain consistency
+    const originalRegenerate = req.session.regenerate;
+    req.session.regenerate = function(callback?: (err?: any) => void) {
+      // Prevent session regeneration during normal operation
+      if (callback) callback(null);
+      return this;
+    };
+    
+    // Debug logging for session tracking
+    if (req.path.startsWith('/api/') && !req.path.includes('csrf-token')) {
+      console.log(`${req.method} ${req.path} - Session: ${req.sessionID.slice(0, 8)}... - Auth: ${req.isAuthenticated()}`);
     }
     
     next();

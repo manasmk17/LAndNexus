@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Logo } from "@/components/ui/logo";
-import { LoadingSpinner, NetworkLoadingIcon } from "@/components/ui/loading-spinner";
 import { 
   User, 
   Briefcase, 

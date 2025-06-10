@@ -1,7 +1,6 @@
 import { Link } from "wouter";
 import { Facebook, Twitter, Linkedin, Instagram, Mail, MapPin, Phone, ChevronRight, ArrowUpRight, Youtube, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Logo } from "@/components/ui/logo";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -95,8 +94,11 @@ export default function Footer() {
         {/* Main Footer */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-x-8 gap-y-12 mb-12">
           <div className="lg:col-span-2">
-            <div className="mb-6">
-              <Logo variant="white" size="lg" />
+            <div className="flex items-center mb-6">
+              <div className="bg-gradient-to-r from-blue-700 to-blue-500 text-white font-bold text-lg p-2 rounded-lg mr-2">
+                L&D
+              </div>
+              <span className="text-white font-bold text-2xl">Nexus</span>
             </div>
             <p className="text-slate-300 mb-6 max-w-md">
               Connecting learning & development professionals with organizations to create impactful training solutions. Our platform helps organizations find the right expertise and professionals showcase their skills.

@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Logo } from "@/components/ui/logo";
 import { AlertCircle, Home, ChevronLeft } from "lucide-react";
 import { Link } from "wouter";
 
@@ -10,10 +9,7 @@ export default function NotFound() {
       <Card className="w-full max-w-md mx-4 shadow-lg border-0">
         <CardContent className="pt-6">
           <div className="flex flex-col items-center text-center">
-            <div className="mb-4">
-              <Logo variant="blue-flat" size="lg" />
-            </div>
-            <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+            <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
             <h1 className="text-3xl font-bold text-slate-900 mb-2">Page Not Found</h1>
             <div className="w-16 h-1 bg-blue-600 rounded my-2"></div>
             <p className="mt-4 text-gray-600">

@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import ProfessionalDashboardContent from "@/components/dashboard/professional-dashboard";
 
 export default function ProfessionalDashboard() {
@@ -20,7 +19,7 @@ export default function ProfessionalDashboard() {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
-        <LoadingSpinner size="lg" text="Loading your dashboard..." />
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }

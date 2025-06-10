@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Logo } from "@/components/ui/logo";
 import { Shield, Loader2 } from "lucide-react";
 
 export default function AdminLogin() {
@@ -75,8 +74,8 @@ export default function AdminLogin() {
       <div className="flex flex-col items-center justify-center flex-1 px-4 py-12">
         <Card className="w-full max-w-md mx-auto">
           <CardHeader className="space-y-1 text-center">
-            <div className="flex justify-center mb-4">
-              <Logo variant="blue-flat" size="lg" />
+            <div className="flex items-center justify-center mb-2">
+              <Shield className="h-10 w-10 text-primary" />
             </div>
             <CardTitle className="text-2xl font-bold">Admin Login</CardTitle>
             <CardDescription>

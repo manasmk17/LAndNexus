@@ -184,22 +184,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fileFilter: fileFilterImages
   });
   
-  // Configure session with proper same-origin settings
+  // Configure session with forced session creation and persistence
   app.use(
     session({
       secret: process.env.SESSION_SECRET || "L&D-nexus-secret-key-very-long",
-      resave: false,
-      saveUninitialized: false, // Only create sessions when needed
+      resave: true, // Force session save on every request
+      saveUninitialized: true, // Create session even if not modified
       name: 'connect.sid',
       cookie: { 
         secure: false, // false for development
-        httpOnly: true, // true for security
+        httpOnly: false, // false to allow frontend access for debugging
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        sameSite: 'lax' // lax for same-origin requests
+        sameSite: 'lax', // lax for same-origin requests
+        path: '/' // explicit path
       },
       store: new MemoryStore({
         checkPeriod: 86400000 // prune expired entries every 24h
-      })
+      }),
+      rolling: true // Reset expiration on each request
     })
   );
 
@@ -207,9 +209,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Add middleware to debug session and authentication state
+  // Session persistence middleware - ensure session consistency
   app.use((req, res, next) => {
-    // Only log for API requests to avoid spam
+    // Force session to be loaded and saved
+    if (req.session) {
+      req.session.touch();
+    }
+    
+    // Debug logging for API requests
     if (req.path.startsWith('/api/')) {
       console.log(`Request: ${req.method} ${req.path}`);
       console.log(`Session ID: ${req.sessionID}`);
@@ -217,6 +224,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`User in session: ${req.user ? `ID ${req.user.id}` : 'None'}`);
       console.log(`Session data:`, req.session);
     }
+    
     next();
   });
 

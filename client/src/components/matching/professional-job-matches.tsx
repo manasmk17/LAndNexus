@@ -168,7 +168,7 @@ export default function ProfessionalJobMatches() {
                     <Badge className="mb-2 bg-emerald-100 text-emerald-800">
                       {formatMatchScore(match)} Match
                     </Badge>
-                    <Link href={`/jobs/${match.job.id}`}>
+                    <Link href={`/job/${match.job.id}`}>
                       <Button size="sm" className="flex items-center">
                         View Job <ChevronRight className="ml-1 h-4 w-4" />
                       </Button>

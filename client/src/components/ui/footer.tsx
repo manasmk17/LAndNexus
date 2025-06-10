@@ -1,8 +1,55 @@
 import { Link } from "wouter";
 import { Facebook, Twitter, Linkedin, Instagram, Mail, MapPin, Phone, ChevronRight, ArrowUpRight, Youtube, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Footer() {
+  const [email, setEmail] = useState("");
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const { toast } = useToast();
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      toast({
+        title: "Email required",
+        description: "Please enter your email address",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubscribing(true);
+    try {
+      const response = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (response.ok) {
+        toast({
+          title: "Successfully subscribed!",
+          description: "Thank you for subscribing to our newsletter.",
+        });
+        setEmail("");
+      } else {
+        throw new Error('Subscription failed');
+      }
+    } catch (error) {
+      toast({
+        title: "Subscription failed",
+        description: "Please try again later or contact support.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
+
   return (
     <footer className="bg-slate-900 text-white pt-16 pb-8 overflow-hidden relative">
       {/* Background Pattern */}
@@ -234,10 +281,10 @@ export default function Footer() {
               <p className="mt-1">Company Registration Number: 16450617</p>
             </div>
             <div className="flex flex-wrap justify-center gap-6">
-              <a href="#" className="text-slate-400 hover:text-white text-sm transition-colors">Privacy Policy</a>
-              <a href="#" className="text-slate-400 hover:text-white text-sm transition-colors">Terms of Service</a>
-              <a href="#" className="text-slate-400 hover:text-white text-sm transition-colors">Cookies</a>
-              <a href="#" className="text-slate-400 hover:text-white text-sm transition-colors">GDPR</a>
+              <Link href="/pages/privacy" className="text-slate-400 hover:text-white text-sm transition-colors">Privacy Policy</Link>
+              <Link href="/pages/terms" className="text-slate-400 hover:text-white text-sm transition-colors">Terms of Service</Link>
+              <Link href="/pages/privacy" className="text-slate-400 hover:text-white text-sm transition-colors">Cookies</Link>
+              <Link href="/pages/privacy" className="text-slate-400 hover:text-white text-sm transition-colors">GDPR</Link>
             </div>
           </div>
         </div>

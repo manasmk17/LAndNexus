@@ -3,6 +3,7 @@ import HowItWorks from "@/components/home/how-it-works";
 import { MENAMarketplace } from "@/components/home/mena-marketplace";
 import MENAFeatures from "@/components/home/mena-features";
 import MENARegions from "@/components/home/mena-regions";
+import IndustrySectors from "@/components/home/industry-sectors";
 import FeaturedProfessionals from "@/components/home/featured-professionals";
 import FeaturedJobs from "@/components/home/featured-jobs";
 import ResourceHub from "@/components/home/resource-hub";
@@ -14,7 +15,10 @@ export default function Home() {
   return (
     <div>
       <Hero />
+      <MENAFeatures />
       <HowItWorks />
+      <MENARegions />
+      <IndustrySectors />
       <MENAMarketplace />
       <FeaturedProfessionals />
       <FeaturedJobs />

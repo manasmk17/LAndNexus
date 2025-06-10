@@ -184,15 +184,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fileFilter: fileFilterImages
   });
   
-  // Configure session
+  // Configure session with enhanced settings
   app.use(
     session({
-      secret: process.env.SESSION_SECRET || "L&D-nexus-secret",
-      resave: true,
-      saveUninitialized: true,
+      secret: process.env.SESSION_SECRET || "L&D-nexus-secret-key-very-long",
+      resave: false,
+      saveUninitialized: false,
+      name: 'connect.sid',
       cookie: { 
         secure: false,
-        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days by default
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        sameSite: 'lax'
       },
       store: new MemoryStore({
         checkPeriod: 86400000 // prune expired entries every 24h
@@ -203,6 +206,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize Passport
   app.use(passport.initialize());
   app.use(passport.session());
+
+  // Add middleware to debug session and authentication state
+  app.use((req, res, next) => {
+    // Only log for API requests to avoid spam
+    if (req.path.startsWith('/api/')) {
+      console.log(`Request: ${req.method} ${req.path}`);
+      console.log(`Session ID: ${req.sessionID}`);
+      console.log(`Authenticated: ${req.isAuthenticated()}`);
+      console.log(`User in session: ${req.user ? req.user.username : 'None'}`);
+      console.log(`Session data:`, req.session);
+    }
+    next();
+  });
 
   // Configure Passport with a custom callback to support both username and email login
   passport.use(new LocalStrategy(async (identifier, password, done) => {

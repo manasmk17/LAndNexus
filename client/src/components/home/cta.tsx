@@ -54,25 +54,25 @@ export default function CTA() {
                 
                 <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                   {user ? (
-                    <Link href={user.userType === "professional" ? "/professional-dashboard" : "/company-dashboard"}>
-                      <Button size="lg" className="bg-white hover:bg-blue-50 text-blue-900 font-semibold shadow-lg hover:shadow-xl border-none transition-all duration-300 hover:-translate-y-0.5 w-full sm:w-auto">
+                    <Button size="lg" className="bg-white hover:bg-blue-50 text-blue-900 font-semibold shadow-lg hover:shadow-xl border-none transition-all duration-300 hover:-translate-y-0.5 w-full sm:w-auto" asChild>
+                      <Link href={user.userType === "professional" ? "/professional-dashboard" : "/company-dashboard"}>
                         Go to Dashboard
                         <ArrowRight className="ml-2 h-5 w-5" />
-                      </Button>
-                    </Link>
+                      </Link>
+                    </Button>
                   ) : (
                     <>
-                      <Link href="/register">
-                        <Button size="lg" className="bg-white hover:bg-blue-50 text-blue-900 font-semibold shadow-lg hover:shadow-xl border-none transition-all duration-300 hover:-translate-y-0.5 w-full sm:w-auto">
+                      <Button size="lg" className="bg-white hover:bg-blue-50 text-blue-900 font-semibold shadow-lg hover:shadow-xl border-none transition-all duration-300 hover:-translate-y-0.5 w-full sm:w-auto" asChild>
+                        <Link href="/register">
                           Create Account
                           <ArrowRight className="ml-2 h-5 w-5" />
-                        </Button>
-                      </Link>
-                      <Link href="/professionals">
-                        <Button size="lg" variant="outline" className="border-2 border-blue-400 bg-transparent text-white hover:bg-white/10 font-semibold transition-all duration-300 w-full sm:w-auto">
+                        </Link>
+                      </Button>
+                      <Button size="lg" variant="outline" className="border-2 border-blue-400 bg-transparent text-white hover:bg-white/10 font-semibold transition-all duration-300 w-full sm:w-auto" asChild>
+                        <Link href="/professionals">
                           Explore Professionals
-                        </Button>
-                      </Link>
+                        </Link>
+                      </Button>
                     </>
                   )}
                 </div>

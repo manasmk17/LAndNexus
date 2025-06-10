@@ -176,7 +176,8 @@ export class ResponseCache {
     const now = Date.now();
     const keysToDelete: string[] = [];
     
-    for (const [key, entry] of this.cache.entries()) {
+    const cacheEntries = Array.from(this.cache.entries());
+    for (const [key, entry] of cacheEntries) {
       const prefix = key.split(':')[0];
       const config = this.getConfig(prefix);
       const age = now - entry.timestamp;
@@ -225,7 +226,8 @@ export class ResponseCache {
       memoryUsage: 0
     };
     
-    for (const [key, entry] of this.cache.entries()) {
+    const cacheEntries = Array.from(this.cache.entries());
+    for (const [key, entry] of cacheEntries) {
       const prefix = key.split(':')[0];
       
       stats.totalHits += entry.hits;

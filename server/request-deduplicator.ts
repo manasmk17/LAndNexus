@@ -100,7 +100,8 @@ export class RequestDeduplicator {
     const now = Date.now();
     const staleCutoff = now - this.maxPendingTime;
 
-    for (const [key, request] of this.pendingRequests) {
+    const pendingEntries = Array.from(this.pendingRequests.entries());
+    for (const [key, request] of pendingEntries) {
       if (request.timestamp < staleCutoff) {
         console.warn(`Removing stale request: ${key} (pending for ${now - request.timestamp}ms)`);
         this.pendingRequests.delete(key);

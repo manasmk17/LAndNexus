@@ -603,9 +603,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email already exists" });
       }
       
+      // Hash the password before storing
+      const salt = crypto.randomBytes(16).toString('hex');
+      const keyLen = 64;
+      
+      const hashedPassword = await new Promise<string>((resolve, reject) => {
+        crypto.scrypt(validUserData.password, salt, keyLen, (err: any, derivedKey: Buffer) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(`${derivedKey.toString('hex')}.${salt}`);
+          }
+        });
+      });
+      
       // Force admin user type and admin status
       const adminUser = await storage.createUser({
         ...validUserData,
+        password: hashedPassword,
         userType: "admin",
         isAdmin: true
       });
@@ -637,7 +652,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email already exists" });
       }
 
-      const user = await storage.createUser(userData);
+      // Hash the password before storing
+      const salt = crypto.randomBytes(16).toString('hex');
+      const keyLen = 64;
+      
+      const hashedPassword = await new Promise<string>((resolve, reject) => {
+        crypto.scrypt(userData.password, salt, keyLen, (err: any, derivedKey: Buffer) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(`${derivedKey.toString('hex')}.${salt}`);
+          }
+        });
+      });
+
+      const user = await storage.createUser({
+        ...userData,
+        password: hashedPassword
+      });
 
       // If the user is a professional, create a basic professional profile
       if (user.userType === "professional") {

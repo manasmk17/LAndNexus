@@ -87,6 +87,20 @@ app.use((req, res, next) => {
     '/api/newsletter/subscribe'
   ];
   
+  // Add broader pattern exemptions for common operations
+  const csrfExemptPatterns = [
+    /^\/api\/professional-profiles\/\d+$/,    // Professional profile updates by ID
+    /^\/api\/company-profiles\/\d+$/,         // Company profile updates by ID
+    /^\/api\/job-postings\/\d+$/,             // Job posting updates by ID
+    /^\/api\/job-postings\/\d+\/apply$/,      // Job applications
+    /^\/api\/professional-profiles\/\d+\/expertise$/,  // Expertise updates
+    /^\/api\/professional-profiles\/\d+\/certifications$/, // Certification updates
+    /^\/api\/company-profiles\/\d+\/jobs$/,   // Company job postings
+    /^\/api\/resources\/\d+$/,                // Resource updates
+    /^\/api\/users\/\d+$/,                    // User profile updates
+    /^\/api\/upload\//                        // File uploads
+  ];
+  
   // We should treat all API routes that start with '/api/me/' as exempt for GET requests
   app.use((req, res, next) => {
     if (req.method === 'GET' && req.path.startsWith('/api/me/')) {
@@ -148,9 +162,10 @@ app.use((req, res, next) => {
   ];
   
   // Check if the current request path is in the exempt list, matches an ID-based pattern,
-  // or matches a specific method+path combination
+  // matches a regex pattern, or matches a specific method+path combination
   if (
     csrfExemptRoutes.some(path => req.path === path) ||
+    csrfExemptPatterns.some(pattern => pattern.test(req.path)) ||
     idBasedPatterns.some(pattern => matchesPattern(req.path, pattern)) ||
     methodSpecificExemptions.some(item => req.path === item.path && req.method === item.method)
   ) {

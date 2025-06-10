@@ -25,11 +25,15 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
         <div className="w-20 h-20 rounded-full bg-gradient-to-br from-slate-800 via-slate-700 to-blue-700 flex items-center justify-center overflow-hidden shadow-lg transform group-hover:scale-105 transition-transform duration-300 border-2 border-slate-300">
           {professional.profileImagePath ? (
             <img 
-              src={professional.profileImagePath.startsWith('uploads/') ? `/${professional.profileImagePath}` : professional.profileImagePath}
+              src={(() => {
+                const imagePath = professional.profileImagePath.startsWith('uploads/') ? `/${professional.profileImagePath}` : professional.profileImagePath;
+                console.log(`Professional ${professional.id} image path: '${professional.profileImagePath}' -> '${imagePath}'`);
+                return imagePath;
+              })()}
               alt={professional.title || 'Professional'} 
               className="w-full h-full object-cover"
               onError={(e) => {
-                console.log("Image load error, using placeholder");
+                console.log(`Image load error for professional ${professional.id}, path: ${professional.profileImagePath}`);
                 // Set default avatar on error using UI Avatars service with the user's name
                 const target = e.target as HTMLImageElement;
                 target.onerror = null; // Prevent infinite error loops

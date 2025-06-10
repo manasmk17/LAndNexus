@@ -1478,7 +1478,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("DEV MODE: Allowing unauthenticated /api/professionals/me/consultations access for testing");
         
         // Return sample consultations for testing
-        const testConsultations = await storage.getConsultationsByProfessionalId(5); // Using sample profile ID 5
+        const testConsultations = await storage.getProfessionalConsultations(5); // Using sample profile ID 5
         return res.json(testConsultations || []);
       }
 
@@ -1493,7 +1493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Professional profile not found for current user" });
       }
       
-      const consultations = await storage.getConsultationsByProfessionalId(profile.id);
+      const consultations = await storage.getProfessionalConsultations(profile.id);
       res.json(consultations || []);
     } catch (err) {
       console.error("Error fetching professional consultations:", err);
@@ -1509,7 +1509,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log("DEV MODE: Allowing unauthenticated /api/professionals/me/messages access for testing");
         
         // Return sample messages for testing
-        const testMessages = await storage.getMessagesByUserId(5); // Using sample user ID 5
+        const testMessages = await storage.getUserMessages(5); // Using sample user ID 5
         return res.json(testMessages || []);
       }
 
@@ -1519,7 +1519,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only professionals can access this endpoint" });
       }
       
-      const messages = await storage.getMessagesByUserId(user.id);
+      const messages = await storage.getUserMessages(user.id);
       res.json(messages || []);
     } catch (err) {
       console.error("Error fetching professional messages:", err);

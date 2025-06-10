@@ -173,6 +173,18 @@ export async function apiRequest(
       errorObject: error
     });
     
+    // Handle authentication errors specifically to prevent unhandled rejections
+    if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+      console.log('Authentication error:', error.message);
+      // Clear authentication state to prevent cascading errors
+      authStore.clearAuth();
+      // Return a proper Response object instead of throwing
+      return new Response(JSON.stringify({ message: 'Authentication required' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+    
     // For network errors, provide more helpful message
     if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
       throw new Error(`Network error when connecting to ${url}. Please check your internet connection.`);
@@ -463,6 +475,17 @@ export const getQueryFn: <T>(options: {
 
 // Setup global unhandled rejection handler for React Query
 window.addEventListener('unhandledrejection', event => {
+  // Handle authentication errors specifically
+  if (event.reason && typeof event.reason.message === 'string' && 
+      (event.reason.message.includes('401') || 
+       event.reason.message.includes('Unauthorized') ||
+       event.reason.message.includes('Authentication'))) {
+    console.log('Authentication cleared');
+    authStore.clearAuth();
+    event.preventDefault();
+    return;
+  }
+  
   // Only log and prevent default if it's our query or mutation error
   if (event.reason && (
       event.reason.name === 'QueryError' || 
@@ -475,10 +498,8 @@ window.addEventListener('unhandledrejection', event => {
       ))
     )) {
     console.log('Handled React Query rejection:', event.reason);
-    // Prevent the default browser handling of the error
     event.preventDefault();
   } else if (event.reason) {
-    // Log but don't prevent default for other errors
     console.warn('Unhandled promise rejection (not React Query):', event.reason);
   }
 });

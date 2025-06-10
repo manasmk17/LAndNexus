@@ -155,7 +155,7 @@ class AuthStore {
   }
 
   // Clear authentication state
-  private clearAuth(): void {
+  clearAuth(): void {
     if (this.refreshTimer) {
       clearTimeout(this.refreshTimer);
       this.refreshTimer = null;

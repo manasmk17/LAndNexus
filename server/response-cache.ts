@@ -150,7 +150,8 @@ export class ResponseCache {
     let deleted = 0;
     const keysToDelete: string[] = [];
     
-    for (const key of this.cache.keys()) {
+    const cacheKeys = Array.from(this.cache.keys());
+    for (const key of cacheKeys) {
       if (key.startsWith(pattern)) {
         keysToDelete.push(key);
       }

@@ -6,6 +6,9 @@ import csurf from "csurf";
 import cookieParser from "cookie-parser";
 import helmet from 'helmet';
 import cors from 'cors';
+import { memoryLeakDetector } from "./memory-leak-detector";
+import { responseCache } from "./response-cache";
+import { requestDeduplicator } from "./request-deduplicator";
 
 const app = express();
 
@@ -220,9 +223,21 @@ app.use((req, res, next) => {
   // Initialize database connection with retry capability
   await initializeDatabase();
   
-  // Start performance monitoring
+  // Start performance monitoring and memory leak detection
   const { performanceMonitor } = await import("./performance-monitor");
   performanceMonitor.startMonitoring();
+  
+  // Initialize memory leak detection
+  memoryLeakDetector.startMonitoring(30000); // Check every 30 seconds
+  console.log('Memory leak detection enabled');
+  
+  // Force garbage collection every 5 minutes to prevent memory buildup
+  setInterval(() => {
+    if (global.gc) {
+      global.gc();
+      console.log('Periodic garbage collection executed');
+    }
+  }, 5 * 60 * 1000);
   
   // Add static file serving for uploaded files - must come before routes
   app.use('/uploads', express.static('uploads', {

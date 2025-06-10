@@ -480,7 +480,7 @@ export default function JobDetail({ jobId }: JobDetailProps) {
                   <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center mr-3">
                     {company.logoUrl ? (
                       <img 
-                        src={company.logoUrl} 
+                        src={company.logoUrl?.startsWith('uploads/') ? `/${company.logoUrl}` : company.logoUrl} 
                         alt={company.companyName} 
                         className="w-full h-full object-contain p-1" 
                       />

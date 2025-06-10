@@ -233,7 +233,7 @@ export default function ImageGallery({ professionalId, editable = false }: Image
           <CardContent className="p-0 relative" ref={galleryRef}>
             <div className="relative aspect-video overflow-hidden">
               <img
-                src={`/${images[currentIndex]?.path}`}
+                src={images[currentIndex]?.path?.startsWith('uploads/') ? `/${images[currentIndex].path}` : images[currentIndex]?.path}
                 alt={images[currentIndex]?.caption || "Gallery image"}
                 className="w-full h-full object-cover transition-transform hover:scale-105 duration-500"
               />
@@ -325,7 +325,7 @@ export default function ImageGallery({ professionalId, editable = false }: Image
                     onClick={() => setCurrentIndex(index)}
                   >
                     <img
-                      src={`/${image.path}`}
+                      src={image.path?.startsWith('uploads/') ? `/${image.path}` : image.path}
                       alt={image.caption || `Thumbnail ${index + 1}`}
                       className="h-16 w-16 object-cover rounded"
                     />

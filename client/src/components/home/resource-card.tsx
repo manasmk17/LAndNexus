@@ -63,7 +63,7 @@ export default function ResourceCard({ resource }: ResourceCardProps) {
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
       <div className="w-full h-48 overflow-hidden">
         <ImageWithFallback
-          src={resource.imageUrl}
+          src={resource.imageUrl?.startsWith('uploads/') ? `/${resource.imageUrl}` : resource.imageUrl}
           alt={resource.title}
           className="w-full h-48 object-cover"
           fallbackClassName="w-full h-48 flex items-center justify-center bg-gray-100"

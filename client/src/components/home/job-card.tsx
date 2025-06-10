@@ -53,7 +53,7 @@ export default function JobCard({ job }: JobCardProps) {
           <div className="w-12 h-12 rounded bg-white p-2 border border-gray-200 flex items-center justify-center">
             {company?.logoUrl ? (
               <img 
-                src={company.logoUrl} 
+                src={company.logoUrl?.startsWith('uploads/') ? `/${company.logoUrl}` : company.logoUrl} 
                 alt={company?.companyName || "Company logo"} 
                 className="max-w-full max-h-full object-contain"
               />

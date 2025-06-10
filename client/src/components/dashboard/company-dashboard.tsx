@@ -166,7 +166,7 @@ export default function CompanyDashboard() {
                     <div className="w-16 h-16 rounded bg-primary bg-opacity-10 flex items-center justify-center">
                       {profile.logoUrl ? (
                         <img
-                          src={profile.logoUrl}
+                          src={profile.logoUrl?.startsWith('uploads/') ? `/${profile.logoUrl}` : profile.logoUrl}
                           alt={profile.companyName}
                           className="w-full h-full object-contain rounded"
                         />

@@ -1889,7 +1889,7 @@ export default function EditProfileForm() {
                           <div className="mt-2">
                             <p className="text-sm text-muted-foreground mb-2">Current logo:</p>
                             <img 
-                              src={`/${companyProfile.logoImagePath}`} 
+                              src={companyProfile.logoImagePath.startsWith('uploads/') ? `/${companyProfile.logoImagePath}` : companyProfile.logoImagePath} 
                               alt="Company logo" 
                               className="w-32 h-32 object-contain rounded-md border"
                             />

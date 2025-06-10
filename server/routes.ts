@@ -815,25 +815,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     })(req, res, next);
   });
 
+  // Enhanced logout endpoint with JWT token invalidation
   app.post("/api/logout", async (req, res) => {
     try {
-      // Revoke auth token if present
+      const sessionId = req.sessionID;
+      
+      // Clear JWT tokens and invalidate session
+      authManager.clearAuthCookies(res);
+      authManager.invalidateSession(sessionId);
+      
+      // Revoke legacy auth token if present
       const authToken = req.cookies.auth_token;
       if (authToken) {
         await storage.revokeAuthToken(authToken);
         res.clearCookie('auth_token');
-        console.log('Revoked persistent auth token on logout');
       }
       
       req.logout(() => {
-        res.json({ message: "Logged out" });
+        req.session.destroy((err) => {
+          if (err) {
+            console.error('Session destruction error:', err);
+          }
+          res.clearCookie('sessionId');
+          res.clearCookie('connect.sid');
+          console.log(`User logged out, session ${sessionId.slice(0, 8)}... invalidated`);
+          res.json({ message: "Logged out successfully" });
+        });
       });
     } catch (error) {
       console.error('Error during logout:', error);
-      // Still proceed with logout even if token revocation fails
+      // Still proceed with logout even if token cleanup fails
       req.logout(() => {
         res.json({ message: "Logged out" });
       });
+    }
+  });
+
+  // Token refresh endpoint
+  app.post("/api/refresh-token", async (req, res) => {
+    try {
+      const refreshToken = req.cookies?.refreshToken;
+      
+      if (!refreshToken) {
+        return res.status(401).json({ message: "Refresh token not found" });
+      }
+      
+      const refreshResult = authManager.refreshAccessToken(refreshToken);
+      
+      if (!refreshResult) {
+        return res.status(401).json({ message: "Invalid refresh token" });
+      }
+      
+      // Set new access token cookie
+      authManager.setAuthCookies(res, refreshResult.accessToken, refreshToken);
+      
+      res.json({
+        accessToken: refreshResult.accessToken,
+        user: refreshResult.user
+      });
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      res.status(500).json({ message: "Token refresh failed" });
     }
   });
   
@@ -968,9 +1010,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/me", isAuthenticated, async (req, res) => {
-    // Remove sensitive information from user object
-    const { password, resetToken, resetTokenExpiry, ...safeUserInfo } = req.user as any;
-    res.json(safeUserInfo);
+    try {
+      let user = req.user as any;
+      
+      // If using JWT tokens, get user from token payload
+      if ((req as any).tokenUser) {
+        const tokenUser = (req as any).tokenUser;
+        user = await storage.getUser(tokenUser.userId);
+        if (!user) {
+          return res.status(401).json({ message: "User not found" });
+        }
+      }
+      
+      if (!user) {
+        return res.status(401).json({ message: "User not found in session" });
+      }
+      
+      // Remove sensitive information from user object
+      const { password, resetToken, resetTokenExpiry, ...safeUserInfo } = user;
+      res.json(safeUserInfo);
+    } catch (error) {
+      console.error('Error in /api/me:', error);
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
   
   // Get user by ID (for resource cards and other components)

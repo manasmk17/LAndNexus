@@ -20,10 +20,10 @@ export default function CTA() {
           
           <div className="relative bg-gradient-to-br from-slate-900 to-blue-900 rounded-2xl shadow-2xl overflow-hidden">
             {/* Radial gradient overlay */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-600/20 via-transparent to-transparent"></div>
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-600/20 via-transparent to-transparent pointer-events-none"></div>
             
             <div className="md:flex items-stretch">
-              <div className="md:w-2/3 p-10 lg:p-14 text-white">
+              <div className="md:w-2/3 p-10 lg:p-14 text-white relative z-20">
                 <div className="inline-flex items-center bg-blue-900/50 backdrop-blur-sm px-4 py-2 rounded-full text-sm text-blue-200 font-medium mb-8 border border-blue-700/40">
                   <Star className="h-4 w-4 mr-2 text-blue-400" />
                   <span>Join thousands of L&D professionals worldwide</span>
@@ -52,26 +52,41 @@ export default function CTA() {
                   </div>
                 </div>
                 
-                <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 relative z-30">
                   {user ? (
-                    <Button size="lg" className="bg-white hover:bg-blue-50 text-blue-900 font-semibold shadow-lg hover:shadow-xl border-none transition-all duration-300 hover:-translate-y-0.5 w-full sm:w-auto" asChild>
-                      <Link href={user.userType === "professional" ? "/professional-dashboard" : "/company-dashboard"}>
-                        Go to Dashboard
-                        <ArrowRight className="ml-2 h-5 w-5" />
-                      </Link>
+                    <Button 
+                      size="lg" 
+                      className="bg-white hover:bg-blue-50 text-blue-900 font-semibold shadow-lg hover:shadow-xl border-none transition-all duration-300 hover:-translate-y-0.5 w-full sm:w-auto cursor-pointer" 
+                      onClick={() => window.location.href = user.userType === "professional" ? "/professional-dashboard" : "/company-dashboard"}
+                    >
+                      Go to Dashboard
+                      <ArrowRight className="ml-2 h-5 w-5" />
                     </Button>
                   ) : (
                     <>
-                      <Button size="lg" className="bg-white hover:bg-blue-50 text-blue-900 font-semibold shadow-lg hover:shadow-xl border-none transition-all duration-300 hover:-translate-y-0.5 w-full sm:w-auto" asChild>
-                        <Link href="/register">
-                          Create Account
-                          <ArrowRight className="ml-2 h-5 w-5" />
-                        </Link>
+                      <Button 
+                        size="lg" 
+                        className="bg-white hover:bg-blue-50 text-blue-900 font-semibold shadow-lg hover:shadow-xl border-none transition-all duration-300 hover:-translate-y-0.5 w-full sm:w-auto cursor-pointer touch-manipulation" 
+                        onClick={() => window.location.href = "/register"}
+                        onTouchEnd={(e) => {
+                          e.preventDefault();
+                          window.location.href = "/register";
+                        }}
+                      >
+                        Create Account
+                        <ArrowRight className="ml-2 h-5 w-5" />
                       </Button>
-                      <Button size="lg" variant="outline" className="border-2 border-blue-400 bg-transparent text-white hover:bg-white/10 font-semibold transition-all duration-300 w-full sm:w-auto" asChild>
-                        <Link href="/professionals">
-                          Explore Professionals
-                        </Link>
+                      <Button 
+                        size="lg" 
+                        variant="outline" 
+                        className="border-2 border-blue-400 bg-transparent text-white hover:bg-white/10 font-semibold transition-all duration-300 w-full sm:w-auto cursor-pointer touch-manipulation" 
+                        onClick={() => window.location.href = "/professionals"}
+                        onTouchEnd={(e) => {
+                          e.preventDefault();
+                          window.location.href = "/professionals";
+                        }}
+                      >
+                        Explore Professionals
                       </Button>
                     </>
                   )}

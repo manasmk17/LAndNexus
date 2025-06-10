@@ -15,7 +15,9 @@ interface ImageHealthReport {
 export class ImageHealthMonitor {
   private healthReports: Map<string, ImageHealthReport> = new Map();
   private isMonitoring = false;
-  private checkInterval = 5 * 60 * 1000; // 5 minutes
+  private checkInterval = 10 * 60 * 1000; // 10 minutes (reduced frequency)
+  private intervalId: NodeJS.Timeout | null = null;
+  private maxReports = 1000; // Limit stored reports
 
   async startMonitoring() {
     if (this.isMonitoring) return;
@@ -23,13 +25,40 @@ export class ImageHealthMonitor {
     this.isMonitoring = true;
     console.log("Image health monitoring started");
     
-    // Initial scan
-    await this.performHealthCheck();
-    
-    // Set up periodic monitoring
-    setInterval(async () => {
+    // Initial scan with delay to avoid startup blocking
+    setTimeout(async () => {
       await this.performHealthCheck();
+    }, 30000); // 30 second delay
+    
+    // Set up periodic monitoring with cleanup
+    this.intervalId = setInterval(async () => {
+      await this.performHealthCheck();
+      this.cleanupOldReports();
     }, this.checkInterval);
+  }
+
+  stopMonitoring() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
+    this.isMonitoring = false;
+    console.log("Image health monitoring stopped");
+  }
+
+  private cleanupOldReports() {
+    if (this.healthReports.size > this.maxReports) {
+      const entries = Array.from(this.healthReports.entries());
+      // Keep only the newest reports
+      const sorted = entries.sort((a, b) => 
+        b[1].lastChecked.getTime() - a[1].lastChecked.getTime()
+      );
+      
+      this.healthReports.clear();
+      sorted.slice(0, this.maxReports).forEach(([key, value]) => {
+        this.healthReports.set(key, value);
+      });
+    }
   }
 
   async performHealthCheck(): Promise<ImageHealthReport[]> {

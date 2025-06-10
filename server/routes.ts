@@ -64,6 +64,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 });
 
 import { registerAdminRoutes } from "./admin-routes";
+import { trackApiPerformance } from "./api-performance";
+import { cacheManager } from "./cache-manager";
 
 const MemoryStore = memorystore(session);
 
@@ -83,6 +85,9 @@ async function initializeResourceCategories() {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Add API performance tracking
+  app.use('/api', trackApiPerformance());
+  
   // SEO Routes - Must be first to avoid frontend routing conflicts
   app.get("/sitemap.xml", async (req, res) => {
     try {
@@ -4856,6 +4861,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Store active connections by userId
   const connections = new Map<number, WebSocket[]>();
+  const maxConnectionsPerUser = 5; // Limit connections per user
   
   wss.on('connection', (ws: WebSocket) => {
     console.log("New WebSocket connection established");

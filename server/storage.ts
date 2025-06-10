@@ -512,7 +512,13 @@ export class MemStorage implements IStorage {
   }
   
   async getAllUsers(): Promise<User[]> {
-    return Array.from(this.users.values());
+    const cacheKey = 'all-users';
+    const cached = this.getFromCache(cacheKey);
+    if (cached) return cached;
+    
+    const users = Array.from(this.users.values());
+    this.setCache(cacheKey, users);
+    return users;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -595,7 +601,13 @@ export class MemStorage implements IStorage {
   }
   
   async getAllProfessionalProfiles(): Promise<ProfessionalProfile[]> {
-    return Array.from(this.professionalProfiles.values());
+    const cacheKey = 'all-professional-profiles';
+    const cached = this.getFromCache(cacheKey);
+    if (cached) return cached;
+    
+    const profiles = Array.from(this.professionalProfiles.values());
+    this.setCache(cacheKey, profiles);
+    return profiles;
   }
   
   async getFeaturedProfessionalProfiles(limit: number): Promise<ProfessionalProfile[]> {
@@ -632,6 +644,10 @@ export class MemStorage implements IStorage {
     };
     
     this.professionalProfiles.set(id, newProfile);
+    
+    // Invalidate related cache
+    this.invalidateCache('professional');
+    
     return newProfile;
   }
   
@@ -780,7 +796,13 @@ export class MemStorage implements IStorage {
   }
   
   async getAllJobPostings(): Promise<JobPosting[]> {
-    return Array.from(this.jobPostings.values());
+    const cacheKey = 'all-job-postings';
+    const cached = this.getFromCache(cacheKey);
+    if (cached) return cached;
+    
+    const jobPostings = Array.from(this.jobPostings.values());
+    this.setCache(cacheKey, jobPostings);
+    return jobPostings;
   }
   
   async getLatestJobPostings(limit: number): Promise<JobPosting[]> {
@@ -887,7 +909,51 @@ export class MemStorage implements IStorage {
   }
   
   async getAllResources(): Promise<Resource[]> {
-    return Array.from(this.resources.values());
+    const cacheKey = 'all-resources';
+    const cached = this.getFromCache(cacheKey);
+    if (cached) return cached;
+    
+    const resources = Array.from(this.resources.values());
+    this.setCache(cacheKey, resources);
+    return resources;
+  }
+
+  // Cache management methods
+  private getFromCache(key: string): any {
+    const cached = this.queryCache.get(key);
+    if (!cached) return null;
+    
+    // Check if cache is expired
+    if (Date.now() - cached.timestamp > this.CACHE_TTL) {
+      this.queryCache.delete(key);
+      return null;
+    }
+    
+    return cached.data;
+  }
+
+  private setCache(key: string, data: any): void {
+    this.queryCache.set(key, {
+      data,
+      timestamp: Date.now()
+    });
+  }
+
+  private invalidateCache(pattern?: string): void {
+    if (pattern) {
+      // Invalidate specific cache entries
+      for (const key of this.queryCache.keys()) {
+        if (key.includes(pattern)) {
+          this.queryCache.delete(key);
+        }
+      }
+    } else {
+      // Clear all cache
+      this.queryCache.clear();
+    }
+    
+    // Also clear match cache
+    this.matchCache.clear();
   }
   
   async getFeaturedResources(limit: number): Promise<Resource[]> {

@@ -209,8 +209,15 @@ app.use((req, res, next) => {
   // Initialize database connection with retry capability
   await initializeDatabase();
   
+  // Start performance monitoring
+  const { performanceMonitor } = await import("./performance-monitor");
+  performanceMonitor.startMonitoring();
+  
   // Add static file serving for uploaded files - must come before routes
-  app.use('/uploads', express.static('uploads'));
+  app.use('/uploads', express.static('uploads', {
+    maxAge: '1d', // Cache static files for 1 day
+    etag: true
+  }));
   
   const server = await registerRoutes(app);
 

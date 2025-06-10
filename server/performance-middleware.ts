@@ -48,12 +48,12 @@ const cacheableRoutes: { [pattern: string]: CachedRouteConfig } = {
 };
 
 /**
- * Middleware to handle response caching for GET requests
+ * Simplified caching middleware that doesn't interfere with response flow
  */
 export function cacheMiddleware() {
   return (req: Request, res: Response, next: NextFunction) => {
-    // Only cache GET requests
-    if (req.method !== 'GET') {
+    // Only process GET requests to API endpoints
+    if (req.method !== 'GET' || !req.path.startsWith('/api/')) {
       return next();
     }
 
@@ -73,23 +73,8 @@ export function cacheMiddleware() {
       return res.json(cached.data);
     }
 
-    // Store original json method
-    const originalJson = res.json;
-    
-    // Override json method to cache response
-    res.json = function(data: any) {
-      if (routeConfig.shouldCache(req, res)) {
-        const etag = responseCache.set('api', data, { 
-          key: cacheKey,
-          ttl: routeConfig.ttl 
-        });
-        res.set('ETag', etag);
-        res.set('X-Cache', 'MISS');
-      }
-      
-      return originalJson.call(this, data);
-    };
-
+    // Mark as cache miss for logging
+    res.set('X-Cache', 'MISS');
     next();
   };
 }
@@ -162,18 +147,41 @@ export function performanceMiddleware() {
   return (req: Request, res: Response, next: NextFunction) => {
     const startTime = Date.now();
     
-    // Monitor response time
-    res.on('finish', () => {
+    // Add performance headers before response starts
+    const originalSend = res.send;
+    const originalJson = res.json;
+    
+    res.send = function(data: any) {
       const duration = Date.now() - startTime;
       
       // Log slow requests
       if (duration > 1000) {
-        console.warn(`🐌 Slow API call: ${req.method} ${req.path} took ${duration}ms`);
+        console.warn(`Slow API call: ${req.method} ${req.path} took ${duration}ms`);
       }
       
-      // Add performance headers
-      res.set('X-Response-Time', `${duration}ms`);
-    });
+      // Set headers only if they haven't been sent
+      if (!res.headersSent) {
+        res.set('X-Response-Time', `${duration}ms`);
+      }
+      
+      return originalSend.call(this, data);
+    };
+    
+    res.json = function(data: any) {
+      const duration = Date.now() - startTime;
+      
+      // Log slow requests
+      if (duration > 1000) {
+        console.warn(`Slow API call: ${req.method} ${req.path} took ${duration}ms`);
+      }
+      
+      // Set headers only if they haven't been sent
+      if (!res.headersSent) {
+        res.set('X-Response-Time', `${duration}ms`);
+      }
+      
+      return originalJson.call(this, data);
+    };
 
     next();
   };

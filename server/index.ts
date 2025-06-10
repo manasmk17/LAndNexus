@@ -239,10 +239,9 @@ app.use((req, res, next) => {
     }
   }, 5 * 60 * 1000);
   
-  // Add performance middleware before routes
-  const { cacheMiddleware, performanceMiddleware } = await import("./performance-middleware");
+  // Add performance monitoring only (no caching middleware that conflicts with response flow)
+  const { performanceMiddleware } = await import("./performance-middleware");
   app.use(performanceMiddleware());
-  app.use(cacheMiddleware());
   
   // Add static file serving for uploaded files - must come before routes
   app.use('/uploads', express.static('uploads', {

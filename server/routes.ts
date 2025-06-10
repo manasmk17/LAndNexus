@@ -184,27 +184,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fileFilter: fileFilterImages
   });
   
-  // Configure session with enhanced settings for cross-origin support
+  // Configure session with proper same-origin settings
   app.use(
     session({
       secret: process.env.SESSION_SECRET || "L&D-nexus-secret-key-very-long",
       resave: false,
-      saveUninitialized: true, // Changed to true to create sessions for unauthenticated users
+      saveUninitialized: false, // Only create sessions when needed
       name: 'connect.sid',
       cookie: { 
-        secure: false,
-        httpOnly: false, // Changed to false to allow frontend access
+        secure: false, // false for development
+        httpOnly: true, // true for security
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        sameSite: 'none', // Changed to 'none' for cross-origin requests
-        domain: undefined // Let browser handle domain automatically
+        sameSite: 'lax' // lax for same-origin requests
       },
       store: new MemoryStore({
         checkPeriod: 86400000 // prune expired entries every 24h
-      }),
-      // Force session creation
-      genid: function(req) {
-        return crypto.randomBytes(16).toString('hex');
-      }
+      })
     })
   );
 

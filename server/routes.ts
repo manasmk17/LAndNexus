@@ -45,6 +45,8 @@ import { registerEscrowRoutes } from "./escrow-routes";
 import { registerSubscriptionRoutes } from "./subscription-routes";
 import { subscriptionService } from "./subscription-service";
 import { requireUsageLimit, incrementUserUsage, canUserPerformAction } from "./feature-gate";
+import { responseCache } from "./response-cache";
+import { requestDeduplicator } from "./request-deduplicator";
 import { z } from "zod";
 import session from "express-session";
 import passport from "passport";
@@ -1035,7 +1037,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Get user by ID (for resource cards and other components)
+  // Get user by ID (for resource cards and other components) - Cached
   app.get("/api/me/:id", async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
@@ -1043,19 +1045,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid user ID format" });
       }
       
-      const user = await storage.getUser(userId);
+      // Check cache first
+      const cacheKey = 'user-profile';
+      const cached = responseCache.get(cacheKey, { userId });
+      if (cached) {
+        res.set('ETag', cached.etag);
+        return res.json(cached.data);
+      }
+      
+      const user = await requestDeduplicator.deduplicate(`user-${userId}`, async () => {
+        return await storage.getUser(userId);
+      });
+      
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
       // Return only safe public user info
-      res.json({
+      const userInfo = {
         id: user.id,
         username: user.username,
         firstName: user.firstName,
         lastName: user.lastName,
         userType: user.userType
-      });
+      };
+      
+      // Cache the result
+      const etag = responseCache.set(cacheKey, userInfo, { userId });
+      res.set('ETag', etag);
+      res.json(userInfo);
     } catch (err) {
       console.error("Error fetching user by ID:", err);
       res.status(500).json({ message: "Server error" });

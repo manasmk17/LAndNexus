@@ -109,9 +109,9 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
           )}
         </div>
         <p className="text-slate-900 mb-6 bg-slate-50 p-4 rounded-lg italic border-l-4 border-slate-400 shadow-md">
-          "{professional?.bio?.length > 120 
-            ? professional.bio?.substring(0, 120) + '...' 
-            : professional.bio || 'No bio available'}"
+          "{professional?.bio && professional.bio.length > 120 
+            ? professional.bio.substring(0, 120) + '...' 
+            : professional?.bio || 'No bio available'}"
         </p>
         
         {professional.ratePerHour && (

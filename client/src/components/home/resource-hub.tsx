@@ -20,9 +20,9 @@ export default function ResourceHub() {
   return (
     <section className="py-16 bg-gray-50">
       <div className="container mx-auto px-4">
-        <h2 className="text-3xl font-heading font-bold text-center mb-4">Resource Hub</h2>
+        <h2 className="text-3xl font-heading font-bold text-center mb-4">Elite L&D Resource Hub</h2>
         <p className="text-gray-600 text-center max-w-2xl mx-auto mb-10">
-          Access curated learning materials, templates, and articles from the L&D community.
+          Access curated learning materials from top MENA region experts. Premium templates, insights, and resources for corporate learning excellence.
         </p>
         
         {/* Resource Categories */}

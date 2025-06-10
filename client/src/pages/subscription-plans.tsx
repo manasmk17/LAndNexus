@@ -144,9 +144,9 @@ export default function SubscriptionPlans() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12">
       <SEOMeta
-        title="Subscription Plans | L&D Nexus | International Certified Professionals"
-        description="Choose the perfect subscription plan for your L&D career. Professional at $19/month, Expert at $49/month, Elite at $99/month. Companies: Startup at $39/month, Growth at $99/month, Enterprise at $199/month. AI-powered matching, unlimited access, priority support."
-        keywords="L&D subscription plans, professional development pricing, International Certified Trainers subscription, Global Learning Development platform pricing"
+        title="L&D Nexus Subscription Plans | Connect with Top Experts UAE | AI-Powered Matching"
+        description="Join the AI-powered marketplace for corporate learning in MENA. Professional plans from $19/month, Company plans from $39/month. Instant expert connection, elite L&D professionals, MENA region focus."
+        keywords="L&D subscription plans UAE, AI-powered expert matching plans, corporate learning MENA pricing, top L&D experts subscription, instant professional connection plans"
         canonicalUrl="https://www.ldnexus.com/subscription-plans"
         structuredData={createPricingSchema()}
       />
@@ -154,11 +154,11 @@ export default function SubscriptionPlans() {
         {/* Header Section */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Choose Your Perfect Plan
+            Join the AI-Powered Marketplace
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Unlock your professional potential with our comprehensive L&D platform. 
-            Choose the plan that fits your career goals and business needs.
+            Connect with top L&D experts instantly across UAE and MENA region. 
+            Choose your plan for intelligent matching and corporate learning excellence.
           </p>
 
           {/* Plan Type Toggle */}

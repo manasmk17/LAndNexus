@@ -184,63 +184,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fileFilter: fileFilterImages
   });
   
-  // Configure session middleware with forced persistence
+  // Configure robust session middleware
   app.use(session({
-    secret: process.env.SESSION_SECRET || "L&D-nexus-secret-key-very-long",
+    secret: process.env.SESSION_SECRET || "L&D-nexus-secret-key-very-long-for-production",
     resave: false,
     saveUninitialized: false,
-    name: 'connect.sid',
+    name: 'sessionId',
     cookie: { 
-      secure: false,
+      secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       sameSite: 'lax',
-      path: '/'
+      path: '/',
+      domain: undefined
     },
     store: new MemoryStore({
-      checkPeriod: 86400000
+      checkPeriod: 24 * 60 * 60 * 1000 // Check every 24 hours
     }),
-    // Force session ID consistency
-    genid: function(req) {
-      // Use existing session ID from cookie if available
-      const existingId = req.headers.cookie?.match(/connect\.sid=([^;]+)/)?.[1];
-      if (existingId) {
-        try {
-          // Decode the session ID from the signed cookie
-          const decoded = decodeURIComponent(existingId);
-          if (decoded.startsWith('s:')) {
-            const sessionId = decoded.slice(2).split('.')[0];
-            return sessionId;
-          }
-        } catch (e) {
-          // If decoding fails, generate new ID
-        }
-      }
-      // Generate new session ID if none exists
-      return require('crypto').randomBytes(16).toString('hex');
-    }
+    rolling: true // Reset expiration on activity
   }));
 
   // Initialize Passport
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Session fixing middleware - ensure consistent session across requests
+  // Session persistence middleware
   app.use((req, res, next) => {
-    // Store original session ID for comparison
-    const originalSessionID = req.sessionID;
-    
-    // Override session regenerate to maintain consistency
-    const originalRegenerate = req.session.regenerate;
-    req.session.regenerate = function(callback?: (err?: any) => void) {
-      // Prevent session regeneration during normal operation
-      if (callback) callback(null);
-      return this;
-    };
-    
-    // Debug logging for session tracking
-    if (req.path.startsWith('/api/') && !req.path.includes('csrf-token')) {
-      console.log(`${req.method} ${req.path} - Session: ${req.sessionID.slice(0, 8)}... - Auth: ${req.isAuthenticated()}`);
+    // Ensure session is properly loaded and maintained
+    if (req.session && req.sessionID) {
+      // Touch session to update last access time
+      req.session.touch();
+      
+      // Set session activity flag for tracking
+      (req.session as any).lastActivity = new Date();
     }
     
     next();

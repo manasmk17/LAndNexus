@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/ui/logo";
 import { Menu, User, LogOut, MessageSquare, Settings, BookOpen, Award, Briefcase, Users, Home } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -47,10 +48,7 @@ export default function Navbar() {
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center">
             <Link href="/" className="flex items-center">
-              <div className="bg-gradient-to-r from-blue-700 to-blue-500 text-white font-bold text-xl p-2 rounded-lg mr-2">
-                L&D
-              </div>
-              <span className="text-slate-800 font-heading font-bold text-2xl">Nexus</span>
+              <Logo variant="blue-flat" size="md" clickable={false} />
             </Link>
             <nav className="hidden md:block ml-10">
               <ul className="flex space-x-6">

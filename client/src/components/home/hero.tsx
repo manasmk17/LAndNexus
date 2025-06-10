@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/ui/logo";
 import { useAuth } from "@/hooks/use-auth";
 import { ArrowRight, Award, Users, Briefcase, Sparkles } from "lucide-react";
 
@@ -19,6 +20,9 @@ export default function Hero() {
       <div className="container mx-auto px-4 py-20 lg:py-32 relative z-10">
         <div className="flex flex-col md:flex-row items-center gap-12">
           <div className="md:w-1/2 mb-8 md:mb-0">
+            <div className="flex items-center justify-center md:justify-start mb-6">
+              <Logo variant="blue-gradient" size="xl" />
+            </div>
             <div className="inline-block px-3 py-1 rounded-full bg-blue-900/60 backdrop-blur-sm text-blue-200 text-sm font-medium mb-6 border border-blue-700/50">
               The AI-Powered Marketplace
             </div>

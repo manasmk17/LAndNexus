@@ -298,6 +298,9 @@ export class MemStorage implements IStorage {
     
     // Initialize with some resource categories
     this.initResourceCategories();
+    
+    // Initialize demo data with professional images
+    this.initDemoData();
   }
   
   private initExpertise() {
@@ -339,6 +342,402 @@ export class MemStorage implements IStorage {
         description: cat.description
       };
       this.resourceCategories.set(id, category);
+    });
+  }
+
+  private initDemoData() {
+    // Create demo users
+    this.createDemoUsers();
+    
+    // Create demo professional profiles with images
+    this.createDemoProfessionalProfiles();
+    
+    // Create demo company profiles with logos
+    this.createDemoCompanyProfiles();
+    
+    // Create demo resources with images
+    this.createDemoResources();
+    
+    // Create demo job postings
+    this.createDemoJobPostings();
+  }
+
+  private createDemoUsers() {
+    const demoUsers = [
+      {
+        username: "sarah.johnson",
+        email: "sarah.johnson@example.com",
+        password: "demo123",
+        firstName: "Sarah",
+        lastName: "Johnson",
+        userType: "professional" as const,
+        isAdmin: false
+      },
+      {
+        username: "michael.chen",
+        email: "michael.chen@example.com", 
+        password: "demo123",
+        firstName: "Michael",
+        lastName: "Chen",
+        userType: "professional" as const,
+        isAdmin: false
+      },
+      {
+        username: "alexandra.martinez",
+        email: "alexandra.martinez@example.com",
+        password: "demo123", 
+        firstName: "Alexandra",
+        lastName: "Martinez",
+        userType: "professional" as const,
+        isAdmin: false
+      },
+      {
+        username: "david.wilson",
+        email: "david.wilson@example.com",
+        password: "demo123",
+        firstName: "David", 
+        lastName: "Wilson",
+        userType: "professional" as const,
+        isAdmin: false
+      },
+      {
+        username: "techcorp.admin",
+        email: "admin@techcorp.com",
+        password: "demo123",
+        firstName: "Tech",
+        lastName: "Corp",
+        userType: "company" as const,
+        isAdmin: false
+      },
+      {
+        username: "innovate.solutions",
+        email: "hr@innovatesolutions.com", 
+        password: "demo123",
+        firstName: "Innovate",
+        lastName: "Solutions", 
+        userType: "company" as const,
+        isAdmin: false
+      }
+    ];
+
+    demoUsers.forEach(userData => {
+      const id = this.userId++;
+      const user: User = { 
+        ...userData, 
+        id, 
+        isAdmin: userData.isAdmin || false,
+        createdAt: new Date(),
+        stripeCustomerId: null,
+        stripeSubscriptionId: null,
+        subscriptionTier: null,
+        subscriptionStatus: null,
+        resetToken: null,
+        resetTokenExpiry: null,
+        stripeConnectAccountId: null,
+        payoutAccountSetup: false
+      };
+      this.users.set(id, user);
+    });
+  }
+
+  private createDemoProfessionalProfiles() {
+    const professionalProfiles = [
+      {
+        userId: 1,
+        firstName: "Sarah",
+        lastName: "Johnson", 
+        email: "sarah.johnson@example.com",
+        phone: "+1 (555) 123-4567",
+        title: "Senior Learning & Development Strategist",
+        bio: "Experienced L&D professional with over 12 years in corporate training and development. Specialized in creating comprehensive learning ecosystems that drive organizational growth and employee engagement.",
+        location: "San Francisco, CA",
+        profileImageUrl: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face",
+        ratePerHour: 150,
+        featured: true,
+        verified: true,
+        rating: 4.9,
+        reviewCount: 47,
+        yearsExperience: 12,
+        interests: "Leadership Development, Digital Learning, Change Management",
+        industryFocus: "Technology, Healthcare, Finance",
+        services: "Strategic Planning, Program Development, Executive Coaching",
+        availability: "Available for new projects",
+        workExperience: "Former Head of L&D at Fortune 500 companies",
+        testimonials: "Sarah transformed our learning culture completely"
+      },
+      {
+        userId: 2,
+        firstName: "Michael",
+        lastName: "Chen",
+        email: "michael.chen@example.com", 
+        phone: "+1 (555) 234-5678",
+        title: "Executive Leadership Coach",
+        bio: "Certified executive coach and former C-suite executive with deep expertise in leadership development, organizational psychology, and high-performance team building.",
+        location: "New York, NY",
+        profileImageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face",
+        ratePerHour: 200,
+        featured: true,
+        verified: true,
+        rating: 4.8,
+        reviewCount: 34,
+        yearsExperience: 15,
+        interests: "Executive Coaching, Leadership Assessment, Strategic Thinking",
+        industryFocus: "Technology, Consulting, Manufacturing", 
+        services: "Executive Coaching, Leadership Assessments, Board Advisory",
+        availability: "Limited availability - premium clients only",
+        workExperience: "Former VP at McKinsey & Company, Harvard MBA",
+        testimonials: "Michael's coaching elevated our entire leadership team"
+      },
+      {
+        userId: 3,
+        firstName: "Alexandra", 
+        lastName: "Martinez",
+        email: "alexandra.martinez@example.com",
+        phone: "+1 (555) 345-6789",
+        title: "Corporate Training & Development Specialist",
+        bio: "Dynamic training professional specializing in adult learning methodologies, instructional design, and digital learning solutions. Expert in creating engaging, results-driven training programs.",
+        location: "Austin, TX",
+        profileImageUrl: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&crop=face",
+        ratePerHour: 120,
+        featured: true,
+        verified: true,
+        rating: 4.7,
+        reviewCount: 28,
+        yearsExperience: 8,
+        interests: "Instructional Design, eLearning, Performance Management",
+        industryFocus: "Retail, Hospitality, Education",
+        services: "Training Design, LMS Implementation, Skills Assessment",
+        availability: "Available for new projects",
+        workExperience: "Lead Instructional Designer at major retailers",
+        testimonials: "Alexandra's programs boosted our team performance by 40%"
+      },
+      {
+        userId: 4,
+        firstName: "David",
+        lastName: "Wilson", 
+        email: "david.wilson@example.com",
+        phone: "+1 (555) 456-7890",
+        title: "Change Management & Organizational Development Expert",
+        bio: "Strategic change management consultant with proven track record in guiding organizations through complex transformations. Specialized in culture change, process improvement, and stakeholder engagement.",
+        location: "Chicago, IL", 
+        profileImageUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face",
+        ratePerHour: 175,
+        featured: false,
+        verified: true,
+        rating: 4.6,
+        reviewCount: 22,
+        yearsExperience: 10,
+        interests: "Change Management, Culture Transformation, Process Optimization",
+        industryFocus: "Financial Services, Healthcare, Government",
+        services: "Change Strategy, Culture Assessment, Process Design",
+        availability: "Available for new projects",
+        workExperience: "Senior Manager at Deloitte Consulting",
+        testimonials: "David guided us through our most successful transformation"
+      }
+    ];
+
+    professionalProfiles.forEach(profile => {
+      const id = this.profProfileId++;
+      const newProfile: ProfessionalProfile = { 
+        id,
+        userId: profile.userId,
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        email: profile.email,
+        phone: profile.phone,
+        title: profile.title,
+        bio: profile.bio,
+        location: profile.location,
+        videoIntroUrl: null,
+        ratePerHour: profile.ratePerHour,
+        profileImageUrl: profile.profileImageUrl,
+        profileImagePath: null,
+        galleryImages: [],
+        featured: profile.featured,
+        verified: profile.verified,
+        rating: profile.rating,
+        reviewCount: profile.reviewCount,
+        yearsExperience: profile.yearsExperience,
+        interests: profile.interests,
+        industryFocus: profile.industryFocus,
+        services: profile.services,
+        availability: profile.availability,
+        workExperience: profile.workExperience,
+        testimonials: profile.testimonials
+      };
+      this.professionalProfiles.set(id, newProfile);
+    });
+  }
+
+  private createDemoCompanyProfiles() {
+    const companyProfiles = [
+      {
+        userId: 5,
+        companyName: "TechCorp Innovations",
+        industry: "Technology",
+        description: "Leading technology company focused on AI and machine learning solutions. We're committed to continuous learning and development for our 2,500+ employees across 15 global offices.",
+        size: "Large Enterprise (1000+ employees)",
+        location: "San Francisco, CA",
+        website: "https://techcorp-innovations.com",
+        logoUrl: "https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=200&h=200&fit=crop",
+        featured: true,
+        verified: true
+      },
+      {
+        userId: 6,
+        companyName: "Innovate Solutions",
+        industry: "Consulting", 
+        description: "Strategic consulting firm specializing in digital transformation and organizational development. We help Fortune 500 companies build learning organizations that thrive in the digital age.",
+        size: "Medium Business (100-999 employees)",
+        location: "New York, NY",
+        website: "https://innovate-solutions.com",
+        logoUrl: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop",
+        featured: true,
+        verified: true
+      }
+    ];
+
+    companyProfiles.forEach(profile => {
+      const id = this.companyProfileId++;
+      const newProfile: CompanyProfile = { 
+        id,
+        userId: profile.userId,
+        companyName: profile.companyName,
+        industry: profile.industry,
+        description: profile.description,
+        size: profile.size,
+        location: profile.location,
+        website: profile.website,
+        logoUrl: profile.logoUrl,
+        logoImagePath: null,
+        featured: profile.featured,
+        verified: profile.verified
+      };
+      this.companyProfiles.set(id, newProfile);
+    });
+  }
+
+  private createDemoResources() {
+    const demoResources = [
+      {
+        title: "The Complete Guide to Learning & Development Strategy",
+        description: "Comprehensive guide covering modern L&D strategies, from needs analysis to impact measurement. Includes frameworks, templates, and case studies from industry leaders.",
+        content: "This comprehensive guide explores the fundamental principles of effective learning and development strategy...",
+        resourceType: "guide",
+        categoryId: 1,
+        authorId: 1,
+        featured: true,
+        imageUrl: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&h=400&fit=crop",
+        contentUrl: null
+      },
+      {
+        title: "Executive Leadership Development Program Template",
+        description: "Ready-to-implement program template for developing senior leadership capabilities. Includes curriculum outlines, assessment tools, and coaching frameworks.",
+        content: "A complete program template designed for organizations looking to develop their senior leadership...",
+        resourceType: "template",
+        categoryId: 1,
+        authorId: 2,
+        featured: true,
+        imageUrl: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=600&h=400&fit=crop",
+        contentUrl: null
+      },
+      {
+        title: "Digital Learning Best Practices Masterclass",
+        description: "Video masterclass covering the latest trends in digital learning, including microlearning, adaptive learning platforms, and virtual reality training applications.",
+        content: "Digital learning masterclass content covering comprehensive strategies for modern workplace learning...",
+        resourceType: "video",
+        categoryId: 2,
+        authorId: 3,
+        featured: true,
+        imageUrl: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?w=600&h=400&fit=crop",
+        contentUrl: "https://example.com/masterclass/digital-learning"
+      },
+      {
+        title: "Change Management Workshop Series",
+        description: "Interactive workshop series designed to build change management capabilities across your organization. Includes facilitator guides and participant materials.",
+        content: "Workshop series content with facilitator guides and comprehensive change management strategies...",
+        resourceType: "workshop",
+        categoryId: 1,
+        authorId: 4,
+        featured: false,
+        imageUrl: "https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=600&h=400&fit=crop",
+        contentUrl: null
+      },
+      {
+        title: "Performance Management Framework",
+        description: "Modern performance management approach that focuses on continuous development rather than annual reviews. Includes implementation roadmap and tools.",
+        content: "This framework represents a shift from traditional performance management to a more agile...",
+        resourceType: "framework",
+        categoryId: 3,
+        authorId: 1,
+        featured: false,
+        imageUrl: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&h=400&fit=crop",
+        contentUrl: null
+      },
+      {
+        title: "Diversity & Inclusion Training Certification",
+        description: "Comprehensive certification program for D&I training professionals. Covers unconscious bias, inclusive leadership, and creating psychologically safe environments.",
+        content: "Certification program content covering diversity, inclusion, unconscious bias training and implementation...",
+        resourceType: "certification",
+        categoryId: 4,
+        authorId: 2,
+        featured: true,
+        imageUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=600&h=400&fit=crop",
+        contentUrl: null
+      }
+    ];
+
+    demoResources.forEach(resource => {
+      const id = this.resourceId++;
+      const newResource: Resource = { 
+        ...resource, 
+        id, 
+        createdAt: new Date(),
+        categoryId: resource.categoryId,
+        contentUrl: resource.contentUrl,
+        filePath: null
+      };
+      this.resources.set(id, newResource);
+    });
+  }
+
+  private createDemoJobPostings() {
+    const jobPostings = [
+      {
+        companyId: 1,
+        title: "Senior Learning & Development Manager",
+        description: "Lead our global L&D initiatives for a fast-growing tech company. Drive strategic learning programs that support our mission to democratize AI technology.",
+        requirements: "Master's degree in HR, Psychology, or related field. 7+ years L&D experience. Experience with digital learning platforms and data analytics.",
+        location: "San Francisco, CA (Hybrid)",
+        jobType: "full-time",
+        salaryRange: "$120,000 - $150,000",
+        experienceLevel: "senior-level",
+        status: "open"
+      },
+      {
+        companyId: 2, 
+        title: "Organizational Development Consultant",
+        description: "Help our clients build high-performing organizations through strategic OD initiatives. Work with Fortune 500 companies on culture transformation projects.",
+        requirements: "PhD or Master's in Organizational Psychology. 5+ years consulting experience. Strong facilitation and change management skills.",
+        location: "New York, NY (On-site)",
+        jobType: "contract",
+        salaryRange: "$180 - $250 per hour",
+        experienceLevel: "senior-level", 
+        status: "open"
+      }
+    ];
+
+    jobPostings.forEach(job => {
+      const id = this.jobPostingId++;
+      const newJob: JobPosting = { 
+        ...job,
+        id,
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        featured: false,
+        remote: null
+      };
+      this.jobPostings.set(id, newJob);
     });
   }
   

@@ -70,17 +70,24 @@ export default function Footer() {
             </p>
           </div>
           <div className="lg:w-1/2">
-            <div className="flex flex-col sm:flex-row gap-3">
+            <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-3">
               <input 
                 type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email" 
                 className="flex-grow px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
               />
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 px-6 border-none">
-                Subscribe
+              <Button 
+                type="submit"
+                disabled={isSubscribing}
+                className="bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center gap-2 px-6 border-none disabled:opacity-50"
+              >
+                {isSubscribing ? "Subscribing..." : "Subscribe"}
                 <ArrowUpRight className="h-4 w-4" />
               </Button>
-            </div>
+            </form>
           </div>
         </div>
         

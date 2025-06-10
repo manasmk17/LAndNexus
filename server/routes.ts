@@ -3791,6 +3791,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Newsletter subscription endpoint
+  app.post("/api/newsletter/subscribe", bypassCSRF, async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email || !email.includes('@')) {
+        return res.status(400).json({ message: "Valid email address required" });
+      }
+
+      // Log the subscription (in a real implementation, this would save to database or send to email service)
+      console.log(`Newsletter subscription: ${email}`);
+      
+      // For now, we'll just return success. In production, this would integrate with an email service like SendGrid
+      res.json({ 
+        success: true, 
+        message: "Successfully subscribed to newsletter",
+        email: email 
+      });
+    } catch (error) {
+      console.error("Newsletter subscription error:", error);
+      res.status(500).json({ message: "Failed to subscribe to newsletter" });
+    }
+  });
+
   // Messaging Routes with enhanced error handling and real-time updates
   app.get("/api/messages", isAuthenticated, async (req, res) => {
     try {

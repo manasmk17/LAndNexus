@@ -184,24 +184,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fileFilter: fileFilterImages
   });
   
-  // Configure session with forced session creation and persistence
+  // Configure session with proper persistence settings
   app.use(
     session({
       secret: process.env.SESSION_SECRET || "L&D-nexus-secret-key-very-long",
-      resave: true, // Force session save on every request
-      saveUninitialized: true, // Create session even if not modified
+      resave: false,
+      saveUninitialized: false,
       name: 'connect.sid',
       cookie: { 
-        secure: false, // false for development
-        httpOnly: false, // false to allow frontend access for debugging
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        sameSite: 'lax', // lax for same-origin requests
-        path: '/' // explicit path
+        secure: false,
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000,
+        sameSite: 'strict',
+        path: '/',
+        domain: undefined
       },
       store: new MemoryStore({
-        checkPeriod: 86400000 // prune expired entries every 24h
-      }),
-      rolling: true // Reset expiration on each request
+        checkPeriod: 86400000
+      })
     })
   );
 
@@ -752,54 +752,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Extended session for user ${user.username} to 30 days`);
         }
         
-        req.login(user, async (err) => {
+        req.login(user, (err) => {
           if (err) {
             return next(err);
           }
           
-          try {
-            let authToken = null;
-            
-            // Create persistent auth token if "Remember Me" is selected
-            if (rememberMe) {
-              const expiresAt = new Date();
-              expiresAt.setDate(expiresAt.getDate() + 30); // 30 days
-              
-              authToken = await storage.createAuthToken(
-                user.id,
-                'remember_me',
-                expiresAt,
-                req.get('User-Agent'),
-                req.ip
-              );
-              
-              // Set secure cookie with the auth token
-              res.cookie('auth_token', authToken.token, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
-                maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-              });
-              
-              console.log(`Created persistent auth token for user ${user.username}`);
+          // Force session save to ensure persistence
+          req.session.save((saveErr) => {
+            if (saveErr) {
+              console.error('Session save error:', saveErr);
+              return next(saveErr);
             }
             
-            // Send more complete user information
-            // Remove password field for security
+            console.log(`User logged in successfully. Session ID: ${req.sessionID}`);
+            console.log(`Session saved. User ID: ${user.id}`);
+            
+            // Remove sensitive fields
             const { password, resetToken, resetTokenExpiry, ...userWithoutSensitiveInfo } = user;
             
-            console.log(`User ${user.username} logged in successfully. Session ID: ${req.sessionID}`);
-            
-            return res.json({
-              ...userWithoutSensitiveInfo,
-              hasRememberToken: !!authToken
-            });
-          } catch (tokenError) {
-            console.error('Error creating auth token:', tokenError);
-            // Continue with normal login even if token creation fails
-            const { password, resetToken, resetTokenExpiry, ...userWithoutSensitiveInfo } = user;
             return res.json(userWithoutSensitiveInfo);
-          }
+          });
         });
       } catch (error) {
         console.error('Login error:', error);

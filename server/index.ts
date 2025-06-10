@@ -9,14 +9,18 @@ import cors from 'cors';
 
 const app = express();
 
-// Configure CORS with explicit same-origin policy for session cookies
+// Configure CORS for proper session cookie handling
 app.use(cors({
-  origin: true, // Allow all origins for development
+  origin: function(origin, callback) {
+    // Allow same-origin requests and development
+    callback(null, true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-CSRF-Token'],
   exposedHeaders: ['Set-Cookie'],
-  optionsSuccessStatus: 200
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
 // Apply Helmet middleware for secure HTTP headers

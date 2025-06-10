@@ -218,6 +218,11 @@ export class MemStorage implements IStorage {
   private notifications: Map<number, Notification>;
   private notificationPreferences: Map<number, NotificationPreference>;
   
+  // Performance optimization: Add caching for expensive operations
+  private matchCache: Map<string, any> = new Map();
+  private queryCache: Map<string, { data: any; timestamp: number }> = new Map();
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  
   private userId: number;
   private profProfileId: number;
   private expertiseId: number;
@@ -262,6 +267,10 @@ export class MemStorage implements IStorage {
     this.notificationTypes = new Map();
     this.notifications = new Map();
     this.notificationPreferences = new Map();
+    
+    // Initialize cache maps
+    this.matchCache = new Map();
+    this.queryCache = new Map();
     
     this.userId = 1;
     this.profProfileId = 1;
@@ -626,6 +635,7 @@ export class MemStorage implements IStorage {
       firstName: profile.firstName || null,
       lastName: profile.lastName || null,
       email: profile.email || null,
+      phone: profile.phone || null,
       title: profile.title || null,
       bio: profile.bio || null,
       location: profile.location || null,
@@ -640,7 +650,11 @@ export class MemStorage implements IStorage {
       reviewCount: profile.reviewCount || 0,
       yearsExperience: profile.yearsExperience || 0,
       interests: profile.interests || null,
-      industryFocus: profile.industryFocus || null
+      industryFocus: profile.industryFocus || null,
+      services: profile.services || null,
+      availability: profile.availability || null,
+      workExperience: profile.workExperience || null,
+      testimonials: profile.testimonials || null
     };
     
     this.professionalProfiles.set(id, newProfile);

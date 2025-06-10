@@ -321,7 +321,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Check if user is authenticated
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    // Check JWT tokens first
+    // First check traditional session authentication (highest priority)
+    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+      return next();
+    }
+    
+    // Check JWT tokens
     const authHeader = req.headers.authorization;
     const accessToken = authHeader && authHeader.split(' ')[1];
     
@@ -342,11 +347,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (req as any).tokenUser = refreshResult.user;
         return next();
       }
-    }
-    
-    // Fall back to traditional session auth
-    if (req.isAuthenticated && req.isAuthenticated()) {
-      return next();
     }
     
     res.status(401).json({ message: "Unauthorized" });

@@ -423,8 +423,13 @@ export class MemStorage implements IStorage {
     demoUsers.forEach(userData => {
       const id = this.userId++;
       const user: User = { 
-        ...userData, 
         id, 
+        username: userData.username,
+        password: userData.password,
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        userType: userData.userType,
         isAdmin: userData.isAdmin || false,
         createdAt: new Date(),
         stripeCustomerId: null,
@@ -735,7 +740,11 @@ export class MemStorage implements IStorage {
         createdAt: new Date(),
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
         featured: false,
-        remote: null
+        remote: null,
+        minCompensation: null,
+        maxCompensation: null,
+        compensationUnit: null,
+        duration: null
       };
       this.jobPostings.set(id, newJob);
     });
@@ -932,8 +941,13 @@ export class MemStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userId++;
     const user: User = { 
-      ...insertUser, 
       id, 
+      username: insertUser.username,
+      password: insertUser.password,
+      email: insertUser.email,
+      firstName: insertUser.firstName,
+      lastName: insertUser.lastName,
+      userType: insertUser.userType,
       isAdmin: insertUser.isAdmin || false,
       createdAt: new Date(),
       stripeCustomerId: null,
@@ -941,7 +955,9 @@ export class MemStorage implements IStorage {
       subscriptionTier: null,
       subscriptionStatus: null,
       resetToken: null,
-      resetTokenExpiry: null
+      resetTokenExpiry: null,
+      stripeConnectAccountId: null,
+      payoutAccountSetup: false
     };
     this.users.set(id, user);
     return user;

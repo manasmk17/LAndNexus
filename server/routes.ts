@@ -184,22 +184,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fileFilter: fileFilterImages
   });
   
-  // Configure session with enhanced settings
+  // Configure session with enhanced settings for cross-origin support
   app.use(
     session({
       secret: process.env.SESSION_SECRET || "L&D-nexus-secret-key-very-long",
       resave: false,
-      saveUninitialized: false,
+      saveUninitialized: true, // Changed to true to create sessions for unauthenticated users
       name: 'connect.sid',
       cookie: { 
         secure: false,
-        httpOnly: true,
+        httpOnly: false, // Changed to false to allow frontend access
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        sameSite: 'lax'
+        sameSite: 'none', // Changed to 'none' for cross-origin requests
+        domain: undefined // Let browser handle domain automatically
       },
       store: new MemoryStore({
         checkPeriod: 86400000 // prune expired entries every 24h
-      })
+      }),
+      // Force session creation
+      genid: function(req) {
+        return crypto.randomBytes(16).toString('hex');
+      }
     })
   );
 
@@ -214,7 +219,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Request: ${req.method} ${req.path}`);
       console.log(`Session ID: ${req.sessionID}`);
       console.log(`Authenticated: ${req.isAuthenticated()}`);
-      console.log(`User in session: ${req.user ? req.user.username : 'None'}`);
+      console.log(`User in session: ${req.user ? `ID ${req.user.id}` : 'None'}`);
       console.log(`Session data:`, req.session);
     }
     next();

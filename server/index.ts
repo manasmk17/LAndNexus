@@ -5,8 +5,29 @@ import { initializeDatabase } from "./db";
 import csurf from "csurf";
 import cookieParser from "cookie-parser";
 import helmet from 'helmet';
+import cors from 'cors';
 
 const app = express();
+
+// Configure CORS first to handle cross-origin requests
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow all origins in development
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    
+    // In production, you would check against allowed origins
+    callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-CSRF-Token'],
+  exposedHeaders: ['Set-Cookie']
+}));
 
 // Apply Helmet middleware for secure HTTP headers
 app.use(helmet({

@@ -120,28 +120,28 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="#" className="text-slate-300 hover:text-white transition-colors flex items-center group">
+                <Link href="/pages/careers" className="text-slate-300 hover:text-white transition-colors flex items-center group">
                   <ChevronRight className="h-3 w-3 mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                   Careers
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-slate-300 hover:text-white transition-colors flex items-center group">
+                <a href="https://ldnmag.com" target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors flex items-center group">
                   <ChevronRight className="h-3 w-3 mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                   Blog
                 </a>
               </li>
               <li>
-                <a href="#" className="text-slate-300 hover:text-white transition-colors flex items-center group">
+                <Link href="/pages/press" className="text-slate-300 hover:text-white transition-colors flex items-center group">
                   <ChevronRight className="h-3 w-3 mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                   Press
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-slate-300 hover:text-white transition-colors flex items-center group">
+                <Link href="/pages/contact" className="text-slate-300 hover:text-white transition-colors flex items-center group">
                   <ChevronRight className="h-3 w-3 mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                   Contact
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -153,34 +153,34 @@ export default function Footer() {
             </h3>
             <ul className="space-y-3">
               <li>
-                <a href="#" className="text-slate-300 hover:text-white transition-colors flex items-center group">
+                <Link href="/pages/help" className="text-slate-300 hover:text-white transition-colors flex items-center group">
                   <ChevronRight className="h-3 w-3 mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                   Help Center
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-slate-300 hover:text-white transition-colors flex items-center group">
+                <Link href="/pages/privacy" className="text-slate-300 hover:text-white transition-colors flex items-center group">
                   <ChevronRight className="h-3 w-3 mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                   Privacy Policy
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-slate-300 hover:text-white transition-colors flex items-center group">
+                <Link href="/pages/terms" className="text-slate-300 hover:text-white transition-colors flex items-center group">
                   <ChevronRight className="h-3 w-3 mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                   Terms of Service
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-slate-300 hover:text-white transition-colors flex items-center group">
+                <Link href="/pages/safety" className="text-slate-300 hover:text-white transition-colors flex items-center group">
                   <ChevronRight className="h-3 w-3 mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                   Trust & Safety
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-slate-300 hover:text-white transition-colors flex items-center group">
+                <Link href="/pages/accessibility" className="text-slate-300 hover:text-white transition-colors flex items-center group">
                   <ChevronRight className="h-3 w-3 mr-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                   Accessibility
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

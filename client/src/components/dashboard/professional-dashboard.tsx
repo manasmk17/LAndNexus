@@ -42,7 +42,8 @@ export default function ProfessionalDashboard() {
     isLoading: isLoadingProfile 
   } = useQuery<ProfessionalProfile>({
     queryKey: ["/api/professionals/me"],
-    enabled: !!user,
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
   });
   
   // Fetch job applications - using "me" endpoint that doesn't require profile ID
@@ -51,7 +52,8 @@ export default function ProfessionalDashboard() {
     isLoading: isLoadingApplications 
   } = useQuery<JobApplication[]>({
     queryKey: ["/api/professionals/me/applications"],
-    enabled: !!user,
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
   });
   
   // Fetch messages
@@ -60,7 +62,8 @@ export default function ProfessionalDashboard() {
     isLoading: isLoadingMessages 
   } = useQuery<Message[]>({
     queryKey: ["/api/messages"],
-    enabled: !!user,
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
   });
   
   // Fetch consultations - using "me" endpoint that doesn't require profile ID
@@ -69,7 +72,8 @@ export default function ProfessionalDashboard() {
     isLoading: isLoadingConsultations 
   } = useQuery<Consultation[]>({
     queryKey: ["/api/professionals/me/consultations"],
-    enabled: !!user,
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
   });
   
   // Additional query for job details

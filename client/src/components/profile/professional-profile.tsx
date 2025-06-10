@@ -234,7 +234,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
               <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
                 {profile.profileImagePath ? (
                   <img 
-                    src={`/${profile.profileImagePath}`} 
+                    src={profile.profileImagePath.startsWith('/uploads/') ? profile.profileImagePath : `/uploads/${profile.profileImagePath}`} 
                     alt={`${profile.firstName} ${profile.lastName}`} 
                     className="w-full h-full object-cover rounded-full"
                     onError={(e) => {

@@ -25,7 +25,7 @@ export default function ProfessionalCard({ professional }: ProfessionalCardProps
         <div className="w-20 h-20 rounded-full bg-gradient-to-br from-slate-800 via-slate-700 to-blue-700 flex items-center justify-center overflow-hidden shadow-lg transform group-hover:scale-105 transition-transform duration-300 border-2 border-slate-300">
           {professional.profileImagePath ? (
             <img 
-              src={`/${professional.profileImagePath}`} 
+              src={professional.profileImagePath.startsWith('/uploads/') ? professional.profileImagePath : `/uploads/${professional.profileImagePath}`}
               alt={professional.title || 'Professional'} 
               className="w-full h-full object-cover"
               onError={(e) => {

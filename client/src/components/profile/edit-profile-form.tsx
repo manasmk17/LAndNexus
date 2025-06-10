@@ -986,7 +986,7 @@ export default function EditProfileForm() {
                             <p className="text-sm text-muted-foreground mb-2">Current image:</p>
                             <div className="relative group">
                               <img 
-                                src={`/${professionalProfile.profileImagePath}`} 
+                                src={professionalProfile.profileImagePath.startsWith('/uploads/') ? professionalProfile.profileImagePath : `/uploads/${professionalProfile.profileImagePath}`} 
                                 alt="Current profile" 
                                 className="w-32 h-32 object-cover rounded-md border"
                                 onError={(e) => {

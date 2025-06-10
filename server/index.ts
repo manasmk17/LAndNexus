@@ -178,14 +178,24 @@ app.use((req, res, next) => {
   csrfProtection(req, res, next);
 });
 
-// Add CSRF token to response for client-side use
+// Add CSRF token to response for client-side use - only for non-API routes
 app.use((req: any, res: any, next) => {
+  // Skip CSRF token generation for API routes that are exempt
+  if (req.path.startsWith('/api/') && req.path !== '/api/csrf-token') {
+    return next();
+  }
+  
   if (req.csrfToken) {
-    res.cookie('XSRF-TOKEN', req.csrfToken(), {
-      httpOnly: false, // Client-side JavaScript needs to access it
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict'
-    });
+    try {
+      const token = req.csrfToken();
+      res.cookie('XSRF-TOKEN', token, {
+        httpOnly: false, // Client-side JavaScript needs to access it
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+      });
+    } catch (error) {
+      console.error('Error generating CSRF token:', error);
+    }
   }
   next();
 });

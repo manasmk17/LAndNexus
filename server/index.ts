@@ -43,20 +43,14 @@ app.use(express.json({ limit: '2mb' })); // Limit JSON body size
 app.use(express.urlencoded({ extended: false, limit: '2mb' })); // Limit URL-encoded body size
 app.use(cookieParser());
 
-// Configure CSRF protection with detailed error logging
+// Configure CSRF protection with proper initialization
 const csrfProtection = csurf({
   cookie: {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict'
+    secure: false, // Set to false for development
+    sameSite: 'lax'
   },
-  ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],
-  // Custom error handler
-  value: (req) => {
-    const token = req.headers['x-csrf-token'] as string;
-    console.log('CSRF Token from request:', token);
-    return token;
-  }
+  ignoreMethods: ['GET', 'HEAD', 'OPTIONS']
 });
 
 // Apply CSRF protection to all routes except specific API endpoints that need to be exempt

@@ -20,13 +20,13 @@ export default function Hero() {
         <div className="flex flex-col md:flex-row items-center gap-12">
           <div className="md:w-1/2 mb-8 md:mb-0">
             <div className="inline-block px-3 py-1 rounded-full bg-blue-900/60 backdrop-blur-sm text-blue-200 text-sm font-medium mb-6 border border-blue-700/50">
-              The Premier L&D Marketplace
+              The AI-Powered Marketplace
             </div>
             <h1 className="text-4xl md:text-5xl xl:text-6xl font-bold mb-6 text-white leading-tight">
-              AI-Powered <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-white">Corporate Training Platform</span> for UAE
+              Connect with Top <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-white">Learning & Development Experts</span> – Instantly, Intelligently
             </h1>
             <p className="text-lg md:text-xl text-blue-100 mb-8 max-w-2xl">
-              Connect with verified freelance L&D experts and International Certified Professionals. AI trainer matching for bilingual training marketplace and corporate training solutions in UAE.
+              Empowering companies and L&D professionals across the UAE and beyond with AI-powered matching. Join us for corporate learning in the MENA region.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               {user ? (

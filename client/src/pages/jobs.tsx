@@ -76,8 +76,8 @@ export default function Jobs() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold mb-2">L&D Job Opportunities</h1>
-          <p className="text-gray-500">Find training and development projects</p>
+          <h1 className="text-3xl font-bold mb-2">Top L&D Opportunities in MENA</h1>
+          <p className="text-gray-500">Connect instantly with elite learning and development projects across UAE and beyond</p>
         </div>
         
         {user?.userType === "company" && (

@@ -10,9 +10,9 @@ interface SEOMetaProps {
 }
 
 export function SEOMeta({
-  title = "L&D Nexus | AI-Powered Corporate Training Platform UAE | International Certified Professionals",
-  description = "L&D Nexus connects companies with verified freelance L&D experts and International Certified Professionals in UAE. AI trainer matching, global learning & development experts, certified professional trainers for businesses.",
-  keywords = "corporate training UAE, AI trainer matching, International Certified Trainers, Global Learning & Development Experts, Certified Professional Trainers for Businesses, AI-Matched International Training Experts, learning and development platform, bilingual training marketplace, L&D Nexus",
+  title = "L&D Nexus | Connect with Top Learning & Development Experts | AI-Powered Matching UAE",
+  description = "Connect with top L&D experts instantly and intelligently with AI-powered matching. Empowering companies and professionals across UAE and MENA region. Join us for corporate learning excellence.",
+  keywords = "top learning development experts UAE, AI-powered L&D matching, corporate learning MENA region, instant expert connection, learning development professionals UAE, AI training marketplace, L&D experts MENA, corporate training solutions UAE",
   canonicalUrl = "https://www.ldnexus.com",
   ogImage = "https://www.ldnexus.com/og-image.jpg",
   structuredData

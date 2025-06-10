@@ -23,7 +23,7 @@ export default function Hero() {
               The AI-Powered Marketplace
             </div>
             <h1 className="text-4xl md:text-5xl xl:text-6xl font-bold mb-6 text-white leading-tight">
-              Connect with Top <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-white">Learning & Development Experts</span> – Instantly, Intelligently
+              Connect with Top <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-white">Learning & Development Experts</span> - Instantly, Intelligently, with AI-Powered Matching
             </h1>
             <p className="text-lg md:text-xl text-blue-100 mb-8 max-w-2xl">
               Empowering companies and L&D professionals across the UAE and beyond with AI-powered matching. Join us for corporate learning in the MENA region.

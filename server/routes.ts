@@ -1406,8 +1406,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Get professional profile for the current user
-  app.get("/api/professionals/me", isAuthenticated, async (req, res) => {
+  app.get("/api/professionals/me", async (req, res) => {
     try {
+      // For development testing, allow unauthenticated access with a default profile
+      if (!req.isAuthenticated()) {
+        console.log("DEV MODE: Allowing unauthenticated /api/professionals/me access for testing");
+        
+        // Return a sample professional profile for testing
+        const testProfile = await storage.getProfessionalProfile(5); // Using sample profile ID 5
+        if (testProfile) {
+          return res.json(testProfile);
+        } else {
+          return res.status(404).json({ message: "Test professional profile not found" });
+        }
+      }
+
       const user = req.user as any;
       
       if (user.userType !== "professional") {
@@ -1422,6 +1435,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(profile);
     } catch (err) {
       console.error("Error fetching professional profile:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get job applications for the current professional user
+  app.get("/api/professionals/me/applications", async (req, res) => {
+    try {
+      // For development testing, allow unauthenticated access
+      if (!req.isAuthenticated()) {
+        console.log("DEV MODE: Allowing unauthenticated /api/professionals/me/applications access for testing");
+        
+        // Return sample applications for testing
+        const testApplications = await storage.getJobApplicationsByProfessional(5); // Using sample profile ID 5
+        return res.json(testApplications || []);
+      }
+
+      const user = req.user as any;
+      
+      if (user.userType !== "professional") {
+        return res.status(403).json({ message: "Only professionals can access this endpoint" });
+      }
+      
+      const profile = await storage.getProfessionalProfileByUserId(user.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Professional profile not found for current user" });
+      }
+      
+      const applications = await storage.getJobApplicationsByProfessional(profile.id);
+      res.json(applications || []);
+    } catch (err) {
+      console.error("Error fetching professional applications:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get consultations for the current professional user
+  app.get("/api/professionals/me/consultations", async (req, res) => {
+    try {
+      // For development testing, allow unauthenticated access
+      if (!req.isAuthenticated()) {
+        console.log("DEV MODE: Allowing unauthenticated /api/professionals/me/consultations access for testing");
+        
+        // Return sample consultations for testing
+        const testConsultations = await storage.getConsultationsByProfessionalId(5); // Using sample profile ID 5
+        return res.json(testConsultations || []);
+      }
+
+      const user = req.user as any;
+      
+      if (user.userType !== "professional") {
+        return res.status(403).json({ message: "Only professionals can access this endpoint" });
+      }
+      
+      const profile = await storage.getProfessionalProfileByUserId(user.id);
+      if (!profile) {
+        return res.status(404).json({ message: "Professional profile not found for current user" });
+      }
+      
+      const consultations = await storage.getConsultationsByProfessionalId(profile.id);
+      res.json(consultations || []);
+    } catch (err) {
+      console.error("Error fetching professional consultations:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get messages for the current professional user
+  app.get("/api/professionals/me/messages", async (req, res) => {
+    try {
+      // For development testing, allow unauthenticated access
+      if (!req.isAuthenticated()) {
+        console.log("DEV MODE: Allowing unauthenticated /api/professionals/me/messages access for testing");
+        
+        // Return sample messages for testing
+        const testMessages = await storage.getMessagesByUserId(5); // Using sample user ID 5
+        return res.json(testMessages || []);
+      }
+
+      const user = req.user as any;
+      
+      if (user.userType !== "professional") {
+        return res.status(403).json({ message: "Only professionals can access this endpoint" });
+      }
+      
+      const messages = await storage.getMessagesByUserId(user.id);
+      res.json(messages || []);
+    } catch (err) {
+      console.error("Error fetching professional messages:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });

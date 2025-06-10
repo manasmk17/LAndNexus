@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Logo } from "@/components/ui/logo";
 import { AlertCircle, Home, ChevronLeft } from "lucide-react";
 import { Link } from "wouter";
 

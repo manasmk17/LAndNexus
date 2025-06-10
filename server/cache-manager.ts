@@ -90,10 +90,9 @@ export class CacheManager {
   }
 
   invalidate(pattern: string): void {
-    for (const key of this.cache.keys()) {
-      if (key.includes(pattern)) {
-        this.cache.delete(key);
-      }
+    const keysToDelete = Array.from(this.cache.keys()).filter(key => key.includes(pattern));
+    for (const key of keysToDelete) {
+      this.cache.delete(key);
     }
   }
 
@@ -102,7 +101,7 @@ export class CacheManager {
     let expired = 0;
     let active = 0;
 
-    for (const entry of this.cache.values()) {
+    for (const entry of Array.from(this.cache.values())) {
       if (now - entry.timestamp > this.defaultTTL) {
         expired++;
       } else {
@@ -149,7 +148,7 @@ export class CacheManager {
     const now = Date.now();
     const toDelete: string[] = [];
 
-    for (const [key, entry] of this.cache.entries()) {
+    for (const [key, entry] of Array.from(this.cache.entries())) {
       if (now - entry.timestamp > this.defaultTTL) {
         toDelete.push(key);
       }
@@ -166,7 +165,7 @@ export class CacheManager {
 
   private estimateMemoryUsage(): number {
     let size = 0;
-    for (const [key, entry] of this.cache.entries()) {
+    for (const [key, entry] of Array.from(this.cache.entries())) {
       size += key.length * 2; // UTF-16 characters
       size += JSON.stringify(entry.data).length * 2;
       size += 64; // Estimated overhead per entry

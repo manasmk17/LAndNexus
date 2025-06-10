@@ -47,7 +47,7 @@ class ApiPerformanceTracker {
           console.warn(`Slow API call: ${req.method} ${endpoint} took ${duration}ms`);
         }
         
-        return originalEnd.apply(this, args);
+        return originalEnd.apply(this, args as any);
       };
       
       next();

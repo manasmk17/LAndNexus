@@ -59,7 +59,10 @@ export function Navbar() {
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">L&D</span>
             </div>
-            <span className="font-semibold text-xl hidden sm:block">L&D Nexus</span>
+            <div className="hidden sm:flex flex-col">
+              <span className="font-semibold text-xl text-gray-900">L&D Nexus</span>
+              <span className="text-xs text-blue-600 font-medium -mt-1">AI-Powered MENA</span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}

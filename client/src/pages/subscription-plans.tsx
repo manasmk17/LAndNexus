@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { Logo } from "@/components/ui/logo";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { 
   Check, 
   Star, 
@@ -134,7 +136,7 @@ export default function SubscriptionPlans() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-center min-h-[400px]">
-            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+            <LoadingSpinner size="lg" text="Loading subscription plans..." />
           </div>
         </div>
       </div>
@@ -153,6 +155,9 @@ export default function SubscriptionPlans() {
       <div className="container mx-auto px-4">
         {/* Header Section */}
         <div className="text-center mb-12">
+          <div className="flex justify-center mb-6">
+            <Logo variant="blue-flat" size="lg" />
+          </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Join the AI-Powered Marketplace
           </h1>

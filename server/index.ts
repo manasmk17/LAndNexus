@@ -83,7 +83,8 @@ app.use((req, res, next) => {
     '/api/update-subscription',
     '/api/cancel-subscription',
     '/api/create-setup-intent',
-    '/api/webhook'
+    '/api/webhook',
+    '/api/newsletter/subscribe'
   ];
   
   // We should treat all API routes that start with '/api/me/' as exempt for GET requests

@@ -87,20 +87,6 @@ app.use((req, res, next) => {
     '/api/newsletter/subscribe'
   ];
   
-  // Add broader pattern exemptions for common operations
-  const csrfExemptPatterns = [
-    /^\/api\/professional-profiles\/\d+$/,    // Professional profile updates by ID
-    /^\/api\/company-profiles\/\d+$/,         // Company profile updates by ID
-    /^\/api\/job-postings\/\d+$/,             // Job posting updates by ID
-    /^\/api\/job-postings\/\d+\/apply$/,      // Job applications
-    /^\/api\/professional-profiles\/\d+\/expertise$/,  // Expertise updates
-    /^\/api\/professional-profiles\/\d+\/certifications$/, // Certification updates
-    /^\/api\/company-profiles\/\d+\/jobs$/,   // Company job postings
-    /^\/api\/resources\/\d+$/,                // Resource updates
-    /^\/api\/users\/\d+$/,                    // User profile updates
-    /^\/api\/upload\//                        // File uploads
-  ];
-  
   // We should treat all API routes that start with '/api/me/' as exempt for GET requests
   app.use((req, res, next) => {
     if (req.method === 'GET' && req.path.startsWith('/api/me/')) {
@@ -162,10 +148,9 @@ app.use((req, res, next) => {
   ];
   
   // Check if the current request path is in the exempt list, matches an ID-based pattern,
-  // matches a regex pattern, or matches a specific method+path combination
+  // or matches a specific method+path combination
   if (
     csrfExemptRoutes.some(path => req.path === path) ||
-    csrfExemptPatterns.some(pattern => pattern.test(req.path)) ||
     idBasedPatterns.some(pattern => matchesPattern(req.path, pattern)) ||
     methodSpecificExemptions.some(item => req.path === item.path && req.method === item.method)
   ) {
@@ -178,24 +163,14 @@ app.use((req, res, next) => {
   csrfProtection(req, res, next);
 });
 
-// Add CSRF token to response for client-side use - only for non-API routes
+// Add CSRF token to response for client-side use
 app.use((req: any, res: any, next) => {
-  // Skip CSRF token generation for API routes that are exempt
-  if (req.path.startsWith('/api/') && req.path !== '/api/csrf-token') {
-    return next();
-  }
-  
   if (req.csrfToken) {
-    try {
-      const token = req.csrfToken();
-      res.cookie('XSRF-TOKEN', token, {
-        httpOnly: false, // Client-side JavaScript needs to access it
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
-      });
-    } catch (error) {
-      console.error('Error generating CSRF token:', error);
-    }
+    res.cookie('XSRF-TOKEN', req.csrfToken(), {
+      httpOnly: false, // Client-side JavaScript needs to access it
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict'
+    });
   }
   next();
 });

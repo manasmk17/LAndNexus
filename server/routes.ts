@@ -302,11 +302,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Check if user is authenticated
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    console.log(`Auth check for ${req.method} ${req.path} - isAuthenticated: ${req.isAuthenticated()}, user: ${req.user ? (req.user as any).username : 'none'}`);
     if (req.isAuthenticated()) {
       return next();
     }
-    console.log(`Authentication failed for ${req.method} ${req.path} - Session ID: ${req.sessionID}`);
     res.status(401).json({ message: "Unauthorized" });
   };
 
@@ -605,24 +603,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email already exists" });
       }
       
-      // Hash the password before storing
-      const salt = crypto.randomBytes(16).toString('hex');
-      const keyLen = 64;
-      
-      const hashedPassword = await new Promise<string>((resolve, reject) => {
-        crypto.scrypt(validUserData.password, salt, keyLen, (err: any, derivedKey: Buffer) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(`${derivedKey.toString('hex')}.${salt}`);
-          }
-        });
-      });
-      
       // Force admin user type and admin status
       const adminUser = await storage.createUser({
         ...validUserData,
-        password: hashedPassword,
         userType: "admin",
         isAdmin: true
       });
@@ -654,80 +637,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email already exists" });
       }
 
-      // Hash the password before storing
-      const salt = crypto.randomBytes(16).toString('hex');
-      const keyLen = 64;
-      
-      const hashedPassword = await new Promise<string>((resolve, reject) => {
-        crypto.scrypt(userData.password, salt, keyLen, (err: any, derivedKey: Buffer) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(`${derivedKey.toString('hex')}.${salt}`);
-          }
-        });
-      });
+      const user = await storage.createUser(userData);
 
-      const user = await storage.createUser({
-        ...userData,
-        password: hashedPassword
-      });
-
-      // Create appropriate profile based on user type
+      // If the user is a professional, create a basic professional profile
       if (user.userType === "professional") {
         try {
           // Check if a profile already exists (shouldn't, but let's be safe)
           const existingProfile = await storage.getProfessionalProfileByUserId(user.id);
           
           if (!existingProfile) {
-            // Create a basic profile with proper name data from user
-            const profileTitle = user.firstName && user.lastName 
-              ? `${user.firstName} ${user.lastName} - Learning & Development Professional`
-              : `${user.username}'s Profile`;
-              
+            // Create a basic profile with just the userId
             await storage.createProfessionalProfile({
               userId: user.id,
-              firstName: user.firstName,
-              lastName: user.lastName,
-              title: profileTitle,
-              bio: "Edit this profile to add your professional bio and expertise.",
+              title: `${user.username}'s Profile`, // Default title using username
+              bio: "Edit this profile to add your professional bio.",
               yearsExperience: 0,
               ratePerHour: 0,
               availability: "true"
             });
-            console.log(`Created professional profile for ${user.firstName} ${user.lastName} (ID: ${user.id})`);
+            console.log(`Created basic professional profile for new user ${user.id}`);
           }
         } catch (profileErr) {
           console.error("Error creating professional profile during registration:", profileErr);
           // Continue with registration even if profile creation fails
           // We'll handle this later in the profile editing flow
-        }
-      } else if (user.userType === "company") {
-        try {
-          // Check if a company profile already exists
-          const existingCompanyProfile = await storage.getCompanyProfileByUserId(user.id);
-          
-          if (!existingCompanyProfile) {
-            // Create a basic company profile
-            const companyName = user.firstName && user.lastName 
-              ? `${user.firstName} ${user.lastName}'s Company`
-              : `${user.username} Company`;
-              
-            await storage.createCompanyProfile({
-              userId: user.id,
-              companyName: companyName,
-              description: "Edit this profile to describe your company and L&D needs.",
-              industry: "Technology", // Default industry
-              size: "1-10", // Default size
-              location: "United States", // Default location
-              website: "",
-              verified: false
-            });
-            console.log(`Created company profile for user ${user.username} (ID: ${user.id})`);
-          }
-        } catch (companyProfileErr) {
-          console.error("Error creating company profile during registration:", companyProfileErr);
-          // Continue with registration even if profile creation fails
         }
       }
 

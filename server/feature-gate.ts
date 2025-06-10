@@ -4,12 +4,12 @@ import { storage } from './storage';
 // Feature definitions mapped to plan types
 export const PLAN_FEATURES = {
   free: {
-    maxJobApplications: 5,  // Allow 5 job applications for free users
-    maxJobPostings: 1,      // Allow 1 job posting for companies
+    maxJobApplications: 0,
+    maxJobPostings: 0,
     maxResourceDownloads: 3,
     maxTeamMembers: 1,
-    maxContacts: 10,        // Allow basic networking
-    aiMatchingEnabled: true, // Enable basic AI matching for all users
+    maxContacts: 0,
+    aiMatchingEnabled: false,
     directMessaging: false,
     videoConsultations: false,
     analyticsAccess: false,

@@ -19,14 +19,14 @@ export default function Hero() {
       <div className="container mx-auto px-4 py-20 lg:py-32 relative z-10">
         <div className="flex flex-col md:flex-row items-center gap-12">
           <div className="md:w-1/2 mb-8 md:mb-0">
-            <div className="inline-block px-4 py-2 rounded-full bg-gradient-to-r from-blue-900/80 to-purple-900/80 backdrop-blur-sm text-blue-100 text-sm font-semibold mb-6 border border-blue-700/50 shadow-lg">
-              🤖 The AI-Powered Marketplace for Corporate Learning in MENA
+            <div className="inline-block px-3 py-1 rounded-full bg-blue-900/60 backdrop-blur-sm text-blue-200 text-sm font-medium mb-6 border border-blue-700/50">
+              The AI-Powered Marketplace
             </div>
             <h1 className="text-4xl md:text-5xl xl:text-6xl font-bold mb-6 text-white leading-tight">
-              Connect with Top <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-300 via-purple-300 to-white">Learning & Development Experts</span> – Instantly, Intelligently
+              Connect with Top <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-white">Learning & Development Experts</span> – Instantly, Intelligently
             </h1>
-            <p className="text-lg md:text-xl text-blue-100 mb-8 max-w-2xl leading-relaxed">
-              <strong>Empowering companies and L&D professionals across the UAE and beyond</strong> with AI-powered matching. The premier marketplace connecting corporate learning needs with expert solutions across the MENA region.
+            <p className="text-lg md:text-xl text-blue-100 mb-8 max-w-2xl">
+              Empowering companies and L&D professionals across the UAE and beyond with AI-powered matching. Join us for corporate learning in the MENA region.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               {user ? (

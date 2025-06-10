@@ -10,9 +10,9 @@ interface SEOMetaProps {
 }
 
 export function SEOMeta({
-  title = "L&D Nexus | AI-Powered Marketplace for Corporate Learning MENA | Connect with Top Learning & Development Experts UAE",
-  description = "The AI-Powered Marketplace for Corporate Learning in the MENA Region. Connect with Top Learning & Development Experts - Instantly, Intelligently, with AI-Powered Matching. Empowering companies and L&D professionals across the UAE and beyond with intelligent corporate training solutions.",
-  keywords = "AI-powered marketplace corporate learning MENA, top learning development experts UAE, instant intelligent L&D matching, corporate training MENA region, L&D professionals UAE Dubai Abu Dhabi, AI training marketplace Middle East, corporate learning solutions MENA, learning development experts Saudi Arabia Kuwait Qatar, intelligent training matching platform, MENA corporate education, UAE business training experts",
+  title = "L&D Nexus | Connect with Top Learning & Development Experts | AI-Powered Matching UAE",
+  description = "Connect with top L&D experts instantly and intelligently with AI-powered matching. Empowering companies and professionals across UAE and MENA region. Join us for corporate learning excellence.",
+  keywords = "top learning development experts UAE, AI-powered L&D matching, corporate learning MENA region, instant expert connection, learning development professionals UAE, AI training marketplace, L&D experts MENA, corporate training solutions UAE",
   canonicalUrl = "https://www.ldnexus.com",
   ogImage = "https://www.ldnexus.com/og-image.jpg",
   structuredData
@@ -88,83 +88,14 @@ export const createProfessionalSchema = (professional: any) => ({
   "knowsAbout": professional.expertise?.map((exp: any) => exp.name) || []
 });
 
-export const createOrganizationSchema = () => ({
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "L&D Nexus",
-  "alternateName": "Learning and Development Nexus",
-  "description": "The AI-Powered Marketplace for Corporate Learning in the MENA Region. Connect with Top Learning & Development Experts - Instantly, Intelligently, with AI-Powered Matching.",
-  "url": "https://www.ldnexus.com",
-  "logo": "https://www.ldnexus.com/logo.png",
-  "contactPoint": {
-    "@type": "ContactPoint",
-    "email": "official.ldnexus@gmail.com",
-    "contactType": "customer service",
-    "areaServed": ["AE", "SA", "QA", "KW", "OM", "BH"],
-    "availableLanguage": ["English", "Arabic"]
-  },
-  "address": {
-    "@type": "PostalAddress",
-    "streetAddress": "71–75 Shelton Street, Covent Garden",
-    "addressLocality": "London",
-    "addressCountry": "GB",
-    "postalCode": "WC2H 9JQ"
-  },
-  "areaServed": [
-    {
-      "@type": "Country",
-      "name": "United Arab Emirates"
-    },
-    {
-      "@type": "Country", 
-      "name": "Saudi Arabia"
-    },
-    {
-      "@type": "Country",
-      "name": "Qatar"
-    },
-    {
-      "@type": "Country",
-      "name": "Kuwait"
-    },
-    {
-      "@type": "Country",
-      "name": "Oman"
-    },
-    {
-      "@type": "Country",
-      "name": "Bahrain"
-    }
-  ],
-  "knowsAbout": [
-    "Corporate Learning",
-    "AI-Powered Matching",
-    "Learning and Development",
-    "Professional Training",
-    "MENA Region",
-    "Corporate Training",
-    "Artificial Intelligence"
-  ],
-  "sameAs": [
-    "https://www.linkedin.com/company/l-d-nexus/",
-    "https://ldnmag.com"
-  ]
-});
-
 export const createPricingSchema = () => ({
   "@context": "https://schema.org",
   "@type": "Service",
-  "name": "L&D Nexus AI-Powered Learning Marketplace",
-  "description": "AI-powered marketplace connecting companies with learning & development experts across MENA region",
+  "name": "L&D Nexus Professional Training Platform",
   "provider": {
     "@type": "Organization",
     "name": "L&D Nexus",
     "url": "https://www.ldnexus.com"
-  },
-  "areaServed": ["AE", "SA", "QA", "KW", "OM", "BH"],
-  "audience": {
-    "@type": "Audience",
-    "audienceType": "Corporate Learning Professionals"
   },
   "offers": [
     {

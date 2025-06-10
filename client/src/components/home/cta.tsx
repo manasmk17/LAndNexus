@@ -52,42 +52,30 @@ export default function CTA() {
                   </div>
                 </div>
                 
-                <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 relative z-30">
+                <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 relative z-50">
                   {user ? (
-                    <Button 
-                      size="lg" 
-                      className="bg-white hover:bg-blue-50 text-blue-900 font-semibold shadow-lg hover:shadow-xl border-none transition-all duration-300 hover:-translate-y-0.5 w-full sm:w-auto cursor-pointer" 
-                      onClick={() => window.location.href = user.userType === "professional" ? "/professional-dashboard" : "/company-dashboard"}
+                    <a
+                      href={user.userType === "professional" ? "/professional-dashboard" : "/company-dashboard"}
+                      className="inline-flex items-center justify-center gap-2 h-11 rounded-md px-8 bg-white hover:bg-blue-50 text-blue-900 font-semibold shadow-lg hover:shadow-xl border-none transition-all duration-300 hover:-translate-y-0.5 w-full sm:w-auto cursor-pointer text-center no-underline"
                     >
                       Go to Dashboard
                       <ArrowRight className="ml-2 h-5 w-5" />
-                    </Button>
+                    </a>
                   ) : (
                     <>
-                      <Button 
-                        size="lg" 
-                        className="bg-white hover:bg-blue-50 text-blue-900 font-semibold shadow-lg hover:shadow-xl border-none transition-all duration-300 hover:-translate-y-0.5 w-full sm:w-auto cursor-pointer touch-manipulation" 
-                        onClick={() => window.location.href = "/register"}
-                        onTouchEnd={(e) => {
-                          e.preventDefault();
-                          window.location.href = "/register";
-                        }}
+                      <a
+                        href="/register"
+                        className="inline-flex items-center justify-center gap-2 h-11 rounded-md px-8 bg-white hover:bg-blue-50 text-blue-900 font-semibold shadow-lg hover:shadow-xl border-none transition-all duration-300 hover:-translate-y-0.5 w-full sm:w-auto cursor-pointer text-center no-underline touch-manipulation"
                       >
                         Create Account
                         <ArrowRight className="ml-2 h-5 w-5" />
-                      </Button>
-                      <Button 
-                        size="lg" 
-                        variant="outline" 
-                        className="border-2 border-blue-400 bg-transparent text-white hover:bg-white/10 font-semibold transition-all duration-300 w-full sm:w-auto cursor-pointer touch-manipulation" 
-                        onClick={() => window.location.href = "/professionals"}
-                        onTouchEnd={(e) => {
-                          e.preventDefault();
-                          window.location.href = "/professionals";
-                        }}
+                      </a>
+                      <a
+                        href="/professionals"
+                        className="inline-flex items-center justify-center gap-2 h-11 rounded-md px-8 border-2 border-blue-400 bg-transparent text-white hover:bg-white/10 font-semibold transition-all duration-300 w-full sm:w-auto cursor-pointer text-center no-underline touch-manipulation"
                       >
                         Explore Professionals
-                      </Button>
+                      </a>
                     </>
                   )}
                 </div>

@@ -1,5 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-import { sessionManager } from './sessionManager';
+import { authStore } from './authStore';
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -117,11 +117,18 @@ export async function apiRequest(
     }
   }
 
+  // Add authentication header if available
+  const authHeader = authStore.getAuthHeader();
+  if (authHeader) {
+    headers['Authorization'] = authHeader;
+  }
+
   try {
-    const res = await sessionManager.sessionFetch(url, {
+    const res = await fetch(url, {
       method,
       headers,
       body: isFormData ? data as FormData : (data ? JSON.stringify(data) : undefined),
+      credentials: "include",
     });
 
     // Enhanced error handling for CSRF-specific errors

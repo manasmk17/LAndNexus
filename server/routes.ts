@@ -66,6 +66,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 import { registerAdminRoutes } from "./admin-routes";
 import { trackApiPerformance } from "./api-performance";
 import { cacheManager } from "./cache-manager";
+import { authManager } from "./auth-manager";
 
 const MemoryStore = memorystore(session);
 
@@ -320,9 +321,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Check if user is authenticated
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    if (req.isAuthenticated()) {
+    // Check JWT tokens first
+    const authHeader = req.headers.authorization;
+    const accessToken = authHeader && authHeader.split(' ')[1];
+    
+    if (accessToken) {
+      const payload = authManager.verifyAccessToken(accessToken);
+      if (payload && authManager.isSessionActive(payload.sessionId)) {
+        (req as any).tokenUser = payload;
+        return next();
+      }
+    }
+    
+    // Check refresh token and attempt refresh
+    const refreshToken = req.cookies?.refreshToken;
+    if (refreshToken) {
+      const refreshResult = authManager.refreshAccessToken(refreshToken);
+      if (refreshResult) {
+        res.setHeader('X-New-Access-Token', refreshResult.accessToken);
+        (req as any).tokenUser = refreshResult.user;
+        return next();
+      }
+    }
+    
+    // Fall back to traditional session auth
+    if (req.isAuthenticated && req.isAuthenticated()) {
       return next();
     }
+    
     res.status(401).json({ message: "Unauthorized" });
   };
 
@@ -746,26 +772,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log(`Extended session for user ${user.username} to 30 days`);
         }
         
-        req.login(user, (err) => {
+        req.login(user, async (err) => {
           if (err) {
             return next(err);
           }
           
-          // Force session save to ensure persistence
-          req.session.save((saveErr) => {
-            if (saveErr) {
-              console.error('Session save error:', saveErr);
-              return next(saveErr);
-            }
+          try {
+            // Generate JWT tokens for enhanced session management
+            const accessToken = authManager.generateAccessToken(user, req.sessionID);
+            const refreshToken = authManager.generateRefreshToken(user, req.sessionID);
             
-            console.log(`User logged in successfully. Session ID: ${req.sessionID}`);
-            console.log(`Session saved. User ID: ${user.id}`);
+            // Set authentication cookies
+            authManager.setAuthCookies(res, accessToken, refreshToken);
             
-            // Remove sensitive fields
-            const { password, resetToken, resetTokenExpiry, ...userWithoutSensitiveInfo } = user;
-            
-            return res.json(userWithoutSensitiveInfo);
-          });
+            // Force session save to ensure persistence
+            req.session.save((saveErr) => {
+              if (saveErr) {
+                console.error('Session save error:', saveErr);
+                return next(saveErr);
+              }
+              
+              console.log(`User ${user.username} authenticated with session ${req.sessionID.slice(0, 8)}...`);
+              
+              // Remove sensitive fields
+              const { password, resetToken, resetTokenExpiry, ...userWithoutSensitiveInfo } = user;
+              
+              return res.json({
+                ...userWithoutSensitiveInfo,
+                accessToken, // Include for frontend use
+                sessionPersisted: true
+              });
+            });
+          } catch (authError) {
+            console.error('Authentication token generation error:', authError);
+            return next(authError);
+          }
         });
       } catch (error) {
         console.error('Login error:', error);

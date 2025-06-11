@@ -77,7 +77,11 @@ export default function JobPostForm() {
   });
 
   const onSubmit = async (data: z.infer<typeof jobPostingFormSchema>) => {
+    console.log("Job posting form submitted with data:", data);
+    console.log("Company profile:", companyProfile);
+    
     if (!companyProfile) {
+      console.log("No company profile found, showing error");
       toast({
         title: "Company profile required",
         description: "Please complete your company profile before posting a job",
@@ -483,11 +487,22 @@ export default function JobPostForm() {
           </div>
         </div>
         
-        <div className="flex justify-end">
+        <div className="flex justify-end mt-6">
           <Button 
-            type="submit" 
-            disabled={isSubmitting || isLoadingProfile}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2"
+            type="button"
+            disabled={false}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-8 py-3 cursor-pointer z-10 relative"
+            onClick={async (e) => {
+              e.preventDefault();
+              console.log("Post Job button clicked directly!");
+              
+              // Get form data directly
+              const formData = form.getValues();
+              console.log("Form data:", formData);
+              
+              // Call onSubmit directly
+              await onSubmit(formData);
+            }}
           >
             {isSubmitting ? (
               <>

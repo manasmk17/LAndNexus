@@ -2645,17 +2645,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Company profile not found" });
       }
 
-      const jobData = insertJobPostingSchema.parse({
+      console.log("Job posting request data:", JSON.stringify(req.body, null, 2));
+
+      // Clean the data before validation
+      const cleanData = {
         ...req.body,
-        companyId: companyProfile.id
-      });
+        companyId: companyProfile.id,
+        // Ensure duration is handled properly (can be empty string or null)
+        duration: req.body.duration || null,
+        // Ensure compensation fields are properly typed
+        minCompensation: req.body.minCompensation ? parseInt(req.body.minCompensation) : null,
+        maxCompensation: req.body.maxCompensation ? parseInt(req.body.maxCompensation) : null
+      };
+
+      console.log("Cleaned job data:", JSON.stringify(cleanData, null, 2));
+
+      const jobData = insertJobPostingSchema.parse(cleanData);
 
       const job = await storage.createJobPosting(jobData);
       res.status(201).json(job);
     } catch (err) {
       if (err instanceof z.ZodError) {
+        console.error("Job posting validation errors:", err.errors);
         return res.status(400).json({ message: "Invalid input", errors: err.errors });
       }
+      console.error("Job posting error:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });

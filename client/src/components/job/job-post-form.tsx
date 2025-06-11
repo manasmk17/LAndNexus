@@ -130,7 +130,16 @@ export default function JobPostForm() {
       const jobPostingData = {
         ...jobData,
         expiresAt: expirationDate.toISOString(),
-        companyId: companyProfile.id
+        companyId: companyProfile.id,
+        // Ensure proper data types for validation
+        minCompensation: data.minCompensation || null,
+        maxCompensation: data.maxCompensation || null,
+        duration: data.duration || null,
+        // Trim whitespace from text fields
+        title: data.title?.trim(),
+        description: data.description?.trim(),
+        location: data.location?.trim(),
+        requirements: data.requirements?.trim()
       };
       
       const response = await apiRequest("POST", "/api/job-postings", jobPostingData);

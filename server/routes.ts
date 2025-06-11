@@ -2666,7 +2666,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(job);
     } catch (err) {
       if (err instanceof z.ZodError) {
-        console.error("Job posting validation errors:", err.errors);
+        console.error("Job posting validation errors:", JSON.stringify(err.errors, null, 2));
         return res.status(400).json({ message: "Invalid input", errors: err.errors });
       }
       console.error("Job posting error:", err);

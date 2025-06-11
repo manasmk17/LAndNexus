@@ -67,7 +67,7 @@ export default function JobPostForm() {
       maxCompensation: undefined,
       compensationUnit: "yearly",
       duration: "",
-      requirements: "",
+      requirements: "To be discussed",
       remote: false,
       featured: false,
       status: "open",
@@ -79,8 +79,36 @@ export default function JobPostForm() {
   const onSubmit = async (data: z.infer<typeof jobPostingFormSchema>) => {
     if (!companyProfile) {
       toast({
-        title: t("form.companyDetails"),
-        description: t("professional.profile.complete"),
+        title: "Company profile required",
+        description: "Please complete your company profile before posting a job",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate required fields
+    if (!data.title?.trim()) {
+      toast({
+        title: "Title required",
+        description: "Please enter a job title",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!data.description?.trim()) {
+      toast({
+        title: "Description required", 
+        description: "Please enter a job description",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!data.location?.trim()) {
+      toast({
+        title: "Location required",
+        description: "Please enter a job location",
         variant: "destructive",
       });
       return;
@@ -456,11 +484,17 @@ export default function JobPostForm() {
         </div>
         
         <div className="flex justify-end">
-          <Button type="submit" disabled={isSubmitting}>
+          <Button 
+            type="submit" 
+            disabled={isSubmitting || isLoadingProfile}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2"
+          >
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Posting Job...
               </>
+            ) : isLoadingProfile ? (
+              "Loading..."
             ) : (
               "Post Job"
             )}

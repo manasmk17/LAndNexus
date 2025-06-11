@@ -47,7 +47,7 @@ export function getCsrfToken(): string | null {
   const cookies = document.cookie.split('; ');
   const tokenCookie = cookies.find(cookie => cookie.startsWith('XSRF-TOKEN='));
   if (tokenCookie) {
-    return decodeURIComponent(tokenCookie.split('=')[1]);
+    return tokenCookie.split('=')[1];
   }
   return null;
 }

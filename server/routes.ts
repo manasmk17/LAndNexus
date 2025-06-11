@@ -2655,9 +2655,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         duration: req.body.duration || null,
         // Ensure compensation fields are properly typed
         minCompensation: req.body.minCompensation ? parseInt(req.body.minCompensation) : null,
-        maxCompensation: req.body.maxCompensation ? parseInt(req.body.maxCompensation) : null,
-        // Convert expiresAt string to Date object
-        expiresAt: req.body.expiresAt ? new Date(req.body.expiresAt) : null
+        maxCompensation: req.body.maxCompensation ? parseInt(req.body.maxCompensation) : null
       };
 
       console.log("Cleaned job data:", JSON.stringify(cleanData, null, 2));

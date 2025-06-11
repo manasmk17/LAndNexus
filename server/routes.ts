@@ -328,6 +328,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return next();
     }
     
+    // Additional session check for cases where req.isAuthenticated might not be properly set
+    if (req.session && (req.session as any).passport && (req.session as any).passport.user) {
+      // Session exists with user data, manually set req.user
+      const userId = (req.session as any).passport.user;
+      if (userId) {
+        // User is authenticated via session, proceed
+        return next();
+      }
+    }
+    
     // Check JWT tokens
     const authHeader = req.headers.authorization;
     const accessToken = authHeader && authHeader.split(' ')[1];

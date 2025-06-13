@@ -2187,8 +2187,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Company Profile Routes
-  app.post("/api/company-profiles", isAuthenticated, uploadProfileImage.single('profileImage'), async (req, res) => {
+  app.post("/api/company-profiles", uploadProfileImage.single('profileImage'), async (req, res) => {
     try {
+      console.log("Company profile creation - Session debug:", {
+        isAuthenticated: req.isAuthenticated(),
+        sessionID: req.sessionID,
+        hasUser: !!req.user,
+        userId: req.user ? (req.user as any).id : 'none',
+        cookies: req.headers.cookie || 'none'
+      });
+      
+      // Check authentication
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
       const user = req.user as any;
 
       if (user.userType !== "company") {

@@ -818,32 +818,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Token refresh endpoint
+  // Token refresh endpoint - disabled for session-only auth
   app.post("/api/refresh-token", async (req, res) => {
-    try {
-      const refreshToken = req.cookies?.refreshToken;
-      
-      if (!refreshToken) {
-        return res.status(401).json({ message: "Refresh token not found" });
-      }
-      
-      const refreshResult = authManager.refreshAccessToken(refreshToken);
-      
-      if (!refreshResult) {
-        return res.status(401).json({ message: "Invalid refresh token" });
-      }
-      
-      // Set new access token cookie
-      authManager.setAuthCookies(res, refreshResult.accessToken, refreshToken);
-      
-      res.json({
-        accessToken: refreshResult.accessToken,
-        user: refreshResult.user
-      });
-    } catch (error) {
-      console.error('Token refresh error:', error);
-      res.status(500).json({ message: "Token refresh failed" });
-    }
+    res.status(401).json({ message: "Refresh token not found" });
   });
   
   // Password recovery endpoints

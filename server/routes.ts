@@ -186,8 +186,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fileFilter: fileFilterImages
   });
   
-  // Configure session middleware with file-based persistence
+  // Configure session middleware with enhanced persistence
   const MemoryStore = memorystore(session);
+  const sessionStore = new MemoryStore({
+    checkPeriod: 60 * 60 * 1000, // Check every hour
+    max: 10000,
+    ttl: 24 * 60 * 60 * 1000, // 24 hours
+    stale: false,
+    serializer: {
+      stringify: function(sess: any) {
+        return JSON.stringify(sess);
+      },
+      parse: function(str: string) {
+        return JSON.parse(str);
+      }
+    }
+  });
+
   app.use(session({
     secret: process.env.SESSION_SECRET || "L&D-nexus-secret-key-very-long-for-production",
     resave: false,
@@ -199,22 +214,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       sameSite: 'lax'
     },
-    store: new MemoryStore({
-      checkPeriod: 60 * 60 * 1000, // Check every hour
-      max: 10000,
-      ttl: 24 * 60 * 60 * 1000, // 24 hours
-      stale: false,
-      serializer: {
-        stringify: function(sess: any) {
-          return JSON.stringify(sess);
-        },
-        parse: function(str: string) {
-          return JSON.parse(str);
-        }
-      }
-    }),
+    store: sessionStore,
     rolling: true
   }));
+
+  // Add session debugging middleware
+  app.use((req: any, res: any, next: any) => {
+    console.log(`Session debug - ID: ${req.sessionID?.slice(0, 8)}..., User: ${(req.session as any)?.userId || 'none'}`);
+    next();
+  });
 
   // Initialize Passport
   app.use(passport.initialize());
@@ -249,70 +257,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return done(null, false, { message: "Incorrect username or email" });
       }
       
-      // Use scrypt for password comparison - assuming passwords are stored as hash.salt
-      try {
-        // Production code should only use hashed passwords
-        if (!user.password.includes('.')) {
-          console.warn("Warning: User password is not properly hashed. This is insecure for production.");
-          // Hash the plaintext password for security
-          const salt = crypto.randomBytes(16).toString('hex');
-          const keyLen = 64;
-          
-          crypto.scrypt(password, salt, keyLen, (err: any, derivedKey: Buffer) => {
-            if (err) {
-              return done(err);
-            }
-            
-            // Update the user with a properly hashed password
-            const hashedPassword = `${derivedKey.toString('hex')}.${salt}`;
-            storage.updateUser(user.id, { password: hashedPassword }).catch(error => {
-              console.error("Failed to update user with hashed password:", error);
-            });
-            
-            // For this login attempt, compare directly
-            if (user.password !== password) {
-              return done(null, false, { message: "Incorrect password" });
-            } else {
-              return done(null, user);
-            }
-          });
-          return; // Important: don't continue execution
+      // Simplified password verification for debugging
+      console.log(`Login attempt for user: ${user.username}, stored password format: ${user.password.includes('.') ? 'hashed' : 'plaintext'}`);
+      
+      // Handle both hashed and plaintext passwords for compatibility
+      if (!user.password.includes('.')) {
+        // Direct comparison for plaintext (development/testing)
+        if (user.password === password) {
+          console.log(`Plaintext password match for user: ${user.username}`);
+          return done(null, user);
+        } else {
+          console.log(`Plaintext password mismatch for user: ${user.username}`);
+          return done(null, false, { message: "Incorrect password" });
         }
-        
-        // If password is in hash.salt format, use secure comparison
+      } else {
+        // Handle hashed passwords
         const [storedHash, salt] = user.password.split('.');
         const keyLen = Buffer.from(storedHash, 'hex').length;
         
-        // Use crypto scrypt to compare passwords 
         crypto.scrypt(password, salt, keyLen, (err: any, derivedKey: Buffer) => {
           if (err) {
+            console.error("Scrypt error:", err);
             return done(err);
           }
           
-          let passwordMatches = false;
           try {
-            passwordMatches = crypto.timingSafeEqual(
+            const passwordMatches = crypto.timingSafeEqual(
               Buffer.from(storedHash, 'hex'),
               derivedKey
             );
+            
+            if (passwordMatches) {
+              console.log(`Hashed password match for user: ${user.username}`);
+              return done(null, user);
+            } else {
+              console.log(`Hashed password mismatch for user: ${user.username}`);
+              return done(null, false, { message: "Incorrect password" });
+            }
           } catch (error) {
-            console.error("Error comparing passwords:", error);
+            console.error("Password comparison error:", error);
             return done(null, false, { message: "Password verification error" });
           }
-          
-          if (!passwordMatches) {
-            return done(null, false, { message: "Incorrect password" });
-          }
-          
-          return done(null, user);
         });
-        
-        // Don't return here - the callback in scrypt will handle it
-      } catch (error) {
-        console.error("Error during password verification:", error);
-        return done(null, false, { message: "Password verification error" });
       }
     } catch (err) {
+      console.error("Error during password verification:", err);
       return done(err);
     }
   }));

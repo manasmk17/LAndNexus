@@ -68,28 +68,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         } else {
           console.log("Authentication cleared");
           setUser(null);
-          
-          // Try to refresh token if we get 401
-          if (response.status === 401) {
-            try {
-              const refreshResponse = await apiRequest("POST", "/api/refresh-token");
-              if (refreshResponse.ok) {
-                // Retry the auth check after token refresh
-                const retryResponse = await fetch("/api/me", {
-                  credentials: "include",
-                });
-                if (retryResponse.ok) {
-                  const retryUserData = await retryResponse.json();
-                  if (retryUserData && retryUserData.id) {
-                    setUser(retryUserData);
-                  }
-                }
-              }
-            } catch (refreshErr) {
-              // Token refresh failed, keep user as null
-              console.warn("Token refresh failed:", refreshErr);
-            }
-          }
         }
       } catch (err) {
         console.warn("Unhandled promise rejection (not React Query):", err);

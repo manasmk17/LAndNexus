@@ -50,6 +50,31 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
+        // First, try to restore from localStorage
+        const storedToken = localStorage.getItem('session_token');
+        const storedUserData = localStorage.getItem('user_data');
+        
+        if (storedToken && storedUserData) {
+          try {
+            const userData = JSON.parse(storedUserData);
+            console.log("Attempting session restoration from localStorage");
+            
+            // Verify the session is still valid with the server
+            const response = await apiRequest("GET", "/api/me", undefined);
+            if (response.ok) {
+              const currentUserData = await response.json();
+              setUser(currentUserData);
+              console.log("Session restored successfully");
+              return;
+            }
+          } catch (e) {
+            console.log("Session restoration failed, clearing stored data");
+            localStorage.removeItem('session_token');
+            localStorage.removeItem('user_data');
+          }
+        }
+
+        // Fallback to standard session check
         const response = await fetch("/api/me", {
           credentials: "include",
           headers: {
@@ -70,7 +95,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setUser(null);
         }
       } catch (err) {
-        console.warn("Unhandled promise rejection (not React Query):", err);
+        console.warn("Authentication check failed:", err);
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -91,7 +116,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       
       // Store session token if provided for persistent authentication
       if (userData.sessionToken) {
+        // Store in both cookie and localStorage for maximum persistence
         document.cookie = `session_token=${userData.sessionToken}; path=/; max-age=86400; SameSite=Lax`;
+        localStorage.setItem('session_token', userData.sessionToken);
+        localStorage.setItem('user_data', JSON.stringify(userData));
         console.log("Session token stored for persistent auth");
       }
       
@@ -114,8 +142,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       await apiRequest("POST", "/api/logout", {});
       
-      // Clear session token cookie
+      // Clear session token from both cookie and localStorage
       document.cookie = "session_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+      localStorage.removeItem('session_token');
+      localStorage.removeItem('user_data');
       console.log("Session token cleared");
       
       setUser(null);

@@ -68,12 +68,22 @@ export function getCsrfToken(): string | null {
 }
 
 /**
- * Gets session token from cookies for persistent authentication
+ * Gets session token from cookies or localStorage for persistent authentication
  */
 export function getSessionToken(): string | null {
+  // Try cookie first
   const cookies = document.cookie.split('; ');
   const sessionCookie = cookies.find(cookie => cookie.startsWith('session_token='));
-  return sessionCookie ? decodeURIComponent(sessionCookie.split('=')[1]) : null;
+  if (sessionCookie) {
+    return decodeURIComponent(sessionCookie.split('=')[1]);
+  }
+  
+  // Fallback to localStorage
+  try {
+    return localStorage.getItem('session_token');
+  } catch {
+    return null;
+  }
 }
 
 /**

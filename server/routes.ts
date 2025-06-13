@@ -213,9 +213,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     name: 'ldnexus_session',
     cookie: { 
       secure: false,
-      httpOnly: true,
+      httpOnly: false, // Allow client access for debugging
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: 'lax'
+      sameSite: 'lax',
+      domain: undefined // Don't restrict domain in development
     },
     store: sessionStore,
     rolling: true
@@ -354,7 +355,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return next();
       }
       
-      // Check session token store for persistent authentication
+      // Check session token store for persistent authentication (PRIMARY METHOD)
       if (sessionToken) {
         const tokenData = sessionTokenStore.get(sessionToken);
         if (tokenData) {
@@ -368,14 +369,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 const { password, ...safeUser } = user;
                 (req as any).user = safeUser;
                 
-                // Update session data for consistency
+                // Update ALL session data for consistency
                 if (req.session) {
                   (req.session as any).userId = user.id;
                   (req.session as any).userType = user.userType;
                   (req.session as any).authenticated = true;
+                  (req.session as any).sessionToken = sessionToken;
+                  
+                  // Force session save
+                  req.session.save((err) => {
+                    if (err) console.log("Session save error during auth:", err);
+                  });
                 }
                 
-                console.log(`Session restored via token store for user: ${user.username} (${user.userType})`);
+                console.log(`Authentication SUCCESS via token store for user: ${user.username} (${user.userType})`);
                 return next();
               }
             } catch (error) {
@@ -386,6 +393,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             sessionTokenStore.delete(sessionToken);
             console.log("Session token expired and removed");
           }
+        } else {
+          console.log("Session token not found in store");
         }
       }
       

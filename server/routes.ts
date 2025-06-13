@@ -186,6 +186,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fileFilter: fileFilterImages
   });
   
+  // Session token mapping for persistent authentication
+  const sessionTokenStore = new Map<string, { userId: number; userType: string; timestamp: number }>();
+
   // Configure session middleware with enhanced persistence
   const MemoryStore = memorystore(session);
   const sessionStore = new MemoryStore({
@@ -351,7 +354,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return next();
       }
       
-      // Check for session token match
+      // Check session token store for persistent authentication
+      if (sessionToken) {
+        const tokenData = sessionTokenStore.get(sessionToken);
+        if (tokenData) {
+          // Check if token is still valid (24 hours)
+          const tokenAge = Date.now() - tokenData.timestamp;
+          if (tokenAge < 24 * 60 * 60 * 1000) {
+            console.log(`Valid session token found for user ID: ${tokenData.userId}`);
+            try {
+              const user = await storage.getUser(tokenData.userId);
+              if (user) {
+                const { password, ...safeUser } = user;
+                (req as any).user = safeUser;
+                
+                // Update session data for consistency
+                if (req.session) {
+                  (req.session as any).userId = user.id;
+                  (req.session as any).userType = user.userType;
+                  (req.session as any).authenticated = true;
+                }
+                
+                console.log(`Session restored via token store for user: ${user.username} (${user.userType})`);
+                return next();
+              }
+            } catch (error) {
+              console.log("Token store user lookup failed:", error);
+            }
+          } else {
+            // Remove expired token
+            sessionTokenStore.delete(sessionToken);
+            console.log("Session token expired and removed");
+          }
+        }
+      }
+      
+      // Check for session token match (fallback)
       if (sessionToken && req.session && (req.session as any).sessionToken === sessionToken) {
         const userId = (req.session as any).userId;
         if (userId) {
@@ -844,6 +882,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const sessionToken = crypto.randomBytes(32).toString('hex');
           (req.session as any).sessionToken = sessionToken;
           
+          // Store session token mapping for cross-session authentication
+          sessionTokenStore.set(sessionToken, {
+            userId: user.id,
+            userType: user.userType,
+            timestamp: Date.now()
+          });
+          
           // Store the session token in a cookie for consistent access
           res.cookie('session_token', sessionToken, {
             httpOnly: false, // Allow client access for API calls
@@ -883,6 +928,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/logout", async (req, res) => {
     try {
       const sessionId = req.sessionID;
+      
+      // Clean up session token from store
+      const sessionToken = req.cookies.session_token;
+      if (sessionToken) {
+        sessionTokenStore.delete(sessionToken);
+        res.clearCookie('session_token');
+        console.log(`Session token ${sessionToken.slice(0, 8)}... removed from store`);
+      }
       
       // Revoke legacy auth token if present
       const authToken = req.cookies.auth_token;

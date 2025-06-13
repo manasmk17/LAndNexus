@@ -117,11 +117,7 @@ export async function apiRequest(
     }
   }
 
-  // Add authentication header if available
-  const authHeader = authStore.getAuthHeader();
-  if (authHeader) {
-    headers['Authorization'] = authHeader;
-  }
+  // Session-based auth - no authorization header needed
 
   try {
     const res = await fetch(url, {
@@ -173,11 +169,9 @@ export async function apiRequest(
       errorObject: error
     });
     
-    // Handle authentication errors specifically to prevent unhandled rejections
+    // Handle authentication errors gracefully
     if (error.message.includes('401') || error.message.includes('Unauthorized')) {
-      console.log('Authentication error:', error.message);
-      // Clear authentication state to prevent cascading errors
-      authStore.clearAuth();
+      // Don't log as error for expected auth failures
       // Return a proper Response object instead of throwing
       return new Response(JSON.stringify({ message: 'Authentication required' }), {
         status: 401,

@@ -6,9 +6,7 @@ import csurf from "csurf";
 import cookieParser from "cookie-parser";
 import helmet from 'helmet';
 import cors from 'cors';
-import { memoryLeakDetector } from "./memory-leak-detector";
-import { responseCache } from "./response-cache";
-import { requestDeduplicator } from "./request-deduplicator";
+// Removed heavy monitoring imports to reduce memory overhead
 
 const app = express();
 
@@ -97,7 +95,7 @@ app.use((req, res, next) => {
     '/api/create-setup-intent',
     '/api/webhook',
     '/api/newsletter/subscribe',
-    '/api/refresh-token',
+
     '/api/job-postings'
   ];
   

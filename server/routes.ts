@@ -818,10 +818,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Token refresh endpoint - disabled for session-only auth
-  app.post("/api/refresh-token", async (req, res) => {
-    res.status(401).json({ message: "Refresh token not found" });
-  });
+  // Removed refresh token endpoint - using session-only auth
   
   // Password recovery endpoints
   app.post("/api/auth/forgot-password", async (req, res) => {

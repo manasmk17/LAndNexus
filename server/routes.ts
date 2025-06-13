@@ -2608,8 +2608,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maxCompensation: req.body.maxCompensation ? parseInt(req.body.maxCompensation) : null
       };
 
-      // Handle expiresInDays conversion to expiresAt if needed
-      if (req.body.expiresInDays && !cleanData.expiresAt) {
+      // Handle expiresAt conversion from ISO string to Date object
+      if (req.body.expiresAt) {
+        cleanData.expiresAt = new Date(req.body.expiresAt);
+      } else if (req.body.expiresInDays) {
+        // Handle expiresInDays conversion to expiresAt if needed
         const expirationDate = new Date();
         expirationDate.setDate(expirationDate.getDate() + parseInt(req.body.expiresInDays));
         cleanData.expiresAt = expirationDate;

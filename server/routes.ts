@@ -188,7 +188,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Session token mapping for persistent authentication
-  const sessionTokenStore = new Map<string, { userId: number; userType: string; timestamp: number }>();
+  class PersistentTokenStore {
+    private tokens: Map<string, { userId: number; userType: string; timestamp: number }> = new Map();
+    private filePath = path.join(process.cwd(), 'session-tokens.json');
+    
+    constructor() {
+      this.loadTokens();
+      // Cleanup expired tokens every hour
+      setInterval(() => this.cleanupExpiredTokens(), 60 * 60 * 1000);
+    }
+    
+    private loadTokens() {
+      try {
+        if (fs.existsSync(this.filePath)) {
+          const data = fs.readFileSync(this.filePath, 'utf8');
+          const tokenData = JSON.parse(data);
+          this.tokens = new Map(Object.entries(tokenData));
+          console.log(`Loaded ${this.tokens.size} session tokens from storage`);
+        }
+      } catch (error) {
+        console.error('Error loading session tokens:', error);
+        this.tokens = new Map();
+      }
+    }
+    
+    private saveTokens() {
+      try {
+        const tokenData = Object.fromEntries(this.tokens);
+        fs.writeFileSync(this.filePath, JSON.stringify(tokenData, null, 2));
+      } catch (error) {
+        console.error('Error saving session tokens:', error);
+      }
+    }
+    
+    private cleanupExpiredTokens() {
+      const now = Date.now();
+      const expired = [];
+      for (const [token, data] of this.tokens) {
+        if (now - data.timestamp > 24 * 60 * 60 * 1000) { // 24 hours
+          expired.push(token);
+        }
+      }
+      expired.forEach(token => this.tokens.delete(token));
+      if (expired.length > 0) {
+        console.log(`Cleaned up ${expired.length} expired session tokens`);
+        this.saveTokens();
+      }
+    }
+    
+    set(token: string, data: { userId: number; userType: string; timestamp: number }) {
+      this.tokens.set(token, data);
+      this.saveTokens();
+    }
+    
+    get(token: string) {
+      return this.tokens.get(token);
+    }
+    
+    delete(token: string) {
+      const result = this.tokens.delete(token);
+      if (result) {
+        this.saveTokens();
+      }
+      return result;
+    }
+    
+    get size() {
+      return this.tokens.size;
+    }
+    
+    keys() {
+      return this.tokens.keys();
+    }
+  }
+  
+  const sessionTokenStore = new PersistentTokenStore();
 
   // Configure session middleware with enhanced persistence
   const MemoryStore = memorystore(session);

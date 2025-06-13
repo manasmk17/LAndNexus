@@ -92,6 +92,22 @@ export default function CompanyProfile() {
     );
   }
 
+  if (!company) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Company Not Found</h1>
+            <p className="text-gray-600 mb-6">The company profile you're looking for doesn't exist.</p>
+            <Link href="/jobs">
+              <Button>Browse Jobs</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
@@ -180,9 +196,9 @@ export default function CompanyProfile() {
                       </div>
                     ))}
                   </div>
-                ) : jobs && jobs.length > 0 ? (
+                ) : jobs && Array.isArray(jobs) && jobs.length > 0 ? (
                   <div className="space-y-4">
-                    {jobs.map((job: any) => (
+                    {jobs.map((job) => (
                       <div key={job.id} className="border rounded-lg p-4 hover:bg-gray-50 transition-colors">
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="font-medium text-lg">{job.title}</h3>
@@ -228,7 +244,7 @@ export default function CompanyProfile() {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Open Positions</span>
                   <span className="font-semibold">
-                    {jobs ? jobs.filter((job: any) => job.status === 'open').length : 0}
+                    {jobs && Array.isArray(jobs) ? jobs.filter((job) => job.status === 'open').length : 0}
                   </span>
                 </div>
                 <div className="flex justify-between">

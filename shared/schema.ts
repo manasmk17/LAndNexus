@@ -154,13 +154,16 @@ export const jobPostings = pgTable("job_postings", {
   remote: boolean("remote").default(false),
   featured: boolean("featured").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  modifiedAt: timestamp("modified_at").defaultNow().notNull(),
   expiresAt: timestamp("expires_at"),
   status: text("status").notNull().default("open"), // "open", "closed", "filled"
+  archived: boolean("archived").default(false),
 });
 
 export const insertJobPostingSchema = createInsertSchema(jobPostings).omit({
   id: true,
   createdAt: true,
+  modifiedAt: true,
 });
 
 // Job Applications

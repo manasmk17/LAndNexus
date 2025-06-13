@@ -2658,7 +2658,7 @@ export class DatabaseStorage implements IStorage {
   ): Promise<JobPosting | undefined> {
     const [updatedJob] = await db
       .update(jobPostings)
-      .set(job)
+      .set({ ...job, modifiedAt: new Date() })
       .where(eq(jobPostings.id, id))
       .returning();
     return updatedJob;

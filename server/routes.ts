@@ -2739,6 +2739,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Status management endpoint for companies
+  app.patch("/api/job-postings/:id/status", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.user as any;
+      const { status } = req.body;
+
+      if (!["open", "closed", "filled"].includes(status)) {
+        return res.status(400).json({ message: "Invalid status. Must be 'open', 'closed', or 'filled'" });
+      }
+
+      // Check if job exists
+      const job = await storage.getJobPosting(id);
+      if (!job) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+
+      // Check if the company profile belongs to the user
+      const companyProfile = await storage.getCompanyProfile(job.companyId);
+      if (companyProfile?.userId !== user.id) {
+        return res.status(403).json({ message: "You can only update your own job postings" });
+      }
+
+      const updatedJob = await storage.updateJobPosting(id, { status });
+      res.json(updatedJob);
+    } catch (err) {
+      console.error("Error updating job status:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.delete("/api/job-postings/:id", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);

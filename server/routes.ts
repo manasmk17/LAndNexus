@@ -2590,6 +2590,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maxCompensation: req.body.maxCompensation ? parseInt(req.body.maxCompensation) : null
       };
 
+      // Handle expiresInDays conversion to expiresAt if needed
+      if (req.body.expiresInDays && !cleanData.expiresAt) {
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() + parseInt(req.body.expiresInDays));
+        cleanData.expiresAt = expirationDate.toISOString();
+      }
+
+      // Remove expiresInDays as it's not in the schema
+      delete cleanData.expiresInDays;
+
       console.log("Cleaned job data:", JSON.stringify(cleanData, null, 2));
 
       const jobData = insertJobPostingSchema.parse(cleanData);

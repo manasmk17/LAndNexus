@@ -52,7 +52,7 @@ app.use(cookieParser());
 const csrfProtection = csurf({
   cookie: {
     httpOnly: false, // Allow client-side access to CSRF token
-    secure: false, // Always false for development
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     key: '_csrf'
   },
@@ -173,13 +173,7 @@ app.use((req, res, next) => {
     return;
   }
   
-  // For development environment, temporarily bypass CSRF to fix authentication issues
-  if (process.env.NODE_ENV !== 'production') {
-    console.log(`CSRF protection bypassed for development: ${req.method} ${req.path}`);
-    return next();
-  }
-  
-  // For all other requests, apply CSRF protection in production
+  // For all other requests, apply CSRF protection
   csrfProtection(req, res, next);
 });
 

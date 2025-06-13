@@ -97,7 +97,8 @@ export default function LoginForm() {
                 <Input placeholder="Enter your username or email" {...field} />
               </FormControl>
               <FormDescription className="text-xs text-muted-foreground">
-                You can login with either your username or email address
+                You can login with either your username or email address<br/>
+                <span className="text-blue-600 font-medium">Demo: Use "ldnexus" / "password" for L&D Nexus company account</span>
               </FormDescription>
               <FormMessage />
             </FormItem>

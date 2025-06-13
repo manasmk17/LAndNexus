@@ -52,32 +52,54 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       try {
         const response = await fetch("/api/me", {
           credentials: "include",
+          headers: {
+            'Cache-Control': 'no-cache',
+          }
         });
 
         if (response.ok) {
           const userData = await response.json();
-          setUser(userData);
+          if (userData && userData.id) {
+            setUser(userData);
+          } else {
+            console.log("Authentication cleared");
+            setUser(null);
+          }
         } else {
-          // If unauthorized (401) or any other status, just set user to null
-          // This is expected for users who aren't logged in
+          console.log("Authentication cleared");
           setUser(null);
+          
+          // Try to refresh token if we get 401
+          if (response.status === 401) {
+            try {
+              const refreshResponse = await apiRequest("POST", "/api/refresh-token");
+              if (refreshResponse.ok) {
+                // Retry the auth check after token refresh
+                const retryResponse = await fetch("/api/me", {
+                  credentials: "include",
+                });
+                if (retryResponse.ok) {
+                  const retryUserData = await retryResponse.json();
+                  if (retryUserData && retryUserData.id) {
+                    setUser(retryUserData);
+                  }
+                }
+              }
+            } catch (refreshErr) {
+              // Token refresh failed, keep user as null
+              console.warn("Token refresh failed:", refreshErr);
+            }
+          }
         }
       } catch (err) {
-        // Properly log but don't let the promise reject
-        console.error("Auth status check error:", err);
-        // Set user to null on error
+        console.warn("Unhandled promise rejection (not React Query):", err);
         setUser(null);
       } finally {
         setIsLoading(false);
       }
     };
 
-    // Prevent unhandled rejections by catching errors at this level
-    checkAuthStatus().catch(error => {
-      console.error("Caught auth check error:", error);
-      setIsLoading(false);
-      setUser(null);
-    });
+    checkAuthStatus();
   }, []);
 
   // Login function

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,9 +37,24 @@ import {
   type CompanyProfile
 } from "@shared/schema";
 
-// Extended schema for form validation
+// Extended schema for form validation with proper field requirements
 const jobPostingFormSchema = insertJobPostingSchema.extend({
-  expiresInDays: z.number().int().min(1).default(30)
+  expiresInDays: z.number().int().min(1).default(30),
+  title: z.string().min(1, "Job title is required"),
+  description: z.string().min(10, "Job description must be at least 10 characters"),
+  location: z.string().min(1, "Location is required"),
+  requirements: z.string().min(1, "Requirements are required"),
+  companyId: z.number().int().positive("Company ID is required"),
+  minCompensation: z.number().int().positive().optional(),
+  maxCompensation: z.number().int().positive().optional()
+}).refine((data) => {
+  if (data.minCompensation && data.maxCompensation) {
+    return data.minCompensation <= data.maxCompensation;
+  }
+  return true;
+}, {
+  message: "Minimum compensation cannot be greater than maximum compensation",
+  path: ["maxCompensation"]
 });
 
 export default function JobPostForm() {
@@ -67,14 +82,21 @@ export default function JobPostForm() {
       maxCompensation: undefined,
       compensationUnit: "yearly",
       duration: "",
-      requirements: "To be discussed",
+      requirements: "",
       remote: false,
       featured: false,
       status: "open",
       expiresInDays: 30,
-      companyId: undefined
+      companyId: companyProfile?.id || undefined
     },
   });
+
+  // Update form when company profile loads
+  useEffect(() => {
+    if (companyProfile?.id) {
+      form.setValue('companyId', companyProfile.id);
+    }
+  }, [companyProfile, form]);
 
   const onSubmit = async (data: z.infer<typeof jobPostingFormSchema>) => {
     console.log("Job posting form submitted with data:", data);
@@ -125,21 +147,22 @@ export default function JobPostForm() {
       const expirationDate = new Date();
       expirationDate.setDate(expirationDate.getDate() + data.expiresInDays);
       
-      // Remove expiresInDays and add expiresAt and companyId
-      const { expiresInDays, ...jobData } = data;
+      // Create properly formatted payload for backend validation
       const jobPostingData = {
-        ...jobData,
-        expiresAt: expirationDate.toISOString(),
         companyId: companyProfile.id,
-        // Ensure proper data types for validation
+        title: data.title.trim(),
+        description: data.description.trim(),
+        location: data.location.trim(),
+        jobType: data.jobType,
         minCompensation: data.minCompensation || null,
         maxCompensation: data.maxCompensation || null,
-        duration: data.duration || null,
-        // Trim whitespace from text fields
-        title: data.title?.trim(),
-        description: data.description?.trim(),
-        location: data.location?.trim(),
-        requirements: data.requirements?.trim()
+        compensationUnit: data.compensationUnit || null,
+        duration: data.duration?.trim() || null,
+        requirements: data.requirements?.trim() || "To be discussed",
+        remote: Boolean(data.remote),
+        featured: Boolean(data.featured),
+        status: data.status,
+        expiresAt: expirationDate.toISOString()
       };
       
       const response = await apiRequest("POST", "/api/job-postings", jobPostingData);

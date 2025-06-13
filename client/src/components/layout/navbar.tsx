@@ -88,7 +88,7 @@ export function Navbar() {
                   <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                     <Avatar className="h-9 w-9">
                       <AvatarFallback>
-                        {user.firstName?.[0] || user.username[0].toUpperCase()}
+                        {user?.firstName?.[0] || user?.username?.[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
                   </Button>

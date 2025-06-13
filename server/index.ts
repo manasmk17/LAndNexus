@@ -234,9 +234,8 @@ app.use((req, res, next) => {
       const { performanceMonitor } = await import("./performance-monitor");
       performanceMonitor.startMonitoring();
       
-      // Initialize memory leak detection with reduced frequency to prevent conflicts
-      memoryLeakDetector.startMonitoring(60000); // Check every 60 seconds instead of 30
-      console.log('Memory leak detection started');
+      // Memory leak detection disabled to prevent startup conflicts
+      console.log('Memory leak detection disabled');
       
       monitoringInitialized = true;
     } catch (monitoringErr) {
@@ -344,15 +343,7 @@ app.use((req, res, next) => {
   } catch (startupError) {
     console.error('Critical startup error:', startupError);
     
-    // Attempt graceful degradation
-    try {
-      // Clean up any partially initialized resources
-      if (memoryLeakDetector) {
-        memoryLeakDetector.stopMonitoring();
-      }
-    } catch (cleanupErr) {
-      console.warn('Cleanup error:', cleanupErr);
-    }
+    // Attempt graceful degradation - monitoring disabled
     
     // Exit with error code
     process.exit(1);

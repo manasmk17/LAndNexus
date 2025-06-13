@@ -192,6 +192,11 @@ export interface IStorage {
   // Subscription operations
   getUserSubscription(userId: number): Promise<any>;
   updateUserSubscription(userId: number, subscriptionData: any): Promise<any>;
+  
+  // Auth token operations
+  createAuthToken(tokenData: InsertAuthToken): Promise<AuthToken>;
+  validateAuthToken(token: string): Promise<AuthToken | null>;
+  revokeAuthToken(token: string): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -3459,6 +3464,58 @@ export class DatabaseStorage implements IStorage {
       console.error("Error fetching subscription plans:", error);
       return [];
     }
+  }
+
+  // Auth token methods
+  async createAuthToken(tokenData: InsertAuthToken): Promise<AuthToken> {
+    const id = this.authTokenId++;
+    const authToken: AuthToken = {
+      id,
+      createdAt: new Date(),
+      lastUsedAt: null,
+      isRevoked: false,
+      ...tokenData
+    };
+    
+    this.authTokens.set(authToken.token, authToken);
+    return authToken;
+  }
+
+  async validateAuthToken(token: string): Promise<AuthToken | null> {
+    const authToken = this.authTokens.get(token);
+    
+    if (!authToken) {
+      return null;
+    }
+    
+    // Check if token is expired
+    if (authToken.expiresAt < new Date()) {
+      this.authTokens.delete(token);
+      return null;
+    }
+    
+    // Check if token is revoked
+    if (authToken.isRevoked) {
+      return null;
+    }
+    
+    // Update last used timestamp
+    authToken.lastUsedAt = new Date();
+    this.authTokens.set(token, authToken);
+    
+    return authToken;
+  }
+
+  async revokeAuthToken(token: string): Promise<boolean> {
+    const authToken = this.authTokens.get(token);
+    
+    if (!authToken) {
+      return false;
+    }
+    
+    authToken.isRevoked = true;
+    this.authTokens.set(token, authToken);
+    return true;
   }
 }
 

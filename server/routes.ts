@@ -186,23 +186,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fileFilter: fileFilterImages
   });
   
-  // Configure session middleware with persistent store
+  // Configure session middleware with file-based persistence
   const MemoryStore = memorystore(session);
   app.use(session({
     secret: process.env.SESSION_SECRET || "L&D-nexus-secret-key-very-long-for-production",
-    resave: true,
+    resave: false,
     saveUninitialized: false,
-    name: 'sessionId',
+    name: 'ldnexus_session',
     cookie: { 
-      secure: false, // Set to false for development
+      secure: false,
       httpOnly: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
       sameSite: 'lax'
     },
     store: new MemoryStore({
-      checkPeriod: 24 * 60 * 60 * 1000,
-      max: 1000000, // Maximum number of sessions
-      ttl: 7 * 24 * 60 * 60 * 1000 // Session TTL
+      checkPeriod: 60 * 60 * 1000, // Check every hour
+      max: 10000,
+      ttl: 24 * 60 * 60 * 1000, // 24 hours
+      stale: false,
+      serializer: {
+        stringify: function(sess: any) {
+          return JSON.stringify(sess);
+        },
+        parse: function(str: string) {
+          return JSON.parse(str);
+        }
+      }
     }),
     rolling: true
   }));
@@ -328,12 +337,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Simplified authentication middleware
+  // Enhanced authentication middleware with token support
   const isAuthenticated = async (req: Request, res: Response, next: Function) => {
     try {
       // Check passport authentication
       if (req.isAuthenticated && req.isAuthenticated() && req.user) {
         return next();
+      }
+      
+      // Check for authentication token in cookies
+      const authToken = req.cookies?.auth_token;
+      if (authToken) {
+        try {
+          const tokenData = await storage.validateAuthToken(authToken);
+          if (tokenData && tokenData.userId) {
+            const user = await storage.getUser(tokenData.userId);
+            if (user) {
+              const { password, ...safeUser } = user;
+              (req as any).user = safeUser;
+              return next();
+            }
+          }
+        } catch (tokenError) {
+          console.log("Token validation failed:", tokenError);
+        }
       }
       
       // Check for user ID in session (fallback)

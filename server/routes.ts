@@ -190,14 +190,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(session({
     secret: process.env.SESSION_SECRET || "L&D-nexus-secret-key-very-long-for-production",
     resave: true, // Force session save to ensure passport data persists
-    saveUninitialized: true, // Save new sessions immediately
+    saveUninitialized: false, // Don't save empty sessions
     name: 'connect.sid', // Use standard session name
     cookie: { 
       secure: false, // Allow non-HTTPS for development
-      httpOnly: true,
+      httpOnly: false, // Allow client-side access for debugging
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       sameSite: 'lax',
-      path: '/'
+      path: '/',
+      domain: undefined // Let browser handle domain
     },
     store: new MemoryStore({
       checkPeriod: 24 * 60 * 60 * 1000, // Check every 24 hours
@@ -834,41 +835,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return next(err);
           }
           
-          // Regenerate session to prevent session fixation
-          req.session.regenerate((regenerateErr) => {
-            if (regenerateErr) {
-              console.error('Session regeneration error:', regenerateErr);
-              return next(regenerateErr);
+          // Force session save to ensure persistence
+          req.session.save((saveErr) => {
+            if (saveErr) {
+              console.error('Session save error:', saveErr);
+              return next(saveErr);
             }
             
-            // Re-login user after regeneration
-            req.login(user, (loginErr) => {
-              if (loginErr) {
-                console.error('Re-login error after regeneration:', loginErr);
-                return next(loginErr);
-              }
-              
-              // Force session save to ensure persistence
-              req.session.save((saveErr) => {
-                if (saveErr) {
-                  console.error('Session save error:', saveErr);
-                  return next(saveErr);
-                }
-                
-                console.log(`User ${user.username} authenticated with session ${req.sessionID.slice(0, 8)}...`);
-                
-                // Explicitly set session cookie headers
-                res.setHeader('Set-Cookie', res.getHeaders()['set-cookie'] || []);
-                
-                // Remove sensitive fields
-                const { password, resetToken, resetTokenExpiry, ...userWithoutSensitiveInfo } = user;
-                
-                return res.json({
-                  ...userWithoutSensitiveInfo,
-                  sessionPersisted: true,
-                  sessionId: req.sessionID
-                });
-              });
+            console.log(`User ${user.username} authenticated with session ${req.sessionID.slice(0, 8)}...`);
+            
+            // Remove sensitive fields
+            const { password, resetToken, resetTokenExpiry, ...userWithoutSensitiveInfo } = user;
+            
+            return res.json({
+              ...userWithoutSensitiveInfo,
+              sessionPersisted: true,
+              sessionId: req.sessionID
             });
           });
         });

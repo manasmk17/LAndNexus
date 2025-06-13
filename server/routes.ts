@@ -932,6 +932,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             timestamp: Date.now()
           });
           
+          console.log(`Token stored in sessionTokenStore: ${sessionToken.slice(0, 8)}... for user ${user.id}`);
+          console.log(`Token store now has ${sessionTokenStore.size} tokens`);
+          
           // Store the session token in a cookie for consistent access
           res.cookie('session_token', sessionToken, {
             httpOnly: false, // Allow client access for API calls
@@ -2825,12 +2828,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Add alias for companies/me/jobs endpoint
-  app.get("/api/companies/me/jobs", async (req, res) => {
+  app.get("/api/companies/me/jobs", isAuthenticated, async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-      
       const user = req.user as any;
       
       if (user.userType !== "company") {

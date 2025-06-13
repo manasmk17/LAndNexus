@@ -20,9 +20,12 @@ export function JobManagementTable({ companyId }: JobManagementTableProps) {
   const queryClient = useQueryClient();
   const [selectedJob, setSelectedJob] = useState<JobPosting | null>(null);
 
-  const { data: jobs = [], isLoading } = useQuery<JobPosting[]>({
+  const { data: jobs = [], isLoading } = useQuery({
     queryKey: ['/api/companies/me/job-postings'],
-    queryFn: () => apiRequest("GET", "/api/companies/me/job-postings")
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/companies/me/job-postings");
+      return response as JobPosting[];
+    }
   });
 
   const statusMutation = useMutation({
@@ -139,7 +142,7 @@ export function JobManagementTable({ companyId }: JobManagementTableProps) {
     );
   }
 
-  if (jobs.length === 0) {
+  if (!Array.isArray(jobs) || jobs.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -167,7 +170,7 @@ export function JobManagementTable({ companyId }: JobManagementTableProps) {
       </div>
 
       <div className="grid gap-4">
-        {jobs.map((job: JobPosting) => (
+        {Array.isArray(jobs) && jobs.map((job: JobPosting) => (
           <Card key={job.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-start justify-between">

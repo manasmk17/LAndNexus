@@ -210,8 +210,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Session persistence middleware with enhanced debugging
-  app.use((req, res, next) => {
+  // Session persistence middleware with synchronous user resolution
+  app.use(async (req, res, next) => {
     // Ensure session is properly loaded and maintained
     if (req.session && req.sessionID) {
       // Touch session to update last access time
@@ -220,17 +220,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Set session activity flag for tracking
       (req.session as any).lastActivity = new Date();
       
-      // Debug session passport data
-      if ((req.session as any).passport && (req.session as any).passport.user) {
-        // Manually trigger user deserialization if needed
-        if (!req.user) {
-          storage.getUser((req.session as any).passport.user).then(user => {
-            if (user) {
-              req.user = user;
-            }
-          }).catch(err => {
-            console.error('Manual session user resolution failed:', err);
-          });
+      // Synchronously resolve user if passport data exists but user is not set
+      if ((req.session as any).passport && (req.session as any).passport.user && !req.user) {
+        try {
+          const user = await storage.getUser((req.session as any).passport.user);
+          if (user) {
+            req.user = user;
+          }
+        } catch (err) {
+          console.error('Manual session user resolution failed:', err);
         }
       }
     }

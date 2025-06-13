@@ -186,24 +186,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fileFilter: fileFilterImages
   });
   
-  // Configure robust session middleware
+  // Configure session middleware with persistent store
+  const MemoryStore = memorystore(session);
   app.use(session({
     secret: process.env.SESSION_SECRET || "L&D-nexus-secret-key-very-long-for-production",
-    resave: false,
+    resave: true,
     saveUninitialized: false,
     name: 'sessionId',
     cookie: { 
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Set to false for development
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      sameSite: 'lax',
-      path: '/',
-      domain: undefined
+      sameSite: 'lax'
     },
     store: new MemoryStore({
-      checkPeriod: 24 * 60 * 60 * 1000 // Check every 24 hours
+      checkPeriod: 24 * 60 * 60 * 1000,
+      max: 1000000, // Maximum number of sessions
+      ttl: 7 * 24 * 60 * 60 * 1000 // Session TTL
     }),
-    rolling: true // Reset expiration on activity
+    rolling: true
   }));
 
   // Initialize Passport
@@ -327,65 +328,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Robust authentication middleware
+  // Simplified authentication middleware
   const isAuthenticated = async (req: Request, res: Response, next: Function) => {
     try {
-      // Check traditional session authentication using Passport
+      // Check passport authentication
       if (req.isAuthenticated && req.isAuthenticated() && req.user) {
         return next();
       }
       
-      // Manual session check - check if session contains user data
-      if (req.session && (req.session as any).passport && (req.session as any).passport.user) {
-        const userId = (req.session as any).passport.user;
-        if (userId) {
-          // Manually load the user from storage and set it on the request
-          try {
-            const user = await storage.getUser(userId);
-            if (user) {
-              // Remove password and set safe user object
-              const { password, ...safeUser } = user;
-              (req as any).user = safeUser;
-              console.log(`User ${userId} authenticated via session fallback for ${req.method} ${req.path}`);
-              return next();
-            }
-          } catch (error) {
-            console.error("Error loading user from session:", error);
-          }
-        }
-      }
-      
-      // Additional fallback - check for session existence with user ID
-      if (req.session && req.session.id && (req.session as any).userId) {
+      // Check for user ID in session (fallback)
+      if (req.session && (req.session as any).userId) {
         const userId = (req.session as any).userId;
-        try {
-          const user = await storage.getUser(userId);
-          if (user) {
-            const { password, ...safeUser } = user;
-            (req as any).user = safeUser;
-            console.log(`User ${userId} authenticated via direct session for ${req.method} ${req.path}`);
-            return next();
-          }
-        } catch (error) {
-          console.error("Error in direct session check:", error);
+        const user = await storage.getUser(userId);
+        if (user) {
+          const { password, ...safeUser } = user;
+          (req as any).user = safeUser;
+          return next();
         }
       }
-      
-      // Enhanced debug logging for session structure
-      console.log(`Authentication failed for ${req.method} ${req.path}:`, {
-        hasIsAuthenticated: !!req.isAuthenticated,
-        isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
-        hasUser: !!req.user,
-        hasSession: !!req.session,
-        sessionPassport: req.session ? (req.session as any).passport : undefined,
-        sessionUserId: req.session ? (req.session as any).userId : undefined,
-        sessionId: req.session ? req.session.id : undefined,
-        fullSession: req.session ? Object.keys(req.session) : []
-      });
       
       res.status(401).json({ message: "Unauthorized" });
     } catch (error) {
-      console.error("Authentication middleware error:", error);
+      console.error("Auth error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   };

@@ -29,17 +29,17 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // For development, can tighten in production
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://js.stripe.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "https://api.stripe.com", "https://js.stripe.com"],
+      connectSrc: ["'self'", "https://api.stripe.com", "https://js.stripe.com", "wss:", "ws:"],
       frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
       upgradeInsecureRequests: []
     }
   },
-  crossOriginEmbedderPolicy: false, // For development compatibility
-  crossOriginResourcePolicy: { policy: "cross-origin" }, // For development compatibility
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" },
 }));
 
 // Rate limiting would be added here in production

@@ -1250,11 +1250,18 @@ export class MemStorage implements IStorage {
   async createJobPosting(job: InsertJobPosting): Promise<JobPosting> {
     const id = this.jobPostingId++;
     const newJob: JobPosting = { 
-      ...job, 
       id, 
+      companyId: job.companyId,
+      title: job.title,
+      description: job.description,
+      location: job.location,
+      jobType: job.jobType,
+      requirements: job.requirements,
       createdAt: new Date(),
+      modifiedAt: new Date(),
       status: job.status || "open",
       featured: job.featured || false,
+      archived: job.archived || false,
       minCompensation: job.minCompensation || null,
       maxCompensation: job.maxCompensation || null,
       duration: job.duration || null,

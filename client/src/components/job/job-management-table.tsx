@@ -20,7 +20,7 @@ export function JobManagementTable({ companyId }: JobManagementTableProps) {
   const queryClient = useQueryClient();
   const [selectedJob, setSelectedJob] = useState<JobPosting | null>(null);
 
-  const { data: jobs = [], isLoading } = useQuery({
+  const { data: jobs = [], isLoading } = useQuery<JobPosting[]>({
     queryKey: ['/api/companies/me/job-postings'],
     queryFn: () => apiRequest("GET", "/api/companies/me/job-postings")
   });

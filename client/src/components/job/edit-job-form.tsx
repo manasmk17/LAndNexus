@@ -42,7 +42,7 @@ export function EditJobForm({ jobId }: EditJobFormProps) {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
 
-  const { data: job, isLoading, error } = useQuery({
+  const { data: job, isLoading, error } = useQuery<JobPosting>({
     queryKey: ['/api/job-postings', jobId],
     queryFn: () => apiRequest("GET", `/api/job-postings/${jobId}`)
   });

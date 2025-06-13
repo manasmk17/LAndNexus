@@ -26,6 +26,7 @@ import EditProfile from "@/pages/edit-profile";
 import Jobs from "@/pages/jobs";
 import PostJob from "@/pages/post-job";
 import JobDetail from "@/pages/job-detail";
+import EditJob from "@/pages/edit-job";
 import Resources from "@/pages/resources";
 import ManageResources from "@/pages/manage-resources";
 import CreateResource from "@/pages/create-resource";
@@ -96,6 +97,11 @@ function Router() {
       <ProtectedRoute 
         path="/post-job" 
         component={PostJob} 
+        userTypes={["company"]} 
+      />
+      <ProtectedRoute 
+        path="/edit-job/:id" 
+        component={EditJob} 
         userTypes={["company"]} 
       />
       <ProtectedRoute 

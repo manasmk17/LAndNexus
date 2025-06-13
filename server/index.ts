@@ -52,7 +52,7 @@ app.use(cookieParser());
 const csrfProtection = csurf({
   cookie: {
     httpOnly: false, // Allow client-side access to CSRF token
-    secure: process.env.NODE_ENV === 'production',
+    secure: false, // Always false for development
     sameSite: 'lax',
     key: '_csrf'
   },

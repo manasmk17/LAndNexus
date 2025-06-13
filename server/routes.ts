@@ -193,8 +193,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     saveUninitialized: false,
     name: 'sessionId',
     cookie: { 
-      secure: process.env.NODE_ENV === 'production',
-      httpOnly: true,
+      secure: false, // Always false for development
+      httpOnly: false, // Allow client-side access for debugging
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       sameSite: 'lax',
       path: '/',
@@ -313,9 +313,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   passport.deserializeUser(async (id: number, done) => {
     try {
+      console.log(`Deserializing user with ID: ${id}`);
       const user = await storage.getUser(id);
+      if (!user) {
+        console.log(`User with ID ${id} not found during deserialization`);
+        return done(null, false);
+      }
+      console.log(`User ${user.username} successfully deserialized`);
       done(null, user);
     } catch (err) {
+      console.error(`Error deserializing user ${id}:`, err);
       done(err);
     }
   });
@@ -327,10 +334,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return next();
     }
     
-    // Manual session check for edge cases
+    // Manual session check and user restoration for edge cases
     if (req.session && (req.session as any).passport && (req.session as any).passport.user) {
-      // Session exists, let passport handle it on next request
-      return next();
+      const userId = (req.session as any).passport.user;
+      
+      // Manually restore user if passport failed to do so
+      storage.getUser(userId).then(user => {
+        if (user) {
+          req.user = user;
+          return next();
+        } else {
+          console.log(`Authentication failed - user ${userId} not found`);
+          res.status(401).json({ message: "Unauthorized" });
+        }
+      }).catch(err => {
+        console.error(`Error restoring user ${userId}:`, err);
+        res.status(401).json({ message: "Unauthorized" });
+      });
+      return;
     }
     
     // Log authentication failure for debugging

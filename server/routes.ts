@@ -68,7 +68,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 import { registerAdminRoutes } from "./admin-routes";
 import { trackApiPerformance } from "./api-performance";
 import { cacheManager } from "./cache-manager";
-import { authManager } from "./auth-manager";
 
 const MemoryStore = memorystore(session);
 
@@ -321,75 +320,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Check if user is authenticated
-  const isAuthenticated = async (req: Request, res: Response, next: Function) => {
-    try {
-      // First check traditional session authentication (highest priority)
-      if (req.isAuthenticated && req.isAuthenticated() && req.user) {
-        return next();
-      }
-      
-      // Additional session check for cases where req.isAuthenticated might not be properly set
-      if (req.session && (req.session as any).passport && (req.session as any).passport.user) {
-        const userId = (req.session as any).passport.user;
-        if (userId) {
-          // Fetch user data from storage and attach to request
-          try {
-            const user = await storage.getUserById(userId);
-            if (user) {
-              (req as any).user = user;
-              return next();
-            }
-          } catch (err) {
-            console.error('Error fetching user from session:', err);
-          }
-        }
-      }
-      
-      // Check JWT tokens
-      const authHeader = req.headers.authorization;
-      const accessToken = authHeader && authHeader.split(' ')[1];
-      
-      if (accessToken) {
-        const payload = authManager.verifyAccessToken(accessToken);
-        if (payload && authManager.isSessionActive(payload.sessionId)) {
-          try {
-            const user = await storage.getUserById(payload.userId);
-            if (user) {
-              (req as any).user = user;
-              (req as any).tokenUser = payload;
-              return next();
-            }
-          } catch (err) {
-            console.error('Error fetching user from token:', err);
-          }
-        }
-      }
-      
-      // Check refresh token and attempt refresh
-      const refreshToken = req.cookies?.refreshToken;
-      if (refreshToken) {
-        const refreshResult = authManager.refreshAccessToken(refreshToken);
-        if (refreshResult) {
-          res.setHeader('X-New-Access-Token', refreshResult.accessToken);
-          try {
-            const user = await storage.getUserById(refreshResult.user.userId);
-            if (user) {
-              (req as any).user = user;
-              (req as any).tokenUser = refreshResult.user;
-              return next();
-            }
-          } catch (err) {
-            console.error('Error fetching user from refresh token:', err);
-          }
-        }
-      }
-      
-      res.status(401).json({ message: "Unauthorized" });
-    } catch (error) {
-      console.error('Authentication middleware error:', error);
-      res.status(500).json({ message: "Authentication error" });
+  // Simplified authentication middleware
+  const isAuthenticated = (req: Request, res: Response, next: Function) => {
+    // Check traditional session authentication using Passport
+    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+      return next();
     }
+    
+    // Manual session check for edge cases
+    if (req.session && (req.session as any).passport && (req.session as any).passport.user) {
+      // Session exists, let passport handle it on next request
+      return next();
+    }
+    
+    res.status(401).json({ message: "Unauthorized" });
   };
 
   const isAdmin = (req: Request, res: Response, next: Function) => {
@@ -817,36 +761,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return next(err);
           }
           
-          try {
-            // Generate JWT tokens for enhanced session management
-            const accessToken = authManager.generateAccessToken(user, req.sessionID);
-            const refreshToken = authManager.generateRefreshToken(user, req.sessionID);
+          // Force session save to ensure persistence
+          req.session.save((saveErr) => {
+            if (saveErr) {
+              console.error('Session save error:', saveErr);
+              return next(saveErr);
+            }
             
-            // Set authentication cookies
-            authManager.setAuthCookies(res, accessToken, refreshToken);
+            console.log(`User ${user.username} authenticated with session ${req.sessionID.slice(0, 8)}...`);
             
-            // Force session save to ensure persistence
-            req.session.save((saveErr) => {
-              if (saveErr) {
-                console.error('Session save error:', saveErr);
-                return next(saveErr);
-              }
-              
-              console.log(`User ${user.username} authenticated with session ${req.sessionID.slice(0, 8)}...`);
-              
-              // Remove sensitive fields
-              const { password, resetToken, resetTokenExpiry, ...userWithoutSensitiveInfo } = user;
-              
-              return res.json({
-                ...userWithoutSensitiveInfo,
-                accessToken, // Include for frontend use
-                sessionPersisted: true
-              });
+            // Remove sensitive fields
+            const { password, resetToken, resetTokenExpiry, ...userWithoutSensitiveInfo } = user;
+            
+            return res.json({
+              ...userWithoutSensitiveInfo,
+              sessionPersisted: true
             });
-          } catch (authError) {
-            console.error('Authentication token generation error:', authError);
-            return next(authError);
-          }
+          });
         });
       } catch (error) {
         console.error('Login error:', error);
@@ -855,14 +786,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     })(req, res, next);
   });
 
-  // Enhanced logout endpoint with JWT token invalidation
+  // Logout endpoint
   app.post("/api/logout", async (req, res) => {
     try {
       const sessionId = req.sessionID;
-      
-      // Clear JWT tokens and invalidate session
-      authManager.clearAuthCookies(res);
-      authManager.invalidateSession(sessionId);
       
       // Revoke legacy auth token if present
       const authToken = req.cookies.auth_token;

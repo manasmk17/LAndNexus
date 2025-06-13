@@ -2587,14 +2587,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maxCompensation: req.body.maxCompensation ? parseInt(req.body.maxCompensation) : null
       };
 
-      // Handle expiresAt conversion to Date object
-      if (cleanData.expiresAt && typeof cleanData.expiresAt === 'string') {
-        const dateObj = new Date(cleanData.expiresAt);
-        if (!isNaN(dateObj.getTime())) {
-          cleanData.expiresAt = dateObj;
-        }
-      }
-
       // Handle expiresInDays conversion to expiresAt if needed
       if (req.body.expiresInDays && !cleanData.expiresAt) {
         const expirationDate = new Date();
@@ -2605,8 +2597,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Remove expiresInDays as it's not in the schema
       delete cleanData.expiresInDays;
 
-      console.log("Cleaned job data before validation:", JSON.stringify(cleanData, null, 2));
-      console.log("expiresAt type:", typeof cleanData.expiresAt);
+      console.log("Cleaned job data:", JSON.stringify(cleanData, null, 2));
 
       const jobData = insertJobPostingSchema.parse(cleanData);
 

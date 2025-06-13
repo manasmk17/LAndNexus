@@ -2726,6 +2726,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update job posting endpoint for company users
+  app.put("/api/job-postings/:id", isAuthenticated, async (req, res) => {
+    try {
+      const jobId = parseInt(req.params.id);
+      const user = req.user as any;
+
+      if (isNaN(jobId)) {
+        return res.status(400).json({ message: "Invalid job posting ID" });
+      }
+
+      if (user.userType !== "company") {
+        return res.status(403).json({ message: "Only companies can update job postings" });
+      }
+
+      // Get the job posting to verify ownership
+      const existingJob = await storage.getJobPosting(jobId);
+      if (!existingJob) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+
+      // Get company profile to verify ownership
+      const companyProfile = await storage.getCompanyProfileByUserId(user.id);
+      if (!companyProfile || existingJob.companyId !== companyProfile.id) {
+        return res.status(403).json({ message: "You can only update your own job postings" });
+      }
+
+      // Clean and validate the update data
+      const updateData = {
+        ...req.body,
+        modifiedAt: new Date(),
+        // Ensure compensation fields are properly typed
+        minCompensation: req.body.minCompensation ? parseInt(req.body.minCompensation) : null,
+        maxCompensation: req.body.maxCompensation ? parseInt(req.body.maxCompensation) : null,
+        // Handle duration properly
+        duration: req.body.duration || null
+      };
+
+      // Remove fields that shouldn't be updated directly
+      delete updateData.id;
+      delete updateData.companyId;
+      delete updateData.createdAt;
+
+      console.log(`Company ${user.username} updating job posting ${jobId}`);
+      
+      const updatedJob = await storage.updateJobPosting(jobId, updateData);
+      res.json(updatedJob);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        console.error("Job update validation errors:", err.errors);
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      console.error("Job update error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Delete job posting endpoint for company users
+  app.delete("/api/job-postings/:id", isAuthenticated, async (req, res) => {
+    try {
+      const jobId = parseInt(req.params.id);
+      const user = req.user as any;
+
+      if (isNaN(jobId)) {
+        return res.status(400).json({ message: "Invalid job posting ID" });
+      }
+
+      if (user.userType !== "company") {
+        return res.status(403).json({ message: "Only companies can delete job postings" });
+      }
+
+      // Get the job posting to verify ownership
+      const existingJob = await storage.getJobPosting(jobId);
+      if (!existingJob) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+
+      // Get company profile to verify ownership
+      const companyProfile = await storage.getCompanyProfileByUserId(user.id);
+      if (!companyProfile || existingJob.companyId !== companyProfile.id) {
+        return res.status(403).json({ message: "You can only delete your own job postings" });
+      }
+
+      // Check if job has applications
+      const applications = await storage.getJobApplicationsByJob(jobId);
+      const hasApplications = applications.length > 0;
+
+      console.log(`Company ${user.username} deleting job posting ${jobId} (${hasApplications ? 'with' : 'without'} applications)`);
+
+      // Soft delete by setting status to 'deleted' and archived to true
+      const deleteData = {
+        status: 'deleted',
+        archived: true,
+        modifiedAt: new Date()
+      };
+
+      const deletedJob = await storage.updateJobPosting(jobId, deleteData);
+      
+      res.json({ 
+        message: "Job posting deleted successfully",
+        hadApplications: hasApplications,
+        applicationsCount: applications.length,
+        job: deletedJob
+      });
+    } catch (err) {
+      console.error("Job deletion error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Update job status endpoint (pause/resume/close)
+  app.patch("/api/job-postings/:id/status", isAuthenticated, async (req, res) => {
+    try {
+      const jobId = parseInt(req.params.id);
+      const user = req.user as any;
+      const { status } = req.body;
+
+      if (isNaN(jobId)) {
+        return res.status(400).json({ message: "Invalid job posting ID" });
+      }
+
+      if (user.userType !== "company") {
+        return res.status(403).json({ message: "Only companies can update job status" });
+      }
+
+      // Validate status
+      const validStatuses = ['open', 'paused', 'closed', 'filled'];
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: "Invalid status. Must be one of: open, paused, closed, filled" });
+      }
+
+      // Get the job posting to verify ownership
+      const existingJob = await storage.getJobPosting(jobId);
+      if (!existingJob) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+
+      // Get company profile to verify ownership
+      const companyProfile = await storage.getCompanyProfileByUserId(user.id);
+      if (!companyProfile || existingJob.companyId !== companyProfile.id) {
+        return res.status(403).json({ message: "You can only update your own job postings" });
+      }
+
+      console.log(`Company ${user.username} changing job ${jobId} status from ${existingJob.status} to ${status}`);
+
+      const updateData = {
+        status,
+        modifiedAt: new Date()
+      };
+
+      const updatedJob = await storage.updateJobPosting(jobId, updateData);
+      res.json(updatedJob);
+    } catch (err) {
+      console.error("Job status update error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.get("/api/job-postings/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     

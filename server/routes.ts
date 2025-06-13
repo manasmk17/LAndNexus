@@ -314,23 +314,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
-      done(null, user);
+      if (user) {
+        done(null, user);
+      } else {
+        done(null, false);
+      }
     } catch (err) {
-      done(err);
+      console.error('Passport deserializeUser error:', err);
+      done(null, false);
     }
   });
 
   // Simplified authentication middleware
-  const isAuthenticated = (req: Request, res: Response, next: Function) => {
+  const isAuthenticated = async (req: Request, res: Response, next: Function) => {
     // Check traditional session authentication using Passport
     if (req.isAuthenticated && req.isAuthenticated() && req.user) {
       return next();
     }
     
-    // Manual session check for edge cases
+    // Manual session check for edge cases where passport didn't deserialize
     if (req.session && (req.session as any).passport && (req.session as any).passport.user) {
-      // Session exists, let passport handle it on next request
-      return next();
+      try {
+        // Manually deserialize the user if passport failed
+        const userId = (req.session as any).passport.user;
+        const user = await storage.getUser(userId);
+        if (user) {
+          req.user = user;
+          return next();
+        }
+      } catch (error) {
+        console.error('Manual user deserialization failed:', error);
+      }
     }
     
     // Log authentication failure for debugging

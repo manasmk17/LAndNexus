@@ -89,6 +89,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const response = await apiRequest("POST", "/api/login", credentials);
       const userData = await response.json();
       
+      // Store session token if provided for persistent authentication
+      if (userData.sessionToken) {
+        document.cookie = `session_token=${userData.sessionToken}; path=/; max-age=86400; SameSite=Lax`;
+        console.log("Session token stored for persistent auth");
+      }
+      
       setUser(userData);
       return userData;
     } catch (err) {

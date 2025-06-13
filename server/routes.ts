@@ -331,17 +331,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log(`Auth check for ${req.method} ${req.path}`);
       console.log(`Session ID: ${req.sessionID?.slice(0, 8)}...`);
+      
+      // Check for session token in cookies
+      const sessionToken = req.cookies.session_token;
+      console.log(`Session token: ${sessionToken ? sessionToken.slice(0, 8) + '...' : 'none'}`);
+      
       console.log(`Session data:`, {
         authenticated: req.isAuthenticated ? req.isAuthenticated() : false,
         hasUser: !!req.user,
         sessionUserId: (req.session as any)?.userId,
-        sessionUserType: (req.session as any)?.userType
+        sessionUserType: (req.session as any)?.userType,
+        sessionToken: (req.session as any)?.sessionToken,
+        cookieToken: sessionToken
       });
       
       // Check passport authentication first
       if (req.isAuthenticated && req.isAuthenticated() && req.user) {
         console.log(`User authenticated via passport: ${(req.user as any).username}`);
         return next();
+      }
+      
+      // Check for session token match
+      if (sessionToken && req.session && (req.session as any).sessionToken === sessionToken) {
+        const userId = (req.session as any).userId;
+        if (userId) {
+          console.log(`Session token validated for user ID: ${userId}`);
+          try {
+            const user = await storage.getUser(userId);
+            if (user) {
+              const { password, ...safeUser } = user;
+              (req as any).user = safeUser;
+              console.log(`Session restored via token for user: ${user.username} (${user.userType})`);
+              return next();
+            }
+          } catch (error) {
+            console.log("Token-based user lookup failed:", error);
+          }
+        }
       }
       
       // Check for user ID in session (comprehensive fallback)
@@ -812,6 +838,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Store user ID directly in session for fallback authentication
           (req.session as any).userId = user.id;
           (req.session as any).userType = user.userType;
+          (req.session as any).authenticated = true;
+          
+          // Generate and store a session token for consistent authentication
+          const sessionToken = crypto.randomBytes(32).toString('hex');
+          (req.session as any).sessionToken = sessionToken;
+          
+          // Store the session token in a cookie for consistent access
+          res.cookie('session_token', sessionToken, {
+            httpOnly: false, // Allow client access for API calls
+            secure: false, // Set to true in production with HTTPS
+            sameSite: 'lax',
+            maxAge: 24 * 60 * 60 * 1000 // 24 hours
+          });
           
           // Force session save to ensure persistence
           req.session.save((saveErr) => {
@@ -821,14 +860,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             
             console.log(`User ${user.username} authenticated with session ${req.sessionID.slice(0, 8)}...`);
-            console.log(`Session stored with userId: ${user.id}, userType: ${user.userType}`);
+            console.log(`Session stored with userId: ${user.id}, userType: ${user.userType}, token: ${sessionToken.slice(0, 8)}...`);
             
             // Remove sensitive fields
             const { password, resetToken, resetTokenExpiry, ...userWithoutSensitiveInfo } = user;
             
             return res.json({
               ...userWithoutSensitiveInfo,
-              sessionPersisted: true
+              sessionPersisted: true,
+              sessionToken: sessionToken
             });
           });
         });

@@ -738,13 +738,15 @@ export class MemStorage implements IStorage {
         ...job,
         id,
         createdAt: new Date(),
+        modifiedAt: new Date(),
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
         featured: false,
         remote: null,
         minCompensation: null,
         maxCompensation: null,
         compensationUnit: null,
-        duration: null
+        duration: null,
+        archived: false
       };
       this.jobPostings.set(id, newJob);
     });
@@ -1251,6 +1253,7 @@ export class MemStorage implements IStorage {
       ...job, 
       id, 
       createdAt: new Date(),
+      modifiedAt: new Date(),
       status: job.status || "open",
       featured: job.featured || false,
       minCompensation: job.minCompensation || null,
@@ -1258,7 +1261,8 @@ export class MemStorage implements IStorage {
       duration: job.duration || null,
       expiresAt: job.expiresAt || null,
       compensationUnit: job.compensationUnit || null,
-      remote: job.remote || false
+      remote: job.remote || false,
+      archived: job.archived || false
     };
     this.jobPostings.set(id, newJob);
     return newJob;

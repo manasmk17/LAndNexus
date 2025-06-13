@@ -25,6 +25,7 @@ import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import SubscriptionStatus from "@/components/dashboard/subscription-status";
 import JobProfessionalMatches from "@/components/dashboard/job-professional-matches";
+import { JobManagementTable } from "@/components/job/job-management-table";
 import type { 
   CompanyProfile, 
   JobPosting, 
@@ -240,94 +241,18 @@ export default function CompanyDashboard() {
         </TabsList>
         
         <TabsContent value="jobs">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Your Job Postings</CardTitle>
-                <CardDescription>
-                  Manage your current job listings
-                </CardDescription>
-              </div>
-              <Link href="/post-job">
-                <Button>
-                  <Plus className="mr-2 h-4 w-4" /> Post a Job
-                </Button>
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {!profile ? (
-                <div className="text-center py-4">
-                  <p className="text-gray-500 mb-4">Create a company profile to post jobs</p>
-                  <Link href="/edit-profile">
-                    <Button>Complete Your Company Profile</Button>
-                  </Link>
-                </div>
-              ) : isLoadingJobs ? (
-                <div className="space-y-4">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="border rounded-md p-4">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-2">
-                          <Skeleton className="h-5 w-64" />
-                          <Skeleton className="h-4 w-48" />
-                        </div>
-                        <Skeleton className="h-8 w-24" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : jobPostings && jobPostings.length > 0 ? (
-                <div className="space-y-4">
-                  {jobPostings.map((job) => (
-                    <div key={job.id} className="border rounded-md p-4 hover:bg-gray-50">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h3 className="font-medium">{job.title}</h3>
-                          <div className="flex flex-wrap gap-x-4 text-gray-500 text-sm">
-                            <span>{job.location} {job.remote ? '(Remote)' : ''}</span>
-                            <span>Posted {format(new Date(job.createdAt), 'MMM d, yyyy')}</span>
-                          </div>
-                        </div>
-                        <Badge 
-                          className={`
-                            ${job.status === 'open' ? 'bg-green-100 text-green-800' : ''}
-                            ${job.status === 'closed' ? 'bg-gray-100 text-gray-800' : ''}
-                            ${job.status === 'filled' ? 'bg-blue-100 text-blue-800' : ''}
-                          `}
-                        >
-                          {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between items-center mt-3">
-                        <Badge variant="outline" className="mr-2">{job.jobType}</Badge>
-                        <div className="flex space-x-2">
-                          <Link href={`/job/${job.id}`}>
-                            <Button variant="ghost" size="sm" className="flex items-center">
-                              View <ChevronRight className="ml-1 h-4 w-4" />
-                            </Button>
-                          </Link>
-                          <Link href={`/job/${job.id}/applications`}>
-                            <Button variant="outline" size="sm">
-                              Applications
-                            </Button>
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-6">
-                  <Briefcase className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                  <h3 className="font-medium mb-1">No Job Postings</h3>
-                  <p className="text-gray-500 mb-4">You haven't posted any jobs yet</p>
-                  <Link href="/post-job">
-                    <Button>Post Your First Job</Button>
-                  </Link>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {!profile ? (
+            <Card>
+              <CardContent className="text-center py-8">
+                <p className="text-gray-500 mb-4">Create a company profile to post jobs</p>
+                <Link href="/edit-profile">
+                  <Button>Complete Your Company Profile</Button>
+                </Link>
+              </CardContent>
+            </Card>
+          ) : (
+            <JobManagementTable companyId={profile.id} />
+          )}
         </TabsContent>
         
         <TabsContent value="applications">

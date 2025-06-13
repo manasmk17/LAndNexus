@@ -223,12 +223,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     private cleanupExpiredTokens() {
       const now = Date.now();
-      const expired = [];
-      for (const [token, data] of this.tokens) {
+      const expired: string[] = [];
+      this.tokens.forEach((data, token) => {
         if (now - data.timestamp > 24 * 60 * 60 * 1000) { // 24 hours
           expired.push(token);
         }
-      }
+      });
       expired.forEach(token => this.tokens.delete(token));
       if (expired.length > 0) {
         console.log(`Cleaned up ${expired.length} expired session tokens`);

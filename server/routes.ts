@@ -189,11 +189,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Configure robust session middleware
   app.use(session({
     secret: process.env.SESSION_SECRET || "L&D-nexus-secret-key-very-long-for-production",
-    resave: false,
+    resave: true, // Force session save to ensure passport data persists
     saveUninitialized: false,
     name: 'sessionId',
     cookie: { 
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Allow non-HTTPS for development
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       sameSite: 'lax',
@@ -210,7 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Session persistence middleware
+  // Session persistence middleware with enhanced debugging
   app.use((req, res, next) => {
     // Ensure session is properly loaded and maintained
     if (req.session && req.sessionID) {
@@ -219,6 +219,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Set session activity flag for tracking
       (req.session as any).lastActivity = new Date();
+      
+      // Debug session passport data
+      if ((req.session as any).passport && (req.session as any).passport.user) {
+        // Manually trigger user deserialization if needed
+        if (!req.user) {
+          storage.getUser((req.session as any).passport.user).then(user => {
+            if (user) {
+              req.user = user;
+            }
+          }).catch(err => {
+            console.error('Manual session user resolution failed:', err);
+          });
+        }
+      }
     }
     
     next();
@@ -308,15 +322,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   passport.serializeUser((user: any, done) => {
+    console.log('Serializing user:', user.id);
     done(null, user.id);
   });
 
   passport.deserializeUser(async (id: number, done) => {
     try {
+      console.log('Deserializing user ID:', id);
       const user = await storage.getUser(id);
       if (user) {
+        console.log('User deserialized successfully:', user.username);
         done(null, user);
       } else {
+        console.log('User not found during deserialization:', id);
         done(null, false);
       }
     } catch (err) {

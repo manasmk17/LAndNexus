@@ -71,17 +71,25 @@ class AuthStore {
           isLoading: false
         });
       } else {
-        this.setState({
-          user: null,
-          isAuthenticated: false,
-          isLoading: false
-        });
+        // Don't immediately mark as unauthenticated, might be a temporary issue
+        // Only clear auth if we get a definitive 401
+        if (response.status === 401) {
+          this.setState({
+            user: null,
+            isAuthenticated: false,
+            isLoading: false
+          });
+        } else {
+          // For other errors, just stop loading but don't clear potential auth state
+          this.setState({
+            isLoading: false
+          });
+        }
       }
     } catch (error) {
       console.error('Auth initialization failed:', error);
+      // Network errors shouldn't clear auth state - user might be offline temporarily
       this.setState({
-        user: null,
-        isAuthenticated: false,
         isLoading: false
       });
     }

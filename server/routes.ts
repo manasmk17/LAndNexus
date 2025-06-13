@@ -333,6 +333,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return next();
     }
     
+    // Log authentication failure for debugging
+    console.log(`Authentication failed for ${req.method} ${req.path}:`, {
+      hasIsAuthenticated: !!req.isAuthenticated,
+      isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+      hasUser: !!req.user,
+      hasSession: !!req.session,
+      sessionPassport: req.session ? (req.session as any).passport : undefined
+    });
+    
     res.status(401).json({ message: "Unauthorized" });
   };
 

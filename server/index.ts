@@ -51,11 +51,18 @@ app.use(cookieParser());
 // Configure CSRF protection with proper initialization
 const csrfProtection = csurf({
   cookie: {
-    httpOnly: true,
-    secure: false, // Set to false for development
-    sameSite: 'lax'
+    httpOnly: false, // Allow client-side access to CSRF token
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    key: '_csrf'
   },
-  ignoreMethods: ['GET', 'HEAD', 'OPTIONS']
+  ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],
+  value: function (req) {
+    return (req.body && req.body._csrf) ||
+           (req.query && req.query._csrf) ||
+           (req.headers['x-csrf-token']) ||
+           (req.headers['x-xsrf-token']);
+  }
 });
 
 // Apply CSRF protection to all routes except specific API endpoints that need to be exempt

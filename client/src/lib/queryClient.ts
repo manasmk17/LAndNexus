@@ -45,10 +45,25 @@ async function throwIfResNotOk(res: Response) {
  */
 export function getCsrfToken(): string | null {
   const cookies = document.cookie.split('; ');
-  const tokenCookie = cookies.find(cookie => cookie.startsWith('XSRF-TOKEN='));
+  
+  // Try XSRF-TOKEN first (common convention)
+  let tokenCookie = cookies.find(cookie => cookie.startsWith('XSRF-TOKEN='));
   if (tokenCookie) {
-    return tokenCookie.split('=')[1];
+    return decodeURIComponent(tokenCookie.split('=')[1]);
   }
+  
+  // Fallback to _csrf cookie
+  tokenCookie = cookies.find(cookie => cookie.startsWith('_csrf='));
+  if (tokenCookie) {
+    return decodeURIComponent(tokenCookie.split('=')[1]);
+  }
+  
+  // Try to get from meta tag as last resort
+  const metaToken = document.querySelector('meta[name="csrf-token"]');
+  if (metaToken) {
+    return metaToken.getAttribute('content');
+  }
+  
   return null;
 }
 

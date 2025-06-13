@@ -43,6 +43,7 @@ import BookConsultation from "@/pages/book-consultation";
 import PageView from "@/pages/page";
 import About from "@/pages/about";
 import NotFound from "@/pages/not-found";
+import JobApplications from "@/pages/job-applications";
 import { AuthProvider } from "@/lib/auth";
 
 function Router() {
@@ -67,6 +68,13 @@ function Router() {
       <Route path="/pages/:slug" component={PageView} />
       <Route path="/admin-test" component={AdminTest} />
       <Route path="/admin-page" component={AdminPage} />
+      
+      {/* Job Applications Route */}
+      <ProtectedRoute 
+        path="/job/:id/applications" 
+        component={JobApplications} 
+        userTypes={["company"]} 
+      />
 
       {/* Protected routes with user type restrictions */}
       <ProtectedRoute 

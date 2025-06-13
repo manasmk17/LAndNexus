@@ -322,46 +322,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Check if user is authenticated
-  const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    // First check traditional session authentication (highest priority)
-    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
-      return next();
-    }
-    
-    // Additional session check for cases where req.isAuthenticated might not be properly set
-    if (req.session && (req.session as any).passport && (req.session as any).passport.user) {
-      // Session exists with user data, manually set req.user
-      const userId = (req.session as any).passport.user;
-      if (userId) {
-        // User is authenticated via session, proceed
+  const isAuthenticated = async (req: Request, res: Response, next: Function) => {
+    try {
+      // First check traditional session authentication (highest priority)
+      if (req.isAuthenticated && req.isAuthenticated() && req.user) {
         return next();
       }
-    }
-    
-    // Check JWT tokens
-    const authHeader = req.headers.authorization;
-    const accessToken = authHeader && authHeader.split(' ')[1];
-    
-    if (accessToken) {
-      const payload = authManager.verifyAccessToken(accessToken);
-      if (payload && authManager.isSessionActive(payload.sessionId)) {
-        (req as any).tokenUser = payload;
-        return next();
+      
+      // Additional session check for cases where req.isAuthenticated might not be properly set
+      if (req.session && (req.session as any).passport && (req.session as any).passport.user) {
+        const userId = (req.session as any).passport.user;
+        if (userId) {
+          // Fetch user data from storage and attach to request
+          try {
+            const user = await storage.getUserById(userId);
+            if (user) {
+              (req as any).user = user;
+              return next();
+            }
+          } catch (err) {
+            console.error('Error fetching user from session:', err);
+          }
+        }
       }
-    }
-    
-    // Check refresh token and attempt refresh
-    const refreshToken = req.cookies?.refreshToken;
-    if (refreshToken) {
-      const refreshResult = authManager.refreshAccessToken(refreshToken);
-      if (refreshResult) {
-        res.setHeader('X-New-Access-Token', refreshResult.accessToken);
-        (req as any).tokenUser = refreshResult.user;
-        return next();
+      
+      // Check JWT tokens
+      const authHeader = req.headers.authorization;
+      const accessToken = authHeader && authHeader.split(' ')[1];
+      
+      if (accessToken) {
+        const payload = authManager.verifyAccessToken(accessToken);
+        if (payload && authManager.isSessionActive(payload.sessionId)) {
+          try {
+            const user = await storage.getUserById(payload.userId);
+            if (user) {
+              (req as any).user = user;
+              (req as any).tokenUser = payload;
+              return next();
+            }
+          } catch (err) {
+            console.error('Error fetching user from token:', err);
+          }
+        }
       }
+      
+      // Check refresh token and attempt refresh
+      const refreshToken = req.cookies?.refreshToken;
+      if (refreshToken) {
+        const refreshResult = authManager.refreshAccessToken(refreshToken);
+        if (refreshResult) {
+          res.setHeader('X-New-Access-Token', refreshResult.accessToken);
+          try {
+            const user = await storage.getUserById(refreshResult.user.userId);
+            if (user) {
+              (req as any).user = user;
+              (req as any).tokenUser = refreshResult.user;
+              return next();
+            }
+          } catch (err) {
+            console.error('Error fetching user from refresh token:', err);
+          }
+        }
+      }
+      
+      res.status(401).json({ message: "Unauthorized" });
+    } catch (error) {
+      console.error('Authentication middleware error:', error);
+      res.status(500).json({ message: "Authentication error" });
     }
-    
-    res.status(401).json({ message: "Unauthorized" });
   };
 
   const isAdmin = (req: Request, res: Response, next: Function) => {

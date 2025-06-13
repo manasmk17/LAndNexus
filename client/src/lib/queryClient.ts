@@ -68,6 +68,15 @@ export function getCsrfToken(): string | null {
 }
 
 /**
+ * Gets session token from cookies for persistent authentication
+ */
+export function getSessionToken(): string | null {
+  const cookies = document.cookie.split('; ');
+  const sessionCookie = cookies.find(cookie => cookie.startsWith('session_token='));
+  return sessionCookie ? decodeURIComponent(sessionCookie.split('=')[1]) : null;
+}
+
+/**
  * Makes authenticated API requests with CSRF protection
  */
 export async function apiRequest(
@@ -76,12 +85,18 @@ export async function apiRequest(
   data?: unknown | undefined,
   isFormData: boolean = false,
 ): Promise<Response> {
-  // Build headers with CSRF token
+  // Build headers with CSRF token and session token
   const headers: Record<string, string> = {};
   
   // Add content type for JSON requests
   if (data && !isFormData) {
     headers["Content-Type"] = "application/json";
+  }
+  
+  // Add session token for authentication persistence
+  const sessionToken = getSessionToken();
+  if (sessionToken) {
+    headers["X-Session-Token"] = sessionToken;
   }
   
   // Add CSRF token for non-GET methods

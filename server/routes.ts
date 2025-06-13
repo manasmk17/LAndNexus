@@ -335,8 +335,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Auth check for ${req.method} ${req.path}`);
       console.log(`Session ID: ${req.sessionID?.slice(0, 8)}...`);
       
-      // Check for session token in cookies
-      const sessionToken = req.cookies.session_token;
+      // Check for session token in cookies or headers
+      const sessionToken = req.cookies.session_token || req.headers['x-session-token'];
       console.log(`Session token: ${sessionToken ? sessionToken.slice(0, 8) + '...' : 'none'}`);
       
       console.log(`Session data:`, {

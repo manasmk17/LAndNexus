@@ -162,7 +162,12 @@ export const insertJobPostingSchema = createInsertSchema(jobPostings).omit({
   id: true,
   createdAt: true,
 }).extend({
-  expiresAt: z.union([z.date(), z.string().transform((str) => new Date(str))]).optional()
+  expiresAt: z.preprocess((val) => {
+    if (typeof val === 'string') {
+      return new Date(val);
+    }
+    return val;
+  }, z.date().optional())
 });
 
 // Job Applications

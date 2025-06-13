@@ -341,25 +341,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Simplified authentication middleware
+  // Enhanced authentication middleware with forced session resolution
   const isAuthenticated = async (req: Request, res: Response, next: Function) => {
     // Check traditional session authentication using Passport
     if (req.isAuthenticated && req.isAuthenticated() && req.user) {
       return next();
     }
     
-    // Manual session check for edge cases where passport didn't deserialize
+    // Force session reload if passport user exists but req.user is missing
     if (req.session && (req.session as any).passport && (req.session as any).passport.user) {
       try {
-        // Manually deserialize the user if passport failed
         const userId = (req.session as any).passport.user;
+        console.log('Force deserializing user for authenticated session:', userId);
         const user = await storage.getUser(userId);
         if (user) {
+          // Force attach user to request
           req.user = user;
+          console.log('Successfully force-authenticated user:', user.username);
           return next();
         }
       } catch (error) {
-        console.error('Manual user deserialization failed:', error);
+        console.error('Force user deserialization failed:', error);
+      }
+    }
+    
+    // Additional check for valid session data
+    if (req.sessionID && req.session) {
+      try {
+        // Check if session contains valid passport data
+        const sessionData = req.session as any;
+        if (sessionData.passport && sessionData.passport.user) {
+          const userId = sessionData.passport.user;
+          const user = await storage.getUser(userId);
+          if (user) {
+            req.user = user;
+            console.log('Recovered authentication from session data for user:', user.username);
+            return next();
+          }
+        }
+      } catch (error) {
+        console.error('Session recovery failed:', error);
       }
     }
     

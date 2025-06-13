@@ -321,39 +321,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Simplified authentication middleware
-  const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    // Check traditional session authentication using Passport
-    if (req.isAuthenticated && req.isAuthenticated() && req.user) {
-      return next();
-    }
-    
-    // Manual session check for edge cases - check if session contains user data
-    if (req.session && (req.session as any).passport && (req.session as any).passport.user) {
-      // Manually set the user from session data
-      const userId = (req.session as any).passport.user;
-      if (userId) {
-        // For now, allow the request to proceed - this handles the session disconnect issue
+  const isAuthenticated = async (req: Request, res: Response, next: Function) => {
+    try {
+      // Check traditional session authentication using Passport
+      if (req.isAuthenticated && req.isAuthenticated() && req.user) {
         return next();
       }
+      
+      // Manual session check for edge cases - check if session contains user data
+      if (req.session && (req.session as any).passport && (req.session as any).passport.user) {
+        const userId = (req.session as any).passport.user;
+        if (userId) {
+          // Manually load the user from storage and set it on the request
+          try {
+            const user = await storage.getUser(userId);
+            if (user) {
+              (req as any).user = user;
+              return next();
+            }
+          } catch (error) {
+            console.error("Error loading user from session:", error);
+          }
+        }
+      }
+      
+      // Log authentication failure for debugging
+      console.log(`Authentication failed for ${req.method} ${req.path}:`, {
+        hasIsAuthenticated: !!req.isAuthenticated,
+        isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+        hasUser: !!req.user,
+        hasSession: !!req.session,
+        sessionPassport: req.session ? (req.session as any).passport : undefined
+      });
+      
+      res.status(401).json({ message: "Unauthorized" });
+    } catch (error) {
+      console.error("Authentication middleware error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
-    
-    // Additional check for sessionId cookie presence (indicates active session)
-    if (req.session && req.headers.cookie && req.headers.cookie.includes('sessionId=')) {
-      // Session cookie exists, likely authenticated but passport isn't recognizing it
-      // Allow the request to proceed to handle the session issue
-      return next();
-    }
-    
-    // Log authentication failure for debugging
-    console.log(`Authentication failed for ${req.method} ${req.path}:`, {
-      hasIsAuthenticated: !!req.isAuthenticated,
-      isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
-      hasUser: !!req.user,
-      hasSession: !!req.session,
-      sessionPassport: req.session ? (req.session as any).passport : undefined
-    });
-    
-    res.status(401).json({ message: "Unauthorized" });
   };
 
   const isAdmin = (req: Request, res: Response, next: Function) => {

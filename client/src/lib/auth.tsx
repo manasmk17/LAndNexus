@@ -113,6 +113,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     try {
       await apiRequest("POST", "/api/logout", {});
+      
+      // Clear session token cookie
+      document.cookie = "session_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+      console.log("Session token cleared");
+      
       setUser(null);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Logout failed";

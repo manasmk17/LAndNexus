@@ -78,7 +78,7 @@ export function EditJobForm({ job, isOpen, onClose, onSuccess }: EditJobFormProp
         ...data,
         expiresAt: data.expiresAt?.toISOString()
       };
-      return apiRequest(`/api/job-postings/${job.id}`, "PUT", updateData);
+      return apiRequest("PUT", `/api/job-postings/${job.id}`, updateData);
     },
     onSuccess: () => {
       toast({

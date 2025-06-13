@@ -25,6 +25,7 @@ import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import SubscriptionStatus from "@/components/dashboard/subscription-status";
 import JobProfessionalMatches from "@/components/dashboard/job-professional-matches";
+import { JobActionButtons } from "@/components/job/JobActionButtons";
 import type { 
   CompanyProfile, 
   JobPosting, 
@@ -299,7 +300,14 @@ export default function CompanyDashboard() {
                         </Badge>
                       </div>
                       <div className="flex justify-between items-center mt-3">
-                        <Badge variant="outline" className="mr-2">{job.jobType}</Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">{job.jobType}</Badge>
+                          {job.minCompensation && job.maxCompensation && (
+                            <span className="text-sm text-gray-600">
+                              ${job.minCompensation.toLocaleString()} - ${job.maxCompensation.toLocaleString()}
+                            </span>
+                          )}
+                        </div>
                         <div className="flex space-x-2">
                           <Link href={`/job/${job.id}`}>
                             <Button variant="ghost" size="sm" className="flex items-center">
@@ -312,6 +320,9 @@ export default function CompanyDashboard() {
                             </Button>
                           </Link>
                         </div>
+                      </div>
+                      <div className="mt-3 pt-3 border-t">
+                        <JobActionButtons job={job} compact={true} />
                       </div>
                     </div>
                   ))}

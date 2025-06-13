@@ -43,9 +43,8 @@ export function JobActionButtons({ job, compact = false }: JobActionButtonsProps
 
   const deleteJobMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/job-postings/${job.id}`, {
-        method: "DELETE"
-      });
+      const response = await apiRequest("DELETE", `/api/job-postings/${job.id}`);
+      return response.json();
     },
     onSuccess: (data) => {
       toast({
@@ -82,11 +81,7 @@ export function JobActionButtons({ job, compact = false }: JobActionButtonsProps
       delete duplicateData.modifiedAt;
       delete duplicateData.companyId;
 
-      return apiRequest("/api/job-postings", {
-        method: "POST",
-        body: JSON.stringify(duplicateData),
-        headers: { "Content-Type": "application/json" }
-      });
+      return apiRequest("POST", "/api/job-postings", duplicateData);
     },
     onSuccess: () => {
       toast({

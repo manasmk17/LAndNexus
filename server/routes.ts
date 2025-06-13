@@ -7,6 +7,7 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 import * as crypto from "crypto";
+import bcrypt from "bcrypt";
 import { 
   insertUserSchema, 
   insertProfessionalProfileSchema,
@@ -267,7 +268,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Handle different password formats
       if (user.password.startsWith('$2b$') || user.password.startsWith('$2a$')) {
         // Handle bcrypt passwords
-        const bcrypt = require('bcrypt');
         bcrypt.compare(password, user.password, (err: any, result: boolean) => {
           if (err) {
             console.error("Bcrypt error:", err);

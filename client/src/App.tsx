@@ -43,6 +43,7 @@ import BookConsultation from "@/pages/book-consultation";
 import PageView from "@/pages/page";
 import About from "@/pages/about";
 import NotFound from "@/pages/not-found";
+import CompanyProfile from "@/pages/company-profile";
 import { AuthProvider } from "@/lib/auth";
 
 function Router() {
@@ -58,6 +59,7 @@ function Router() {
       <Route path="/admin-login" component={AdminLogin} />
       <Route path="/professionals" component={Professionals} />
       <Route path="/professional-profile/:id" component={ProfessionalProfile} />
+      <Route path="/company/:id" component={CompanyProfile} />
       <Route path="/jobs" component={Jobs} />
       <Route path="/job/:id" component={JobDetail} />
       <Route path="/resources" component={Resources} />

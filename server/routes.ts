@@ -264,8 +264,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Simplified password verification for debugging
       console.log(`Login attempt for user: ${user.username}, stored password format: ${user.password.includes('.') ? 'hashed' : 'plaintext'}`);
       
-      // Handle both hashed and plaintext passwords for compatibility
-      if (!user.password.includes('.')) {
+      // Handle different password formats
+      if (user.password.startsWith('$2b$') || user.password.startsWith('$2a$')) {
+        // Handle bcrypt passwords
+        const bcrypt = require('bcrypt');
+        bcrypt.compare(password, user.password, (err: any, result: boolean) => {
+          if (err) {
+            console.error("Bcrypt error:", err);
+            return done(err);
+          }
+          
+          if (result) {
+            console.log(`Bcrypt password match for user: ${user.username}`);
+            return done(null, user);
+          } else {
+            console.log(`Bcrypt password mismatch for user: ${user.username}`);
+            return done(null, false, { message: "Incorrect password" });
+          }
+        });
+        return;
+      } else if (!user.password.includes('.')) {
         // Direct comparison for plaintext (development/testing)
         if (user.password === password) {
           console.log(`Plaintext password match for user: ${user.username}`);
@@ -367,8 +385,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check session token store for persistent authentication (PRIMARY METHOD)
       if (sessionToken) {
+        console.log(`Checking token store for token: ${sessionToken.slice(0, 8)}...`);
+        console.log(`Token store size: ${sessionTokenStore.size}`);
+        
         const tokenData = sessionTokenStore.get(sessionToken);
         if (tokenData) {
+          console.log(`Found token data:`, { userId: tokenData.userId, userType: tokenData.userType, age: Date.now() - tokenData.timestamp });
+          
           // Check if token is still valid (24 hours)
           const tokenAge = Date.now() - tokenData.timestamp;
           if (tokenAge < 24 * 60 * 60 * 1000) {
@@ -405,6 +428,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         } else {
           console.log("Session token not found in store");
+          console.log("Available tokens in store:", Array.from(sessionTokenStore.keys()).map(k => k.slice(0, 8) + '...'));
         }
       }
       
@@ -2800,6 +2824,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(jobs);
   });
 
+  // Add alias for companies/me/jobs endpoint
+  app.get("/api/companies/me/jobs", async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      const user = req.user as any;
+      
+      if (user.userType !== "company") {
+        return res.status(403).json({ message: "Not a company user" });
+      }
+      
+      const companyProfile = await storage.getCompanyProfileByUserId(user.id);
+      
+      if (!companyProfile) {
+        return res.json([]);
+      }
+      
+      const jobs = await storage.getCompanyJobPostings(companyProfile.id);
+      return res.json(jobs);
+    } catch (err) {
+      console.error("Error fetching company job postings:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.get("/api/companies/:id/job-postings", async (req, res) => {
     try {
       // Special case for "me" endpoint
@@ -3171,6 +3222,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(applications);
     } catch (err) {
       console.error("Error fetching professional applications:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get all job applications for a company's job postings
+  app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      
+      if (user.userType !== "company") {
+        return res.status(403).json({ message: "Not a company user" });
+      }
+      
+      const companyProfile = await storage.getCompanyProfileByUserId(user.id);
+      if (!companyProfile) {
+        return res.json([]);
+      }
+      
+      // Get all job postings for this company
+      const jobPostings = await storage.getCompanyJobPostings(companyProfile.id);
+      
+      // Get applications for each job posting
+      const applicationsData = [];
+      for (const job of jobPostings) {
+        const applications = await storage.getJobApplicationsByJob(job.id);
+        if (applications.length > 0) {
+          applicationsData.push({
+            jobId: job.id,
+            jobTitle: job.title,
+            applications: applications
+          });
+        }
+      }
+      
+      res.json(applicationsData);
+    } catch (err) {
+      console.error("Error fetching company job applications:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });

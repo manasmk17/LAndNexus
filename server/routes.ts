@@ -2612,15 +2612,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.body.expiresInDays && !req.body.expiresAt) {
         const expirationDate = new Date();
         expirationDate.setDate(expirationDate.getDate() + parseInt(req.body.expiresInDays));
-        cleanData.expiresAt = expirationDate.toISOString();
+        cleanData.expiresAt = expirationDate;
+      } else if (req.body.expiresAt && typeof req.body.expiresAt === 'string') {
+        // Convert ISO string to Date object
+        cleanData.expiresAt = new Date(req.body.expiresAt);
       }
 
       // Remove expiresInDays as it's not in the schema
       delete cleanData.expiresInDays;
 
-      console.log("Cleaned job data:", JSON.stringify(cleanData, null, 2));
+      console.log("Cleaned job data before validation:", {
+        ...cleanData,
+        expiresAt: cleanData.expiresAt ? `Date object: ${cleanData.expiresAt.toString()}` : null
+      });
 
-      const jobData = insertJobPostingSchema.parse(cleanData);
+      // Validate all fields except expiresAt using schema
+      const { expiresAt, ...dataForValidation } = cleanData;
+      const validatedData = insertJobPostingSchema.omit({ expiresAt: true }).parse(dataForValidation);
+      
+      // Add back the properly converted expiresAt
+      const jobData = { ...validatedData, expiresAt: cleanData.expiresAt };
 
       const job = await storage.createJobPosting(jobData);
       res.status(201).json(job);

@@ -738,8 +738,10 @@ export class MemStorage implements IStorage {
         ...job,
         id,
         createdAt: new Date(),
+        modifiedAt: new Date(),
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
         featured: false,
+        archived: false,
         remote: null,
         minCompensation: null,
         maxCompensation: null,

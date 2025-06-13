@@ -154,13 +154,23 @@ export const jobPostings = pgTable("job_postings", {
   remote: boolean("remote").default(false),
   featured: boolean("featured").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  modifiedAt: timestamp("modified_at").defaultNow().notNull(),
   expiresAt: timestamp("expires_at"),
+  archived: boolean("archived").default(false),
   status: text("status").notNull().default("open"), // "open", "closed", "filled"
 });
 
 export const insertJobPostingSchema = createInsertSchema(jobPostings).omit({
   id: true,
   createdAt: true,
+  modifiedAt: true,
+}).extend({
+  expiresAt: z.preprocess((val) => {
+    if (typeof val === 'string') {
+      return new Date(val);
+    }
+    return val;
+  }, z.date().optional())
 });
 
 // Job Applications

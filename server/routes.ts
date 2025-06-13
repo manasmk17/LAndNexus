@@ -314,13 +314,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   passport.deserializeUser(async (id: number, done) => {
     try {
       const user = await storage.getUser(id);
-      done(null, user);
+      if (user) {
+        // Remove password from user object for security
+        const { password, ...safeUser } = user;
+        done(null, safeUser);
+      } else {
+        done(null, false);
+      }
     } catch (err) {
-      done(err);
+      console.error("Error deserializing user:", err);
+      done(null, false);
     }
   });
 
-  // Simplified authentication middleware
+  // Robust authentication middleware
   const isAuthenticated = async (req: Request, res: Response, next: Function) => {
     try {
       // Check traditional session authentication using Passport
@@ -328,7 +335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return next();
       }
       
-      // Manual session check for edge cases - check if session contains user data
+      // Manual session check - check if session contains user data
       if (req.session && (req.session as any).passport && (req.session as any).passport.user) {
         const userId = (req.session as any).passport.user;
         if (userId) {
@@ -336,12 +343,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             const user = await storage.getUser(userId);
             if (user) {
-              (req as any).user = user;
+              // Remove password and set safe user object
+              const { password, ...safeUser } = user;
+              (req as any).user = safeUser;
+              console.log(`User ${userId} authenticated via session fallback for ${req.method} ${req.path}`);
               return next();
             }
           } catch (error) {
             console.error("Error loading user from session:", error);
           }
+        }
+      }
+      
+      // Additional fallback - check for session existence with user ID
+      if (req.session && req.session.id && (req.session as any).userId) {
+        const userId = (req.session as any).userId;
+        try {
+          const user = await storage.getUser(userId);
+          if (user) {
+            const { password, ...safeUser } = user;
+            (req as any).user = safeUser;
+            console.log(`User ${userId} authenticated via direct session for ${req.method} ${req.path}`);
+            return next();
+          }
+        } catch (error) {
+          console.error("Error in direct session check:", error);
         }
       }
       
@@ -351,7 +377,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
         hasUser: !!req.user,
         hasSession: !!req.session,
-        sessionPassport: req.session ? (req.session as any).passport : undefined
+        sessionPassport: req.session ? (req.session as any).passport : undefined,
+        sessionId: req.session ? req.session.id : undefined
       });
       
       res.status(401).json({ message: "Unauthorized" });
@@ -798,6 +825,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return next(err);
           }
           
+          // Store user ID directly in session for fallback authentication
+          (req.session as any).userId = user.id;
+          (req.session as any).userType = user.userType;
+          
           // Force session save to ensure persistence
           req.session.save((saveErr) => {
             if (saveErr) {
@@ -806,6 +837,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             
             console.log(`User ${user.username} authenticated with session ${req.sessionID.slice(0, 8)}...`);
+            console.log(`Session stored with userId: ${user.id}, userType: ${user.userType}`);
             
             // Remove sensitive fields
             const { password, resetToken, resetTokenExpiry, ...userWithoutSensitiveInfo } = user;

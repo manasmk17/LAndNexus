@@ -62,7 +62,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-02-24.acacia" as any,
+  apiVersion: "2024-12-18.acacia" as any,
 });
 
 import { registerAdminRoutes } from "./admin-routes";
@@ -522,144 +522,182 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Stripe payment route for one-time payments (used for subscription initialization)
+  // Import payment service
+  const { paymentService } = await import("./payment-service");
+
+  // Stripe payment route for one-time payments
   app.post("/api/create-payment-intent", bypassCSRF, isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      const { amount, tier } = req.body;
+      const { amount, description = 'One-time payment', currency = 'usd' } = req.body;
       
       if (!amount) {
         return res.status(400).json({ message: "Amount is required" });
       }
       
-      // Create a proper description based on the tier
-      const description = tier 
-        ? `L&D Nexus ${tier.charAt(0).toUpperCase() + tier.slice(1)} Subscription` 
-        : 'L&D Nexus Subscription';
+      const result = await paymentService.createOneTimePaymentIntent(
+        user.id,
+        amount,
+        description,
+        currency
+      );
       
-      // Create a payment intent with metadata to track the purpose
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Convert to cents
-        currency: "usd",
-        description: description,
-        metadata: {
-          userId: user.id.toString(),
-          tier: tier || 'basic',
-          type: 'subscription'
-        }
-      });
+      console.log(`Created payment intent ${result.paymentIntentId} for user ${user.id}`);
       
-      console.log(`Created payment intent ${paymentIntent.id} for user ${user.id}, tier: ${tier}`);
-      
-      res.json({ 
-        clientSecret: paymentIntent.client_secret,
-        paymentIntentId: paymentIntent.id 
-      });
+      res.json(result);
     } catch (error: any) {
       console.error("Error creating payment intent:", error);
-      res
-        .status(500)
-        .json({ message: "Error creating payment intent: " + error.message });
+      res.status(500).json({ 
+        message: "Error creating payment intent: " + error.message 
+      });
     }
   });
 
   // Stripe subscription route
-  app.post('/api/create-subscription', bypassCSRF, async (req, res) => {
+  app.post('/api/create-subscription', bypassCSRF, isAuthenticated, async (req, res) => {
     try {
-      // Check authentication with session verification
-      const isAuth = req.isAuthenticated();
-      const sessionUser = req.user;
-      
-      console.log("Subscription auth check:", { 
-        isAuthenticated: isAuth, 
-        hasUser: !!sessionUser,
-        sessionID: req.sessionID 
-      });
-      
-      if (!isAuth || !sessionUser) {
-        console.log("Subscription endpoint: User not authenticated");
-        return res.status(401).json({ 
-          message: "Authentication required. Please log in to create a subscription." 
-        });
-      }
-
       const user = req.user as any;
-      const { planId, billingCycle, currency, paymentMethodId, priceId, tier } = req.body;
+      const { planId, billingCycle, currency = 'usd' } = req.body;
 
-      // Handle different parameter formats for subscription creation
-      if (planId && billingCycle) {
-        // Frontend is requesting subscription setup with plan selection
-        // For demo purposes, return a mock client secret
-        console.log(`Creating subscription for user ${user.id}: plan ${planId}, billing ${billingCycle}, currency ${currency}`);
-        
-        return res.json({
-          clientSecret: "pi_demo_client_secret_for_testing",
-          subscriptionId: "sub_demo_subscription_id",
-          status: "requires_payment_method"
+      if (!planId || !billingCycle) {
+        return res.status(400).json({ 
+          message: "Plan ID and billing cycle are required" 
         });
       }
 
-      if (!paymentMethodId || !priceId || !tier) {
+      // Define pricing based on plan and billing cycle
+      const pricingMap: { [key: string]: { [key: string]: number } } = {
+        'basic': { 'monthly': 9.99, 'yearly': 99.99 },
+        'professional': { 'monthly': 29.99, 'yearly': 299.99 },
+        'enterprise': { 'monthly': 99.99, 'yearly': 999.99 }
+      };
+
+      const amount = pricingMap[planId]?.[billingCycle];
+      if (!amount) {
         return res.status(400).json({ 
-          message: "Missing required parameters for payment processing" 
+          message: "Invalid plan or billing cycle" 
         });
       }
 
       let customerId = user.stripeCustomerId;
 
-      // If user doesn't have a Stripe customer ID, create one
+      // Create Stripe customer if doesn't exist
       if (!customerId) {
         const customer = await stripe.customers.create({
           email: user.email,
-          name: `${user.firstName} ${user.lastName}`,
-          payment_method: paymentMethodId,
-          invoice_settings: {
-            default_payment_method: paymentMethodId,
-          },
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username,
+          metadata: {
+            userId: user.id.toString(),
+            userType: user.userType
+          }
         });
-
+        
         customerId = customer.id;
-        // Update user with Stripe customer ID
         await storage.updateStripeCustomerId(user.id, customerId);
-      } else {
-        // If they do have a customer ID, update their payment method
-        await stripe.paymentMethods.attach(paymentMethodId, {
-          customer: customerId,
-        });
+      }
 
-        await stripe.customers.update(customerId, {
-          invoice_settings: {
-            default_payment_method: paymentMethodId,
-          },
+      // Create setup intent for subscription
+      const setupIntent = await stripe.setupIntents.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        usage: 'off_session',
+        metadata: {
+          planId,
+          billingCycle,
+          amount: amount.toString(),
+          userId: user.id.toString()
+        }
+      });
+
+      console.log(`Created setup intent ${setupIntent.id} for user ${user.id}, plan: ${planId}`);
+      
+      res.json({
+        clientSecret: setupIntent.client_secret,
+        setupIntentId: setupIntent.id,
+        customerId,
+        planDetails: {
+          planId,
+          billingCycle,
+          amount,
+          currency
+        }
+      });
+    } catch (error: any) {
+      console.error("Error creating subscription setup:", error);
+      res.status(500).json({ 
+        message: "Error creating subscription setup: " + error.message 
+      });
+    }
+  });
+
+  // Complete subscription after payment method setup
+  app.post('/api/complete-subscription', bypassCSRF, isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { setupIntentId, planId, billingCycle } = req.body;
+
+      if (!setupIntentId || !planId || !billingCycle) {
+        return res.status(400).json({ 
+          message: "Setup intent ID, plan ID, and billing cycle are required" 
         });
       }
 
-      // Create the subscription
-      const subscription = await stripe.subscriptions.create({
+      // Retrieve the setup intent to get the payment method
+      const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
+      
+      if (setupIntent.status !== 'succeeded') {
+        return res.status(400).json({ 
+          message: "Payment method setup not completed" 
+        });
+      }
+
+      const paymentMethodId = setupIntent.payment_method as string;
+      let customerId = user.stripeCustomerId;
+
+      // Define pricing based on plan and billing cycle
+      const pricingMap: { [key: string]: { [key: string]: number } } = {
+        'basic': { 'monthly': 9.99, 'yearly': 99.99 },
+        'professional': { 'monthly': 29.99, 'yearly': 299.99 },
+        'enterprise': { 'monthly': 99.99, 'yearly': 999.99 }
+      };
+
+      const amount = pricingMap[planId]?.[billingCycle];
+      if (!amount) {
+        return res.status(400).json({ 
+          message: "Invalid plan or billing cycle" 
+        });
+      }
+
+      // Create a one-time payment for the first billing cycle
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency: 'usd',
         customer: customerId,
-        items: [
-          {
-            price: priceId,
-          },
-        ],
-        payment_behavior: 'default_incomplete',
-        expand: ['latest_invoice.payment_intent'],
+        payment_method: paymentMethodId,
+        confirmation_method: 'manual',
+        confirm: true,
+        metadata: {
+          planId,
+          billingCycle,
+          userId: user.id.toString(),
+          type: 'subscription_payment'
+        }
       });
 
       // Update user with subscription data
-      await storage.updateStripeSubscriptionId(user.id, subscription.id);
-      await storage.updateUserSubscription(user.id, tier, subscription.status);
-
-      const invoice = subscription.latest_invoice as any;
-      const paymentIntent = invoice.payment_intent as any;
+      await storage.updateStripeSubscriptionId(user.id, `manual_${Date.now()}`);
+      await storage.updateUserSubscription(user.id, planId, 'active');
 
       res.json({
-        subscriptionId: subscription.id,
-        clientSecret: paymentIntent.client_secret,
+        success: true,
+        paymentIntent: paymentIntent.id,
+        status: paymentIntent.status,
+        subscriptionTier: planId
       });
     } catch (error: any) {
+      console.error("Error completing subscription:", error);
       res.status(500).json({ 
-        message: "Error creating subscription: " + error.message 
+        message: "Error completing subscription: " + error.message 
       });
     }
   });

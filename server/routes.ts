@@ -553,7 +553,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Stripe subscription payment intent route
+  // Stripe subscription route
   app.post('/api/create-subscription', bypassCSRF, isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
@@ -565,91 +565,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const result = await paymentService.createSubscriptionPaymentIntent(
-        user.id,
-        planId,
-        billingCycle,
-        currency
-      );
-      
-      console.log(`Created subscription payment intent for user ${user.id}, plan: ${planId}`);
-      
-      res.json(result);
-    } catch (error: any) {
-      console.error("Error creating subscription:", error);
-      res.status(500).json({ 
-        message: "Error creating subscription: " + error.message 
-      });
-    }
-  });
+      // Define pricing based on plan and billing cycle
+      const pricingMap: { [key: string]: { [key: string]: number } } = {
+        'basic': { 'monthly': 9.99, 'yearly': 99.99 },
+        'professional': { 'monthly': 29.99, 'yearly': 299.99 },
+        'enterprise': { 'monthly': 99.99, 'yearly': 999.99 }
+      };
 
-  // Confirm subscription payment
-  app.post('/api/confirm-subscription-payment', bypassCSRF, isAuthenticated, async (req, res) => {
-    try {
-      const { paymentIntentId } = req.body;
-
-      if (!paymentIntentId) {
+      const amount = pricingMap[planId]?.[billingCycle];
+      if (!amount) {
         return res.status(400).json({ 
-          message: "Payment intent ID is required" 
+          message: "Invalid plan or billing cycle" 
         });
       }
 
-      const result = await paymentService.confirmSubscriptionPayment(paymentIntentId);
+      let customerId = user.stripeCustomerId;
+
+      // Create Stripe customer if doesn't exist
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username,
+          metadata: {
+            userId: user.id.toString(),
+            userType: user.userType
+          }
+        });
+        
+        customerId = customer.id;
+        await storage.updateStripeCustomerId(user.id, customerId);
+      }
+
+      // Create setup intent for subscription
+      const setupIntent = await stripe.setupIntents.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        usage: 'off_session',
+        metadata: {
+          planId,
+          billingCycle,
+          amount: amount.toString(),
+          userId: user.id.toString()
+        }
+      });
+
+      console.log(`Created setup intent ${setupIntent.id} for user ${user.id}, plan: ${planId}`);
       
-      console.log(`Subscription activated for payment intent: ${paymentIntentId}`);
-      
-      res.json(result);
+      res.json({
+        clientSecret: setupIntent.client_secret,
+        setupIntentId: setupIntent.id,
+        customerId,
+        planDetails: {
+          planId,
+          billingCycle,
+          amount,
+          currency
+        }
+      });
     } catch (error: any) {
-      console.error("Error confirming subscription payment:", error);
+      console.error("Error creating subscription setup:", error);
       res.status(500).json({ 
-        message: "Error confirming subscription payment: " + error.message 
+        message: "Error creating subscription setup: " + error.message 
       });
     }
   });
 
-  // Get user payment methods
-  app.get('/api/payment-methods', isAuthenticated, async (req, res) => {
+  // Complete subscription after payment method setup
+  app.post('/api/complete-subscription', bypassCSRF, isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      const paymentMethods = await paymentService.getUserPaymentMethods(user.id);
-      
-      res.json(paymentMethods);
-    } catch (error: any) {
-      console.error("Error fetching payment methods:", error);
-      res.status(500).json({ 
-        message: "Error fetching payment methods: " + error.message 
-      });
-    }
-  });
+      const { setupIntentId, planId, billingCycle } = req.body;
 
-  // Delete payment method
-  app.delete('/api/payment-methods/:paymentMethodId', isAuthenticated, async (req, res) => {
-    try {
-      const { paymentMethodId } = req.params;
-      const result = await paymentService.deletePaymentMethod(paymentMethodId);
-      
-      res.json(result);
-    } catch (error: any) {
-      console.error("Error deleting payment method:", error);
-      res.status(500).json({ 
-        message: "Error deleting payment method: " + error.message 
-      });
-    }
-  });
+      if (!setupIntentId || !planId || !billingCycle) {
+        return res.status(400).json({ 
+          message: "Setup intent ID, plan ID, and billing cycle are required" 
+        });
+      }
 
-  // Create setup intent for saving payment methods
-  app.post('/api/setup-payment-method', bypassCSRF, isAuthenticated, async (req, res) => {
-    try {
-      const user = req.user as any;
-      const { paymentMethodTypes = ['card'] } = req.body;
+      // Retrieve the setup intent to get the payment method
+      const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
       
-      const result = await paymentService.createSetupIntent(user.id, paymentMethodTypes);
-      
-      res.json(result);
+      if (setupIntent.status !== 'succeeded') {
+        return res.status(400).json({ 
+          message: "Payment method setup not completed" 
+        });
+      }
+
+      const paymentMethodId = setupIntent.payment_method as string;
+      let customerId = user.stripeCustomerId;
+
+      // Define pricing based on plan and billing cycle
+      const pricingMap: { [key: string]: { [key: string]: number } } = {
+        'basic': { 'monthly': 9.99, 'yearly': 99.99 },
+        'professional': { 'monthly': 29.99, 'yearly': 299.99 },
+        'enterprise': { 'monthly': 99.99, 'yearly': 999.99 }
+      };
+
+      const amount = pricingMap[planId]?.[billingCycle];
+      if (!amount) {
+        return res.status(400).json({ 
+          message: "Invalid plan or billing cycle" 
+        });
+      }
+
+      // Create a one-time payment for the first billing cycle
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency: 'usd',
+        customer: customerId,
+        payment_method: paymentMethodId,
+        confirmation_method: 'manual',
+        confirm: true,
+        metadata: {
+          planId,
+          billingCycle,
+          userId: user.id.toString(),
+          type: 'subscription_payment'
+        }
+      });
+
+      // Update user with subscription data
+      await storage.updateStripeSubscriptionId(user.id, `manual_${Date.now()}`);
+      await storage.updateUserSubscription(user.id, planId, 'active');
+
+      res.json({
+        success: true,
+        paymentIntent: paymentIntent.id,
+        status: paymentIntent.status,
+        subscriptionTier: planId
+      });
     } catch (error: any) {
-      console.error("Error creating setup intent:", error);
+      console.error("Error completing subscription:", error);
       res.status(500).json({ 
-        message: "Error creating setup intent: " + error.message 
+        message: "Error completing subscription: " + error.message 
       });
     }
   });
@@ -665,6 +713,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!webhookSecret) {
         console.warn("STRIPE_WEBHOOK_SECRET not configured. Webhook signature verification skipped.");
+        // For development purposes, assuming req.body might already be parsed
         try {
           event = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
         } catch (err) {
@@ -672,6 +721,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).send("Invalid webhook payload");
         }
       } else {
+        // If webhook secret is available, verify signature
         event = stripe.webhooks.constructEvent(
           req.body,
           signature,
@@ -683,40 +733,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
-    // Handle the event using payment service
-    try {
-      await paymentService.handleWebhookEvent(event);
-    } catch (error: any) {
-      console.error("Error handling webhook event:", error);
+    // Handle the event
+    switch (event.type) {
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted':
+        const subscription = event.data.object as any;
+        // Find the user by their Stripe customer ID
+        const user = await storage.getUserByStripeCustomerId(subscription.customer);
+
+        if (user) {
+          // Update the subscription status
+          const subscriptionTier = user.subscriptionTier || "basic";
+          await storage.updateUserSubscription(
+            user.id, 
+            subscriptionTier, 
+            subscription.status
+          );
+        }
+        break;
+      default:
+        // Unexpected event type
+        console.log(`Unhandled event type ${event.type}`);
     }
 
+    // Return a 200 response to acknowledge receipt of the event
     res.json({ received: true });
-  });
-
-  // Send payment confirmation email
-  app.post('/api/send-payment-confirmation', bypassCSRF, isAuthenticated, async (req, res) => {
-    try {
-      const user = req.user as any;
-      const { paymentIntentId, planId, billingCycle, amount } = req.body;
-
-      console.log(`Payment confirmation for user ${user.id}:`, {
-        paymentIntentId,
-        planId,
-        billingCycle,
-        amount,
-        userEmail: user.email
-      });
-
-      res.json({ 
-        success: true, 
-        message: 'Payment confirmation logged successfully' 
-      });
-    } catch (error: any) {
-      console.error("Error sending payment confirmation:", error);
-      res.status(500).json({ 
-        message: "Error sending payment confirmation: " + error.message 
-      });
-    }
   });
 
   // Consultation payment endpoint

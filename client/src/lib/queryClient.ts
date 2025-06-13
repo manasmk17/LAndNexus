@@ -480,21 +480,27 @@ window.addEventListener('unhandledrejection', event => {
     return;
   }
   
-  // Only log and prevent default if it's our query or mutation error
-  if (event.reason && (
-      event.reason.name === 'QueryError' || 
-      event.reason.name === 'MutationError' || 
-      event.reason.name === 'NetworkError' ||
-      (typeof event.reason.message === 'string' && (
-        event.reason.message.includes('Network') ||
-        event.reason.message.includes('Failed to fetch') ||
-        event.reason.message.includes('connection')
-      ))
-    )) {
-    console.log('Handled React Query rejection:', event.reason);
+  // Check if this is a React Query related error
+  const isReactQueryError = event.reason && (
+    event.reason.name === 'QueryError' || 
+    event.reason.name === 'MutationError' || 
+    event.reason.name === 'NetworkError' ||
+    (typeof event.reason.message === 'string' && (
+      event.reason.message.includes('Network') ||
+      event.reason.message.includes('Failed to fetch') ||
+      event.reason.message.includes('connection') ||
+      event.reason.message.includes('AbortError') ||
+      event.reason.message.includes('CSRF')
+    ))
+  );
+  
+  if (isReactQueryError) {
+    console.log('Handled React Query rejection:', event.reason?.message || event.reason);
     event.preventDefault();
   } else if (event.reason) {
-    console.warn('Unhandled promise rejection (not React Query):', event.reason);
+    // For non-React Query errors, only log a warning and let the error propagate naturally
+    console.warn('Unhandled promise rejection (not React Query):', event.reason?.message || event.reason);
+    // Don't prevent default for non-React Query errors
   }
 });
 

@@ -389,16 +389,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
   
-  // CSRF token refresh endpoint - temporarily disabled for debugging
+  // CSRF token endpoint
   app.get('/api/csrf-token', (req: any, res) => {
-    // Return a mock token for development to unblock frontend
-    const mockToken = crypto.randomBytes(32).toString('hex');
-    res.cookie('XSRF-TOKEN', mockToken, {
-      httpOnly: false,
-      secure: false,
-      sameSite: 'lax'
-    });
-    res.json({ csrfToken: mockToken });
+    try {
+      // Generate proper CSRF token using req.csrfToken() if available
+      let token;
+      if (req.csrfToken && typeof req.csrfToken === 'function') {
+        token = req.csrfToken();
+      } else {
+        // Fallback token generation for development
+        token = crypto.randomBytes(32).toString('hex');
+      }
+      
+      res.cookie('XSRF-TOKEN', token, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax'
+      });
+      res.json({ csrfToken: token });
+    } catch (error) {
+      console.error('Error generating CSRF token:', error);
+      res.status(500).json({ message: 'Failed to generate CSRF token' });
+    }
   });
 
   // Stripe payment route for one-time payments (used for subscription initialization)

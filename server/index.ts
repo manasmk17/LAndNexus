@@ -95,19 +95,14 @@ app.use((req, res, next) => {
     '/api/create-setup-intent',
     '/api/webhook',
     '/api/newsletter/subscribe',
-
     '/api/job-postings'
   ];
   
-  // We should treat all API routes that start with '/api/me/' as exempt for GET requests
-  app.use((req, res, next) => {
-    if (req.method === 'GET' && req.path.startsWith('/api/me/')) {
-      console.log(`CSRF protection bypassed for ${req.method} ${req.path}`);
-      next();
-      return;
-    }
-    next();
-  });
+  // Special handling for GET requests to /api/me/ routes
+  if (req.method === 'GET' && req.path.startsWith('/api/me/')) {
+    console.log(`CSRF protection bypassed for ${req.method} ${req.path}`);
+    return next();
+  }
   
   // Special exempt routes handling for specific HTTP methods
   const methodSpecificExemptions = [

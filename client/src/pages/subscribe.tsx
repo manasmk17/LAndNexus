@@ -20,10 +20,22 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "@/lib/i18n";
 
-if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
-  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
+let stripePromise: Promise<any> | null = null;
+
+try {
+  if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+    console.error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
+    stripePromise = null;
+  } else {
+    stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY).catch(error => {
+      console.error('Failed to load Stripe.js:', error);
+      return null;
+    });
+  }
+} catch (error) {
+  console.error('Error initializing Stripe:', error);
+  stripePromise = null;
 }
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 interface SubscriptionPlan {
   id: number;

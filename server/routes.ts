@@ -2594,7 +2594,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.body.expiresInDays && !cleanData.expiresAt) {
         const expirationDate = new Date();
         expirationDate.setDate(expirationDate.getDate() + parseInt(req.body.expiresInDays));
-        cleanData.expiresAt = expirationDate.toISOString();
+        cleanData.expiresAt = expirationDate;
       }
 
       // Remove expiresInDays as it's not in the schema

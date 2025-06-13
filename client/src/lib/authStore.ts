@@ -1,6 +1,6 @@
 /**
  * Frontend Authentication Store
- * Manages authentication state, token refresh, and session persistence
+ * Manages authentication state using session-based auth only
  */
 
 interface User {
@@ -14,7 +14,6 @@ interface User {
 
 interface AuthState {
   user: User | null;
-  accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
@@ -23,11 +22,9 @@ class AuthStore {
   private static instance: AuthStore;
   private state: AuthState = {
     user: null,
-    accessToken: null,
     isAuthenticated: false,
     isLoading: true
   };
-  private refreshTimer: NodeJS.Timeout | null = null;
   private listeners: Array<(state: AuthState) => void> = [];
 
   static getInstance(): AuthStore {
@@ -62,12 +59,8 @@ class AuthStore {
   // Initialize authentication on app start
   private async initializeAuth(): Promise<void> {
     try {
-      // Check if user is already authenticated
       const response = await fetch('/api/me', {
-        credentials: 'include',
-        headers: {
-          'Authorization': this.state.accessToken ? `Bearer ${this.state.accessToken}` : ''
-        }
+        credentials: 'include'
       });
 
       if (response.ok) {
@@ -77,16 +70,17 @@ class AuthStore {
           isAuthenticated: true,
           isLoading: false
         });
-        this.startTokenRefresh();
       } else {
-        // Try to refresh token
-        await this.refreshToken();
+        this.setState({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false
+        });
       }
     } catch (error) {
       console.error('Auth initialization failed:', error);
       this.setState({
         user: null,
-        accessToken: null,
         isAuthenticated: false,
         isLoading: false
       });
@@ -116,12 +110,10 @@ class AuthStore {
         
         this.setState({
           user: userData,
-          accessToken: userData.accessToken,
           isAuthenticated: true,
           isLoading: false
         });
 
-        this.startTokenRefresh();
         console.log('Authentication successful for user:', userData.username);
         return true;
       } else {
@@ -132,7 +124,6 @@ class AuthStore {
     } catch (error) {
       this.setState({
         user: null,
-        accessToken: null,
         isAuthenticated: false,
         isLoading: false
       });
@@ -156,65 +147,13 @@ class AuthStore {
 
   // Clear authentication state
   clearAuth(): void {
-    if (this.refreshTimer) {
-      clearTimeout(this.refreshTimer);
-      this.refreshTimer = null;
-    }
-
     this.setState({
       user: null,
-      accessToken: null,
       isAuthenticated: false,
       isLoading: false
     });
 
     console.log('Authentication cleared');
-  }
-
-  // Refresh access token
-  private async refreshToken(): Promise<boolean> {
-    try {
-      const response = await fetch('/api/refresh-token', {
-        method: 'POST',
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        this.setState({
-          user: data.user,
-          accessToken: data.accessToken,
-          isAuthenticated: true,
-          isLoading: false
-        });
-        this.startTokenRefresh();
-        return true;
-      } else {
-        this.clearAuth();
-        return false;
-      }
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-      this.clearAuth();
-      return false;
-    }
-  }
-
-  // Start automatic token refresh
-  private startTokenRefresh(): void {
-    if (this.refreshTimer) {
-      clearTimeout(this.refreshTimer);
-    }
-
-    // Refresh token every 14 minutes (1 minute before expiry)
-    this.refreshTimer = setTimeout(() => {
-      this.refreshToken();
-    }, 14 * 60 * 1000);
-  }
-
-  // Get authorization header for API requests
-  getAuthHeader(): string | null {
-    return this.state.accessToken ? `Bearer ${this.state.accessToken}` : null;
   }
 
   // Check if user has specific role

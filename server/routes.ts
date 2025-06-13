@@ -336,8 +336,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Auth check for ${req.method} ${req.path}`);
       console.log(`Session ID: ${req.sessionID?.slice(0, 8)}...`);
       
-      // Check for session token in cookies or headers
-      const sessionToken = req.cookies.session_token || req.headers['x-session-token'];
+      // Check for session token in cookies or headers (with proper case handling)
+      let sessionToken = req.cookies.session_token || 
+                        req.headers['x-session-token'] || 
+                        req.headers['X-Session-Token'];
+      
+      // Also check Authorization header for Bearer token
+      if (!sessionToken && req.headers.authorization) {
+        const authHeader = req.headers.authorization;
+        if (authHeader.startsWith('Bearer ')) {
+          sessionToken = authHeader.substring(7);
+        }
+      }
       console.log(`Session token: ${sessionToken ? sessionToken.slice(0, 8) + '...' : 'none'}`);
       
       console.log(`Session data:`, {

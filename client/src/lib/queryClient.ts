@@ -107,6 +107,7 @@ export async function apiRequest(
   const sessionToken = getSessionToken();
   if (sessionToken) {
     headers["X-Session-Token"] = sessionToken;
+    headers["Authorization"] = `Bearer ${sessionToken}`;
   }
   
   // Add CSRF token for non-GET methods

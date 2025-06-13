@@ -337,46 +337,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Enhanced authentication middleware with token support
+  // Enhanced authentication middleware with comprehensive session support
   const isAuthenticated = async (req: Request, res: Response, next: Function) => {
     try {
-      // Check passport authentication
+      console.log(`Auth check for ${req.method} ${req.path}`);
+      console.log(`Session ID: ${req.sessionID?.slice(0, 8)}...`);
+      console.log(`Session data:`, {
+        authenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+        hasUser: !!req.user,
+        sessionUserId: (req.session as any)?.userId,
+        sessionUserType: (req.session as any)?.userType
+      });
+      
+      // Check passport authentication first
       if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+        console.log(`User authenticated via passport: ${(req.user as any).username}`);
         return next();
       }
       
-      // Check for authentication token in cookies
-      const authToken = req.cookies?.auth_token;
-      if (authToken) {
-        try {
-          const tokenData = await storage.validateAuthToken(authToken);
-          if (tokenData && tokenData.userId) {
-            const user = await storage.getUser(tokenData.userId);
-            if (user) {
-              const { password, ...safeUser } = user;
-              (req as any).user = safeUser;
-              return next();
-            }
-          }
-        } catch (tokenError) {
-          console.log("Token validation failed:", tokenError);
-        }
-      }
-      
-      // Check for user ID in session (fallback)
+      // Check for user ID in session (comprehensive fallback)
       if (req.session && (req.session as any).userId) {
         const userId = (req.session as any).userId;
-        const user = await storage.getUser(userId);
-        if (user) {
-          const { password, ...safeUser } = user;
-          (req as any).user = safeUser;
-          return next();
+        console.log(`Attempting session restoration for user ID: ${userId}`);
+        
+        try {
+          const user = await storage.getUser(userId);
+          if (user) {
+            const { password, ...safeUser } = user;
+            (req as any).user = safeUser;
+            console.log(`Session restored for user: ${user.username} (${user.userType})`);
+            return next();
+          } else {
+            console.log(`User ${userId} not found in storage`);
+          }
+        } catch (error) {
+          console.log("Session user lookup failed:", error);
         }
       }
       
+      console.log("Authentication failed - sending 401");
       res.status(401).json({ message: "Unauthorized" });
     } catch (error) {
-      console.error("Auth error:", error);
+      console.error("Auth middleware error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   };

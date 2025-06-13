@@ -193,10 +193,9 @@ export interface IStorage {
   getUserSubscription(userId: number): Promise<any>;
   updateUserSubscription(userId: number, subscriptionData: any): Promise<any>;
   
-  // Auth token operations
-  createAuthToken(tokenData: InsertAuthToken): Promise<AuthToken>;
-  validateAuthToken(token: string): Promise<AuthToken | null>;
-  revokeAuthToken(token: string): Promise<boolean>;
+  // Simple auth token operations (simplified)
+  createSimpleAuthToken?(userId: number): Promise<string>;
+  validateSimpleAuthToken?(token: string): Promise<number | null>;
 }
 
 export class MemStorage implements IStorage {
@@ -3466,56 +3465,31 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Auth token methods
-  async createAuthToken(tokenData: InsertAuthToken): Promise<AuthToken> {
-    const id = this.authTokenId++;
-    const authToken: AuthToken = {
-      id,
+  // Simple auth token methods (simplified implementation)
+  async createSimpleAuthToken(userId: number): Promise<string> {
+    const token = `auth_${userId}_${Date.now()}_${Math.random().toString(36)}`;
+    this.authTokens.set(token, {
+      id: this.authTokenId++,
+      userId,
+      token,
+      type: 'session',
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
       createdAt: new Date(),
-      lastUsedAt: null,
-      isRevoked: false,
-      ...tokenData
-    };
-    
-    this.authTokens.set(authToken.token, authToken);
-    return authToken;
+      lastUsedAt: new Date(),
+      userAgent: null,
+      ipAddress: null,
+      isRevoked: false
+    });
+    return token;
   }
 
-  async validateAuthToken(token: string): Promise<AuthToken | null> {
+  async validateSimpleAuthToken(token: string): Promise<number | null> {
     const authToken = this.authTokens.get(token);
-    
-    if (!authToken) {
+    if (!authToken || authToken.isRevoked || authToken.expiresAt < new Date()) {
       return null;
     }
-    
-    // Check if token is expired
-    if (authToken.expiresAt < new Date()) {
-      this.authTokens.delete(token);
-      return null;
-    }
-    
-    // Check if token is revoked
-    if (authToken.isRevoked) {
-      return null;
-    }
-    
-    // Update last used timestamp
     authToken.lastUsedAt = new Date();
-    this.authTokens.set(token, authToken);
-    
-    return authToken;
-  }
-
-  async revokeAuthToken(token: string): Promise<boolean> {
-    const authToken = this.authTokens.get(token);
-    
-    if (!authToken) {
-      return false;
-    }
-    
-    authToken.isRevoked = true;
-    this.authTokens.set(token, authToken);
-    return true;
+    return authToken.userId;
   }
 }
 

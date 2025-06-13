@@ -863,7 +863,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         req.login(user, async (err) => {
           if (err) {
+            console.error('req.login error:', err);
             return next(err);
+          }
+          
+          // Manually ensure passport data is set in session
+          if (req.session) {
+            (req.session as any).passport = {
+              user: user.id
+            };
+            
+            // Add additional session metadata
+            (req.session as any).userInfo = {
+              id: user.id,
+              username: user.username,
+              userType: user.userType,
+              isAdmin: user.isAdmin
+            };
           }
           
           // Force session save to ensure persistence
@@ -874,13 +890,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             
             console.log(`User ${user.username} authenticated with session ${req.sessionID.slice(0, 8)}...`);
+            console.log('Session passport data:', (req.session as any).passport);
             
             // Remove sensitive fields
             const { password, resetToken, resetTokenExpiry, ...userWithoutSensitiveInfo } = user;
             
             return res.json({
               ...userWithoutSensitiveInfo,
-              sessionPersisted: true
+              sessionPersisted: true,
+              sessionId: req.sessionID
             });
           });
         });

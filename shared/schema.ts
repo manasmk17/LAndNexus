@@ -161,6 +161,13 @@ export const jobPostings = pgTable("job_postings", {
 export const insertJobPostingSchema = createInsertSchema(jobPostings).omit({
   id: true,
   createdAt: true,
+}).extend({
+  expiresAt: z.union([z.date(), z.string().datetime()]).optional().transform((val) => {
+    if (typeof val === 'string') {
+      return new Date(val);
+    }
+    return val;
+  })
 });
 
 // Job Applications

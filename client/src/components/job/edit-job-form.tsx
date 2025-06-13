@@ -46,7 +46,7 @@ export function EditJobForm({ jobId }: EditJobFormProps) {
     queryKey: ['/api/job-postings', jobId],
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/job-postings/${jobId}`);
-      return response as JobPosting;
+      return response as unknown as JobPosting;
     }
   });
 
@@ -117,11 +117,11 @@ export function EditJobForm({ jobId }: EditJobFormProps) {
       if (data.expiresInDays) {
         const expirationDate = new Date();
         expirationDate.setDate(expirationDate.getDate() + data.expiresInDays);
-        updateData.expiresAt = expirationDate.toISOString();
+        (updateData as any).expiresAt = expirationDate.toISOString();
       }
 
       // Remove expiresInDays from the data sent to server
-      delete updateData.expiresInDays;
+      delete (updateData as any).expiresInDays;
 
       return apiRequest("PUT", `/api/job-postings/${jobId}`, updateData);
     },

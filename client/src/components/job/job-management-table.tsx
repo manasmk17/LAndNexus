@@ -24,7 +24,7 @@ export function JobManagementTable({ companyId }: JobManagementTableProps) {
     queryKey: ['/api/companies/me/job-postings'],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/companies/me/job-postings");
-      return response as JobPosting[];
+      return response as unknown as JobPosting[];
     }
   });
 

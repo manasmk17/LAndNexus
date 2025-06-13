@@ -186,34 +186,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fileFilter: fileFilterImages
   });
   
-  // Configure robust session middleware with forced persistence
+  // Configure robust session middleware
   app.use(session({
     secret: process.env.SESSION_SECRET || "L&D-nexus-secret-key-very-long-for-production",
-    resave: true, // Force session save to ensure passport data persists
-    saveUninitialized: false, // Don't save empty sessions
-    name: 'connect.sid', // Use standard session name
+    resave: false,
+    saveUninitialized: false,
+    name: 'sessionId',
     cookie: { 
-      secure: false, // Allow non-HTTPS for development
-      httpOnly: false, // Allow client-side access for debugging
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       sameSite: 'lax',
       path: '/',
-      domain: undefined // Let browser handle domain
+      domain: undefined
     },
     store: new MemoryStore({
-      checkPeriod: 24 * 60 * 60 * 1000, // Check every 24 hours
-      stale: false // Disable stale session removal
+      checkPeriod: 24 * 60 * 60 * 1000 // Check every 24 hours
     }),
-    rolling: true, // Reset expiration on activity
-    unset: 'keep' // Keep session data on logout
+    rolling: true // Reset expiration on activity
   }));
 
   // Initialize Passport
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Session persistence middleware with synchronous user resolution
-  app.use(async (req, res, next) => {
+  // Session persistence middleware
+  app.use((req, res, next) => {
     // Ensure session is properly loaded and maintained
     if (req.session && req.sessionID) {
       // Touch session to update last access time
@@ -221,18 +219,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Set session activity flag for tracking
       (req.session as any).lastActivity = new Date();
-      
-      // Synchronously resolve user if passport data exists but user is not set
-      if ((req.session as any).passport && (req.session as any).passport.user && !req.user) {
-        try {
-          const user = await storage.getUser((req.session as any).passport.user);
-          if (user) {
-            req.user = user;
-          }
-        } catch (err) {
-          console.error('Manual session user resolution failed:', err);
-        }
-      }
     }
     
     next();
@@ -322,68 +308,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   passport.serializeUser((user: any, done) => {
-    console.log('Serializing user:', user.id);
     done(null, user.id);
   });
 
   passport.deserializeUser(async (id: number, done) => {
     try {
-      console.log('Deserializing user ID:', id);
       const user = await storage.getUser(id);
-      if (user) {
-        console.log('User deserialized successfully:', user.username);
-        done(null, user);
-      } else {
-        console.log('User not found during deserialization:', id);
-        done(null, false);
-      }
+      done(null, user);
     } catch (err) {
-      console.error('Passport deserializeUser error:', err);
-      done(null, false);
+      done(err);
     }
   });
 
-  // Enhanced authentication middleware with forced session resolution
-  const isAuthenticated = async (req: Request, res: Response, next: Function) => {
+  // Simplified authentication middleware
+  const isAuthenticated = (req: Request, res: Response, next: Function) => {
     // Check traditional session authentication using Passport
     if (req.isAuthenticated && req.isAuthenticated() && req.user) {
       return next();
     }
     
-    // Force session reload if passport user exists but req.user is missing
+    // Manual session check for edge cases
     if (req.session && (req.session as any).passport && (req.session as any).passport.user) {
-      try {
-        const userId = (req.session as any).passport.user;
-        console.log('Force deserializing user for authenticated session:', userId);
-        const user = await storage.getUser(userId);
-        if (user) {
-          // Force attach user to request
-          req.user = user;
-          console.log('Successfully force-authenticated user:', user.username);
-          return next();
-        }
-      } catch (error) {
-        console.error('Force user deserialization failed:', error);
-      }
-    }
-    
-    // Additional check for valid session data
-    if (req.sessionID && req.session) {
-      try {
-        // Check if session contains valid passport data
-        const sessionData = req.session as any;
-        if (sessionData.passport && sessionData.passport.user) {
-          const userId = sessionData.passport.user;
-          const user = await storage.getUser(userId);
-          if (user) {
-            req.user = user;
-            console.log('Recovered authentication from session data for user:', user.username);
-            return next();
-          }
-        }
-      } catch (error) {
-        console.error('Session recovery failed:', error);
-      }
+      // Session exists, let passport handle it on next request
+      return next();
     }
     
     // Log authentication failure for debugging
@@ -849,8 +796,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             return res.json({
               ...userWithoutSensitiveInfo,
-              sessionPersisted: true,
-              sessionId: req.sessionID
+              sessionPersisted: true
             });
           });
         });
@@ -2789,37 +2735,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid input", errors: err.errors });
       }
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  // Status management endpoint for companies
-  app.patch("/api/job-postings/:id/status", isAuthenticated, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const user = req.user as any;
-      const { status } = req.body;
-
-      if (!["open", "closed", "filled"].includes(status)) {
-        return res.status(400).json({ message: "Invalid status. Must be 'open', 'closed', or 'filled'" });
-      }
-
-      // Check if job exists
-      const job = await storage.getJobPosting(id);
-      if (!job) {
-        return res.status(404).json({ message: "Job posting not found" });
-      }
-
-      // Check if the company profile belongs to the user
-      const companyProfile = await storage.getCompanyProfile(job.companyId);
-      if (companyProfile?.userId !== user.id) {
-        return res.status(403).json({ message: "You can only update your own job postings" });
-      }
-
-      const updatedJob = await storage.updateJobPosting(id, { status });
-      res.json(updatedJob);
-    } catch (err) {
-      console.error("Error updating job status:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });

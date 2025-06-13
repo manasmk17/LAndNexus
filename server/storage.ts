@@ -738,15 +738,13 @@ export class MemStorage implements IStorage {
         ...job,
         id,
         createdAt: new Date(),
-        modifiedAt: new Date(),
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
         featured: false,
         remote: null,
         minCompensation: null,
         maxCompensation: null,
         compensationUnit: null,
-        duration: null,
-        archived: false
+        duration: null
       };
       this.jobPostings.set(id, newJob);
     });
@@ -1253,7 +1251,6 @@ export class MemStorage implements IStorage {
       ...job, 
       id, 
       createdAt: new Date(),
-      modifiedAt: new Date(),
       status: job.status || "open",
       featured: job.featured || false,
       minCompensation: job.minCompensation || null,
@@ -1261,8 +1258,7 @@ export class MemStorage implements IStorage {
       duration: job.duration || null,
       expiresAt: job.expiresAt || null,
       compensationUnit: job.compensationUnit || null,
-      remote: job.remote || false,
-      archived: job.archived || false
+      remote: job.remote || false
     };
     this.jobPostings.set(id, newJob);
     return newJob;
@@ -2662,7 +2658,7 @@ export class DatabaseStorage implements IStorage {
   ): Promise<JobPosting | undefined> {
     const [updatedJob] = await db
       .update(jobPostings)
-      .set({ ...job, modifiedAt: new Date() })
+      .set(job)
       .where(eq(jobPostings.id, id))
       .returning();
     return updatedJob;

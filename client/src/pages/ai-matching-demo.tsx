@@ -25,28 +25,46 @@ interface MatchResult {
   matchReasons: string[];
 }
 
+interface Professional {
+  id: number;
+  firstName: string;
+  lastName: string;
+  title: string;
+  bio: string;
+}
+
+interface Job {
+  id: number;
+  title: string;
+  description: string;
+  location: string;
+  company?: {
+    companyName: string;
+  };
+}
+
 export default function AIMatchingDemo() {
   const [selectedProfessional, setSelectedProfessional] = useState<string>("");
   const [selectedJob, setSelectedJob] = useState<string>("");
 
   // Fetch professionals
-  const { data: professionals = [], isLoading: loadingProfessionals } = useQuery({
+  const { data: professionals = [], isLoading: loadingProfessionals } = useQuery<Professional[]>({
     queryKey: ["/api/professional-profiles"],
   });
 
   // Fetch jobs
-  const { data: jobs = [], isLoading: loadingJobs } = useQuery({
+  const { data: jobs = [], isLoading: loadingJobs } = useQuery<Job[]>({
     queryKey: ["/api/job-postings"],
   });
 
   // Fetch matching jobs for selected professional
-  const { data: matchingJobs = [], isLoading: loadingMatches, refetch: refetchJobs } = useQuery({
+  const { data: matchingJobs = [], isLoading: loadingMatches, refetch: refetchJobs } = useQuery<MatchResult[]>({
     queryKey: ["/api/matching/professional", selectedProfessional, "jobs"],
     enabled: !!selectedProfessional,
   });
 
   // Fetch matching professionals for selected job
-  const { data: matchingProfessionals = [], isLoading: loadingProfMatches, refetch: refetchProfessionals } = useQuery({
+  const { data: matchingProfessionals = [], isLoading: loadingProfMatches, refetch: refetchProfessionals } = useQuery<MatchResult[]>({
     queryKey: ["/api/matching/job", selectedJob, "professionals"],
     enabled: !!selectedJob,
   });
@@ -104,7 +122,7 @@ export default function AIMatchingDemo() {
                   <SelectValue placeholder="Choose a professional" />
                 </SelectTrigger>
                 <SelectContent>
-                  {professionals.map((prof: any) => (
+                  {professionals.map((prof) => (
                     <SelectItem key={prof.id} value={prof.id.toString()}>
                       {prof.firstName} {prof.lastName} - {prof.title}
                     </SelectItem>
@@ -136,7 +154,7 @@ export default function AIMatchingDemo() {
                   <SelectValue placeholder="Choose a job posting" />
                 </SelectTrigger>
                 <SelectContent>
-                  {jobs.map((job: any) => (
+                  {jobs.map((job) => (
                     <SelectItem key={job.id} value={job.id.toString()}>
                       {job.title} - {job.location}
                     </SelectItem>
@@ -161,7 +179,7 @@ export default function AIMatchingDemo() {
               </div>
             ) : (
               <div className="grid gap-4">
-                {matchingJobs.map((match: MatchResult) => (
+                {matchingJobs.map((match) => (
                   <Card key={match.id} className="hover:shadow-lg transition-shadow">
                     <CardContent className="p-6">
                       <div className="flex justify-between items-start mb-4">
@@ -217,7 +235,7 @@ export default function AIMatchingDemo() {
               </div>
             ) : (
               <div className="grid gap-4">
-                {matchingProfessionals.map((match: MatchResult) => (
+                {matchingProfessionals.map((match) => (
                   <Card key={match.id} className="hover:shadow-lg transition-shadow">
                     <CardContent className="p-6">
                       <div className="flex justify-between items-start mb-4">

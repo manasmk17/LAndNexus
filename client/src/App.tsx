@@ -44,6 +44,7 @@ import PageView from "@/pages/page";
 import About from "@/pages/about";
 import NotFound from "@/pages/not-found";
 import JobApplications from "@/pages/job-applications";
+import AIMatchingDemo from "@/pages/ai-matching-demo";
 import { AuthProvider } from "@/lib/auth";
 
 function Router() {
@@ -68,6 +69,9 @@ function Router() {
       <Route path="/pages/:slug" component={PageView} />
       <Route path="/admin-test" component={AdminTest} />
       <Route path="/admin-page" component={AdminPage} />
+      
+      {/* AI Matching Demo - Public access for testing */}
+      <Route path="/ai-matching-demo" component={AIMatchingDemo} />
       
       {/* Job Applications Route */}
       <ProtectedRoute 

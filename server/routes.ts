@@ -186,16 +186,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fileFilter: fileFilterImages
   });
   
-  // Configure robust session middleware
+  // Configure robust session middleware with enhanced persistence
   app.use(session({
     secret: process.env.SESSION_SECRET || "L&D-nexus-secret-key-very-long-for-production",
-    resave: false,
-    saveUninitialized: false,
+    resave: true, // Force session save even when unmodified
+    saveUninitialized: true, // Save new sessions even when not modified
     name: 'sessionId',
     cookie: { 
       secure: false, // Always false for development
       httpOnly: false, // Allow client-side access for debugging
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days for better persistence
       sameSite: 'lax',
       path: '/',
       domain: undefined
@@ -203,15 +203,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     store: new MemoryStore({
       checkPeriod: 24 * 60 * 60 * 1000 // Check every 24 hours
     }),
-    rolling: true // Reset expiration on activity
+    rolling: true, // Reset expiration on activity
+    proxy: undefined, // Trust proxy settings
+    unset: 'keep' // Keep session even if unset
   }));
 
   // Initialize Passport
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Session persistence middleware
-  app.use((req, res, next) => {
+  // Enhanced session persistence and user restoration middleware
+  app.use(async (req, res, next) => {
     // Ensure session is properly loaded and maintained
     if (req.session && req.sessionID) {
       // Touch session to update last access time
@@ -219,6 +221,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Set session activity flag for tracking
       (req.session as any).lastActivity = new Date();
+      
+      // Auto-restore user if session exists but passport failed
+      if ((req.session as any).passport?.user && !req.user) {
+        try {
+          const userId = (req.session as any).passport.user;
+          const user = await storage.getUser(userId);
+          if (user) {
+            req.user = {
+              id: user.id,
+              username: user.username,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              userType: user.userType,
+              isAdmin: user.isAdmin,
+              subscriptionTier: user.subscriptionTier,
+              subscriptionStatus: user.subscriptionStatus
+            };
+            console.log(`Auto-restored user: ${user.username} from session`);
+          }
+        } catch (error) {
+          console.error('Error auto-restoring user:', error);
+        }
+      }
     }
     
     next();
@@ -308,6 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }));
 
   passport.serializeUser((user: any, done) => {
+    console.log(`Serializing user: ${user.username} (ID: ${user.id})`);
     done(null, user.id);
   });
 
@@ -320,28 +347,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return done(null, false);
       }
       console.log(`User ${user.username} successfully deserialized`);
-      done(null, user);
+      
+      // Ensure user object is properly formatted
+      const sanitizedUser = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        userType: user.userType,
+        isAdmin: user.isAdmin,
+        subscriptionTier: user.subscriptionTier,
+        subscriptionStatus: user.subscriptionStatus
+      };
+      
+      done(null, sanitizedUser);
     } catch (err) {
       console.error(`Error deserializing user ${id}:`, err);
       done(err);
     }
   });
 
-  // Simplified authentication middleware
+  // Enhanced authentication middleware with better session handling
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    // Check traditional session authentication using Passport
+    // Log session details for debugging
+    console.log(`Auth check for ${req.method} ${req.path}:`, {
+      sessionId: req.sessionID,
+      hasPassport: !!(req.session && (req.session as any).passport),
+      passportUser: req.session ? (req.session as any).passport?.user : undefined,
+      hasUser: !!req.user,
+      isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false
+    });
+    
+    // Check if user is already authenticated via Passport
     if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+      console.log(`User ${(req.user as any).username} authenticated via passport`);
       return next();
     }
     
-    // Manual session check and user restoration for edge cases
+    // Manual session check and user restoration
     if (req.session && (req.session as any).passport && (req.session as any).passport.user) {
       const userId = (req.session as any).passport.user;
+      console.log(`Attempting manual user restoration for userId: ${userId}`);
       
-      // Manually restore user if passport failed to do so
+      // Synchronously restore user if passport failed to do so
       storage.getUser(userId).then(user => {
         if (user) {
-          req.user = user;
+          console.log(`Manually restored user: ${user.username}`);
+          
+          // Set the user on the request object
+          req.user = {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            userType: user.userType,
+            isAdmin: user.isAdmin,
+            subscriptionTier: user.subscriptionTier,
+            subscriptionStatus: user.subscriptionStatus
+          };
+          
           return next();
         } else {
           console.log(`Authentication failed - user ${userId} not found`);
@@ -354,15 +420,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return;
     }
     
-    // Log authentication failure for debugging
-    console.log(`Authentication failed for ${req.method} ${req.path}:`, {
-      hasIsAuthenticated: !!req.isAuthenticated,
-      isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
-      hasUser: !!req.user,
-      hasSession: !!req.session,
-      sessionPassport: req.session ? (req.session as any).passport : undefined
-    });
+    // Final check: if session exists but no passport data, session may be corrupted
+    if (req.session && req.sessionID) {
+      console.log(`Session ${req.sessionID.slice(0, 8)}... exists but no passport data found`);
+    }
     
+    console.log(`Authentication failed for ${req.method} ${req.path}`);
     res.status(401).json({ message: "Unauthorized" });
   };
 

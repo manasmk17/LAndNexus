@@ -221,28 +221,42 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Initialize database connection with retry capability
-  await initializeDatabase();
-  
-  // Start performance monitoring and memory leak detection
-  const { performanceMonitor } = await import("./performance-monitor");
-  performanceMonitor.startMonitoring();
-  
-  // Initialize memory leak detection
-  memoryLeakDetector.startMonitoring(30000); // Check every 30 seconds
-  console.log('Memory leak detection enabled');
-  
-  // Force garbage collection every 5 minutes to prevent memory buildup
-  setInterval(() => {
-    if (global.gc) {
-      global.gc();
-      console.log('Periodic garbage collection executed');
+  try {
+    // Initialize database connection with retry capability
+    await initializeDatabase();
+    
+    // Add performance monitoring middleware first
+    const { performanceMiddleware } = await import("./performance-middleware");
+    app.use(performanceMiddleware());
+    
+    // Initialize monitoring systems with controlled startup
+    let monitoringInitialized = false;
+    try {
+      // Start performance monitoring with error handling
+      const { performanceMonitor } = await import("./performance-monitor");
+      performanceMonitor.startMonitoring();
+      
+      // Initialize memory leak detection with reduced frequency to prevent conflicts
+      memoryLeakDetector.startMonitoring(60000); // Check every 60 seconds instead of 30
+      console.log('Memory leak detection started');
+      
+      monitoringInitialized = true;
+    } catch (monitoringErr) {
+      console.warn('Monitoring systems failed to initialize, continuing without them:', monitoringErr);
     }
-  }, 5 * 60 * 1000);
-  
-  // Add performance monitoring only (no caching middleware that conflicts with response flow)
-  const { performanceMiddleware } = await import("./performance-middleware");
-  app.use(performanceMiddleware());
+    
+    // Only set up garbage collection if monitoring is stable
+    if (monitoringInitialized) {
+      setInterval(() => {
+        try {
+          if (global.gc) {
+            global.gc();
+          }
+        } catch (gcErr) {
+          console.warn('Garbage collection failed:', gcErr);
+        }
+      }, 10 * 60 * 1000); // Reduced frequency to every 10 minutes
+    }
   
   // Add static file serving for uploaded files - must come before routes
   app.use('/uploads', express.static('uploads', {
@@ -305,16 +319,44 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Serve the app on port 5000 as expected by workflow
-  // this serves both the API and the client.
-  const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-    keepAliveTimeout: 65000, // Increase keep-alive timeout
-    headersTimeout: 66000, // Increase headers timeout
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+    // Serve the app on port 5000 as expected by workflow
+    // this serves both the API and the client.
+    const port = 5000;
+    
+    // Add error handling for port binding
+    server.on('error', (err: any) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${port} is already in use. Server will exit and retry...`);
+        process.exit(1);
+      } else {
+        console.error('Server error:', err);
+        process.exit(1);
+      }
+    });
+
+    server.listen({
+      port,
+      host: "0.0.0.0",
+      keepAliveTimeout: 65000,
+      headersTimeout: 66000,
+    }, () => {
+      log(`serving on port ${port}`);
+    });
+    
+  } catch (startupError) {
+    console.error('Critical startup error:', startupError);
+    
+    // Attempt graceful degradation
+    try {
+      // Clean up any partially initialized resources
+      if (memoryLeakDetector) {
+        memoryLeakDetector.stopMonitoring();
+      }
+    } catch (cleanupErr) {
+      console.warn('Cleanup error:', cleanupErr);
+    }
+    
+    // Exit with error code
+    process.exit(1);
+  }
 })();

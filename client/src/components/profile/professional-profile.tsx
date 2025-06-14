@@ -137,6 +137,28 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
     enabled: !!profile,
   });
 
+  // Fetch work experiences
+  const { 
+    data: workExperiences, 
+    isLoading: isLoadingWorkExperiences 
+  } = useQuery<any[]>({
+    queryKey: [`/api/professional-profiles/${professionalId}/work-experiences`],
+    enabled: !!profile,
+    retry: false,
+    select: (data) => data || [],
+  });
+
+  // Fetch testimonials
+  const { 
+    data: testimonials, 
+    isLoading: isLoadingTestimonials 
+  } = useQuery<any[]>({
+    queryKey: [`/api/professional-profiles/${professionalId}/testimonials`],
+    enabled: !!profile,
+    retry: false,
+    select: (data) => data || [],
+  });
+
   // Type-safe resource query
   const { 
     data: resources = [] as Resource[],
@@ -312,6 +334,12 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
             <TabsList className="w-full">
               <TabsTrigger value="about">About</TabsTrigger>
               <TabsTrigger value="expertise">Expertise & Certifications</TabsTrigger>
+              <TabsTrigger value="experience">
+                <span className="flex items-center">
+                  <Briefcase className="mr-1 h-4 w-4" />
+                  Experience & Testimonials
+                </span>
+              </TabsTrigger>
               <TabsTrigger value="skill-recommendations">
                 <span className="flex items-center">
                   <Lightbulb className="mr-1 h-4 w-4" />
@@ -525,6 +553,108 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                 </p>
               </TabsContent>
             )}
+
+            <TabsContent value="experience" className="mt-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Work Experience Section */}
+                <div>
+                  <h2 className="text-xl font-semibold mb-4 flex items-center">
+                    <Briefcase className="mr-2 h-5 w-5" />
+                    Work Experience
+                  </h2>
+                  {isLoadingWorkExperiences ? (
+                    <div className="space-y-4">
+                      <Skeleton className="h-24 w-full" />
+                      <Skeleton className="h-24 w-full" />
+                    </div>
+                  ) : workExperiences && workExperiences.length > 0 ? (
+                    <div className="space-y-4">
+                      {workExperiences.map((exp, index) => (
+                        <div key={index} className="p-4 border rounded-lg bg-gray-50">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h3 className="font-semibold text-lg">{exp.position || 'Position'}</h3>
+                              <p className="text-gray-600">{exp.company || 'Company'}</p>
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {exp.startDate && (
+                                <span>
+                                  {exp.startDate} - {exp.current ? 'Present' : exp.endDate || 'Present'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {exp.description && (
+                            <p className="text-gray-700 whitespace-pre-line">{exp.description}</p>
+                          )}
+                          {exp.current && (
+                            <Badge className="mt-2 bg-green-100 text-green-800">Current Position</Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-6 text-center bg-gray-50 rounded-lg">
+                      <Briefcase className="mx-auto h-12 w-12 text-gray-400 mb-3" />
+                      <p className="text-gray-500">No work experience listed</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Testimonials Section */}
+                <div>
+                  <h2 className="text-xl font-semibold mb-4 flex items-center">
+                    <MessageSquare className="mr-2 h-5 w-5" />
+                    Client Testimonials
+                  </h2>
+                  {isLoadingTestimonials ? (
+                    <div className="space-y-4">
+                      <Skeleton className="h-32 w-full" />
+                      <Skeleton className="h-32 w-full" />
+                    </div>
+                  ) : testimonials && testimonials.length > 0 ? (
+                    <div className="space-y-4">
+                      {testimonials.map((testimonial, index) => (
+                        <div key={index} className="p-4 border rounded-lg bg-blue-50 border-blue-200">
+                          <div className="flex items-start mb-3">
+                            <div className="flex-1">
+                              <div className="flex items-center mb-2">
+                                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3">
+                                  <span className="text-white font-semibold text-sm">
+                                    {testimonial.clientName ? testimonial.clientName.charAt(0).toUpperCase() : 'C'}
+                                  </span>
+                                </div>
+                                <div>
+                                  <h4 className="font-semibold text-gray-900">
+                                    {testimonial.clientName || 'Anonymous Client'}
+                                  </h4>
+                                  {testimonial.company && (
+                                    <p className="text-sm text-gray-600">{testimonial.company}</p>
+                                  )}
+                                  {testimonial.date && (
+                                    <p className="text-xs text-gray-500">{testimonial.date}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          {testimonial.text && (
+                            <blockquote className="text-gray-700 italic border-l-4 border-blue-400 pl-4">
+                              "{testimonial.text}"
+                            </blockquote>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-6 text-center bg-gray-50 rounded-lg">
+                      <MessageSquare className="mx-auto h-12 w-12 text-gray-400 mb-3" />
+                      <p className="text-gray-500">No client testimonials yet</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
 
             <TabsContent value="skill-recommendations" className="mt-6">
               <SkillRecommendations 

@@ -86,12 +86,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           const userData = await response.json();
           if (userData && userData.id) {
             setUser(userData);
+            console.log("Session check successful");
           } else {
-            console.log("Authentication cleared");
+            console.log("No user data in response, clearing auth");
             setUser(null);
           }
+        } else if (response.status === 401) {
+          console.log("Session expired or invalid, clearing auth");
+          // Clear any stale tokens
+          localStorage.removeItem('session_token');
+          localStorage.removeItem('user_data');
+          setUser(null);
         } else {
-          console.log("Authentication cleared");
+          console.log("Session check failed with status:", response.status);
           setUser(null);
         }
       } catch (err) {

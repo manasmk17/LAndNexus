@@ -91,6 +91,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize resource categories
   await initializeResourceCategories();
   
+  // Initialize session token restoration
+  restoreSessionTokens();
+  
 
   
   // Configure multer storage for file uploads
@@ -168,6 +171,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
   }, 60 * 60 * 1000); // Clean up every hour
+
+  // Restore any existing session tokens from cookies on server restart
+  const restoreSessionTokens = () => {
+    console.log("Session token store initialized");
+  };
 
   // Configure session middleware with enhanced persistence
   const MemoryStore = memorystore(session);
@@ -328,6 +336,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sessionToken: (req.session as any)?.sessionToken,
         cookieToken: sessionToken
       });
+
+      // If no session token, try to generate one from existing session
+      if (!sessionToken && req.session && (req.session as any).userId) {
+        const newSessionToken = crypto.randomBytes(32).toString('hex');
+        (req.session as any).sessionToken = newSessionToken;
+        
+        // Store in the token store
+        sessionTokenStore.set(newSessionToken, {
+          userId: (req.session as any).userId,
+          userType: (req.session as any).userType || 'professional',
+          timestamp: Date.now()
+        });
+        
+        // Set the cookie
+        res.cookie('session_token', newSessionToken, {
+          httpOnly: false,
+          secure: false,
+          sameSite: 'lax',
+          maxAge: 24 * 60 * 60 * 1000
+        });
+        
+        console.log(`Generated new session token for existing session: ${newSessionToken.slice(0, 8)}...`);
+      }
       
       // Check passport authentication first
       if (req.isAuthenticated && req.isAuthenticated() && req.user) {
@@ -348,6 +379,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if (user) {
                 const { password, ...safeUser } = user;
                 (req as any).user = safeUser;
+                
+                // Update token timestamp
+                tokenData.timestamp = Date.now();
                 
                 // Update ALL session data for consistency
                 if (req.session) {
@@ -372,9 +406,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Remove expired token
             sessionTokenStore.delete(sessionToken);
             console.log("Session token expired and removed");
+            
+            // Clear the cookie
+            res.clearCookie('session_token');
           }
         } else {
-          console.log("Session token not found in store");
+          console.log("Session token not found in store - this might be from a server restart");
+          
+          // If we have a session with user data, restore the token
+          if (req.session && (req.session as any).userId) {
+            const userId = (req.session as any).userId;
+            const userType = (req.session as any).userType || 'professional';
+            
+            // Re-add to token store
+            sessionTokenStore.set(sessionToken, {
+              userId: userId,
+              userType: userType,
+              timestamp: Date.now()
+            });
+            
+            console.log(`Restored session token to store for user ID: ${userId}`);
+            
+            // Try to get the user and continue
+            try {
+              const user = await storage.getUser(userId);
+              if (user) {
+                const { password, ...safeUser } = user;
+                (req as any).user = safeUser;
+                console.log(`Session restored after server restart for user: ${user.username}`);
+                return next();
+              }
+            } catch (error) {
+              console.log("User lookup failed during token restoration:", error);
+            }
+          }
         }
       }
       

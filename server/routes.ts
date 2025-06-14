@@ -65,7 +65,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2024-12-18.acacia" as any,
 });
 
-import { registerAdminRoutes } from "./admin-routes";
 import { trackApiPerformance } from "./api-performance";
 import { cacheManager } from "./cache-manager";
 
@@ -457,8 +456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   };
 
-  // Register admin-specific routes after auth middleware is set up
-  registerAdminRoutes(app);
+  // Admin routes have been removed as part of cleanup
   
   // Middleware to automatically authenticate users with persistent auth tokens
   app.use(async (req, res, next) => {

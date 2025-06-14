@@ -20,6 +20,8 @@ import CompanyDashboard from "@/pages/company-dashboard";
 import Professionals from "@/pages/professionals";
 import ProfessionalProfile from "@/pages/professional-profile";
 import EditProfile from "@/pages/edit-profile";
+import Profile from "@/pages/profile";
+import Settings from "@/pages/settings";
 import Jobs from "@/pages/jobs";
 import PostJob from "@/pages/post-job";
 import JobDetail from "@/pages/job-detail";
@@ -88,11 +90,11 @@ function Router() {
       />
       <ProtectedRoute 
         path="/profile" 
-        component={EditProfile} 
+        component={Profile} 
       />
       <ProtectedRoute 
         path="/settings" 
-        component={EditProfile} 
+        component={Settings} 
       />
       <ProtectedRoute 
         path="/post-job" 

@@ -226,6 +226,9 @@ export class MemStorage implements IStorage {
   private expertises: Map<number, Expertise>;
   private professionalExpertises: Map<number, ProfessionalExpertise>;
   private certifications: Map<number, Certification>;
+  private awards: Map<number, SelectAward>;
+  private trainingMaterials: Map<number, SelectTrainingMaterial>;
+  private portfolioLinks: Map<number, SelectPortfolioLink>;
   private companyProfiles: Map<number, CompanyProfile>;
   private jobPostings: Map<number, JobPosting>;
   private jobApplications: Map<number, JobApplication>;
@@ -253,6 +256,9 @@ export class MemStorage implements IStorage {
   private expertiseId: number;
   private profExpertiseId: number;
   private certificationId: number;
+  private awardId: number;
+  private trainingMaterialId: number;
+  private portfolioLinkId: number;
   private companyProfileId: number;
   private jobPostingId: number;
   private jobApplicationId: number;
@@ -276,6 +282,9 @@ export class MemStorage implements IStorage {
     this.expertises = new Map();
     this.professionalExpertises = new Map();
     this.certifications = new Map();
+    this.awards = new Map();
+    this.trainingMaterials = new Map();
+    this.portfolioLinks = new Map();
     this.companyProfiles = new Map();
     this.jobPostings = new Map();
     this.jobApplications = new Map();
@@ -302,6 +311,9 @@ export class MemStorage implements IStorage {
     this.expertiseId = 1;
     this.profExpertiseId = 1;
     this.certificationId = 1;
+    this.awardId = 1;
+    this.trainingMaterialId = 1;
+    this.portfolioLinkId = 1;
     this.companyProfileId = 1;
     this.jobPostingId = 1;
     this.jobApplicationId = 1;

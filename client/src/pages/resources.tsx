@@ -98,11 +98,28 @@ export default function Resources() {
     isLoading: isLoadingResources,
     error: resourcesError
   } = useQuery<Resource[]>({
-    queryKey: ["/api/resources", { 
+    queryKey: ["/api/resources/search", { 
       query: debouncedSearchTerm, 
-      type: resourceType,
+      type: resourceType === "all" ? undefined : resourceType,
       categoryId: selectedCategory 
     }],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (debouncedSearchTerm) params.append('query', debouncedSearchTerm);
+      if (resourceType && resourceType !== "all") params.append('type', resourceType);
+      if (selectedCategory) params.append('categoryId', selectedCategory.toString());
+      
+      const url = `/api/resources/search${params.toString() ? '?' + params.toString() : ''}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch resources: ${response.status}`);
+      }
+      return response.json();
+    },
+    retry: (failureCount, error: any) => {
+      if (error?.message?.includes('401')) return false;
+      return failureCount < 2;
+    },
     queryFn: async ({ queryKey }) => {
       const [path, params] = queryKey;
       const { query, type, categoryId } = params as { 

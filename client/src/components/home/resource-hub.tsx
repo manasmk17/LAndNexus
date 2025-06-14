@@ -14,7 +14,12 @@ import type { Resource } from "@shared/schema";
 
 export default function ResourceHub() {
   const { data: resources, isLoading, error } = useQuery<Resource[]>({
-    queryKey: ["/api/resources/featured?limit=3"],
+    queryKey: ["/api/resources/featured", { limit: 3 }],
+    retry: (failureCount, error: any) => {
+      // Don't retry on 401 errors
+      if (error?.status === 401) return false;
+      return failureCount < 2;
+    },
   });
 
   return (
@@ -78,7 +83,11 @@ export default function ResourceHub() {
           </div>
         ) : error ? (
           <div className="text-center py-8">
-            <p className="text-red-500">Failed to load resources. Please try again later.</p>
+            <p className="text-red-500">
+              {(error as any)?.status === 401 
+                ? 'Authentication required to view featured resources.' 
+                : 'Failed to load resources. Please try again later.'}
+            </p>
           </div>
         ) : resources && resources.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

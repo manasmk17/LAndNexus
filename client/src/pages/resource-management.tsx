@@ -5,8 +5,9 @@ import { apiRequest, secureFileUpload, queryClient } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/use-auth';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 
 export default function ResourceManagementPage() {
   const { user } = useAuth();
@@ -31,91 +32,118 @@ export default function ResourceManagementPage() {
     enabled: !!user?.isAdmin,
   });
 
-  // Mutation for uploading files
+  // Handle file upload
   const uploadMutation = useMutation({
     mutationFn: async (files: File[]) => {
       const formData = new FormData();
       files.forEach(file => {
         formData.append('files', file);
       });
-      
+
       const response = await secureFileUpload('POST', '/api/resources/upload', formData);
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${response.status}`);
+      }
       return response.json();
     },
-    onSuccess: () => {
-      // Invalidate queries to refresh the resource lists
+    onSuccess: (result, files) => {
+      toast({
+        title: 'Success',
+        description: `Uploaded ${files.length} file(s) successfully`,
+      });
+
+      // Refresh resources
       queryClient.invalidateQueries({ queryKey: ['/api/me/resources'] });
       if (user?.isAdmin) {
         queryClient.invalidateQueries({ queryKey: ['/api/resources'] });
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('Error uploading files:', error);
       toast({
-        title: 'Upload failed',
-        description: error instanceof Error ? error.message : 'An error occurred while uploading files',
-        variant: 'destructive'
-      });
-    }
-  });
-
-  // Mutation for removing resources
-  const removeMutation = useMutation({
-    mutationFn: async (resourceId: number) => {
-      await apiRequest('DELETE', `/api/resources/${resourceId}`);
-    },
-    onSuccess: () => {
-      // Invalidate queries to refresh the resource lists
-      queryClient.invalidateQueries({ queryKey: ['/api/me/resources'] });
-      if (user?.isAdmin) {
-        queryClient.invalidateQueries({ queryKey: ['/api/resources'] });
-      }
-      
-      toast({
-        title: 'Resource removed',
-        description: 'The resource has been removed successfully'
+        title: 'Error',
+        description: error.message || 'Failed to upload files',
+        variant: 'destructive',
       });
     },
-    onError: (error) => {
-      toast({
-        title: 'Failed to remove resource',
-        description: error instanceof Error ? error.message : 'An error occurred',
-        variant: 'destructive'
-      });
-    }
   });
 
-  // Handle file upload
-  const handleFileUpload = async (files: File[]) => {
-    await uploadMutation.mutateAsync(files);
+  const handleFileUpload = (files: File[]) => {
+    if (!user) return;
+    uploadMutation.mutate(files);
   };
 
   // Handle resource removal
+  const removeMutation = useMutation({
+    mutationFn: async (resourceId: number) => {
+      const response = await apiRequest('DELETE', `/api/resources/${resourceId}`);
+      if (!response.ok) {
+        throw new Error(`Delete failed: ${response.status}`);
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Resource removed successfully',
+      });
+
+      // Refresh resources
+      queryClient.invalidateQueries({ queryKey: ['/api/me/resources'] });
+      if (user?.isAdmin) {
+        queryClient.invalidateQueries({ queryKey: ['/api/resources'] });
+      }
+    },
+    onError: (error: any) => {
+      console.error('Error removing resource:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to remove resource',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleResourceRemoved = (resource: Resource) => {
     removeMutation.mutate(resource.id);
   };
 
-  // If loading, show a loading indicator
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="container py-8 max-w-4xl">
+        <h1 className="text-3xl font-bold mb-6">Resource Management</h1>
+        <Card>
+          <CardContent className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+              <p>Loading your resources...</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  // If error, show an error message
   if (error) {
     return (
-      <Card className="mx-auto max-w-4xl">
-        <CardHeader>
-          <CardTitle className="text-center text-red-500">
-            Error loading resources
-          </CardTitle>
-          <p className="text-center text-gray-600">
-            {error instanceof Error ? error.message : 'An unknown error occurred'}
-          </p>
-        </CardHeader>
-      </Card>
+      <div className="container py-8 max-w-4xl">
+        <h1 className="text-3xl font-bold mb-6">Resource Management</h1>
+        <Card>
+          <CardHeader>
+            <CardTitle>Error Loading Resources</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center py-8">
+            <p className="text-red-500 mb-4">
+              {(error as any)?.status === 401 
+                ? 'Authentication required. Please log in again.' 
+                : 'Failed to load resources. Please try again later.'}
+            </p>
+            <Button onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/me/resources'] })}>
+              Retry
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -135,7 +163,7 @@ export default function ResourceManagementPage() {
   return (
     <div className="container py-8 max-w-4xl">
       <h1 className="text-3xl font-bold mb-6">Resource Management</h1>
-      
+
       {user.isAdmin ? (
         <Tabs defaultValue="my-resources">
           <TabsList className="grid w-full grid-cols-2 mb-6 h-auto gap-1 p-1">
@@ -148,7 +176,7 @@ export default function ResourceManagementPage() {
               <span className="sm:hidden">All</span>
             </TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="my-resources" className="space-y-4">
             <ResourceManager
               resources={resources || []}
@@ -156,7 +184,7 @@ export default function ResourceManagementPage() {
               onResourceRemoved={handleResourceRemoved}
             />
           </TabsContent>
-          
+
           <TabsContent value="all-resources" className="space-y-4">
             {isLoadingAll ? (
               <div className="flex items-center justify-center h-40">

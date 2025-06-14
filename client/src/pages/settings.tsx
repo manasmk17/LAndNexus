@@ -228,7 +228,10 @@ export default function SettingsPage() {
                 <Label className="text-base">Profile Visibility</Label>
                 <p className="text-sm text-slate-500">Make your profile visible to others</p>
               </div>
-              <Switch defaultChecked />
+              <Switch 
+                checked={profileVisible}
+                onCheckedChange={handleSwitchChange(setProfileVisible, "Profile Visibility")}
+              />
             </div>
             <Separator />
             <div className="flex items-center justify-between">
@@ -236,7 +239,10 @@ export default function SettingsPage() {
                 <Label className="text-base">Contact Information</Label>
                 <p className="text-sm text-slate-500">Allow others to see your contact details</p>
               </div>
-              <Switch />
+              <Switch 
+                checked={contactInfoVisible}
+                onCheckedChange={handleSwitchChange(setContactInfoVisible, "Contact Information Visibility")}
+              />
             </div>
           </CardContent>
         </Card>
@@ -258,7 +264,7 @@ export default function SettingsPage() {
                 <Label className="text-base">Current Plan</Label>
                 <p className="text-sm text-slate-500">Professional Plan - Active</p>
               </div>
-              <Button variant="outline">Manage Plan</Button>
+              <Button variant="outline" onClick={handleManagePlan}>Manage Plan</Button>
             </div>
             <Separator />
             <div className="flex items-center justify-between">
@@ -266,7 +272,7 @@ export default function SettingsPage() {
                 <Label className="text-base">Payment Methods</Label>
                 <p className="text-sm text-slate-500">Manage your payment methods</p>
               </div>
-              <Button variant="outline">Manage</Button>
+              <Button variant="outline" onClick={handleManagePayment}>Manage</Button>
             </div>
           </CardContent>
         </Card>
@@ -289,7 +295,7 @@ export default function SettingsPage() {
                   <Label className="text-base">Team Members</Label>
                   <p className="text-sm text-slate-500">Add or remove team members</p>
                 </div>
-                <Button variant="outline">Manage Team</Button>
+                <Button variant="outline" onClick={handleManageTeam}>Manage Team</Button>
               </div>
               <Separator />
               <div className="flex items-center justify-between">
@@ -297,7 +303,7 @@ export default function SettingsPage() {
                   <Label className="text-base">Job Posting Defaults</Label>
                   <p className="text-sm text-slate-500">Set default preferences for job postings</p>
                 </div>
-                <Button variant="outline">Configure</Button>
+                <Button variant="outline" onClick={handleConfigureDefaults}>Configure</Button>
               </div>
             </CardContent>
           </Card>
@@ -320,7 +326,7 @@ export default function SettingsPage() {
                 <Label className="text-base">Export Data</Label>
                 <p className="text-sm text-slate-500">Download a copy of your data</p>
               </div>
-              <Button variant="outline">Export</Button>
+              <Button variant="outline" onClick={handleExportData}>Export</Button>
             </div>
             <Separator />
             <div className="flex items-center justify-between">
@@ -328,7 +334,7 @@ export default function SettingsPage() {
                 <Label className="text-base text-red-600">Delete Account</Label>
                 <p className="text-sm text-slate-500">Permanently delete your account and data</p>
               </div>
-              <Button variant="destructive">Delete Account</Button>
+              <Button variant="destructive" onClick={handleDeleteAccount}>Delete Account</Button>
             </div>
           </CardContent>
         </Card>
@@ -350,7 +356,7 @@ export default function SettingsPage() {
                 <Label className="text-base">Contact Support</Label>
                 <p className="text-sm text-slate-500">Get help from our support team</p>
               </div>
-              <Button variant="outline">Contact Us</Button>
+              <Button variant="outline" onClick={handleContactSupport}>Contact Us</Button>
             </div>
             <Separator />
             <div className="flex items-center justify-between">
@@ -358,7 +364,7 @@ export default function SettingsPage() {
                 <Label className="text-base">Terms & Privacy</Label>
                 <p className="text-sm text-slate-500">Review our terms and privacy policy</p>
               </div>
-              <Button variant="outline">View</Button>
+              <Button variant="outline" onClick={handleViewTerms}>View</Button>
             </div>
           </CardContent>
         </Card>

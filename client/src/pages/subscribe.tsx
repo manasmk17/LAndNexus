@@ -9,6 +9,7 @@ import { useTranslation } from "@/lib/i18n";
 
 import { SubscriptionPayment } from "@/components/payment/subscription-payment";
 import { CheckCircle, ArrowLeft } from "lucide-react";
+import type { SubscriptionPlan } from "../../../shared/schema";
 
 export default function Subscribe() {
   const { t } = useTranslation();
@@ -22,12 +23,12 @@ export default function Subscribe() {
   const billing = urlParams.get('billing') as 'monthly' | 'yearly';
   const currency = urlParams.get('currency') as 'USD' | 'AED';
 
-  const { data: plans = [] } = useQuery({
+  const { data: plans = [] } = useQuery<SubscriptionPlan[]>({
     queryKey: ["/api/subscription-plans"],
     enabled: true
   });
 
-  const selectedPlan = plans.find(plan => plan.id === parseInt(planId || '0'));
+  const selectedPlan = plans.find((plan: SubscriptionPlan) => plan.id === parseInt(planId || '0'));
 
   useEffect(() => {
     if (!user) {
@@ -89,7 +90,7 @@ export default function Subscribe() {
           planId={parseInt(planId || '1')}
           planName={selectedPlan.name}
           planPrice={getPrice()}
-          planFeatures={selectedPlan.features}
+          planFeatures={selectedPlan.features as string[]}
           billingCycle={billing}
           currency={currency}
           onSuccess={handleSubscriptionSuccess}

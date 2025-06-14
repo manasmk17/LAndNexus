@@ -1413,6 +1413,11 @@ export class MemStorage implements IStorage {
       this.queryCache.delete(key);
       return null;
     }
+    
+    // Periodic cache cleanup to prevent memory leaks
+    if (this.queryCache.size > 1000) {
+      this.cleanupExpiredCache();
+    }
 
     return cached.data;
   }
@@ -1422,6 +1427,15 @@ export class MemStorage implements IStorage {
       data,
       timestamp: Date.now()
     });
+  }
+
+  private cleanupExpiredCache(): void {
+    const now = Date.now();
+    for (const [key, cached] of this.queryCache.entries()) {
+      if (now - cached.timestamp > this.CACHE_TTL) {
+        this.queryCache.delete(key);
+      }
+    }
   }
 
   private invalidateCache(pattern?: string): void {

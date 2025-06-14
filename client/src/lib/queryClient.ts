@@ -380,7 +380,12 @@ export async function secureFileUpload(
 
     // Handle other errors with detailed information
     if (!res.ok) {
-      const responseText = await res.text();
+      let responseText = '';
+      try {
+        responseText = await res.text();
+      } catch (textError) {
+        responseText = 'Unable to read response body';
+      }
       console.error(`Error ${res.status} from server:`, responseText);
       throw new Error(`Server Error (${res.status}): ${responseText}`);
     }

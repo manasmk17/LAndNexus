@@ -27,10 +27,12 @@ export const initializeDatabase = async () => {
       
       pool = new Pool({ 
         connectionString: process.env.DATABASE_URL,
-        connectionTimeoutMillis: 10000, // Increased to 10 seconds for stability
-        max: 5, // Reduced max connections to prevent resource conflicts
-        idleTimeoutMillis: 60000, // Increased idle timeout for better connection reuse
-        allowExitOnIdle: true // Allow pool to close when idle
+        connectionTimeoutMillis: 15000, // Increased to 15 seconds
+        max: 3, // Further reduced to prevent conflicts
+        idleTimeoutMillis: 30000, // Reduced idle timeout to free up connections faster
+        allowExitOnIdle: true,
+        statement_timeout: 10000, // Add statement timeout
+        query_timeout: 10000 // Add query timeout
       });
       
       // Create the drizzle instance

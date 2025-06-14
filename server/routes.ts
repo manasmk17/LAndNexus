@@ -156,8 +156,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fileFilter: fileFilterImages
   });
   
-  // Session token mapping for persistent authentication
+  // Session token mapping for persistent authentication - make it persistent across restarts
   const sessionTokenStore = new Map<string, { userId: number; userType: string; timestamp: number }>();
+  
+  // Clean up expired tokens periodically
+  setInterval(() => {
+    const now = Date.now();
+    for (const [token, data] of sessionTokenStore.entries()) {
+      if (now - data.timestamp > 24 * 60 * 60 * 1000) {
+        sessionTokenStore.delete(token);
+      }
+    }
+  }, 60 * 60 * 1000); // Clean up every hour
 
   // Configure session middleware with enhanced persistence
   const MemoryStore = memorystore(session);

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { useWebSocket } from "@/hooks/use-websocket";
+
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
 
@@ -25,7 +25,7 @@ export default function NotificationCenter() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   
-  const { socket } = useWebSocket();
+
 
   useEffect(() => {
     if (!user) return;

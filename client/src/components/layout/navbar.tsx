@@ -55,16 +55,12 @@ export function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex items-center space-x-4">
-            <Link to="/" className="flex items-center space-x-3 group">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-accent rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shadow-md">
-                <span className="text-primary-foreground font-bold text-sm">L&D</span>
-              </div>
-              <span className="font-bold text-xl bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                L&D Nexus
-              </span>
-            </Link>
-          </div>
+          <Link href="/" className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">L&D</span>
+            </div>
+            <span className="font-semibold text-xl hidden sm:block">L&D Nexus</span>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6 nav-menu">

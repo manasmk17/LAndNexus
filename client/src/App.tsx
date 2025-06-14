@@ -108,7 +108,7 @@ function Router() {
       <ProtectedRoute 
         path="/create-resource" 
         component={CreateResource} 
-        userTypes={["professional"]} 
+        userTypes={["professional", "company"]} 
       />
       <ProtectedRoute 
         path="/career-recommendations" 

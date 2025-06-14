@@ -124,8 +124,8 @@ export default function CreateResource() {
           description: "Your resource has been published successfully",
         });
 
-        // Redirect to professional dashboard after resource creation
-        setLocation("/professional-dashboard");
+        // Redirect to appropriate dashboard after resource creation
+        setLocation(user.userType === "company" ? "/company-dashboard" : "/professional-dashboard");
       } else {
         // If no file, use regular JSON API request
         await apiRequest("POST", "/api/resources", resourceData);
@@ -141,8 +141,8 @@ export default function CreateResource() {
           queryKey: ["/api/resources"]
         });
 
-        // Redirect to professional dashboard after resource creation
-        setLocation("/professional-dashboard");
+        // Redirect to appropriate dashboard after resource creation
+        setLocation(user.userType === "company" ? "/company-dashboard" : "/professional-dashboard");
       }
     } catch (error) {
       console.error("Error creating resource:", error);

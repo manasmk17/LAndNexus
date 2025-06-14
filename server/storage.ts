@@ -196,6 +196,31 @@ export interface IStorage {
   // Simple auth token operations (simplified)
   createSimpleAuthToken?(userId: number): Promise<string>;
   validateSimpleAuthToken?(token: string): Promise<number | null>;
+
+  // Professional Portfolio Showcase operations
+  // Awards & Recognition
+  getProfessionalAwards(professionalId: number): Promise<ProfessionalAward[]>;
+  createProfessionalAward(award: InsertProfessionalAward): Promise<ProfessionalAward>;
+  updateProfessionalAward(id: number, award: Partial<InsertProfessionalAward>): Promise<ProfessionalAward | undefined>;
+  deleteProfessionalAward(id: number): Promise<boolean>;
+
+  // Training Materials Library
+  getTrainingMaterials(professionalId: number): Promise<TrainingMaterial[]>;
+  createTrainingMaterial(material: InsertTrainingMaterial): Promise<TrainingMaterial>;
+  updateTrainingMaterial(id: number, material: Partial<InsertTrainingMaterial>): Promise<TrainingMaterial | undefined>;
+  deleteTrainingMaterial(id: number): Promise<boolean>;
+
+  // Certification Portfolio
+  getProfessionalCertificationPortfolio(professionalId: number): Promise<ProfessionalCertificationPortfolio[]>;
+  createProfessionalCertificationPortfolio(cert: InsertProfessionalCertificationPortfolio): Promise<ProfessionalCertificationPortfolio>;
+  updateProfessionalCertificationPortfolio(id: number, cert: Partial<InsertProfessionalCertificationPortfolio>): Promise<ProfessionalCertificationPortfolio | undefined>;
+  deleteProfessionalCertificationPortfolio(id: number): Promise<boolean>;
+
+  // External Portfolio Links
+  getExternalPortfolioLinks(professionalId: number): Promise<ExternalPortfolioLink[]>;
+  createExternalPortfolioLink(link: InsertExternalPortfolioLink): Promise<ExternalPortfolioLink>;
+  updateExternalPortfolioLink(id: number, link: Partial<InsertExternalPortfolioLink>): Promise<ExternalPortfolioLink | undefined>;
+  deleteExternalPortfolioLink(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {

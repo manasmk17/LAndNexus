@@ -222,13 +222,11 @@ export default function Resources() {
           <p className="text-gray-500">Access L&D materials, templates, and knowledge</p>
         </div>
         
-        {user && (
-          <Link href="/create-resource">
-            <Button className="mt-4 md:mt-0">
-              Share a Resource
-            </Button>
-          </Link>
-        )}
+        <Link href="/create-resource">
+          <Button className="mt-4 md:mt-0">
+            Share a Resource
+          </Button>
+        </Link>
       </div>
       
       {/* Resource type tabs */}

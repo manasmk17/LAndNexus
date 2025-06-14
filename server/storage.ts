@@ -606,9 +606,6 @@ export class MemStorage implements IStorage {
         availability: profile.availability,
         workExperience: profile.workExperience,
         testimonials: profile.testimonials,
-        awards: null,
-        trainingMaterials: null,
-        certificationPortfolio: null,
         externalPortfolioUrl: null
       };
       this.professionalProfiles.set(id, newProfile);
@@ -1141,9 +1138,6 @@ export class MemStorage implements IStorage {
       availability: profile.availability || null,
       workExperience: profile.workExperience || null,
       testimonials: profile.testimonials || null,
-      awards: profile.awards || null,
-      trainingMaterials: profile.trainingMaterials || null,
-      certificationPortfolio: profile.certificationPortfolio || null,
       externalPortfolioUrl: profile.externalPortfolioUrl || null
     };
 
@@ -1246,7 +1240,14 @@ export class MemStorage implements IStorage {
 
   async createCertification(insertCertification: InsertCertification): Promise<Certification> {
     const id = this.certificationId++;
-    const certification: Certification = { ...insertCertification, id };
+    const certification: Certification = { 
+      ...insertCertification, 
+      id,
+      createdAt: new Date(),
+      description: insertCertification.description || null,
+      imageUrl: insertCertification.imageUrl || null,
+      verificationUrl: insertCertification.verificationUrl || null
+    };
     this.certifications.set(id, certification);
     return certification;
   }
@@ -1270,7 +1271,10 @@ export class MemStorage implements IStorage {
     const award: SelectAward = { 
       ...insertAward, 
       id,
-      createdAt: new Date()
+      createdAt: new Date(),
+      description: insertAward.description || null,
+      imageUrl: insertAward.imageUrl || null,
+      category: insertAward.category || null
     };
     this.awards.set(id, award);
     return award;
@@ -1337,55 +1341,7 @@ export class MemStorage implements IStorage {
     return this.portfolioLinks.delete(id);
   }
 
-  // Training Materials operations
-  async getTrainingMaterial(id: number): Promise<SelectTrainingMaterial | undefined> {
-    return this.trainingMaterials.get(id);
-  }
 
-  async getProfessionalTrainingMaterials(professionalId: number): Promise<SelectTrainingMaterial[]> {
-    return Array.from(this.trainingMaterials.values())
-      .filter(material => material.professionalId === professionalId);
-  }
-
-  async createTrainingMaterial(insertMaterial: InsertTrainingMaterial): Promise<SelectTrainingMaterial> {
-    const id = this.trainingMaterialId++;
-    const material: SelectTrainingMaterial = { 
-      ...insertMaterial, 
-      id,
-      createdAt: new Date()
-    };
-    this.trainingMaterials.set(id, material);
-    return material;
-  }
-
-  async deleteTrainingMaterial(id: number): Promise<boolean> {
-    return this.trainingMaterials.delete(id);
-  }
-
-  // Portfolio Links operations
-  async getPortfolioLink(id: number): Promise<SelectPortfolioLink | undefined> {
-    return this.portfolioLinks.get(id);
-  }
-
-  async getProfessionalPortfolioLinks(professionalId: number): Promise<SelectPortfolioLink[]> {
-    return Array.from(this.portfolioLinks.values())
-      .filter(link => link.professionalId === professionalId);
-  }
-
-  async createPortfolioLink(insertLink: InsertPortfolioLink): Promise<SelectPortfolioLink> {
-    const id = this.portfolioLinkId++;
-    const link: SelectPortfolioLink = { 
-      ...insertLink, 
-      id,
-      createdAt: new Date()
-    };
-    this.portfolioLinks.set(id, link);
-    return link;
-  }
-
-  async deletePortfolioLink(id: number): Promise<boolean> {
-    return this.portfolioLinks.delete(id);
-  }
 
   // Company Profile operations
   async getCompanyProfile(id: number): Promise<CompanyProfile | undefined> {

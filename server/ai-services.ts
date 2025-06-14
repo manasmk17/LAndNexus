@@ -107,24 +107,24 @@ export function calculateCosineSimilarity(embedding1: number[], embedding2: numb
   if (embedding1.length !== embedding2.length) {
     throw new Error("Embeddings must have the same dimensions");
   }
-  
+
   let dotProduct = 0;
   let magnitude1 = 0;
   let magnitude2 = 0;
-  
+
   for (let i = 0; i < embedding1.length; i++) {
     dotProduct += embedding1[i] * embedding2[i];
     magnitude1 += embedding1[i] * embedding1[i];
     magnitude2 += embedding2[i] * embedding2[i];
   }
-  
+
   magnitude1 = Math.sqrt(magnitude1);
   magnitude2 = Math.sqrt(magnitude2);
-  
+
   if (magnitude1 === 0 || magnitude2 === 0) {
     return 0;
   }
-  
+
   return dotProduct / (magnitude1 * magnitude2);
 }
 
@@ -135,11 +135,11 @@ export async function calculateProfileJobMatchScore(
 ): Promise<number> {
   try {
     console.log(`Calculating match score between "${profile.title || profile.firstName}" and "${job.title}"`);
-    
+
     // Generate embeddings for the profile and job
     const profileEmbedding = await generateProfileEmbedding(profile);
     const jobEmbedding = await generateJobEmbedding(job);
-    
+
     // If embeddings could not be generated, fall back to a simpler method
     if (!profileEmbedding || !jobEmbedding) {
       console.log("Using fallback matching algorithm (Gemini not available)");
@@ -147,11 +147,11 @@ export async function calculateProfileJobMatchScore(
       console.log(`Fallback score: ${(fallbackScore * 100).toFixed(1)}%`);
       return fallbackScore;
     }
-    
+
     // Calculate cosine similarity between embeddings
     const similarity = calculateCosineSimilarity(profileEmbedding, jobEmbedding);
     console.log(`AI embedding similarity: ${similarity.toFixed(3)}`);
-    
+
     // Normalize similarity to a 0-1 scale (cosine similarity ranges from -1 to 1)
     const aiScore = (similarity + 1) / 2;
     console.log(`AI normalized score: ${(aiScore * 100).toFixed(1)}%`);
@@ -174,12 +174,12 @@ function fallbackMatchScore(profile: ProfessionalProfile, job: JobPosting): numb
     location: 0,
     industry: 0
   };
-  
+
   // Enhanced title matching (35% weight)
   if (profile.title && job.title) {
     const profileTitle = profile.title.toLowerCase().trim();
     const jobTitle = job.title.toLowerCase().trim();
-    
+
     // Exact match
     if (profileTitle === jobTitle) {
       components.title = 0.35;
@@ -208,12 +208,12 @@ function fallbackMatchScore(profile: ProfessionalProfile, job: JobPosting): numb
       }
     }
   }
-  
+
   // Enhanced skills and experience matching (30% weight)
   if (profile.bio && job.description) {
     const profileText = profile.bio.toLowerCase();
     const jobText = (job.description + ' ' + (job.requirements || '')).toLowerCase();
-    
+
     // L&D specific keywords with weights
     const ldKeywords = [
       { word: 'learning', weight: 1.0 },
@@ -229,34 +229,34 @@ function fallbackMatchScore(profile: ProfessionalProfile, job: JobPosting): numb
       { word: 'facilitation', weight: 0.8 },
       { word: 'workshop', weight: 0.7 }
     ];
-    
+
     let skillScore = 0;
     let maxSkillScore = 0;
-    
+
     for (const { word, weight } of ldKeywords) {
       maxSkillScore += weight;
       if (profileText.includes(word) && jobText.includes(word)) {
         skillScore += weight;
       }
     }
-    
+
     if (maxSkillScore > 0) {
       components.skills = 0.30 * (skillScore / maxSkillScore);
     }
   }
-  
+
   // Experience level matching (20% weight)
   if (profile.yearsExperience && job.requirements) {
     const jobReqs = job.requirements.toLowerCase();
     const years = profile.yearsExperience;
-    
+
     // Extract experience requirements from job
     let requiredYears = 0;
     const experienceMatch = jobReqs.match(/(\d+)\s*(?:\+)?\s*years?\s*(?:of\s*)?experience/i);
     if (experienceMatch) {
       requiredYears = parseInt(experienceMatch[1]);
     }
-    
+
     if (requiredYears > 0) {
       if (years >= requiredYears) {
         // Perfect match or overqualified
@@ -275,12 +275,12 @@ function fallbackMatchScore(profile: ProfessionalProfile, job: JobPosting): numb
       else components.experience = 0.05;
     }
   }
-  
+
   // Location matching (10% weight)
   if (profile.location && job.location) {
     const profLocation = profile.location.toLowerCase().trim();
     const jobLocation = job.location.toLowerCase().trim();
-    
+
     if (profLocation === jobLocation) {
       components.location = 0.10;
     } else if (profLocation.includes('remote') || jobLocation.includes('remote')) {
@@ -289,7 +289,7 @@ function fallbackMatchScore(profile: ProfessionalProfile, job: JobPosting): numb
       components.location = 0.06;
     }
   }
-  
+
   // Industry matching (5% weight)
   if (profile.industryFocus && job.description) {
     const industry = profile.industryFocus.toLowerCase();
@@ -298,68 +298,18 @@ function fallbackMatchScore(profile: ProfessionalProfile, job: JobPosting): numb
       components.industry = 0.05;
     }
   }
-  
+
   // Calculate total score
   totalScore = components.title + components.skills + components.experience + components.location + components.industry;
-  
+
   // Add some variance to make scores more realistic (±5%)
   const variance = (Math.random() - 0.5) * 0.1;
   totalScore += variance;
-  
+
   // Ensure score is between 0.15 and 0.95 for realistic matching
   const finalScore = Math.max(0.15, Math.min(0.95, totalScore));
-  
+
   console.log(`Detailed match breakdown: Title: ${(components.title*100).toFixed(1)}%, Skills: ${(components.skills*100).toFixed(1)}%, Experience: ${(components.experience*100).toFixed(1)}%, Location: ${(components.location*100).toFixed(1)}%, Industry: ${(components.industry*100).toFixed(1)}%, Final: ${(finalScore*100).toFixed(1)}%`);
-  
+
   return finalScore;
-      'design', 'implementation', 'evaluation', 'assessment', 'facilitation'
-    ];
-    
-    const profileSkills = skillKeywords.filter(skill => profileText.includes(skill));
-    const jobSkills = skillKeywords.filter(skill => jobText.includes(skill));
-    const commonSkills = profileSkills.filter(skill => jobSkills.includes(skill));
-    
-    if (commonSkills.length > 0) {
-      score += 0.3 * (commonSkills.length / Math.max(profileSkills.length, jobSkills.length, 1));
-    }
-  }
-  
-  // Location compatibility (15% weight)
-  maxPossibleScore += 0.15;
-  if (job.remote) {
-    score += 0.15; // Remote jobs are always compatible
-  } else if (profile.location && job.location) {
-    if (profile.location.toLowerCase() === job.location.toLowerCase()) {
-      score += 0.15;
-    } else if (profile.location.toLowerCase().includes(job.location.toLowerCase()) || 
-               job.location.toLowerCase().includes(profile.location.toLowerCase())) {
-      score += 0.1;
-    }
-  }
-  
-  // Compensation alignment (10% weight)
-  maxPossibleScore += 0.1;
-  if (profile.ratePerHour && job.minCompensation && job.maxCompensation) {
-    if (profile.ratePerHour >= job.minCompensation && profile.ratePerHour <= job.maxCompensation) {
-      score += 0.1;
-    } else if (profile.ratePerHour * 0.9 <= job.maxCompensation && profile.ratePerHour * 1.1 >= job.minCompensation) {
-      score += 0.05; // Close range
-    }
-  }
-  
-  // Industry alignment (5% weight)
-  maxPossibleScore += 0.05;
-  if (profile.industryFocus && job.description) {
-    const industry = profile.industryFocus.toLowerCase();
-    const description = job.description.toLowerCase();
-    if (description.includes(industry)) {
-      score += 0.05;
-    }
-  }
-  
-  // Ensure minimum viable score and normalize
-  const normalizedScore = score / maxPossibleScore;
-  const minimumScore = 0.2; // 20% minimum for any reasonable match
-  
-  return Math.max(Math.min(normalizedScore, 1.0), minimumScore);
 }

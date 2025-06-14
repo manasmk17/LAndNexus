@@ -37,7 +37,7 @@ export default function ForgotPasswordForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [resetToken, setResetToken] = useState<string | null>(null);
-  
+
   // Initialize form
   const form = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -46,43 +46,38 @@ export default function ForgotPasswordForm() {
     },
   });
 
-  async function onSubmit(data: ForgotPasswordFormValues) {
+  const onSubmit = async (data: ForgotPasswordFormValues) => {
     setIsLoading(true);
-    
     try {
       const response = await apiRequest("POST", "/api/auth/forgot-password", data);
-      const result = await response.json();
-      
-      if (result.success) {
+
+      if (response.ok) {
+        const result = await response.json();
         setSuccess(true);
-        // In production, the token would be sent via email, but for demonstration we'll store it
-        // This is for development/demo only
-        if (result.token) {
-          setResetToken(result.token);
-        }
-        
+        setResetToken(result.token);
+
         toast({
-          title: "Recovery Email Sent",
-          description: "Check your email for instructions to reset your password.",
+          title: "Recovery instructions sent",
+          description: "If your email exists in our system, you'll receive a password reset link within a few minutes.",
         });
       } else {
+        const error = await response.json();
         toast({
-          title: "Error",
-          description: result.message || "An error occurred. Please try again.",
+          title: "Unable to send recovery email",
+          description: error.message || "Please check your email address and try again.",
           variant: "destructive",
         });
       }
     } catch (error) {
-      console.error("Forgot password error:", error);
       toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again later.",
+        title: "Connection error",
+        description: "Please check your internet connection and try again.",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -125,7 +120,7 @@ export default function ForgotPasswordForm() {
                   </FormItem>
                 )}
               />
-              
+
               <Button
                 type="submit"
                 className="w-full"

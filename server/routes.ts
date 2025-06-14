@@ -51,6 +51,7 @@ import { z } from "zod";
 import session from "express-session";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import Stripe from "stripe";
 import memorystore from "memorystore";
 
@@ -246,6 +247,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Configure Passport with a custom callback to support both username and email login
+  // Google OAuth Strategy
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    passport.use(new GoogleStrategy({
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: "/api/auth/google/callback"
+    }, async (accessToken, refreshToken, profile, done) => {
+      try {
+        // Check if user exists with this Google ID
+        let user = await storage.getUserByGoogleId(profile.id);
+        
+        if (user) {
+          return done(null, user);
+        }
+        
+        // Check if user exists with this email
+        if (profile.emails && profile.emails.length > 0) {
+          user = await storage.getUserByEmail(profile.emails[0].value);
+          if (user) {
+            // Link Google account to existing user
+            await storage.linkGoogleAccount(user.id, profile.id);
+            return done(null, user);
+          }
+        }
+        
+        // Create new user from Google profile
+        const newUser = await storage.createUser({
+          username: profile.displayName?.replace(/\s+/g, '').toLowerCase() || `user_${profile.id}`,
+          email: profile.emails?.[0]?.value || `${profile.id}@google.oauth`,
+          firstName: profile.name?.givenName || '',
+          lastName: profile.name?.familyName || '',
+          userType: 'professional', // Default type
+          password: crypto.randomBytes(32).toString('hex'), // Random password
+          googleId: profile.id
+        });
+        
+        return done(null, newUser);
+      } catch (error) {
+        return done(error);
+      }
+    }));
+  }
+
   passport.use(new LocalStrategy(async (identifier, password, done) => {
     try {
       // Check if the identifier is an email (contains @)
@@ -788,6 +832,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Auth Routes
+  // Google OAuth routes
+  app.get("/api/auth/google", 
+    passport.authenticate("google", { scope: ["profile", "email"] })
+  );
+
+  app.get("/api/auth/google/callback",
+    passport.authenticate("google", { failureRedirect: "/login?error=oauth_failed" }),
+    async (req, res) => {
+      try {
+        const user = req.user as any;
+        
+        // Generate session token for consistent authentication
+        const sessionToken = crypto.randomBytes(32).toString('hex');
+        (req.session as any).userId = user.id;
+        (req.session as any).userType = user.userType;
+        (req.session as any).authenticated = true;
+        (req.session as any).sessionToken = sessionToken;
+        
+        // Store session token mapping
+        sessionTokenStore.set(sessionToken, {
+          userId: user.id,
+          userType: user.userType,
+          timestamp: Date.now()
+        });
+        
+        // Set session token cookie
+        res.cookie('session_token', sessionToken, {
+          httpOnly: false,
+          secure: false,
+          sameSite: 'lax',
+          maxAge: 24 * 60 * 60 * 1000
+        });
+        
+        // Force session save
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error('Session save error after OAuth:', saveErr);
+          }
+          
+          // Redirect based on user type
+          if (user.isAdmin) {
+            res.redirect("/admin-dashboard");
+          } else if (user.userType === "professional") {
+            res.redirect("/professional-dashboard");
+          } else {
+            res.redirect("/company-dashboard");
+          }
+        });
+      } catch (error) {
+        console.error('OAuth callback error:', error);
+        res.redirect("/login?error=oauth_error");
+      }
+    }
+  );
+
   // Special admin creation endpoint
   app.post("/api/create-admin", async (req, res) => {
     try {
@@ -1111,6 +1210,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Email verification endpoints
+  app.post("/api/auth/send-verification", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      if (user.emailVerified) {
+        return res.json({ message: "Email is already verified" });
+      }
+      
+      // Generate verification token
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      await storage.setEmailVerificationToken(user.id, verificationToken);
+      
+      // In production, send email here
+      console.log(`Email verification token for ${email}: ${verificationToken}`);
+      
+      res.json({ 
+        success: true, 
+        message: "Verification email sent",
+        // For demo purposes only - remove in production
+        verificationToken,
+        verificationLink: `/verify-email?token=${verificationToken}`
+      });
+    } catch (err) {
+      console.error("Email verification error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.post("/api/auth/verify-email", async (req, res) => {
+    try {
+      const { token } = req.body;
+      
+      if (!token) {
+        return res.status(400).json({ message: "Verification token is required" });
+      }
+      
+      const success = await storage.verifyEmail(token);
+      
+      if (success) {
+        res.json({ success: true, message: "Email verified successfully" });
+      } else {
+        res.status(400).json({ message: "Invalid or expired verification token" });
+      }
+    } catch (err) {
+      console.error("Email verification error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   // Username recovery endpoint
   app.post("/api/auth/recover-username", async (req, res) => {
     try {

@@ -263,61 +263,7 @@ export default function MessageThread({ otherUserId }: MessageThreadProps) {
     });
   };
 
-  const getDisplayName = () => {
-    if (otherUser?.userType === "professional" && professionalProfile) {
-      return professionalProfile.title;
-    } else if (otherUser?.userType === "company" && companyProfile) {
-      return companyProfile.companyName;
-    } else if (otherUser) {
-      return `${otherUser.firstName} ${otherUser.lastName}`;
-    }
-    return "Loading...";
-  };
 
-  if (isLoadingUser || isLoadingMessages) {
-    return (
-      <div className="flex flex-col h-full">
-        <div className="p-4 border-b">
-          <Skeleton className="h-6 w-36" />
-        </div>
-        <div className="flex-1 p-4 overflow-y-auto space-y-4">
-          <div className="flex justify-start">
-            <div className="flex items-start max-w-[75%]">
-              <Skeleton className="h-8 w-8 rounded-full mr-2" />
-              <Skeleton className="h-16 w-64 rounded-md" />
-            </div>
-          </div>
-          <div className="flex justify-end">
-            <Skeleton className="h-12 w-52 rounded-md" />
-          </div>
-          <div className="flex justify-start">
-            <div className="flex items-start max-w-[75%]">
-              <Skeleton className="h-8 w-8 rounded-full mr-2" />
-              <Skeleton className="h-20 w-72 rounded-md" />
-            </div>
-          </div>
-        </div>
-        <div className="p-4 border-t">
-          <Skeleton className="h-10 w-full" />
-        </div>
-      </div>
-    );
-  }
-
-  if (!otherUser) {
-    return (
-      <div className="flex flex-col h-full items-center justify-center">
-        <p className="text-gray-500">User not found</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b">
-        <div className="flex items-center">
-          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-2">
-            {otherUser.userType === "company" ? (
               companyProfile?.logoUrl ? (
                 <img 
                   src={companyProfile.logoUrl} 

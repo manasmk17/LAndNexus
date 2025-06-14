@@ -32,6 +32,22 @@ export default function Messages() {
   const professionalIdParam = params.get("professional");
   const companyIdParam = params.get("company");
   
+  // Set selected user from URL params if provided
+  useEffect(() => {
+    if (userIdParam) {
+      setSelectedUserId(parseInt(userIdParam));
+    } else if (professionalIdParam || companyIdParam) {
+      setLocation("/messages");
+    }
+  }, [userIdParam, professionalIdParam, companyIdParam, setLocation]);
+  
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!isLoadingAuth && !user) {
+      setLocation("/login?redirect=/messages");
+    }
+  }, [user, isLoadingAuth, setLocation]);
+  
   // Fetch all messages for current user
   const { 
     data: messages, 
@@ -53,90 +69,60 @@ export default function Messages() {
         Array.from(new Set([
           ...messages.map(msg => msg.senderId),
           ...messages.map(msg => msg.receiverId)
-        ])) : [];
+        ])).filter(id => id !== user?.id) : [];
+        
+      if (userIds.length === 0) return [];
       
-      // Fetch user details based on the IDs
-      const response = await fetch(`/api/users/batch?userIds=${JSON.stringify(userIds)}`, {
-        credentials: "include"
-      });
-      
+      const response = await fetch(`/api/users/batch?ids=${userIds.join(',')}`);
       if (!response.ok) {
-        console.error("Error fetching users:", await response.text());
-        return [];
+        throw new Error('Failed to fetch users');
       }
-      
       return await response.json();
     }
   });
-
-  // Extract unique contacts from messages
-  const contacts = messages && users ? 
-    Array.from(new Set([
-      ...messages.map(msg => msg.senderId),
-      ...messages.map(msg => msg.receiverId)
-    ]))
-    .filter(id => id !== user?.id) // Exclude current user
-    .map(userId => {
-      const contact = users.find(u => u.id === userId);
-      const lastMessage = messages
-        .filter(msg => msg.senderId === userId || msg.receiverId === userId)
+  
+  // Get unique contacts from messages
+  const contacts = messages ? 
+    Array.from(new Set(
+      messages.map(msg => 
+        msg.senderId === user?.id ? msg.receiverId : msg.senderId
+      )
+    )).map(contactId => {
+      // Get the latest message with this contact
+      const latestMessage = [...messages]
+        .filter(msg => 
+          (msg.senderId === contactId && msg.receiverId === user?.id) ||
+          (msg.receiverId === contactId && msg.senderId === user?.id)
+        )
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
       
-      return contact ? { user: contact, lastMessage } : null;
-    })
-    .filter(Boolean) as Array<{ user: UserType; lastMessage: Message }> : [];
-
-  // Filter contacts based on search
-  const filteredContacts = searchTerm
-    ? contacts.filter(contact => {
-        const name = `${contact.user.firstName} ${contact.user.lastName}`.toLowerCase();
-        const username = contact.user.username.toLowerCase();
-        return name.includes(searchTerm.toLowerCase()) || 
-               username.includes(searchTerm.toLowerCase());
-      })
-    : contacts;
-
-  // Set selected user from URL parameters
-  useEffect(() => {
-    if (userIdParam) {
-      setSelectedUserId(parseInt(userIdParam));
-    } else if (professionalIdParam) {
-      // Get user ID from professional profile
-      fetch(`/api/professional-profiles/${professionalIdParam}`, { credentials: "include" })
-        .then(res => res.json())
-        .then(profile => {
-          if (profile.userId) {
-            setSelectedUserId(profile.userId);
-          }
-        })
-        .catch(console.error);
-    } else if (companyIdParam) {
-      // Get user ID from company profile
-      fetch(`/api/company-profiles/${companyIdParam}`, { credentials: "include" })
-        .then(res => res.json())
-        .then(profile => {
-          if (profile.userId) {
-            setSelectedUserId(profile.userId);
-          }
-        })
-        .catch(console.error);
-    }
-  }, [userIdParam, professionalIdParam, companyIdParam]);
-
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!isLoadingAuth && !user) {
-      setLocation("/login");
-    }
-  }, [user, isLoadingAuth, setLocation]);
-
+      // Find user details
+      const contactUser = users?.find(u => u.id === contactId);
+      
+      return {
+        userId: contactId,
+        user: contactUser,
+        latestMessage,
+        unreadCount: messages.filter(msg => 
+          msg.senderId === contactId && 
+          msg.receiverId === user?.id && 
+          !msg.read
+        ).length
+      };
+    }).filter(contact => contact.user) : [];
+  
+  // Filter contacts based on search term
+  const filteredContacts = contacts.filter(contact => 
+    !searchTerm || 
+    contact.user?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    contact.user?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    contact.user?.username?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
   if (isLoadingAuth) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <Skeleton className="h-8 w-48 mx-auto mb-4" />
-          <Skeleton className="h-4 w-32 mx-auto" />
-        </div>
+      <div className="flex justify-center items-center min-h-screen">
+        <Skeleton className="w-8 h-8 rounded-full" />
       </div>
     );
   }
@@ -146,25 +132,39 @@ export default function Messages() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Messages</h1>
+        <p className="text-muted-foreground">
+          Stay connected with your professional network
+        </p>
+        
+        {connectionError && (
+          <div className="mt-4 p-4 bg-destructive/10 text-destructive rounded-lg">
+            Connection error: {connectionError}. Messages may not update in real-time.
+          </div>
+        )}
+        
+        {!isConnected && (
+          <div className="mt-4 p-4 bg-yellow-100 text-yellow-800 rounded-lg">
+            Connecting to message service...
+          </div>
+        )}
+      </div>
+
+      <div className="grid lg:grid-cols-3 gap-6 h-[600px]">
         {/* Contacts List */}
         <div className="lg:col-span-1">
           <Card className="h-full">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                Messages
-                {connectionError && (
-                  <Badge variant="destructive">Offline</Badge>
-                )}
-                {isConnected && (
-                  <Badge variant="secondary">Online</Badge>
-                )}
+                <User className="h-5 w-5" />
+                Conversations
               </CardTitle>
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search contacts..."
+                  placeholder="Search conversations..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -172,55 +172,69 @@ export default function Messages() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="max-h-96 overflow-y-auto">
-                {isLoadingMessages ? (
-                  <div className="p-4 space-y-3">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <Skeleton key={i} className="h-16 w-full" />
-                    ))}
-                  </div>
-                ) : filteredContacts.length > 0 ? (
-                  filteredContacts.map(({ user: contact, lastMessage }) => (
-                    <div
-                      key={contact.id}
-                      className={`p-4 border-b cursor-pointer hover:bg-muted transition-colors ${
-                        selectedUserId === contact.id ? "bg-muted" : ""
+              {isLoadingMessages ? (
+                <div className="space-y-4 p-4">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="flex items-center space-x-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/2" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : filteredContacts.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground">
+                  <User className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No conversations yet</p>
+                  <p className="text-sm mt-2">
+                    Start a conversation by visiting a professional's profile
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {filteredContacts.map((contact) => (
+                    <button
+                      key={contact.userId}
+                      onClick={() => setSelectedUserId(contact.userId)}
+                      className={`w-full text-left p-4 hover:bg-muted/50 transition-colors ${
+                        selectedUserId === contact.userId ? 'bg-muted' : ''
                       }`}
-                      onClick={() => setSelectedUserId(contact.id)}
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                          {contact.userType === "professional" ? (
-                            <User className="w-5 h-5 text-primary" />
+                      <div className="flex items-center space-x-3">
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                          {contact.user?.userType === 'company' ? (
+                            <Building className="h-5 w-5 text-primary" />
                           ) : (
-                            <Building className="w-5 h-5 text-primary" />
+                            <User className="h-5 w-5 text-primary" />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">
-                            {contact.firstName} {contact.lastName}
-                          </p>
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium truncate">
+                              {contact.user?.firstName} {contact.user?.lastName}
+                            </p>
+                            {contact.unreadCount > 0 && (
+                              <Badge variant="default" className="ml-2">
+                                {contact.unreadCount}
+                              </Badge>
+                            )}
+                          </div>
                           <p className="text-sm text-muted-foreground truncate">
-                            {lastMessage?.content || "No messages yet"}
+                            {contact.latestMessage?.content || 'No messages yet'}
                           </p>
+                          {contact.latestMessage && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {formatDistanceToNow(new Date(contact.latestMessage.createdAt), { addSuffix: true })}
+                            </p>
+                          )}
                         </div>
-                        {lastMessage && (
-                          <p className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(lastMessage.createdAt), { addSuffix: true })}
-                          </p>
-                        )}
                       </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="p-8 text-center">
-                    <p className="text-muted-foreground">No conversations yet</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Start a conversation by contacting a professional or company
-                    </p>
-                  </div>
-                )}
-              </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -244,209 +258,5 @@ export default function Messages() {
         </div>
       </div>
     </div>
-  );
-}
-
-// Set selected user from URL params if provided
-  useEffect(() => {
-    if (userIdParam) {
-      setSelectedUserId(parseInt(userIdParam));
-    } else if (professionalIdParam || companyIdParam) {
-      // In a real app, we'd convert professional/company ID to user ID
-      // For now, we'll redirect to the messages page without a parameter
-      setLocation("/messages");
-    }
-  }, [userIdParam, professionalIdParam, companyIdParam, setLocation]);
-  
-  // Redirect if not logged in
-  useEffect(() => {
-    if (!isLoadingAuth && !user) {
-      setLocation("/login?redirect=/messages");
-    }
-  }, [user, isLoadingAuth, setLocation]);
-  
-  // Get unique contacts from messages
-  const contacts = messages ? 
-    Array.from(new Set(
-      messages.map(msg => 
-        msg.senderId === user?.id ? msg.receiverId : msg.senderId
-      )
-    )).map(contactId => {
-      // Get the latest message with this contact
-      const latestMessage = [...messages]
-        .filter(msg => 
-          (msg.senderId === contactId && msg.receiverId === user?.id) ||
-          (msg.receiverId === contactId && msg.senderId === user?.id)
-        )
-        .sort((a, b) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )[0];
-      
-      // Get user details
-      const contactUser = users?.find(u => u.id === contactId);
-      
-      return {
-        id: contactId,
-        name: contactUser ? `${contactUser.firstName} ${contactUser.lastName}` : `User #${contactId}`,
-        userType: contactUser?.userType || "unknown",
-        lastMessage: latestMessage?.content || "",
-        lastMessageTime: latestMessage?.createdAt || new Date(),
-        unread: messages.filter(msg => 
-          msg.senderId === contactId && 
-          msg.receiverId === user?.id && 
-          !msg.read
-        ).length
-      };
-    }) : [];
-  
-  // Filter contacts by search term
-  const filteredContacts = contacts.filter(contact => 
-    !searchTerm || 
-    contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.lastMessage.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  
-  // Sort contacts by last message time
-  const sortedContacts = [...filteredContacts].sort(
-    (a, b) => new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime()
-  );
-  
-  if (isLoadingAuth) {
-    return (
-      <div className="flex justify-center items-center min-h-[60vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-  
-  if (!user) {
-    return null; // Will redirect via useEffect
-  }
-  
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row mb-6">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Messages</h1>
-          <p className="text-gray-500">Communicate with professionals and companies</p>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[70vh]">
-        {/* Contacts list */}
-        <Card className="md:col-span-1">
-          <CardHeader className="p-4 border-b">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <Input
-                placeholder="Search messages..."
-                className="pl-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </CardHeader>
-          <CardContent className="p-0 overflow-auto max-h-[600px]">
-            {isLoadingMessages ? (
-              // Loading skeletons
-              <div className="space-y-1">
-                {[...Array(5)].map((_, index) => (
-                  <div key={index} className="p-4 border-b hover:bg-gray-50">
-                    <div className="flex items-start">
-                      <Skeleton className="h-10 w-10 rounded-full" />
-                      <div className="ml-3 space-y-2 flex-grow">
-                        <Skeleton className="h-5 w-32" />
-                        <Skeleton className="h-4 w-full" />
-                      </div>
-                      <Skeleton className="h-4 w-16" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : sortedContacts.length === 0 ? (
-              // Empty state
-              <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                <p className="text-gray-500 mb-2">No messages yet</p>
-                <p className="text-sm text-gray-400">
-                  Start a conversation by visiting a professional's or company's profile
-                </p>
-              </div>
-            ) : (
-              // Contact list
-              <div>
-                {sortedContacts.map((contact) => (
-                  <div 
-                    key={contact.id}
-                    className={`p-4 border-b hover:bg-gray-50 cursor-pointer ${
-                      selectedUserId === contact.id ? 'bg-gray-50' : ''
-                    }`}
-                    onClick={() => setSelectedUserId(contact.id)}
-                  >
-                    <div className="flex items-start">
-                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                        {contact.userType === "company" ? (
-                          <Building className="h-5 w-5 text-gray-500" />
-                        ) : (
-                          <User className="h-5 w-5 text-gray-500" />
-                        )}
-                      </div>
-                      <div className="ml-3 flex-grow">
-                        <div className="flex justify-between">
-                          <h3 className="font-medium">{contact.name}</h3>
-                          <span className="text-gray-400 text-xs">
-                            {formatDistanceToNow(new Date(contact.lastMessageTime), { addSuffix: true })}
-                          </span>
-                        </div>
-                        <p className="text-gray-600 text-sm truncate">{contact.lastMessage}</p>
-                      </div>
-                      {contact.unread > 0 && (
-                        <Badge variant="default" className="ml-2">
-                          {contact.unread}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        
-        {/* Message thread */}
-        <Card className="md:col-span-2 h-full flex flex-col">
-          {selectedUserId ? (
-            <MessageThread otherUserId={selectedUserId} />
-          ) : (
-            <div className="flex-grow flex flex-col items-center justify-center p-6">
-              <div className="bg-gray-100 p-3 rounded-full mb-4">
-                <MessageIcon className="h-8 w-8 text-gray-400" />
-              </div>
-              <h3 className="text-xl font-medium mb-2">Your Messages</h3>
-              <p className="text-gray-500 text-center mb-6">
-                Select a conversation or start a new one by visiting a professional's or company's profile
-              </p>
-            </div>
-          )}
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-// Message icon component
-function MessageIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </svg>
   );
 }

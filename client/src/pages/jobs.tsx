@@ -27,7 +27,7 @@ export default function JobsPage() {
     const matchesLocation = !locationFilter || 
       job.location.toLowerCase().includes(locationFilter.toLowerCase());
     
-    const matchesJobType = !jobTypeFilter || job.jobType === jobTypeFilter;
+    const matchesJobType = !jobTypeFilter || jobTypeFilter === "all" || job.jobType === jobTypeFilter;
     
     return matchesSearch && matchesLocation && matchesJobType;
   }) || [];
@@ -75,7 +75,7 @@ export default function JobsPage() {
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All types</SelectItem>
+                  <SelectItem value="all">All types</SelectItem>
                   <SelectItem value="full-time">Full-time</SelectItem>
                   <SelectItem value="part-time">Part-time</SelectItem>
                   <SelectItem value="contract">Contract</SelectItem>

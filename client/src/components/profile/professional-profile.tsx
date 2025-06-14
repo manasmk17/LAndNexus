@@ -336,7 +336,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                 </span>
               </TabsTrigger>
               {profile.videoIntroUrl && <TabsTrigger value="video">Video Introduction</TabsTrigger>}
-              {resources && resources.length > 0 && <TabsTrigger value="resources">Resources</TabsTrigger>}
+
             </TabsList>
 
             <TabsContent value="about" className="mt-6">
@@ -668,29 +668,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
               />
             </TabsContent>
 
-            {resources && resources.length > 0 && (
-              <TabsContent value="resources" className="mt-6">
-                <h2 className="text-xl font-semibold mb-4">Resources & Articles</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {resources.map(resource => (
-                    <Card key={resource.id}>
-                      <CardHeader className="p-4">
-                        <CardTitle className="text-lg">{resource.title}</CardTitle>
-                        <CardDescription>
-                          {resource.resourceType.charAt(0).toUpperCase() + resource.resourceType.slice(1)}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-0">
-                        <p className="text-gray-700 line-clamp-2 mb-3">{resource.description}</p>
-                        <Link href={`/resource/${resource.id}`}>
-                          <Button variant="outline" size="sm">View Resource</Button>
-                        </Link>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </TabsContent>
-            )}
+
           </Tabs>
         </div>
 

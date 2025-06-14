@@ -527,8 +527,12 @@ export default function EditProfileForm() {
       const formData = new FormData();
 
       // Prepare work experience and testimonials as JSON
-      const workExperienceJSON = JSON.stringify(workExperiences);
-      const testimonialsJSON = JSON.stringify(testimonials);
+      // Ensure work experience and testimonials are valid arrays before converting to JSON
+      const validWorkExperiences = Array.isArray(workExperiences) ? workExperiences : [];
+      const validTestimonials = Array.isArray(testimonials) ? testimonials : [];
+
+      const workExperienceJSON = JSON.stringify(validWorkExperiences);
+      const testimonialsJSON = JSON.stringify(validTestimonials);
 
       // Sanitize numeric values before submission - BUG KILLER
       console.log("BUG KILLER: Sanitizing numeric values for profile submission");
@@ -951,7 +955,8 @@ export default function EditProfileForm() {
                             <Button 
                               type="button" 
                               variant="outline"
-                              onClick={() => {
+                              onClick```text
+to={() => {
                                 // Use hidden file input
                                 const fileInput = document.getElementById('profile-image-upload') as HTMLInputElement;
                                 fileInput?.click();

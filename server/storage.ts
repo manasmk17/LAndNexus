@@ -23,7 +23,10 @@ import {
   notifications, Notification, InsertNotification,
   notificationTypes, NotificationType, InsertNotificationType,
   notificationPreferences, NotificationPreference, InsertNotificationPreference,
-  subscriptionPlans, SubscriptionPlan
+  subscriptionPlans, SubscriptionPlan,
+  userSettings, UserSettings, InsertUserSettings,
+  passwordResetRequests, PasswordResetRequest, InsertPasswordResetRequest,
+  userActivityLog, UserActivityLog, InsertUserActivityLog
 } from "@shared/schema";
 
 export interface IStorage {
@@ -57,6 +60,22 @@ export interface IStorage {
 
   // Subscription plans operations
   getSubscriptionPlans(): Promise<SubscriptionPlan[]>;
+
+  // User Settings operations
+  getUserSettings(userId: number): Promise<UserSettings | undefined>;
+  createUserSettings(settings: InsertUserSettings): Promise<UserSettings>;
+  updateUserSettings(userId: number, settings: Partial<InsertUserSettings>): Promise<UserSettings | undefined>;
+  deleteUserSettings(userId: number): Promise<boolean>;
+
+  // Password Reset operations
+  createPasswordResetRequest(userId: number, token: string, expiresAt: Date): Promise<PasswordResetRequest>;
+  getPasswordResetRequest(token: string): Promise<PasswordResetRequest | undefined>;
+  markPasswordResetUsed(token: string): Promise<boolean>;
+  cleanupExpiredPasswordResets(): Promise<number>;
+
+  // User Activity Log operations
+  logUserActivity(activity: InsertUserActivityLog): Promise<UserActivityLog>;
+  getUserActivityLog(userId: number, limit?: number): Promise<UserActivityLog[]>;
 
   // AI Matching operations
   getMatchingJobsForProfessional(professionalId: number, limit?: number): Promise<Array<{job: JobPosting, score: number}>>;
@@ -2097,6 +2116,83 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // User Settings operations
+  async getUserSettings(userId: number): Promise<UserSettings | undefined> {
+    if (!db) return undefined;
+    const [settings] = await db.select().from(userSettings).where(eq(userSettings.userId, userId));
+    return settings;
+  }
+
+  async createUserSettings(settings: InsertUserSettings): Promise<UserSettings> {
+    if (!db) throw new Error("Database not initialized");
+    const [newSettings] = await db.insert(userSettings).values(settings).returning();
+    return newSettings;
+  }
+
+  async updateUserSettings(userId: number, settingsData: Partial<InsertUserSettings>): Promise<UserSettings | undefined> {
+    if (!db) return undefined;
+    const [updatedSettings] = await db.update(userSettings)
+      .set({ ...settingsData, updatedAt: new Date() })
+      .where(eq(userSettings.userId, userId))
+      .returning();
+    return updatedSettings;
+  }
+
+  async deleteUserSettings(userId: number): Promise<boolean> {
+    if (!db) return false;
+    const result = await db.delete(userSettings).where(eq(userSettings.userId, userId));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Password Reset operations
+  async createPasswordResetRequest(userId: number, token: string, expiresAt: Date): Promise<PasswordResetRequest> {
+    if (!db) throw new Error("Database not initialized");
+    const [request] = await db.insert(passwordResetRequests).values({
+      userId,
+      token,
+      expiresAt,
+      used: false
+    }).returning();
+    return request;
+  }
+
+  async getPasswordResetRequest(token: string): Promise<PasswordResetRequest | undefined> {
+    if (!db) return undefined;
+    const [request] = await db.select().from(passwordResetRequests).where(eq(passwordResetRequests.token, token));
+    return request;
+  }
+
+  async markPasswordResetUsed(token: string): Promise<boolean> {
+    if (!db) return false;
+    const result = await db.update(passwordResetRequests)
+      .set({ used: true })
+      .where(eq(passwordResetRequests.token, token));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async cleanupExpiredPasswordResets(): Promise<number> {
+    if (!db) return 0;
+    const result = await db.delete(passwordResetRequests)
+      .where(sql`${passwordResetRequests.expiresAt} < ${new Date()}`);
+    return result.rowCount || 0;
+  }
+
+  // User Activity Log operations
+  async logUserActivity(activity: InsertUserActivityLog): Promise<UserActivityLog> {
+    if (!db) throw new Error("Database not initialized");
+    const [newActivity] = await db.insert(userActivityLog).values(activity).returning();
+    return newActivity;
+  }
+
+  async getUserActivityLog(userId: number, limit: number = 20): Promise<UserActivityLog[]> {
+    if (!db) return [];
+    const activities = await db.select()
+      .from(userActivityLog)
+      .where(eq(userActivityLog.userId, userId))
+      .orderBy(desc(userActivityLog.createdAt))
+      .limit(limit);
+    return activities;
+  }
   // Review operations
   async getReview(id: number): Promise<Review | undefined> {
     const [review] = await db?.select().from(reviews).where(eq(reviews.id, id)) || [];

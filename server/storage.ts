@@ -8,6 +8,9 @@ import {
   expertise, Expertise, InsertExpertise,
   professionalExpertise, ProfessionalExpertise, InsertProfessionalExpertise,
   certifications, Certification, InsertCertification,
+  awards, SelectAward, InsertAward,
+  trainingMaterials, SelectTrainingMaterial, InsertTrainingMaterial,
+  portfolioLinks, SelectPortfolioLink, InsertPortfolioLink,
   companyProfiles, CompanyProfile, InsertCompanyProfile,
   jobPostings, JobPosting, InsertJobPosting,
   jobApplications, JobApplication, InsertJobApplication,
@@ -1238,6 +1241,81 @@ export class MemStorage implements IStorage {
 
   async deleteCertification(id: number): Promise<boolean> {
     return this.certifications.delete(id);
+  }
+
+  // Awards operations
+  async getAward(id: number): Promise<SelectAward | undefined> {
+    return this.awards.get(id);
+  }
+
+  async getProfessionalAwards(professionalId: number): Promise<SelectAward[]> {
+    return Array.from(this.awards.values())
+      .filter(award => award.professionalId === professionalId);
+  }
+
+  async createAward(insertAward: InsertAward): Promise<SelectAward> {
+    const id = this.awardId++;
+    const award: SelectAward = { 
+      ...insertAward, 
+      id,
+      createdAt: new Date()
+    };
+    this.awards.set(id, award);
+    return award;
+  }
+
+  async deleteAward(id: number): Promise<boolean> {
+    return this.awards.delete(id);
+  }
+
+  // Training Materials operations
+  async getTrainingMaterial(id: number): Promise<SelectTrainingMaterial | undefined> {
+    return this.trainingMaterials.get(id);
+  }
+
+  async getProfessionalTrainingMaterials(professionalId: number): Promise<SelectTrainingMaterial[]> {
+    return Array.from(this.trainingMaterials.values())
+      .filter(material => material.professionalId === professionalId);
+  }
+
+  async createTrainingMaterial(insertMaterial: InsertTrainingMaterial): Promise<SelectTrainingMaterial> {
+    const id = this.trainingMaterialId++;
+    const material: SelectTrainingMaterial = { 
+      ...insertMaterial, 
+      id,
+      createdAt: new Date()
+    };
+    this.trainingMaterials.set(id, material);
+    return material;
+  }
+
+  async deleteTrainingMaterial(id: number): Promise<boolean> {
+    return this.trainingMaterials.delete(id);
+  }
+
+  // Portfolio Links operations
+  async getPortfolioLink(id: number): Promise<SelectPortfolioLink | undefined> {
+    return this.portfolioLinks.get(id);
+  }
+
+  async getProfessionalPortfolioLinks(professionalId: number): Promise<SelectPortfolioLink[]> {
+    return Array.from(this.portfolioLinks.values())
+      .filter(link => link.professionalId === professionalId);
+  }
+
+  async createPortfolioLink(insertLink: InsertPortfolioLink): Promise<SelectPortfolioLink> {
+    const id = this.portfolioLinkId++;
+    const link: SelectPortfolioLink = { 
+      ...insertLink, 
+      id,
+      createdAt: new Date()
+    };
+    this.portfolioLinks.set(id, link);
+    return link;
+  }
+
+  async deletePortfolioLink(id: number): Promise<boolean> {
+    return this.portfolioLinks.delete(id);
   }
 
   // Company Profile operations

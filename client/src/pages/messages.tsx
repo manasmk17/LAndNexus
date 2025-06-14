@@ -245,12 +245,9 @@ export default function Messages() {
       </div>
     </div>
   );
-      
-      return await response.json();
-    }
-  });
-  
-  // Set selected user from URL params if provided
+}
+
+// Set selected user from URL params if provided
   useEffect(() => {
     if (userIdParam) {
       setSelectedUserId(parseInt(userIdParam));

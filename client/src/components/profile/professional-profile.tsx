@@ -94,12 +94,7 @@ import {
   Briefcase, 
   CheckCircle,
   Lightbulb,
-  ImageIcon,
-  BookOpen,
-  Shield,
-  Download,
-  Award,
-  ExternalLink
+  ImageIcon
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import SkillRecommendations from "@/components/profile/skill-recommendations";

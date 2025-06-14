@@ -8,9 +8,6 @@ import {
   expertise, Expertise, InsertExpertise,
   professionalExpertise, ProfessionalExpertise, InsertProfessionalExpertise,
   certifications, Certification, InsertCertification,
-  awards, SelectAward, InsertAward,
-  trainingMaterials, SelectTrainingMaterial, InsertTrainingMaterial,
-  portfolioLinks, SelectPortfolioLink, InsertPortfolioLink,
   companyProfiles, CompanyProfile, InsertCompanyProfile,
   jobPostings, JobPosting, InsertJobPosting,
   jobApplications, JobApplication, InsertJobApplication,
@@ -88,24 +85,6 @@ export interface IStorage {
   getProfessionalCertifications(professionalId: number): Promise<Certification[]>;
   createCertification(certification: InsertCertification): Promise<Certification>;
   deleteCertification(id: number): Promise<boolean>;
-
-  // Awards operations
-  getAward(id: number): Promise<SelectAward | undefined>;
-  getProfessionalAwards(professionalId: number): Promise<SelectAward[]>;
-  createAward(award: InsertAward): Promise<SelectAward>;
-  deleteAward(id: number): Promise<boolean>;
-
-  // Training Materials operations
-  getTrainingMaterial(id: number): Promise<SelectTrainingMaterial | undefined>;
-  getProfessionalTrainingMaterials(professionalId: number): Promise<SelectTrainingMaterial[]>;
-  createTrainingMaterial(material: InsertTrainingMaterial): Promise<SelectTrainingMaterial>;
-  deleteTrainingMaterial(id: number): Promise<boolean>;
-
-  // Portfolio Links operations
-  getPortfolioLink(id: number): Promise<SelectPortfolioLink | undefined>;
-  getProfessionalPortfolioLinks(professionalId: number): Promise<SelectPortfolioLink[]>;
-  createPortfolioLink(link: InsertPortfolioLink): Promise<SelectPortfolioLink>;
-  deletePortfolioLink(id: number): Promise<boolean>;
 
   // Company Profile operations
   getCompanyProfile(id: number): Promise<CompanyProfile | undefined>;
@@ -226,9 +205,6 @@ export class MemStorage implements IStorage {
   private expertises: Map<number, Expertise>;
   private professionalExpertises: Map<number, ProfessionalExpertise>;
   private certifications: Map<number, Certification>;
-  private awards: Map<number, SelectAward>;
-  private trainingMaterials: Map<number, SelectTrainingMaterial>;
-  private portfolioLinks: Map<number, SelectPortfolioLink>;
   private companyProfiles: Map<number, CompanyProfile>;
   private jobPostings: Map<number, JobPosting>;
   private jobApplications: Map<number, JobApplication>;
@@ -256,9 +232,6 @@ export class MemStorage implements IStorage {
   private expertiseId: number;
   private profExpertiseId: number;
   private certificationId: number;
-  private awardId: number;
-  private trainingMaterialId: number;
-  private portfolioLinkId: number;
   private companyProfileId: number;
   private jobPostingId: number;
   private jobApplicationId: number;
@@ -282,9 +255,6 @@ export class MemStorage implements IStorage {
     this.expertises = new Map();
     this.professionalExpertises = new Map();
     this.certifications = new Map();
-    this.awards = new Map();
-    this.trainingMaterials = new Map();
-    this.portfolioLinks = new Map();
     this.companyProfiles = new Map();
     this.jobPostings = new Map();
     this.jobApplications = new Map();
@@ -311,9 +281,6 @@ export class MemStorage implements IStorage {
     this.expertiseId = 1;
     this.profExpertiseId = 1;
     this.certificationId = 1;
-    this.awardId = 1;
-    this.trainingMaterialId = 1;
-    this.portfolioLinkId = 1;
     this.companyProfileId = 1;
     this.jobPostingId = 1;
     this.jobApplicationId = 1;
@@ -605,8 +572,7 @@ export class MemStorage implements IStorage {
         services: profile.services,
         availability: profile.availability,
         workExperience: profile.workExperience,
-        testimonials: profile.testimonials,
-        externalPortfolioUrl: null
+        testimonials: profile.testimonials
       };
       this.professionalProfiles.set(id, newProfile);
     });
@@ -1137,8 +1103,7 @@ export class MemStorage implements IStorage {
       services: profile.services || null,
       availability: profile.availability || null,
       workExperience: profile.workExperience || null,
-      testimonials: profile.testimonials || null,
-      externalPortfolioUrl: profile.externalPortfolioUrl || null
+      testimonials: profile.testimonials || null
     };
 
     this.professionalProfiles.set(id, newProfile);
@@ -1240,14 +1205,7 @@ export class MemStorage implements IStorage {
 
   async createCertification(insertCertification: InsertCertification): Promise<Certification> {
     const id = this.certificationId++;
-    const certification: Certification = { 
-      ...insertCertification, 
-      id,
-      createdAt: new Date(),
-      description: insertCertification.description || null,
-      imageUrl: insertCertification.imageUrl || null,
-      verificationUrl: insertCertification.verificationUrl || null
-    };
+    const certification: Certification = { ...insertCertification, id };
     this.certifications.set(id, certification);
     return certification;
   }
@@ -1255,93 +1213,6 @@ export class MemStorage implements IStorage {
   async deleteCertification(id: number): Promise<boolean> {
     return this.certifications.delete(id);
   }
-
-  // Awards operations
-  async getAward(id: number): Promise<SelectAward | undefined> {
-    return this.awards.get(id);
-  }
-
-  async getProfessionalAwards(professionalId: number): Promise<SelectAward[]> {
-    return Array.from(this.awards.values())
-      .filter(award => award.professionalId === professionalId);
-  }
-
-  async createAward(insertAward: InsertAward): Promise<SelectAward> {
-    const id = this.awardId++;
-    const award: SelectAward = { 
-      ...insertAward, 
-      id,
-      createdAt: new Date(),
-      description: insertAward.description || null,
-      imageUrl: insertAward.imageUrl || null,
-      category: insertAward.category || null
-    };
-    this.awards.set(id, award);
-    return award;
-  }
-
-  async deleteAward(id: number): Promise<boolean> {
-    return this.awards.delete(id);
-  }
-
-  // Training Materials operations
-  async getTrainingMaterial(id: number): Promise<SelectTrainingMaterial | undefined> {
-    return this.trainingMaterials.get(id);
-  }
-
-  async getProfessionalTrainingMaterials(professionalId: number): Promise<SelectTrainingMaterial[]> {
-    return Array.from(this.trainingMaterials.values())
-      .filter(material => material.professionalId === professionalId);
-  }
-
-  async createTrainingMaterial(insertTrainingMaterial: InsertTrainingMaterial): Promise<SelectTrainingMaterial> {
-    const id = this.trainingMaterialId++;
-    const trainingMaterial: SelectTrainingMaterial = { 
-      ...insertTrainingMaterial, 
-      id,
-      createdAt: new Date(),
-      description: insertTrainingMaterial.description || null,
-      url: insertTrainingMaterial.url || null,
-      fileUrl: insertTrainingMaterial.fileUrl || null,
-      tags: insertTrainingMaterial.tags || null,
-      isPublic: insertTrainingMaterial.isPublic || null
-    };
-    this.trainingMaterials.set(id, trainingMaterial);
-    return trainingMaterial;
-  }
-
-  async deleteTrainingMaterial(id: number): Promise<boolean> {
-    return this.trainingMaterials.delete(id);
-  }
-
-  // Portfolio Links operations
-  async getPortfolioLink(id: number): Promise<SelectPortfolioLink | undefined> {
-    return this.portfolioLinks.get(id);
-  }
-
-  async getProfessionalPortfolioLinks(professionalId: number): Promise<SelectPortfolioLink[]> {
-    return Array.from(this.portfolioLinks.values())
-      .filter(link => link.professionalId === professionalId);
-  }
-
-  async createPortfolioLink(insertPortfolioLink: InsertPortfolioLink): Promise<SelectPortfolioLink> {
-    const id = this.portfolioLinkId++;
-    const portfolioLink: SelectPortfolioLink = { 
-      ...insertPortfolioLink, 
-      id,
-      createdAt: new Date(),
-      description: insertPortfolioLink.description || null,
-      isPrimary: insertPortfolioLink.isPrimary || null
-    };
-    this.portfolioLinks.set(id, portfolioLink);
-    return portfolioLink;
-  }
-
-  async deletePortfolioLink(id: number): Promise<boolean> {
-    return this.portfolioLinks.delete(id);
-  }
-
-
 
   // Company Profile operations
   async getCompanyProfile(id: number): Promise<CompanyProfile | undefined> {
@@ -1370,7 +1241,7 @@ export class MemStorage implements IStorage {
       location: profile.location,
       website: profile.website || null,
       logoUrl: profile.logoUrl || null,
-      logoImagePath: null,
+      logoImagePath: profile.logoImagePath || null,
       featured: profile.featured || false,
       verified: profile.verified || false
     };
@@ -1814,7 +1685,8 @@ export class MemStorage implements IStorage {
 
   async getPageContentBySlug(slug: string): Promise<PageContent | undefined> {
     return Array.from(this.pageContents.values()).find(
-      (content) => content.slug === slug    );
+      (content) => content.slug === slug
+    );
   }
 
   async getAllPageContents(): Promise<PageContent[]> {
@@ -2589,7 +2461,9 @@ export class DatabaseStorage implements IStorage {
     return this.updateUser(userId, { stripeSubscriptionId: subscriptionId });
   }
 
-
+  async updateUserSubscription(userId: number, tier: string, status: string): Promise<User | undefined> {
+    return this.updateUser(userId, { subscriptionTier: tier, subscriptionStatus: status });
+  }
 
   async getUserByStripeCustomerId(customerId: string): Promise<User | undefined> {
     const [user] = await db
@@ -3638,7 +3512,22 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async updateUserSubscription(userId: number, subscriptionData: any): Promise<any> {
+    if (!db) {
+      throw new Error('Database not initialized');
+    }
 
+    try {
+      return {
+        ...subscriptionData,
+        userId: userId,
+        updatedAt: new Date()
+      };
+    } catch (error) {
+      console.error("Error updating user subscription:", error);
+      return null;
+    }
+  }
 
   // Subscription plans operations
   async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {

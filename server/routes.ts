@@ -4040,6 +4040,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error fetching resources" });
     }
   });
+
+  // Resource search endpoint - separate from main resources endpoint
+  app.get("/api/resources/search", async (req, res) => {
+    try {
+      const query = req.query.query as string | undefined;
+      const type = req.query.type as string | undefined;
+      const categoryId = req.query.categoryId ? parseInt(req.query.categoryId as string) : undefined;
+      
+      // Use the searchResources method which can handle all filtering criteria
+      const resources = await storage.searchResources(query, type, categoryId);
+      res.json(resources);
+    } catch (err) {
+      console.error("Error searching resources:", err);
+      res.status(500).json({ message: "Error searching resources" });
+    }
+  });
   
   app.get("/api/resources/featured", async (req, res) => {
     try {

@@ -14,7 +14,14 @@ import type { Resource } from "@shared/schema";
 
 export default function ResourceHub() {
   const { data: resources, isLoading, error } = useQuery<Resource[]>({
-    queryKey: ["/api/resources/featured", { limit: 3 }],
+    queryKey: ["/api/resources/featured"],
+    queryFn: async () => {
+      const response = await fetch("/api/resources/featured?limit=3");
+      if (!response.ok) {
+        throw new Error(`Failed to fetch featured resources: ${response.status}`);
+      }
+      return response.json();
+    },
     retry: (failureCount, error: any) => {
       // Don't retry on 401 errors
       if (error?.status === 401) return false;

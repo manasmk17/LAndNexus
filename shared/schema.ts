@@ -448,36 +448,36 @@ export const escrowTransactions = pgTable("escrow_transactions", {
   trainerId: integer("trainer_id").notNull().references(() => users.id),
   jobPostingId: integer("job_posting_id").references(() => jobPostings.id),
   bookingId: integer("booking_id").references(() => consultations.id),
-  
+
   // Payment details
   amount: integer("amount").notNull(), // Amount in cents
   currency: text("currency").notNull().default("USD"), // USD or AED
   platformCommissionRate: integer("platform_commission_rate").default(800), // 8% in basis points (800 = 8%)
   platformCommissionAmount: integer("platform_commission_amount").notNull(),
   trainerPayoutAmount: integer("trainer_payout_amount").notNull(),
-  
+
   // Stripe payment details
   stripePaymentIntentId: text("stripe_payment_intent_id"),
   stripeTransferGroupId: text("stripe_transfer_group_id"),
   stripeApplicationFeeId: text("stripe_application_fee_id"),
-  
+
   // Transaction status
   status: text("status", { 
     enum: ["pending", "payment_failed", "funds_captured", "in_escrow", "released", "refunded", "disputed", "cancelled"] 
   }).notNull().default("pending"),
-  
+
   // Escrow details
   escrowReleaseDate: timestamp("escrow_release_date"),
   autoReleaseAfterDays: integer("auto_release_after_days").default(7),
   serviceCompletionConfirmed: boolean("service_completion_confirmed").default(false),
   serviceCompletionDate: timestamp("service_completion_date"),
-  
+
   // Dispute management
   disputeReason: text("dispute_reason"),
   disputeDetails: text("dispute_details"),
   disputeResolution: text("dispute_resolution"),
   disputeResolutionDate: timestamp("dispute_resolution_date"),
-  
+
   // Metadata
   description: text("description"),
   metadata: jsonb("metadata"), // Additional transaction data
@@ -552,14 +552,14 @@ export const subscriptionPlans = pgTable("subscription_plans", {
   stripePriceIdYearlyUSD: text("stripe_price_id_yearly_usd"),
   stripePriceIdMonthlyAED: text("stripe_price_id_monthly_aed"),
   stripePriceIdYearlyAED: text("stripe_price_id_yearly_aed"),
-  
+
   // Feature limits
   maxJobApplications: integer("max_job_applications"), // null = unlimited (for professionals)
   maxJobPostings: integer("max_job_postings"), // null = unlimited (for companies)
   maxResourceDownloads: integer("max_resource_downloads"), // null = unlimited
   maxTeamMembers: integer("max_team_members"), // null = unlimited
   maxContacts: integer("max_contacts"), // professional contacts for companies
-  
+
   // Feature flags
   aiMatchingEnabled: boolean("ai_matching_enabled").default(true),
   priorityMatching: boolean("priority_matching").default(false),
@@ -571,10 +571,10 @@ export const subscriptionPlans = pgTable("subscription_plans", {
   apiAccess: boolean("api_access").default(false),
   whiteLabel: boolean("white_label").default(false),
   dedicatedManager: boolean("dedicated_manager").default(false),
-  
+
   // Support level
   supportLevel: text("support_level", { enum: ["email", "priority_email", "phone", "dedicated", "24_7"] }).default("email"),
-  
+
   isActive: boolean("is_active").default(true),
   sortOrder: integer("sort_order").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),

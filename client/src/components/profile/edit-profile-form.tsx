@@ -113,6 +113,7 @@ export default function EditProfileForm() {
   const [selectedExpertise, setSelectedExpertise] = useState<Expertise[]>([]);
   const [showCertForm, setShowCertForm] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const csrfToken = getCsrfToken();
 
   // Fetch all available expertise areas
   const { data: expertiseAreas } = useQuery<Expertise[]>({
@@ -221,7 +222,7 @@ export default function EditProfileForm() {
           setWorkExperiences([]);
         }
       }
-      
+
       if (professionalProfile.testimonials) {
         try {
           const testimonialData = typeof professionalProfile.testimonials === 'string'
@@ -233,7 +234,7 @@ export default function EditProfileForm() {
           setTestimonials([]);
         }
       }
-      
+
       professionalForm.reset({
         firstName: professionalProfile.firstName || "",
         lastName: professionalProfile.lastName || "",
@@ -321,7 +322,7 @@ export default function EditProfileForm() {
         const response = await apiRequest("POST", "/api/expertise", { name: expertiseValue });
         const newExpertise = await response.json();
         setSelectedExpertise([...selectedExpertise, newExpertise]);
-        
+
         // Refresh expertise list
         queryClient.invalidateQueries({ queryKey: ["/api/expertise"] });
       } catch (error) {
@@ -350,9 +351,9 @@ export default function EditProfileForm() {
       });
       return;
     }
-    
+
     const certData = professionalForm.getValues("newCertification");
-    
+
     // Make certification fields optional - only require name at minimum
     if (!certData || !certData.name) {
       toast({
@@ -362,7 +363,7 @@ export default function EditProfileForm() {
       });
       return;
     }
-    
+
     try {
       console.log("Adding certification:", certData);
       const response = await apiRequest('POST', `/api/professionals/me/certifications`, {
@@ -371,24 +372,24 @@ export default function EditProfileForm() {
         year: certData.year,
         professionalId: professionalProfile.id
       });
-      
+
       if (!response.ok) {
         throw new Error(`Error: ${response.status} ${response.statusText}`);
       }
-      
+
       // Reset form fields
       professionalForm.setValue("newCertification.name", "");
       professionalForm.setValue("newCertification.issuer", "");
       professionalForm.setValue("newCertification.year", undefined);
-      
+
       // Hide the certification form
       setShowCertForm(false);
-      
+
       // Refresh certifications list
       queryClient.invalidateQueries({ 
         queryKey: [`/api/professionals/me/certifications`] 
       });
-      
+
       toast({
         title: "Certification added",
         description: "Your certification has been added successfully"
@@ -406,12 +407,12 @@ export default function EditProfileForm() {
   const handleDeleteCertification = async (certId: number) => {
     try {
       await apiRequest("DELETE", `/api/certifications/${certId}`, {});
-      
+
       // Refresh certifications list
       queryClient.invalidateQueries({ 
         queryKey: [`/api/professionals/me/certifications`] 
       });
-      
+
       toast({
         title: "Certification deleted",
         description: "Your certification has been removed"
@@ -424,7 +425,7 @@ export default function EditProfileForm() {
       });
     }
   };
-  
+
   const handleAddWorkExperience = () => {
     const workExp = professionalForm.getValues("newWorkExperience");
     // Make work experience more flexible - require at least company name
@@ -436,10 +437,10 @@ export default function EditProfileForm() {
       });
       return;
     }
-    
+
     // Add to work experiences array
     setWorkExperiences([...workExperiences, workExp]);
-    
+
     // Reset form
     professionalForm.setValue("newWorkExperience.company", "");
     professionalForm.setValue("newWorkExperience.position", "");
@@ -447,20 +448,20 @@ export default function EditProfileForm() {
     professionalForm.setValue("newWorkExperience.endDate", "");
     professionalForm.setValue("newWorkExperience.description", "");
     professionalForm.setValue("newWorkExperience.current", false);
-    
+
     // Hide form
     setShowWorkExpForm(false);
-    
+
     toast({
       title: "Work experience added",
       description: "Your work experience has been added to your profile"
     });
   };
-  
+
   const handleRemoveWorkExperience = (index: number) => {
     setWorkExperiences(workExperiences.filter((_, i) => i !== index));
   };
-  
+
   const handleAddTestimonial = () => {
     const testimonial = professionalForm.getValues("newTestimonial");
     // Make testimonials more flexible - only require client name at minimum
@@ -472,25 +473,25 @@ export default function EditProfileForm() {
       });
       return;
     }
-    
+
     // Add to testimonials array
     setTestimonials([...testimonials, testimonial]);
-    
+
     // Reset form
     professionalForm.setValue("newTestimonial.clientName", "");
     professionalForm.setValue("newTestimonial.company", "");
     professionalForm.setValue("newTestimonial.text", "");
     professionalForm.setValue("newTestimonial.date", "");
-    
+
     // Hide form
     setShowTestimonialForm(false);
-    
+
     toast({
       title: "Testimonial added",
       description: "The client testimonial has been added to your profile"
     });
   };
-  
+
   const handleRemoveTestimonial = (index: number) => {
     setTestimonials(testimonials.filter((_, i) => i !== index));
   };
@@ -499,11 +500,11 @@ export default function EditProfileForm() {
   const sanitizeNumericValue = (value: any) => {
     // If it's already undefined/null, return empty string
     if (value === undefined || value === null) return "";
-    
+
     // If it's a number or valid string number, return as is
     const numVal = Number(value);
     if (!isNaN(numVal)) return numVal.toString();
-    
+
     // Otherwise return empty string (sanitizing invalid values)
     return "";
   };
@@ -512,27 +513,27 @@ export default function EditProfileForm() {
     console.log("Form submission started - professional profile", data);
     try {
       setIsSubmitting(true);
-      
+
       // Check if user is authenticated
       if (!user || !user.id) {
         console.error("Authentication error: User is not logged in");
         throw new Error("You must be logged in to save your profile. Please log in and try again.");
       }
-      
+
       // Remove additional form fields
       const { newExpertise, newCertification, newWorkExperience, newTestimonial, profileImage, ...profileData } = data;
-      
+
       // Create FormData for file upload
       const formData = new FormData();
-      
+
       // Prepare work experience and testimonials as JSON
       const workExperienceJSON = JSON.stringify(workExperiences);
       const testimonialsJSON = JSON.stringify(testimonials);
-      
+
       // Sanitize numeric values before submission - BUG KILLER
       console.log("BUG KILLER: Sanitizing numeric values for profile submission");
       console.log("Before sanitization - ratePerHour:", profileData.ratePerHour, "yearsExperience:", profileData.yearsExperience);
-      
+
       // Add to profile data with explicit type conversions and sanitization
       const enrichedProfileData = {
         ...profileData,
@@ -547,9 +548,9 @@ export default function EditProfileForm() {
         location: profileData.location || "",
         availability: profileData.availability || "" // Treat as string
       };
-      
+
       console.log("Prepared professional profile data with explicit conversions:", enrichedProfileData);
-      
+
       // Add text fields to FormData with proper type handling
       Object.entries(enrichedProfileData).forEach(([key, value]) => {
         // Handle different types of values appropriately
@@ -566,13 +567,13 @@ export default function EditProfileForm() {
           console.log(`Added form field: ${key} = ${typeof value === 'object' ? JSON.stringify(value) : value}`);
         }
       });
-      
+
       // Add file if provided
       if (profileImage instanceof File) {
         formData.append('profileImage', profileImage);
         console.log(`Added file: profileImage (${profileImage.name}, ${profileImage.size} bytes)`);
       }
-      
+
       // Verify the FormData before submission
       console.log("About to save professional profile with form data:", {
         entries: Array.from(formData.entries()).map(([key, value]) => 
@@ -584,10 +585,10 @@ export default function EditProfileForm() {
           loggedIn: !!user
         }
       });
-      
+
       // Use secureFileUpload which handles CSRF tokens and file uploads
       const response = await secureFileUpload('PUT', "/api/professionals/me", formData);
-      
+
       console.log("DEBUG: Response from profile save:", response.status, response.statusText, {
         url: "/api/professionals/me",
         userId: user.id,
@@ -595,11 +596,11 @@ export default function EditProfileForm() {
         cookies: document.cookie,
         headers: Array.from(response.headers.entries())
       });
-      
+
       // Read the response body for debugging
       const responseText = await response.text();
       let savedProfile;
-      
+
       try {
         // Try to parse the response as JSON
         savedProfile = JSON.parse(responseText);
@@ -611,7 +612,7 @@ export default function EditProfileForm() {
           throw new Error(`Error: ${response.status} ${response.statusText} - ${responseText}`);
         }
       }
-      
+
       // Add all selected expertise to the profile (only if we have a profile ID)
       if (savedProfile && savedProfile.id) {
         console.log("Adding selected expertise to profile...");
@@ -625,7 +626,7 @@ export default function EditProfileForm() {
                 `/api/professionals/me/expertise`, 
                 { expertiseId: expertise.id }
               );
-              
+
               if (!expertiseResponse.ok) {
                 console.warn(`Failed to add expertise ${expertise.id}: ${expertiseResponse.status} ${expertiseResponse.statusText}`);
               }
@@ -637,27 +638,27 @@ export default function EditProfileForm() {
       } else {
         console.warn("Skipping expertise addition: No valid profile ID found in response");
       }
-      
+
       toast({
         title: "Profile saved",
         description: "Your professional profile has been updated successfully",
       });
-      
+
       // Set success state to show message
       setSaveSuccess(true);
-      
+
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({
         queryKey: ["/api/professionals/me"]
       });
-      
+
       console.log("Profile save completed successfully");
-      
+
       // Navigate to success page after a short delay
       setTimeout(() => {
         setLocation("/profile-success");
       }, 1500);
-      
+
     } catch (error) {
       console.error("Profile update error:", error);
       toast({
@@ -674,23 +675,23 @@ export default function EditProfileForm() {
     console.log("Form submission started - company profile", data);
     try {
       setIsSubmitting(true);
-      
+
       // Check if user is authenticated with more detailed logging
       if (!user || !user.id) {
         console.error("Authentication error: User is not logged in");
         throw new Error("You must be logged in to save your profile. Please log in and try again.");
       }
-      
+
       // Extract file from form data
       const { profileImage, ...profileData } = data;
-      
+
       // Create FormData for file upload
       const formData = new FormData();
-      
+
       // Sanitize values before submission - BUG KILLER
       console.log("BUG KILLER: Sanitizing values for company profile submission");
       console.log("Before sanitization - company data:", profileData);
-      
+
       // Add text fields to FormData with explicit userId and type conversions
       const enrichedProfileData = {
         ...profileData,
@@ -703,9 +704,9 @@ export default function EditProfileForm() {
         size: profileData.size || "",
         location: profileData.location || ""
       };
-      
+
       console.log("Prepared company profile data with explicit conversions:", enrichedProfileData);
-      
+
       // Add fields to FormData with proper type handling
       Object.entries(enrichedProfileData).forEach(([key, value]) => {
         // Handle different types of values appropriately
@@ -722,13 +723,13 @@ export default function EditProfileForm() {
           console.log(`Added form field: ${key} = ${typeof value === 'object' ? JSON.stringify(value) : value}`);
         }
       });
-      
+
       // Add file if provided
       if (profileImage instanceof File) {
         formData.append('profileImage', profileImage);
         console.log(`Added file: profileImage (${profileImage.name}, ${profileImage.size} bytes)`);
       }
-      
+
       // Verify the FormData before submission
       console.log("About to save company profile with form data:", {
         entries: Array.from(formData.entries()).map(([key, value]) => 
@@ -740,9 +741,9 @@ export default function EditProfileForm() {
           loggedIn: !!user
         }
       });
-      
+
       let response;
-      
+
       if (companyProfile) {
         // Update existing profile with FormData using secureFileUpload
         console.log(`Updating existing company profile ID: ${companyProfile.id}`);
@@ -760,7 +761,7 @@ export default function EditProfileForm() {
           formData
         );
       }
-      
+
       console.log("DEBUG: Response from company profile save:", response.status, response.statusText, {
         url: companyProfile ? `/api/company-profiles/${companyProfile.id}` : "/api/company-profiles",
         userId: user.id,
@@ -768,11 +769,11 @@ export default function EditProfileForm() {
         cookies: document.cookie,
         headers: Array.from(response.headers.entries())
       });
-      
+
       // Read the response body for debugging
       const responseText = await response.text();
       let savedProfile;
-      
+
       try {
         // Try to parse the response as JSON
         savedProfile = JSON.parse(responseText);
@@ -784,27 +785,27 @@ export default function EditProfileForm() {
           throw new Error(`Error: ${response.status} ${response.statusText} - ${responseText}`);
         }
       }
-      
+
       toast({
         title: "Profile saved",
         description: "Your company profile has been updated successfully",
       });
-      
+
       // Set success state to show message
       setSaveSuccess(true);
-      
+
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({
         queryKey: ["/api/company-profiles/by-user"]
       });
-      
+
       console.log("Company profile save completed successfully");
-      
+
       // Navigate to success page after a short delay
       setTimeout(() => {
         setLocation("/profile-success");
       }, 1500);
-      
+
     } catch (error) {
       console.error("Profile update error:", error);
       toast({
@@ -840,7 +841,7 @@ export default function EditProfileForm() {
           <div className="space-y-6">
             <div className="border p-6 rounded-md shadow-sm">
               <h2 className="text-xl font-semibold mb-4">Basic Information</h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <FormField
                   control={professionalForm.control}
@@ -855,7 +856,7 @@ export default function EditProfileForm() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={professionalForm.control}
                   name="lastName"
@@ -870,7 +871,7 @@ export default function EditProfileForm() {
                   )}
                 />
               </div>
-              
+
               <FormField
                 control={professionalForm.control}
                 name="title"
@@ -887,7 +888,7 @@ export default function EditProfileForm() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={professionalForm.control}
                 name="location"
@@ -904,7 +905,7 @@ export default function EditProfileForm() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={professionalForm.control}
                 name="ratePerHour"
@@ -936,7 +937,7 @@ export default function EditProfileForm() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={professionalForm.control}
                 name="profileImage"
@@ -959,14 +960,14 @@ export default function EditProfileForm() {
                               <Upload className="h-4 w-4 mr-2" />
                               Upload Image
                             </Button>
-                            
+
                             {(value && typeof value === 'object') && (
                               <Badge variant="outline" className="bg-blue-50">
-                                Selected: {(value as File).name}
+                                                               Selected: {(value as File).name}
                               </Badge>
                             )}
                           </div>
-                          
+
                           <Input 
                             id="profile-image-upload"
                             type="file" 
@@ -980,7 +981,7 @@ export default function EditProfileForm() {
                             }} 
                           />
                         </div>
-                        
+
                         {professionalProfile?.profileImagePath && (
                           <div className="mt-2">
                             <p className="text-sm text-muted-foreground mb-2">Current image:</p>
@@ -1008,7 +1009,7 @@ export default function EditProfileForm() {
                                         "DELETE", 
                                         `/api/professional-profiles/${professionalProfile.id}/profile-image`
                                       );
-                                      
+
                                       if (res.ok) {
                                         // Refresh profile data
                                         queryClient.invalidateQueries({ queryKey: ["/api/professionals/me"] });
@@ -1045,10 +1046,10 @@ export default function EditProfileForm() {
                 )}
               />
             </div>
-            
+
             <div className="border p-6 rounded-md shadow-sm">
               <h2 className="text-xl font-semibold mb-4">Professional Details</h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <FormField
                   control={professionalForm.control}
@@ -1082,7 +1083,7 @@ export default function EditProfileForm() {
                   )}
                 />
               </div>
-              
+
               <FormField
                 control={professionalForm.control}
                 name="bio"
@@ -1104,7 +1105,7 @@ export default function EditProfileForm() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={professionalForm.control}
                 name="services"
@@ -1126,7 +1127,7 @@ export default function EditProfileForm() {
                   </FormItem>
                 )}
               />
-              
+
               <div className="mt-6">
                 <FormLabel>Areas of Expertise</FormLabel>
                 <div className="flex flex-wrap gap-2 mt-2 mb-4">
@@ -1180,7 +1181,7 @@ export default function EditProfileForm() {
                   </Button>
                 </div>
               </div>
-              
+
               <div className="mt-6">
                 <div className="flex justify-between items-center mb-4">
                   <FormLabel>Certifications</FormLabel>
@@ -1193,7 +1194,7 @@ export default function EditProfileForm() {
                     {showCertForm ? "Cancel" : "Add Certification"}
                   </Button>
                 </div>
-                
+
                 {certifications && certifications.length > 0 ? (
                   <div className="space-y-3 mb-4">
                     {certifications.map((cert) => (
@@ -1217,7 +1218,7 @@ export default function EditProfileForm() {
                 ) : (
                   <div className="text-sm text-muted-foreground mb-4">No certifications added yet</div>
                 )}
-                
+
                 {showCertForm && (
                   <div className="p-4 border rounded-md bg-muted/50">
                     <FormField
@@ -1233,7 +1234,7 @@ export default function EditProfileForm() {
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={professionalForm.control}
                       name="newCertification.issuer"
@@ -1247,7 +1248,7 @@ export default function EditProfileForm() {
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={professionalForm.control}
                       name="newCertification.year"
@@ -1275,7 +1276,7 @@ export default function EditProfileForm() {
                         </FormItem>
                       )}
                     />
-                    
+
                     <Button 
                       type="button" 
                       onClick={handleAddCertification} 
@@ -1286,7 +1287,7 @@ export default function EditProfileForm() {
                   </div>
                 )}
               </div>
-              
+
               <FormField
                 control={professionalForm.control}
                 name="videoIntroUrl"
@@ -1308,7 +1309,7 @@ export default function EditProfileForm() {
                 )}
               />
             </div>
-            
+
             {/* Work Experience Section */}
             <div className="border p-6 rounded-md shadow-sm">
               <div className="flex justify-between items-center mb-4">
@@ -1322,7 +1323,7 @@ export default function EditProfileForm() {
                   {showWorkExpForm ? "Cancel" : "Add Work Experience"}
                 </Button>
               </div>
-              
+
               {workExperiences && workExperiences.length > 0 ? (
                 <div className="space-y-4 mb-4">
                   {workExperiences.map((exp, index) => (
@@ -1354,7 +1355,7 @@ export default function EditProfileForm() {
               ) : (
                 <div className="text-sm text-muted-foreground mb-4">No work experience added yet</div>
               )}
-              
+
               {showWorkExpForm && (
                 <div className="p-4 border rounded-md bg-muted/50 mb-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1371,7 +1372,7 @@ export default function EditProfileForm() {
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={professionalForm.control}
                       name="newWorkExperience.position"
@@ -1386,7 +1387,7 @@ export default function EditProfileForm() {
                       )}
                     />
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <FormField
                       control={professionalForm.control}
@@ -1401,7 +1402,7 @@ export default function EditProfileForm() {
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={professionalForm.control}
                       name="newWorkExperience.endDate"
@@ -1421,7 +1422,7 @@ export default function EditProfileForm() {
                       )}
                     />
                   </div>
-                  
+
                   <FormField
                     control={professionalForm.control}
                     name="newWorkExperience.current"
@@ -1441,7 +1442,7 @@ export default function EditProfileForm() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={professionalForm.control}
                     name="newWorkExperience.description"
@@ -1459,7 +1460,7 @@ export default function EditProfileForm() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <Button 
                     type="button" 
                     onClick={handleAddWorkExperience} 
@@ -1470,7 +1471,7 @@ export default function EditProfileForm() {
                 </div>
               )}
             </div>
-            
+
             {/* Testimonials Section */}
             <div className="border p-6 rounded-md shadow-sm">
               <div className="flex justify-between items-center mb-4">
@@ -1484,7 +1485,7 @@ export default function EditProfileForm() {
                   {showTestimonialForm ? "Cancel" : "Add Testimonial"}
                 </Button>
               </div>
-              
+
               {testimonials && testimonials.length > 0 ? (
                 <div className="space-y-4 mb-4">
                   {testimonials.map((testimonial, index) => (
@@ -1516,7 +1517,7 @@ export default function EditProfileForm() {
               ) : (
                 <div className="text-sm text-muted-foreground mb-4">No testimonials added yet</div>
               )}
-              
+
               {showTestimonialForm && (
                 <div className="p-4 border rounded-md bg-muted/50 mb-4">
                   <FormField
@@ -1536,7 +1537,7 @@ export default function EditProfileForm() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <FormField
                       control={professionalForm.control}
@@ -1551,7 +1552,7 @@ export default function EditProfileForm() {
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={professionalForm.control}
                       name="newTestimonial.company"
@@ -1570,7 +1571,7 @@ export default function EditProfileForm() {
                       )}
                     />
                   </div>
-                  
+
                   <FormField
                     control={professionalForm.control}
                     name="newTestimonial.date"
@@ -1588,7 +1589,7 @@ export default function EditProfileForm() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <Button 
                     type="button" 
                     onClick={handleAddTestimonial} 
@@ -1599,11 +1600,11 @@ export default function EditProfileForm() {
                 </div>
               )}
             </div>
-            
+
             {/* Contact Information Section */}
             <div className="border p-6 rounded-md shadow-sm">
               <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={professionalForm.control}
@@ -1626,7 +1627,7 @@ export default function EditProfileForm() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={professionalForm.control}
                   name="phone"
@@ -1648,7 +1649,7 @@ export default function EditProfileForm() {
                   )}
                 />
               </div>
-              
+
               <FormField
                 control={professionalForm.control}
                 name="availability"
@@ -1671,7 +1672,7 @@ export default function EditProfileForm() {
               />
             </div>
           </div>
-          
+
           <div className="flex flex-col gap-4 items-end">
             {/* Debug info for professional profile form */}
             <div className="text-xs text-red-500 mb-2">
@@ -1682,7 +1683,7 @@ export default function EditProfileForm() {
                 </div>
               )}
             </div>
-            
+
             <Button 
               type="submit" 
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-md cursor-pointer z-10 relative !important"
@@ -1702,7 +1703,7 @@ export default function EditProfileForm() {
                 "Save Profile"
               )}
             </Button>
-            
+
             {saveSuccess && (
               <div className="w-full flex items-center p-3 bg-green-50 border border-green-200 text-green-700 rounded-md">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -1724,7 +1725,7 @@ export default function EditProfileForm() {
           <div className="space-y-6">
             <div className="border p-6 rounded-md shadow-sm">
               <h2 className="text-xl font-semibold mb-4">Company Information</h2>
-              
+
               <FormField
                 control={companyForm.control}
                 name="companyName"
@@ -1738,7 +1739,7 @@ export default function EditProfileForm() {
                   </FormItem>
                 )}
               />
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <FormField
                   control={companyForm.control}
@@ -1772,7 +1773,7 @@ export default function EditProfileForm() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={companyForm.control}
                   name="size"
@@ -1800,7 +1801,7 @@ export default function EditProfileForm() {
                   )}
                 />
               </div>
-              
+
               <FormField
                 control={companyForm.control}
                 name="location"
@@ -1817,7 +1818,7 @@ export default function EditProfileForm() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={companyForm.control}
                 name="website"
@@ -1838,7 +1839,7 @@ export default function EditProfileForm() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={companyForm.control}
                 name="logoUrl"
@@ -1905,10 +1906,10 @@ export default function EditProfileForm() {
                 )}
               />
             </div>
-            
+
             <div className="border p-6 rounded-md shadow-sm">
               <h2 className="text-xl font-semibold mb-4">Company Description</h2>
-              
+
               <FormField
                 control={companyForm.control}
                 name="description"
@@ -1931,7 +1932,7 @@ export default function EditProfileForm() {
               />
             </div>
           </div>
-          
+
           <div className="flex flex-col gap-4 items-end">
             {/* Debug info for company profile form */}
             <div className="text-xs text-red-500 mb-2">
@@ -1942,7 +1943,7 @@ export default function EditProfileForm() {
                 </div>
               )}
             </div>
-            
+
             <Button 
               type="submit" 
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-md cursor-pointer z-10 relative !important"
@@ -1962,7 +1963,7 @@ export default function EditProfileForm() {
                 "Save Profile"
               )}
             </Button>
-            
+
             {saveSuccess && (
               <div className="w-full flex items-center p-3 bg-green-50 border border-green-200 text-green-700 rounded-md">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">

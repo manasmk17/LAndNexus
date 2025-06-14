@@ -616,8 +616,8 @@ export class MemStorage implements IStorage {
         description: profile.description,
         size: profile.size,
         location: profile.location,
-        website: profile.website,
-        logoUrl: profile.logoUrl,
+        website: profile.website || null,
+        logoUrl: profile.logoUrl || null,
         logoImagePath: null,
         featured: profile.featured,
         verified: profile.verified
@@ -745,8 +745,7 @@ export class MemStorage implements IStorage {
         modifiedAt: new Date(),
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
         featured: false,
-        archived: false,
-        remote: null,
+        archived: false        remote: null,
         minCompensation: null,
         maxCompensation: null,
         compensationUnit: null,
@@ -1020,8 +1019,36 @@ export class MemStorage implements IStorage {
   }
 
   // Professional Profile operations
-  async getProfessionalProfile(id: number): Promise<ProfessionalProfile | undefined> {
-    return this.professionalProfiles.get(id);
+  getProfessionalProfile(id: number): ProfessionalProfile | undefined {
+    const profile = this.professionalProfiles.get(id);
+    if (!profile) return undefined;
+
+    // Parse JSON fields if they're strings
+    if (typeof profile.galleryImages === 'string') {
+      try {
+        profile.galleryImages = JSON.parse(profile.galleryImages);
+      } catch (e) {
+        profile.galleryImages = [];
+      }
+    }
+
+    if (typeof profile.workExperience === 'string') {
+      try {
+        profile.workExperience = JSON.parse(profile.workExperience);
+      } catch (e) {
+        profile.workExperience = [];
+      }
+    }
+
+    if (typeof profile.testimonials === 'string') {
+      try {
+        profile.testimonials = JSON.parse(profile.testimonials);
+      } catch (e) {
+        profile.testimonials = [];
+      }
+    }
+
+    return profile;
   }
 
   async getProfessionalProfileByUserId(userId: number): Promise<ProfessionalProfile | undefined> {
@@ -1063,8 +1090,8 @@ export class MemStorage implements IStorage {
       videoIntroUrl: profile.videoIntroUrl || null,
       ratePerHour: profile.ratePerHour || null,
       profileImageUrl: profile.profileImageUrl || null,
-      profileImagePath: profile.profileImagePath || null,
-      galleryImages: profile.galleryImages || [],
+      profileImagePath: null,
+      galleryImages: [],
       featured: profile.featured || false,
       verified: profile.verified || false,
       rating: profile.rating || 0,
@@ -1086,13 +1113,28 @@ export class MemStorage implements IStorage {
     return newProfile;
   }
 
-  async updateProfessionalProfile(id: number, profile: Partial<InsertProfessionalProfile>): Promise<ProfessionalProfile | undefined> {
-    const existing = this.professionalProfiles.get(id);
-    if (!existing) return undefined;
+  updateProfessionalProfile(id: number, updates: Partial<ProfessionalProfile>): ProfessionalProfile {
+    const profile = this.professionalProfiles.get(id);
+    if (!profile) {
+      throw new Error("Professional profile not found");
+    }
 
-    const updated = { ...existing, ...profile };
-    this.professionalProfiles.set(id, updated);
-    return updated;
+    // Serialize JSON fields if they're arrays
+    if (updates.galleryImages && Array.isArray(updates.galleryImages)) {
+      updates.galleryImages = JSON.stringify(updates.galleryImages) as any;
+    }
+
+    if (updates.workExperience && Array.isArray(updates.workExperience)) {
+      updates.workExperience = JSON.stringify(updates.workExperience) as any;
+    }
+
+    if (updates.testimonials && Array.isArray(updates.testimonials)) {
+      updates.testimonials = JSON.stringify(updates.testimonials) as any;
+    }
+
+    const updatedProfile = { ...profile, ...updates, updatedAt: new Date().toISOString() };
+    this.professionalProfiles.set(id, updatedProfile);
+    return this.getProfessionalProfile(id)!;
   }
 
   async deleteProfessionalProfile(id: number): Promise<boolean> {
@@ -2436,6 +2478,32 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(professionalProfiles)
       .where(eq(professionalProfiles.id, id));
+
+    // Parse JSON fields if they're strings
+    if (profile) {
+        if (typeof profile.galleryImages === 'string') {
+            try {
+                profile.galleryImages = JSON.parse(profile.galleryImages);
+            } catch (e) {
+                profile.galleryImages = [];
+            }
+        }
+        if (typeof profile.workExperience === 'string') {
+            try {
+                profile.workExperience = JSON.parse(profile.workExperience);
+            } catch (e) {
+                profile.workExperience = [];
+            }
+        }
+        if (typeof profile.testimonials === 'string') {
+            try {
+                profile.testimonials = JSON.parse(profile.testimonials);
+            } catch (e) {
+                profile.testimonials = [];
+            }
+        }
+    }
+
     return profile;
   }
 

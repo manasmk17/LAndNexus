@@ -149,9 +149,15 @@ export default function Navbar() {
                     </div>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href="/edit-profile" className="flex items-center cursor-pointer">
+                      <Link href="/profile" className="flex items-center cursor-pointer">
+                        <User className="mr-2 h-4 w-4 text-slate-500" />
+                        <span>Profile</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/settings" className="flex items-center cursor-pointer">
                         <Settings className="mr-2 h-4 w-4 text-slate-500" />
-                        <span>Profile Settings</span>
+                        <span>Settings</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>

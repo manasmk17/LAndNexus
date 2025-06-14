@@ -86,6 +86,24 @@ export interface IStorage {
   createCertification(certification: InsertCertification): Promise<Certification>;
   deleteCertification(id: number): Promise<boolean>;
 
+  // Awards operations
+  getAward(id: number): Promise<SelectAward | undefined>;
+  getProfessionalAwards(professionalId: number): Promise<SelectAward[]>;
+  createAward(award: InsertAward): Promise<SelectAward>;
+  deleteAward(id: number): Promise<boolean>;
+
+  // Training Materials operations
+  getTrainingMaterial(id: number): Promise<SelectTrainingMaterial | undefined>;
+  getProfessionalTrainingMaterials(professionalId: number): Promise<SelectTrainingMaterial[]>;
+  createTrainingMaterial(material: InsertTrainingMaterial): Promise<SelectTrainingMaterial>;
+  deleteTrainingMaterial(id: number): Promise<boolean>;
+
+  // Portfolio Links operations
+  getPortfolioLink(id: number): Promise<SelectPortfolioLink | undefined>;
+  getProfessionalPortfolioLinks(professionalId: number): Promise<SelectPortfolioLink[]>;
+  createPortfolioLink(link: InsertPortfolioLink): Promise<SelectPortfolioLink>;
+  deletePortfolioLink(id: number): Promise<boolean>;
+
   // Company Profile operations
   getCompanyProfile(id: number): Promise<CompanyProfile | undefined>;
   getCompanyProfileByUserId(userId: number): Promise<CompanyProfile | undefined>;

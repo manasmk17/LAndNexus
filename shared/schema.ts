@@ -181,6 +181,15 @@ export const insertPortfolioLinkSchema = createInsertSchema(portfolioLinks).omit
   createdAt: true,
 });
 
+export type SelectCertification = typeof certifications.$inferSelect;
+export type InsertCertification = z.infer<typeof insertCertificationSchema>;
+export type SelectAward = typeof awards.$inferSelect;
+export type InsertAward = z.infer<typeof insertAwardSchema>;
+export type SelectTrainingMaterial = typeof trainingMaterials.$inferSelect;
+export type InsertTrainingMaterial = z.infer<typeof insertTrainingMaterialSchema>;
+export type SelectPortfolioLink = typeof portfolioLinks.$inferSelect;
+export type InsertPortfolioLink = z.infer<typeof insertPortfolioLinkSchema>;
+
 // Company Profiles
 export const companyProfiles = pgTable("company_profiles", {
   id: serial("id").primaryKey(),

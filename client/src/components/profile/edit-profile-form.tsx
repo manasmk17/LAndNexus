@@ -2271,9 +2271,8 @@ export default function EditProfileForm() {
                 />
             </div>
           </div>
-        )}
 
-        <div className="flex flex-col gap-4 items-end">
+          <div className="flex flex-col gap-4 items-end">
             {/* Debug info for professional profile form */}
             <div className="text-xs text-red-500 mb-2">
               <div>isSubmitting: {isSubmitting ? "true" : "false"}</div>

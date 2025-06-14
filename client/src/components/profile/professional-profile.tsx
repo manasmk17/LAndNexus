@@ -7,7 +7,6 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { PortfolioShowcase } from "@/components/portfolio/portfolio-showcase";
 
 // Helper functions to convert various video URLs to embed format
 function getYoutubeEmbedUrl(url: string): string {
@@ -335,7 +334,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
         {/* Profile Content Tabs */}
         <div className="mt-8">
           <Tabs defaultValue="about">
-            <TabsList className="w-full grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 h-auto gap-1 p-1">
+            <TabsList className="w-full grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 h-auto gap-1 p-1">
               <TabsTrigger value="about" className="text-xs sm:text-sm px-2 py-2">About</TabsTrigger>
               <TabsTrigger value="expertise" className="text-xs sm:text-sm px-2 py-2 text-center">
                 <span className="hidden sm:inline">Expertise & Certs</span>
@@ -347,10 +346,6 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                   Experience
                 </span>
                 <span className="lg:hidden">Experience</span>
-              </TabsTrigger>
-              <TabsTrigger value="portfolio" className="text-xs sm:text-sm px-2 py-2 text-center">
-                <span className="hidden sm:inline">Portfolio</span>
-                <span className="sm:hidden">Work</span>
               </TabsTrigger>
               <TabsTrigger value="skill-recommendations" className="text-xs sm:text-sm px-2 py-2 text-center">
                 <span className="hidden lg:flex items-center">
@@ -671,13 +666,6 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                   )}
                 </div>
               </div>
-            </TabsContent>
-
-            <TabsContent value="portfolio" className="mt-6">
-              <PortfolioShowcase 
-                professionalId={professionalId} 
-                isOwner={user?.id === profile.userId}
-              />
             </TabsContent>
 
             <TabsContent value="skill-recommendations" className="mt-6">

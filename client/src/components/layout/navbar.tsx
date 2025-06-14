@@ -1,5 +1,4 @@
 import { Link, useLocation } from "wouter";
-import { useTranslation } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 
 import { useAuth } from "@/hooks/use-auth";
@@ -26,8 +25,24 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-export function Navbar() {
-  const { t } = useTranslation();
+export default function Navbar() {
+  // Simple text instead of translation for now
+  const t = (key: string) => {
+    const translations: { [key: string]: string } = {
+      'nav.home': 'Home',
+      'nav.professionals': 'Professionals', 
+      'nav.jobs': 'Jobs',
+      'nav.resources': 'Resources',
+      'nav.forum': 'Forum',
+      'nav.dashboard': 'Dashboard',
+      'nav.login': 'Login',
+      'nav.register': 'Register',
+      'nav.profile': 'Profile',
+      'nav.settings': 'Settings',
+      'nav.logout': 'Logout'
+    };
+    return translations[key] || key;
+  };
   const [location] = useLocation();
   const { user, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

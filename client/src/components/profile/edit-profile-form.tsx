@@ -955,8 +955,7 @@ export default function EditProfileForm() {
                             <Button 
                               type="button" 
                               variant="outline"
-                              onClick```text
-to={() => {
+                              onClick={() => {
                                 // Use hidden file input
                                 const fileInput = document.getElementById('profile-image-upload') as HTMLInputElement;
                                 fileInput?.click();

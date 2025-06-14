@@ -23,7 +23,11 @@ import {
   notifications, Notification, InsertNotification,
   notificationTypes, NotificationType, InsertNotificationType,
   notificationPreferences, NotificationPreference, InsertNotificationPreference,
-  subscriptionPlans, SubscriptionPlan
+  subscriptionPlans, SubscriptionPlan,
+  professionalAwards, ProfessionalAward, InsertProfessionalAward,
+  trainingMaterials, TrainingMaterial, InsertTrainingMaterial,
+  professionalCertificationPortfolio, ProfessionalCertificationPortfolio, InsertProfessionalCertificationPortfolio,
+  externalPortfolioLinks, ExternalPortfolioLink, InsertExternalPortfolioLink
 } from "@shared/schema";
 
 export interface IStorage {

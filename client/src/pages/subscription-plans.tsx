@@ -163,24 +163,26 @@ export default function SubscriptionPlans() {
           </p>
 
           {/* Plan Type Toggle */}
-          <div className="flex items-center justify-center gap-2 mb-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 mb-8">
             <Button
               variant={planType === 'professional' ? 'default' : 'outline'}
-              size="lg"
+              size="sm"
               onClick={() => setPlanType('professional')}
-              className="px-8"
+              className="w-full sm:w-auto px-4 sm:px-8"
             >
               <User className="mr-2 h-4 w-4" />
-              For Professionals
+              <span className="hidden sm:inline">For Professionals</span>
+              <span className="sm:hidden">Professionals</span>
             </Button>
             <Button
               variant={planType === 'company' ? 'default' : 'outline'}
-              size="lg"
+              size="sm"
               onClick={() => setPlanType('company')}
-              className="px-8"
+              className="w-full sm:w-auto px-4 sm:px-8"
             >
               <Building className="mr-2 h-4 w-4" />
-              For Companies
+              <span className="hidden sm:inline">For Companies</span>
+              <span className="sm:hidden">Companies</span>
             </Button>
           </div>
 

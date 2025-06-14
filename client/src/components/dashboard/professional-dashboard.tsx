@@ -204,15 +204,21 @@ export default function ProfessionalDashboard() {
       </div>
       
       <Tabs defaultValue="applications">
-        <TabsList className="grid grid-cols-3 w-full mb-8">
-          <TabsTrigger value="applications" className="flex items-center">
-            <Briefcase className="h-4 w-4 mr-2" /> Applications
+        <TabsList className="grid grid-cols-3 w-full mb-8 h-auto gap-1 p-1">
+          <TabsTrigger value="applications" className="flex items-center text-xs sm:text-sm px-2 py-2">
+            <Briefcase className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Applications</span>
+            <span className="sm:hidden">Apps</span>
           </TabsTrigger>
-          <TabsTrigger value="messages" className="flex items-center">
-            <MessageSquare className="h-4 w-4 mr-2" /> Messages
+          <TabsTrigger value="messages" className="flex items-center text-xs sm:text-sm px-2 py-2">
+            <MessageSquare className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Messages</span>
+            <span className="sm:hidden">Msgs</span>
           </TabsTrigger>
-          <TabsTrigger value="consultations" className="flex items-center">
-            <Calendar className="h-4 w-4 mr-2" /> Consultations
+          <TabsTrigger value="consultations" className="flex items-center text-xs sm:text-sm px-2 py-2">
+            <Calendar className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Consultations</span>
+            <span className="sm:hidden">Consult</span>
           </TabsTrigger>
         </TabsList>
         

@@ -210,10 +210,19 @@ export default function PaymentDashboard() {
 
       {/* Transactions List */}
       <Tabs defaultValue="all" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="all">{t("payment.allTransactions")}</TabsTrigger>
-          <TabsTrigger value="active">{t("payment.active")}</TabsTrigger>
-          <TabsTrigger value="completed">{t("payment.completed")}</TabsTrigger>
+        <TabsList className="w-full grid grid-cols-3 h-auto gap-1 p-1">
+          <TabsTrigger value="all" className="text-xs sm:text-sm px-2 py-2">
+            <span className="hidden sm:inline">{t("payment.allTransactions")}</span>
+            <span className="sm:hidden">All</span>
+          </TabsTrigger>
+          <TabsTrigger value="active" className="text-xs sm:text-sm px-2 py-2">
+            <span className="hidden sm:inline">{t("payment.active")}</span>
+            <span className="sm:hidden">Active</span>
+          </TabsTrigger>
+          <TabsTrigger value="completed" className="text-xs sm:text-sm px-2 py-2">
+            <span className="hidden sm:inline">{t("payment.completed")}</span>
+            <span className="sm:hidden">Done</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">

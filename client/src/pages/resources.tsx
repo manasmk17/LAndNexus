@@ -191,19 +191,31 @@ export default function Resources() {
       
       {/* Resource type tabs */}
       <Tabs defaultValue={resourceType || "all"} onValueChange={setResourceType} className="mb-6">
-        <TabsList className="w-full md:w-auto grid grid-cols-5 md:inline-flex">
-          <TabsTrigger value="all" className="flex items-center">All</TabsTrigger>
-          <TabsTrigger value="article" className="flex items-center">
-            <BookOpen className="mr-2 h-4 w-4" /> Articles
+        <TabsList className="w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 h-auto gap-1 p-1">
+          <TabsTrigger value="all" className="text-xs sm:text-sm px-2 py-2">All</TabsTrigger>
+          <TabsTrigger value="article" className="text-xs sm:text-sm px-2 py-2">
+            <span className="hidden sm:flex items-center">
+              <BookOpen className="mr-1 h-3 w-3" /> Articles
+            </span>
+            <span className="sm:hidden">Articles</span>
           </TabsTrigger>
-          <TabsTrigger value="template" className="flex items-center">
-            <FileText className="mr-2 h-4 w-4" /> Templates
+          <TabsTrigger value="template" className="text-xs sm:text-sm px-2 py-2">
+            <span className="hidden sm:flex items-center">
+              <FileText className="mr-1 h-3 w-3" /> Templates
+            </span>
+            <span className="sm:hidden">Templates</span>
           </TabsTrigger>
-          <TabsTrigger value="video" className="flex items-center">
-            <Video className="mr-2 h-4 w-4" /> Videos
+          <TabsTrigger value="video" className="text-xs sm:text-sm px-2 py-2">
+            <span className="hidden sm:flex items-center">
+              <Video className="mr-1 h-3 w-3" /> Videos
+            </span>
+            <span className="sm:hidden">Videos</span>
           </TabsTrigger>
-          <TabsTrigger value="webinar" className="flex items-center">
-            <HeadphonesIcon className="mr-2 h-4 w-4" /> Webinars
+          <TabsTrigger value="webinar" className="text-xs sm:text-sm px-2 py-2">
+            <span className="hidden sm:flex items-center">
+              <HeadphonesIcon className="mr-1 h-3 w-3" /> Webinars
+            </span>
+            <span className="sm:hidden">Webinars</span>
           </TabsTrigger>
         </TabsList>
       </Tabs>

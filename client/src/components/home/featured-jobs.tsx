@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { ArrowRight } from "lucide-react";
-import JobCard from "./job-card";
+import LinkedInJobCard from "../job/linkedin-job-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { JobPosting } from "@shared/schema";
 
@@ -49,9 +49,9 @@ export default function FeaturedJobs() {
             <p className="text-red-500">Failed to load job postings. Please try again later.</p>
           </div>
         ) : jobs && jobs.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
             {jobs.map((job) => (
-              <JobCard key={job.id} job={job} />
+              <LinkedInJobCard key={job.id} job={job} />
             ))}
           </div>
         ) : (

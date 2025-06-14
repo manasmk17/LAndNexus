@@ -1291,7 +1291,7 @@ export class MemStorage implements IStorage {
 
   async getCompanyJobPostings(companyId: number): Promise<JobPosting[]> {
     return Array.from(this.jobPostings.values())
-      .filter(job => job.companyId === companyId);
+      .filter(job => job.companyId === companyId && !job.archived);
   }
 
   async createJobPosting(job: InsertJobPosting): Promise<JobPosting> {
@@ -2725,7 +2725,7 @@ export class DatabaseStorage implements IStorage {
     return db
       .select()
       .from(jobPostings)
-      .where(eq(jobPostings.companyId, companyId))
+      .where(and(eq(jobPostings.companyId, companyId), eq(jobPostings.archived, false)))
       .orderBy(desc(jobPostings.createdAt));
   }
 

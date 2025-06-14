@@ -60,7 +60,7 @@ export default function Resources() {
   const [location] = useLocation();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [resourceType, setResourceType] = useState<string>("");
+  const [resourceType, setResourceType] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(9);
@@ -107,20 +107,22 @@ export default function Resources() {
       const [path, params] = queryKey;
       const { query, type, categoryId } = params as { 
         query: string, 
-        type: string,
+        type: string | undefined,
         categoryId: number | null 
       };
       
       const searchParams = new URLSearchParams();
-      if (query) searchParams.append('query', query);
+      if (query && query.trim()) searchParams.append('query', query.trim());
       if (type && type !== 'all') searchParams.append('type', type);
       if (categoryId) searchParams.append('categoryId', categoryId.toString());
       
-      const url = `${path}${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+      const url = `/api/resources/search${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
+      console.log('Fetching resources with URL:', url);
+      
       const response = await fetch(url);
       
       if (!response.ok) {
-        throw new Error('Failed to fetch resources');
+        throw new Error(`Failed to fetch resources: ${response.status}`);
       }
       
       return response.json();
@@ -306,6 +308,7 @@ export default function Resources() {
                   setSearchTerm("");
                   setResourceType("all");
                   setSelectedCategory(null);
+                  setCurrentPage(1);
                 }}
               >
                 Clear Filters
@@ -463,6 +466,7 @@ export default function Resources() {
                 setSearchTerm("");
                 setResourceType("all");
                 setSelectedCategory(null);
+                setCurrentPage(1);
               }}>
                 Clear Filters
               </Button>

@@ -4046,10 +4046,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const query = req.query.query as string | undefined;
       const type = req.query.type as string | undefined;
-      const categoryId = req.query.categoryId ? parseInt(req.query.categoryId as string) : undefined;
+      const categoryIdParam = req.query.categoryId as string | undefined;
+      const categoryId = categoryIdParam ? parseInt(categoryIdParam) : undefined;
+      
+      console.log("Resource search parameters:", { query, type, categoryId });
       
       // Use the searchResources method which can handle all filtering criteria
       const resources = await storage.searchResources(query, type, categoryId);
+      console.log(`Found ${resources.length} resources matching criteria`);
+      
       res.json(resources);
     } catch (err) {
       console.error("Error searching resources:", err);

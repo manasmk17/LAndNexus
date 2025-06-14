@@ -893,17 +893,31 @@ export class MemStorage implements IStorage {
   }
 
   async searchResources(query?: string, type?: string, categoryId?: number): Promise<Resource[]> {
+    console.log('MemStorage searchResources called with:', { query, type, categoryId });
+    
     return Array.from(this.resources.values())
       .filter(resource => {
-        const matchesQuery = !query || 
+        const matchesQuery = !query || !query.trim() || 
           resource.title.toLowerCase().includes(query.toLowerCase()) ||
           resource.description.toLowerCase().includes(query.toLowerCase());
 
-        const matchesType = !type || resource.resourceType === type;
+        const matchesType = !type || type === 'all' || resource.resourceType === type;
 
-        const matchesCategory = !categoryId || resource.categoryId === categoryId;
+        const matchesCategory = !categoryId || isNaN(categoryId) || resource.categoryId === categoryId;
 
-        return matchesQuery && matchesType && matchesCategory;
+        const matches = matchesQuery && matchesType && matchesCategory;
+        
+        if (!matches) {
+          console.log(`Resource "${resource.title}" filtered out:`, {
+            matchesQuery,
+            matchesType,
+            matchesCategory,
+            resourceType: resource.resourceType,
+            resourceCategoryId: resource.categoryId
+          });
+        }
+
+        return matches;
       })
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
@@ -2860,45 +2874,61 @@ export class DatabaseStorage implements IStorage {
   }
 
   async searchResources(query?: string, type?: string, categoryId?: number): Promise<Resource[]> {
-    // Start with base query conditions
-    const conditions: SQL<unknown>[] = [];
-
-    // Add search conditions if query provided
-    if (query) {
-      const searchTerm = `%${query.toLowerCase()}%`;
-      // Create a single SQL condition for text search
-      conditions.push(
-        sql`(LOWER(${resources.title}) LIKE ${searchTerm} OR LOWER(${resources.description}) LIKE ${searchTerm})`
-      );
+    if (!db) {
+      console.warn("Database not available, using empty result for searchResources");
+      return [];
     }
 
-    // Add type filter if provided
-    if (type) {
-      conditions.push(eq(resources.resourceType, type));
-    }
+    try {
+      // Start with base query conditions
+      const conditions: SQL<unknown>[] = [];
 
-    // Add category filter if provided
-    if (categoryId) {
-      conditions.push(eq(resources.categoryId, categoryId));
-    }
+      // Add search conditions if query provided
+      if (query && query.trim()) {
+        const searchTerm = `%${query.toLowerCase()}%`;
+        // Create a single SQL condition for text search
+        conditions.push(
+          sql`(LOWER(${resources.title}) LIKE ${searchTerm} OR LOWER(${resources.description}) LIKE ${searchTerm})`
+        );
+      }
 
-    // Execute query with all conditions
-    let query_result;
-    if (conditions.length > 0) {
-      query_result = await db
-        .select()
-        .from(resources)
-        .where(and(...conditions))
-        .orderBy(desc(resources.createdAt));
-    } else {
-      // No conditions, get all resources
-      query_result = await db
-        .select()
-        .from(resources)
-        .orderBy(desc(resources.createdAt));
-    }
+      // Add type filter if provided
+      if (type && type !== 'all') {
+        conditions.push(eq(resources.resourceType, type));
+      }
 
-    return query_result;
+      // Add category filter if provided
+      if (categoryId && !isNaN(categoryId)) {
+        conditions.push(eq(resources.categoryId, categoryId));
+      }
+
+      console.log(`Searching resources with ${conditions.length} conditions:`, {
+        query: query?.trim(),
+        type: type !== 'all' ? type : undefined,
+        categoryId: !isNaN(categoryId || 0) ? categoryId : undefined
+      });
+
+      // Execute query with all conditions
+      let query_result;
+      if (conditions.length > 0) {
+        query_result = await db
+          .select()
+          .from(resources)
+          .where(and(...conditions))
+          .orderBy(desc(resources.createdAt));
+      } else {
+        // No conditions, get all resources
+        query_result = await db
+          .select()
+          .from(resources)
+          .orderBy(desc(resources.createdAt));
+      }
+
+      return query_result;
+    } catch (error) {
+      console.error("Error in searchResources:", error);
+      return [];
+    }
   }
 
   async getResourceCategory(id: number): Promise<ResourceCategory | undefined> {

@@ -258,18 +258,23 @@ return (
             </div>
             
             <div className="prose max-w-none">
-              <p className="text-gray-700 mb-4">{resource.description}</p>
+              <p className="text-gray-700 mb-4 break-words">{resource.description}</p>
               
               {/* Resource content */}
               {resource.content && (
                 <div className="mt-4">
                   {resource.content.startsWith('http') ? (
-                    <a href={resource.content} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary-dark">
-                      View External Content
-                    </a>
+                    <div className="space-y-2">
+                      <a href={resource.content} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary-dark inline-block">
+                        View External Content
+                      </a>
+                      <div className="text-xs text-gray-500 break-all overflow-hidden">
+                        {resource.content}
+                      </div>
+                    </div>
                   ) : (
                     <div className="prose max-w-none">
-                      <div className="whitespace-pre-line">{resource.content}</div>
+                      <div className="whitespace-pre-line break-words">{resource.content}</div>
                     </div>
                   )}
                 </div>

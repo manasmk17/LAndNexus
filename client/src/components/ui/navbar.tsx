@@ -101,13 +101,18 @@ export default function Navbar() {
             {user ? (
               <div className="hidden md:flex items-center space-x-2">
                 {user.isAdmin ? (
-                  <></>
+                  <Link href="/admin-dashboard" className="flex items-center px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-md transition-colors">
+                    <LayoutDashboard className="h-4 w-4 mr-1.5" />
+                    Dashboard
+                  </Link>
                 ) : user.userType === "professional" ? (
-                  <Link href="/professional-dashboard" className="px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-md transition-colors">
+                  <Link href="/professional-dashboard" className="flex items-center px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-md transition-colors">
+                    <LayoutDashboard className="h-4 w-4 mr-1.5" />
                     Dashboard
                   </Link>
                 ) : (
-                  <Link href="/company-dashboard" className="px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-md transition-colors">
+                  <Link href="/company-dashboard" className="flex items-center px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-md transition-colors">
+                    <LayoutDashboard className="h-4 w-4 mr-1.5" />
                     Dashboard
                   </Link>
                 )}

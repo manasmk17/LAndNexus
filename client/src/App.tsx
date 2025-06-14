@@ -87,6 +87,14 @@ function Router() {
         component={EditProfile} 
       />
       <ProtectedRoute 
+        path="/profile" 
+        component={EditProfile} 
+      />
+      <ProtectedRoute 
+        path="/settings" 
+        component={EditProfile} 
+      />
+      <ProtectedRoute 
         path="/post-job" 
         component={PostJob} 
         userTypes={["company"]} 

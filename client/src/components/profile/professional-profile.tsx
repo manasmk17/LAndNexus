@@ -99,7 +99,6 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import SkillRecommendations from "@/components/profile/skill-recommendations";
 import ImageGallery from "@/components/profile/image-gallery";
-import ProfessionalJobMatches from "@/components/matching/professional-job-matches";
 import type { 
   ProfessionalProfile, 
   Expertise, 
@@ -270,10 +269,6 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                   {profile.featured && (
                     <Badge className="bg-amber-100 text-amber-800">Featured Professional</Badge>
                   )}
-                  <Badge className="bg-blue-100 text-blue-800 flex items-center">
-                    <Briefcase className="mr-1 h-3 w-3" />
-                    AI Matched
-                  </Badge>
                   {profile.ratePerHour && (
                     <Badge className="bg-green-100 text-green-800">
                       ${profile.ratePerHour}/hour
@@ -316,12 +311,6 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
           <Tabs defaultValue="about">
             <TabsList className="w-full">
               <TabsTrigger value="about">About</TabsTrigger>
-              <TabsTrigger value="ai-matches">
-                <span className="flex items-center">
-                  <Briefcase className="mr-1 h-4 w-4" />
-                  AI Job Matches
-                </span>
-              </TabsTrigger>
               <TabsTrigger value="expertise">Expertise & Certifications</TabsTrigger>
               <TabsTrigger value="skill-recommendations">
                 <span className="flex items-center">
@@ -406,20 +395,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
               )}
             </TabsContent>
 
-            <TabsContent value="ai-matches" className="mt-6">
-              <div className="space-y-4">
-                <h2 className="text-xl font-semibold mb-4 flex items-center">
-                  <Briefcase className="mr-2 h-5 w-5 text-blue-600" />
-                  AI-Powered Job Matches
-                </h2>
-                <p className="text-gray-600 mb-4">
-                  Jobs that match your skills and experience based on our AI analysis
-                </p>
-                <ProfessionalJobMatches />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="expertise" className="mt-6"></TabsContent>
+            <TabsContent value="expertise" className="mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h2 className="text-xl font-semibold mb-4">Areas of Expertise</h2>

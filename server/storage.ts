@@ -802,54 +802,16 @@ export class MemStorage implements IStorage {
           const jobDescription = job.description.toLowerCase();
           const jobRequirements = job.requirements.toLowerCase();
 
-          // Enhanced text-based match scoring
-          let titleMatch = 0;
-          let bioMatch = 0;
-          let industryMatch = 0;
-          let skillsMatch = 0;
-          let experienceMatch = 0;
-          
-          // Title matching (more sophisticated)
-          if (profTitle && jobTitle) {
-            const titleWords = profTitle.toLowerCase().split(' ');
-            const jobTitleWords = jobTitle.toLowerCase().split(' ');
-            const commonWords = titleWords.filter(word => 
-              word.length > 2 && jobTitleWords.some(jWord => jWord.includes(word) || word.includes(jWord))
-            );
-            titleMatch = Math.min(commonWords.length * 0.15, 0.4);
-          }
-          
-          // Bio content matching
-          if (profBio && (jobDescription || jobRequirements)) {
-            const bioWords = profBio.toLowerCase().split(' ').filter(word => word.length > 3);
-            const jobText = (jobDescription + ' ' + jobRequirements).toLowerCase();
-            const matchingWords = bioWords.filter(word => jobText.includes(word));
-            bioMatch = Math.min(matchingWords.length * 0.02, 0.25);
-          }
-          
-          // Industry matching
-          if (profIndustry && jobDescription) {
-            industryMatch = jobDescription.toLowerCase().includes(profIndustry) ? 0.2 : 0;
-          }
-          
-          // Experience level matching
-          if (professional.yearsExperience && job.requirements) {
-            const expYears = professional.yearsExperience;
-            const reqText = job.requirements.toLowerCase();
-            if (reqText.includes('senior') && expYears >= 5) experienceMatch = 0.15;
-            else if (reqText.includes('mid') && expYears >= 2 && expYears <= 7) experienceMatch = 0.15;
-            else if (reqText.includes('junior') && expYears <= 3) experienceMatch = 0.15;
-            else if (expYears >= 3) experienceMatch = 0.1;
-          }
-          
-          // Location matching
-          const locationMatch = professional.location && 
-            (professional.location === job.location || job.remote) ? 0.15 : 0;
+          // Calculate text-based match score
+          const titleMatch = profTitle && jobTitle.includes(profTitle) ? 0.3 : 0;
+          const bioMatch = profBio && (jobDescription.includes(profBio) || jobRequirements.includes(profBio)) ? 0.2 : 0;
+          const industryMatch = profIndustry && jobDescription.includes(profIndustry) ? 0.2 : 0;
 
-          score = Math.min(titleMatch + bioMatch + industryMatch + skillsMatch + experienceMatch + locationMatch, 0.95);
-          
-          // Ensure minimum score for any job to avoid 0% matches
-          score = Math.max(score, 0.05);
+          // Assign a moderate score for location match
+          const locationMatch = professional.location && 
+            professional.location === job.location ? 0.3 : 0;
+
+          score = titleMatch + bioMatch + industryMatch + locationMatch;
 
           // Save the calculated score
           this.jobMatches.set(key, score);

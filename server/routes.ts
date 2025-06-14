@@ -4043,6 +4043,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/resource-categories", async (req, res) => {
+    try {
+      const categories = await storage.getAllResourceCategories();
+      res.json(categories);
+    } catch (error) {
+      console.error("Error fetching resource categories:", error);
+      res.status(500).json({ message: "Error fetching categories" });
+    }
+  });
+
   app.get("/api/resources/:id", async (req, res) => {
     const id = parseInt(req.params.id);
     
@@ -4058,6 +4068,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     res.json(resource);
+  });
+
+  // Toggle featured status for a resource
+  app.patch("/api/resources/:id/feature", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.user as any;
+      const { featured } = req.body;
+
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid resource ID format" });
+      }
+
+      const resource = await storage.getResource(id);
+      if (!resource) {
+        return res.status(404).json({ message: "Resource not found" });
+      }
+
+      // Check if user owns the resource or is admin
+      if (resource.authorId !== user.id && !user.isAdmin) {
+        return res.status(403).json({ message: "Not authorized to modify this resource" });
+      }
+
+      const updatedResource = await storage.updateResource(id, { featured });
+      res.json(updatedResource);
+    } catch (error) {
+      console.error("Error updating resource featured status:", error);
+      res.status(500).json({ message: "Error updating resource" });
+    }
   });
   
   // Get current user's resources

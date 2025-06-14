@@ -1,3 +1,256 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  /* Enhanced responsive typography */
+  html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+  }
+  
+  @media (max-width: 640px) {
+    html {
+      font-size: 14px;
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    html {
+      font-size: 16px;
+    }
+  }
+  
+  @media (min-width: 1280px) {
+    html {
+      font-size: 18px;
+    }
+  }
+
+  /* Responsive body styles */
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Enhanced focus styles for accessibility */
+  *:focus {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+  }
+
+  /* Better button focus */
+  button:focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Responsive container utilities */
+  .container-responsive {
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .container-tight {
+    @apply w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Responsive grid utilities */
+  .grid-responsive {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6;
+  }
+
+  .grid-responsive-cards {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6;
+  }
+
+  /* Responsive flex utilities */
+  .flex-responsive {
+    @apply flex flex-col sm:flex-row items-start sm:items-center gap-4;
+  }
+
+  .flex-responsive-center {
+    @apply flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6;
+  }
+
+  /* Responsive text utilities */
+  .text-responsive-xl {
+    @apply text-2xl sm:text-3xl lg:text-4xl xl:text-5xl;
+  }
+
+  .text-responsive-lg {
+    @apply text-xl sm:text-2xl lg:text-3xl;
+  }
+
+  .text-responsive-md {
+    @apply text-lg sm:text-xl lg:text-2xl;
+  }
+
+  /* Responsive spacing utilities */
+  .space-responsive {
+    @apply space-y-4 sm:space-y-6 lg:space-y-8;
+  }
+
+  .padding-responsive {
+    @apply p-4 sm:p-6 lg:p-8;
+  }
+
+  .margin-responsive {
+    @apply m-4 sm:m-6 lg:m-8;
+  }
+
+  /* Responsive card styles */
+  .card-responsive {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 lg:p-8 transition-all duration-200 hover:shadow-md;
+  }
+
+  /* Mobile-first navigation */
+  .nav-responsive {
+    @apply flex flex-col lg:flex-row items-start lg:items-center space-y-2 lg:space-y-0 lg:space-x-6;
+  }
+
+  /* Responsive form layouts */
+  .form-responsive {
+    @apply space-y-4 sm:space-y-6;
+  }
+
+  .form-group-responsive {
+    @apply flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4;
+  }
+
+  /* Responsive button sizes */
+  .btn-responsive {
+    @apply px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-medium rounded-md transition-all duration-200;
+  }
+
+  .btn-responsive-lg {
+    @apply px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-lg font-medium rounded-lg transition-all duration-200;
+  }
+
+  /* Responsive image containers */
+  .image-responsive {
+    @apply w-full h-auto object-cover rounded-lg;
+  }
+
+  .image-container-responsive {
+    @apply relative overflow-hidden rounded-lg aspect-video sm:aspect-[4/3] lg:aspect-video;
+  }
+
+  /* Responsive table wrapper */
+  .table-responsive {
+    @apply w-full overflow-x-auto;
+  }
+
+  .table-responsive table {
+    @apply min-w-full;
+  }
+
+  /* Responsive modal and dialog */
+  .modal-responsive {
+    @apply w-full max-w-sm sm:max-w-md lg:max-w-lg xl:max-w-xl mx-auto;
+  }
+
+  .modal-responsive-wide {
+    @apply w-full max-w-md sm:max-w-lg lg:max-w-2xl xl:max-w-4xl mx-auto;
+  }
+
+  /* Responsive sidebar */
+  .sidebar-responsive {
+    @apply w-full lg:w-64 xl:w-80 bg-white border-r border-gray-200;
+  }
+
+  /* Touch-friendly interactive elements */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
+  }
+
+  /* Hide scrollbars but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Responsive video embed */
+  .video-responsive {
+    @apply relative w-full h-0 pb-[56.25%] overflow-hidden rounded-lg;
+  }
+
+  .video-responsive iframe {
+    @apply absolute top-0 left-0 w-full h-full;
+  }
+}
+
+@layer utilities {
+  /* Safe area utilities for mobile devices */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  
+  .safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* Responsive visibility utilities */
+  .mobile-only {
+    @apply block sm:hidden;
+  }
+
+  .tablet-only {
+    @apply hidden sm:block lg:hidden;
+  }
+
+  .desktop-only {
+    @apply hidden lg:block;
+  }
+
+  .mobile-tablet-only {
+    @apply block lg:hidden;
+  }
+
+  .tablet-desktop-only {
+    @apply hidden sm:block;
+  }
+
+  /* Responsive text alignment */
+  .text-center-mobile {
+    @apply text-center sm:text-left;
+  }
+
+  .text-left-mobile {
+    @apply text-left sm:text-center;
+  }
+
+  /* Responsive overflow handling */
+  .overflow-responsive {
+    @apply overflow-hidden sm:overflow-visible;
+  }
+
+  /* Responsive max-width utilities */
+  .max-w-responsive {
+    @apply max-w-full sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl;
+  }
+
+  /* Responsive aspect ratios */
+  .aspect-responsive-square {
+    @apply aspect-square sm:aspect-video;
+  }
+
+  .aspect-responsive-portrait {
+    @apply aspect-[3/4] sm:aspect-[4/5] lg:aspect-[3/4];
+  }
+}

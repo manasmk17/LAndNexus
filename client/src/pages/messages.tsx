@@ -68,6 +68,187 @@ export default function Messages() {
       return await response.json();
     }
   });
+
+  // Extract unique contacts from messages
+  const contacts = messages && users ? 
+    Array.from(new Set([
+      ...messages.map(msg => msg.senderId),
+      ...messages.map(msg => msg.receiverId)
+    ]))
+    .filter(id => id !== user?.id) // Exclude current user
+    .map(userId => {
+      const contact = users.find(u => u.id === userId);
+      const lastMessage = messages
+        .filter(msg => msg.senderId === userId || msg.receiverId === userId)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+      
+      return contact ? { user: contact, lastMessage } : null;
+    })
+    .filter(Boolean) as Array<{ user: UserType; lastMessage: Message }> : [];
+
+  // Filter contacts based on search
+  const filteredContacts = searchTerm
+    ? contacts.filter(contact => {
+        const name = `${contact.user.firstName} ${contact.user.lastName}`.toLowerCase();
+        const username = contact.user.username.toLowerCase();
+        return name.includes(searchTerm.toLowerCase()) || 
+               username.includes(searchTerm.toLowerCase());
+      })
+    : contacts;
+
+  // Set selected user from URL parameters
+  useEffect(() => {
+    if (userIdParam) {
+      setSelectedUserId(parseInt(userIdParam));
+    } else if (professionalIdParam) {
+      // Get user ID from professional profile
+      fetch(`/api/professional-profiles/${professionalIdParam}`, { credentials: "include" })
+        .then(res => res.json())
+        .then(profile => {
+          if (profile.userId) {
+            setSelectedUserId(profile.userId);
+          }
+        })
+        .catch(console.error);
+    } else if (companyIdParam) {
+      // Get user ID from company profile
+      fetch(`/api/company-profiles/${companyIdParam}`, { credentials: "include" })
+        .then(res => res.json())
+        .then(profile => {
+          if (profile.userId) {
+            setSelectedUserId(profile.userId);
+          }
+        })
+        .catch(console.error);
+    }
+  }, [userIdParam, professionalIdParam, companyIdParam]);
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isLoadingAuth && !user) {
+      setLocation("/login");
+    }
+  }, [user, isLoadingAuth, setLocation]);
+
+  if (isLoadingAuth) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Skeleton className="h-8 w-48 mx-auto mb-4" />
+          <Skeleton className="h-4 w-32 mx-auto" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null; // Will redirect to login
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[600px]">
+        {/* Contacts List */}
+        <div className="lg:col-span-1">
+          <Card className="h-full">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                Messages
+                {connectionError && (
+                  <Badge variant="destructive">Offline</Badge>
+                )}
+                {isConnected && (
+                  <Badge variant="secondary">Online</Badge>
+                )}
+              </CardTitle>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search contacts..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="max-h-96 overflow-y-auto">
+                {isLoadingMessages ? (
+                  <div className="p-4 space-y-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton key={i} className="h-16 w-full" />
+                    ))}
+                  </div>
+                ) : filteredContacts.length > 0 ? (
+                  filteredContacts.map(({ user: contact, lastMessage }) => (
+                    <div
+                      key={contact.id}
+                      className={`p-4 border-b cursor-pointer hover:bg-muted transition-colors ${
+                        selectedUserId === contact.id ? "bg-muted" : ""
+                      }`}
+                      onClick={() => setSelectedUserId(contact.id)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                          {contact.userType === "professional" ? (
+                            <User className="w-5 h-5 text-primary" />
+                          ) : (
+                            <Building className="w-5 h-5 text-primary" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">
+                            {contact.firstName} {contact.lastName}
+                          </p>
+                          <p className="text-sm text-muted-foreground truncate">
+                            {lastMessage?.content || "No messages yet"}
+                          </p>
+                        </div>
+                        {lastMessage && (
+                          <p className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(lastMessage.createdAt), { addSuffix: true })}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-8 text-center">
+                    <p className="text-muted-foreground">No conversations yet</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Start a conversation by contacting a professional or company
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Message Thread */}
+        <div className="lg:col-span-2">
+          <Card className="h-full">
+            {selectedUserId ? (
+              <MessageThread otherUserId={selectedUserId} />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold mb-2">Select a conversation</h3>
+                  <p className="text-muted-foreground">
+                    Choose a contact from the left to start messaging
+                  </p>
+                </div>
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+      
+      return await response.json();
+    }
+  });
   
   // Set selected user from URL params if provided
   useEffect(() => {

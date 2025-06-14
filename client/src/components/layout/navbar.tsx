@@ -108,7 +108,7 @@ export function Navbar() {
                     </div>
                   </div>
                   <DropdownMenuSeparator />
-                  
+
                   <DropdownMenuItem asChild>
                     <Link 
                       href={user.userType === "professional" 
@@ -121,7 +121,7 @@ export function Navbar() {
                       <span>{t("nav.dashboard")}</span>
                     </Link>
                   </DropdownMenuItem>
-                  
+
                   <DropdownMenuItem asChild>
                     <Link href="/edit-profile" className="cursor-pointer">
                       <Settings className="me-2 h-4 w-4" />
@@ -146,7 +146,7 @@ export function Navbar() {
                   )}
 
                   <DropdownMenuSeparator />
-                  
+
                   <DropdownMenuItem 
                     className="cursor-pointer text-red-600 focus:text-red-600"
                     onClick={handleLogout}

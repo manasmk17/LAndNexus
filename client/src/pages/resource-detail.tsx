@@ -260,41 +260,40 @@ return (
             <div className="prose max-w-none">
               <p className="text-gray-700 mb-4">{resource.description}</p>
               
-              {/* Display content as a link if it's a URL */}
+              {/* Resource content */}
               {resource.content && (
-              <div className="mt-4">
-                {resource.content.startsWith('http') ? (
-                  <a href={resource.content} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary-dark">
-                    View External Content
+                <div className="mt-4">
+                  {resource.content.startsWith('http') ? (
+                    <a href={resource.content} target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary-dark">
+                      View External Content
+                    </a>
+                  ) : (
+                    <div className="prose max-w-none">
+                      <div className="whitespace-pre-line">{resource.content}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {resource.contentUrl && (
+                <div className="mt-4">
+                  <a 
+                    href={resource.contentUrl} 
+                    target="_blank"
+                    rel="noopener noreferrer" 
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                  >
+                    Access Resource
                   </a>
-                ) : (
-                  <div className="prose max-w-none mt-4">
-                    {resource.content}
-                  </div>
-                )}
-              </div>
-            )}
-            
-            {resource.filePath && (
-              <Button onClick={handleDownload} className="mt-4">
-                <Download className="mr-2 h-4 w-4" />
-                Download Resource
-              </Button>
-            )}
-            {resource.contentUrl ? (
-              <div className="mt-4">
-                <a 
-                  href={resource.contentUrl} 
-                  target="_blank"
-                  rel="noopener noreferrer" 
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-                >
-                  Access Resource
-                </a>
-              </div>
-            ) : (
-              <div className="whitespace-pre-line">{resource.content || "No content available"}</div>
-            )}
+                </div>
+              )}
+              
+              {resource.filePath && (
+                <Button onClick={handleDownload} className="mt-4">
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Resource
+                </Button>
+              )}
             </div>
             
             {resource.resourceType && getResourceActionButton(resource.resourceType) && (

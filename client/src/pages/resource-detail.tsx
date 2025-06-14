@@ -194,7 +194,7 @@ export default function ResourceDetail() {
 };
 
 return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 max-w-full overflow-hidden">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <div className="flex flex-wrap gap-3 mb-4">

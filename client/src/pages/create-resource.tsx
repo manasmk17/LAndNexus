@@ -49,38 +49,9 @@ const resourceFormSchema = z.object({
 });
 
 export default function CreateResource() {
-  const navigate = useLocation()[1];
-  const { user, loading } = useAuth();
-  const { toast } = useToast();
-
-  // Show loading state while checking authentication
-  if (loading) {
-    return (
-      <div className="container mx-auto py-10 px-4">
-        <div className="max-w-2xl mx-auto text-center">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="mt-4">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Redirect to login if not authenticated
-  if (!user) {
-    return (
-      <div className="container mx-auto py-10 px-4">
-        <div className="max-w-2xl mx-auto text-center">
-          <h1 className="text-3xl font-bold mb-4">Share a Resource</h1>
-          <p className="mb-6">Please log in to share resources with the community.</p>
-          <Button onClick={() => navigate('/login')}>
-            Log In
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -184,6 +155,26 @@ export default function CreateResource() {
       setIsSubmitting(false);
     }
   };
+
+  if (!user) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <Card className="max-w-md mx-auto">
+          <CardHeader>
+            <CardTitle>Sign in required</CardTitle>
+            <CardDescription>
+              You need to be signed in to create resources
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => setLocation("/login")} className="w-full">
+              Sign In
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">

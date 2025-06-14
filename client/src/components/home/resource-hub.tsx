@@ -36,7 +36,7 @@ export default function ResourceHub() {
         <p className="text-gray-600 text-center max-w-2xl mx-auto mb-10">
           Access curated learning materials from top MENA region experts. Premium templates, insights, and resources for corporate learning excellence.
         </p>
-
+        
         {/* Resource Categories */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
           <Link href="/resources?type=template" className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
@@ -45,21 +45,21 @@ export default function ResourceHub() {
             </div>
             <h3 className="font-heading font-medium text-center">Templates</h3>
           </Link>
-
+          
           <Link href="/resources?type=article" className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
             <div className="bg-teal-100 text-teal-600 p-4 rounded-full mb-3">
               <BookOpen className="h-6 w-6" />
             </div>
             <h3 className="font-heading font-medium text-center">Articles</h3>
           </Link>
-
+          
           <Link href="/resources?type=video" className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
             <div className="bg-amber-100 text-amber-600 p-4 rounded-full mb-3">
               <Video className="h-6 w-6" />
             </div>
             <h3 className="font-heading font-medium text-center">Videos</h3>
           </Link>
-
+          
           <Link href="/forum" className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
             <div className="bg-blue-100 text-primary p-4 rounded-full mb-3">
               <MessageSquare className="h-6 w-6" />
@@ -67,10 +67,10 @@ export default function ResourceHub() {
             <h3 className="font-heading font-medium text-center">Community</h3>
           </Link>
         </div>
-
+        
         {/* Featured Resources */}
         <h3 className="text-2xl font-heading font-bold mb-6">Featured Resources</h3>
-
+        
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[...Array(3)].map((_, index) => (
@@ -107,7 +107,7 @@ export default function ResourceHub() {
             <p className="text-gray-500">No featured resources yet. Check back soon!</p>
           </div>
         )}
-
+        
         <div className="text-center mt-10">
           <Button className="inline-flex items-center" asChild>
             <Link href="/resources">
@@ -116,13 +116,7 @@ export default function ResourceHub() {
             </Link>
           </Button>
         </div>
-        <Link href="/create-resource">
-          <Button variant="outline" size="sm">
-            Share Resource
-          </Button>
-        </Link>
       </div>
     </section>
   );
 }
-```

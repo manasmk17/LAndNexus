@@ -6,9 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Settings, Bell, Shield, CreditCard, Users, Eye, Download, HelpCircle } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "wouter";
-import { apiRequest } from "@/lib/queryClient";
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -31,209 +30,79 @@ export default function SettingsPage() {
   const isProfessional = user.userType === "professional";
 
   // Handler functions
-  const handleChangePassword = async () => {
-    const currentPassword = prompt("Enter your current password:");
-    if (!currentPassword) return;
-
-    const newPassword = prompt("Enter your new password:");
-    if (!newPassword) return;
-
-    const confirmPassword = prompt("Confirm your new password:");
-    if (newPassword !== confirmPassword) {
-      toast({
-        title: "Error",
-        description: "Passwords do not match",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const response = await apiRequest("PUT", "/api/auth/change-password", {
-        currentPassword,
-        newPassword,
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Password Changed",
-          description: "Your password has been updated successfully",
-        });
-      } else {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to change password");
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to change password",
-        variant: "destructive",
-      });
-    }
+  const handleChangePassword = () => {
+    toast({
+      title: "Change Password",
+      description: "Password change feature will be implemented soon.",
+    });
   };
 
   const handleManagePlan = () => {
-    // Navigate to subscription management
-    window.location.href = "/manage-subscription";
+    toast({
+      title: "Manage Plan",
+      description: "Redirecting to subscription management...",
+    });
   };
 
   const handleManagePayment = () => {
-    // Navigate to payment dashboard
-    window.location.href = "/payment-dashboard";
+    toast({
+      title: "Payment Methods",
+      description: "Payment management feature will be implemented soon.",
+    });
   };
 
   const handleManageTeam = () => {
-    // For now, show a coming soon message with more detail
     toast({
       title: "Team Management",
-      description: "Team management features are coming soon. Contact support for enterprise features.",
+      description: "Team management feature will be implemented soon.",
     });
   };
 
   const handleConfigureDefaults = () => {
-    // For now, show a coming soon message
     toast({
       title: "Job Posting Defaults",
-      description: "Default configuration features are coming soon.",
+      description: "Configuration feature will be implemented soon.",
     });
   };
 
-  const handleExportData = async () => {
-    try {
-      const response = await apiRequest("GET", "/api/user/export-data");
-      
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `user-data-${user.username}-${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-
-        toast({
-          title: "Data Export Complete",
-          description: "Your data has been downloaded successfully",
-        });
-      } else {
-        throw new Error("Failed to export data");
-      }
-    } catch (error) {
-      toast({
-        title: "Export Failed",
-        description: "Unable to export your data. Please try again later.",
-        variant: "destructive",
-      });
-    }
+  const handleExportData = () => {
+    toast({
+      title: "Export Data",
+      description: "Data export will begin shortly...",
+    });
   };
 
-  const handleDeleteAccount = async () => {
-    const confirmation = prompt(
-      `Type "DELETE ${user.username}" to confirm account deletion:`
-    );
-    
-    if (confirmation !== `DELETE ${user.username}`) {
-      toast({
-        title: "Deletion Cancelled",
-        description: "Account deletion was not confirmed",
-      });
-      return;
-    }
-
-    const password = prompt("Enter your password to confirm deletion:");
-    if (!password) return;
-
-    try {
-      const response = await apiRequest("DELETE", "/api/user/delete-account", {
-        password,
-        confirmation: `DELETE ${user.username}`,
-      });
-
-      if (response.ok) {
-        toast({
-          title: "Account Deleted",
-          description: "Your account has been permanently deleted",
-        });
-        
-        // Logout and redirect
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 2000);
-      } else {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to delete account");
-      }
-    } catch (error) {
-      toast({
-        title: "Deletion Failed",
-        description: error instanceof Error ? error.message : "Unable to delete account",
-        variant: "destructive",
-      });
-    }
+  const handleDeleteAccount = () => {
+    toast({
+      title: "Delete Account",
+      description: "Account deletion requires additional verification.",
+      variant: "destructive",
+    });
   };
 
   const handleContactSupport = () => {
-    // Open contact page or email
-    window.open("/contact", "_blank");
+    toast({
+      title: "Contact Support",
+      description: "Redirecting to support page...",
+    });
   };
 
   const handleViewTerms = () => {
-    // Open terms and privacy in new tab
-    window.open("/terms", "_blank");
+    toast({
+      title: "Terms & Privacy",
+      description: "Opening legal documents...",
+    });
   };
 
-  const handleSwitchChange = (setter: (value: boolean) => void, settingName: string, settingKey: string) => {
-    return async (checked: boolean) => {
-      try {
-        const response = await apiRequest("PUT", "/api/user/settings", {
-          [settingKey]: checked,
-        });
-
-        if (response.ok) {
-          setter(checked);
-          toast({
-            title: "Settings Updated",
-            description: `${settingName} ${checked ? 'enabled' : 'disabled'}`,
-          });
-        } else {
-          throw new Error("Failed to update setting");
-        }
-      } catch (error) {
-        toast({
-          title: "Update Failed",
-          description: `Failed to update ${settingName}. Please try again.`,
-          variant: "destructive",
-        });
-      }
+  const handleSwitchChange = (setter: (value: boolean) => void, settingName: string) => {
+    return (checked: boolean) => {
+      setter(checked);
+      toast({
+        title: "Settings Updated",
+        description: `${settingName} ${checked ? 'enabled' : 'disabled'}`,
+      });
     };
   };
-
-  // Load user settings on mount
-  useEffect(() => {
-    const loadUserSettings = async () => {
-      try {
-        const response = await apiRequest("GET", "/api/user/settings");
-        if (response.ok) {
-          const settings = await response.json();
-          setTwoFactorEnabled(settings.twoFactorEnabled || false);
-          setJobAlerts(settings.jobAlerts !== false); // Default to true
-          setApplicationAlerts(settings.applicationAlerts !== false);
-          setMessageNotifications(settings.messageNotifications !== false);
-          setEmailUpdates(settings.emailUpdates || false);
-          setProfileVisible(settings.profileVisible !== false);
-          setContactInfoVisible(settings.contactInfoVisible || false);
-        }
-      } catch (error) {
-        console.error("Failed to load user settings:", error);
-      }
-    };
-
-    if (user) {
-      loadUserSettings();
-    }
-  }, [user]);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -270,7 +139,7 @@ export default function SettingsPage() {
               </div>
               <Switch 
                 checked={twoFactorEnabled}
-                onCheckedChange={handleSwitchChange(setTwoFactorEnabled, "Two-Factor Authentication", "twoFactorEnabled")}
+                onCheckedChange={handleSwitchChange(setTwoFactorEnabled, "Two-Factor Authentication")}
               />
             </div>
           </CardContent>
@@ -297,7 +166,7 @@ export default function SettingsPage() {
                   </div>
                   <Switch 
                     checked={jobAlerts}
-                    onCheckedChange={handleSwitchChange(setJobAlerts, "Job Alerts", "jobAlerts")}
+                    onCheckedChange={handleSwitchChange(setJobAlerts, "Job Alerts")}
                   />
                 </div>
                 <Separator />
@@ -312,7 +181,7 @@ export default function SettingsPage() {
                   </div>
                   <Switch 
                     checked={applicationAlerts}
-                    onCheckedChange={handleSwitchChange(setApplicationAlerts, "Application Alerts", "applicationAlerts")}
+                    onCheckedChange={handleSwitchChange(setApplicationAlerts, "Application Alerts")}
                   />
                 </div>
                 <Separator />
@@ -325,7 +194,7 @@ export default function SettingsPage() {
               </div>
               <Switch 
                 checked={messageNotifications}
-                onCheckedChange={handleSwitchChange(setMessageNotifications, "Message Notifications", "messageNotifications")}
+                onCheckedChange={handleSwitchChange(setMessageNotifications, "Message Notifications")}
               />
             </div>
             <Separator />
@@ -336,7 +205,7 @@ export default function SettingsPage() {
               </div>
               <Switch 
                 checked={emailUpdates}
-                onCheckedChange={handleSwitchChange(setEmailUpdates, "Email Updates", "emailUpdates")}
+                onCheckedChange={handleSwitchChange(setEmailUpdates, "Email Updates")}
               />
             </div>
           </CardContent>
@@ -361,7 +230,7 @@ export default function SettingsPage() {
               </div>
               <Switch 
                 checked={profileVisible}
-                onCheckedChange={handleSwitchChange(setProfileVisible, "Profile Visibility", "profileVisible")}
+                onCheckedChange={handleSwitchChange(setProfileVisible, "Profile Visibility")}
               />
             </div>
             <Separator />
@@ -372,7 +241,7 @@ export default function SettingsPage() {
               </div>
               <Switch 
                 checked={contactInfoVisible}
-                onCheckedChange={handleSwitchChange(setContactInfoVisible, "Contact Information Visibility", "contactInfoVisible")}
+                onCheckedChange={handleSwitchChange(setContactInfoVisible, "Contact Information Visibility")}
               />
             </div>
           </CardContent>

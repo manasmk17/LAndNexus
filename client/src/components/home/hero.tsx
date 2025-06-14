@@ -30,14 +30,7 @@ export default function Hero() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               {user ? (
-                user.isAdmin ? (
-                  <Button size="lg" className="font-medium bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-700 border-none shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto" asChild>
-                    <Link href="/admin-dashboard">
-                      Admin Dashboard
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                    </Link>
-                  </Button>
-                ) : user.userType === "professional" ? (
+                user.userType === "professional" ? (
                   <Button size="lg" className="font-medium bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-800 hover:to-blue-700 border-none shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto" asChild>
                     <Link href="/professional-dashboard">
                       My Dashboard
@@ -67,7 +60,7 @@ export default function Hero() {
                     </Link>
                   </Button>
                   <div className="mt-4 w-full text-center sm:text-left">
-                    
+
                   </div>
                 </>
               )}

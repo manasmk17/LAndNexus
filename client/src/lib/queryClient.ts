@@ -1,25 +1,36 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 import { authStore } from './authStore';
 
+const API_BASE = "";
+
+// Handle module resolution errors gracefully
+const handleModuleError = (error: any) => {
+  if (error.message?.includes('Importing binding name')) {
+    console.warn('Module resolution issue detected, but continuing...');
+    return null;
+  }
+  throw error;
+};
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     // List of special case endpoints where 404 responses are expected and not errors
     const expectedNotFoundEndpoints = [
       '/api/subscription-status' // No subscription is a valid state, not an error
     ];
-    
+
     // Don't throw for expected 404s
     if (res.status === 404 && expectedNotFoundEndpoints.some(endpoint => res.url.includes(endpoint))) {
       // Just return the response without throwing, caller will handle it appropriately
       return;
     }
-    
+
     // Special handling for DELETE operations that return 204 No Content
     if (res.status === 204) {
       // 204 is success for DELETE, don't throw
       return;
     }
-    
+
     let errorText;
     try {
       // Try to parse as JSON first
@@ -35,7 +46,7 @@ async function throwIfResNotOk(res: Response) {
       // If we can't get the body, fall back to status text
       errorText = res.statusText;
     }
-    
+
     throw new Error(`${res.status}: ${errorText}`);
   }
 }
@@ -45,25 +56,25 @@ async function throwIfResNotOk(res: Response) {
  */
 export function getCsrfToken(): string | null {
   const cookies = document.cookie.split('; ');
-  
+
   // Try XSRF-TOKEN first (common convention)
   let tokenCookie = cookies.find(cookie => cookie.startsWith('XSRF-TOKEN='));
   if (tokenCookie) {
     return decodeURIComponent(tokenCookie.split('=')[1]);
   }
-  
+
   // Fallback to _csrf cookie
   tokenCookie = cookies.find(cookie => cookie.startsWith('_csrf='));
   if (tokenCookie) {
     return decodeURIComponent(tokenCookie.split('=')[1]);
   }
-  
+
   // Try to get from meta tag as last resort
   const metaToken = document.querySelector('meta[name="csrf-token"]');
   if (metaToken) {
     return metaToken.getAttribute('content');
   }
-  
+
   return null;
 }
 
@@ -77,7 +88,7 @@ export function getSessionToken(): string | null {
   if (sessionCookie) {
     return decodeURIComponent(sessionCookie.split('=')[1]);
   }
-  
+
   // Fallback to localStorage
   try {
     return localStorage.getItem('session_token');
@@ -97,33 +108,33 @@ export async function apiRequest(
 ): Promise<Response> {
   // Build headers with CSRF token and session token
   const headers: Record<string, string> = {};
-  
+
   // Add content type for JSON requests
   if (data && !isFormData) {
     headers["Content-Type"] = "application/json";
   }
-  
+
   // Add session token for authentication persistence
   const sessionToken = getSessionToken();
   if (sessionToken) {
     headers["X-Session-Token"] = sessionToken;
   }
-  
+
   // Add CSRF token for non-GET methods
   if (method !== 'GET') {
     let csrfToken = getCsrfToken();
-    
+
     // If the token is missing, immediately try to refresh it
     if (!csrfToken) {
       console.warn('CSRF token not found for API request to:', url, 'method:', method);
-      
+
       try {
         console.log("Attempting to refresh CSRF token for API request...");
         const tokenResponse = await fetch("/api/csrf-token", { 
           method: "GET",
           credentials: "include"
         });
-        
+
         if (tokenResponse.ok) {
           // Wait a moment for cookies to be set
           await new Promise(resolve => setTimeout(resolve, 50));
@@ -133,7 +144,7 @@ export async function apiRequest(
         console.error('Error refreshing CSRF token for API request:', e);
       }
     }
-    
+
     // Set the token if we have it
     if (csrfToken) {
       headers['X-CSRF-Token'] = csrfToken;
@@ -141,7 +152,7 @@ export async function apiRequest(
     } else {
       console.warn("Failed to obtain CSRF token for API request after refresh attempt");
     }
-    
+
     // Log request details for debugging
     try {
       console.log('apiRequest details:', {
@@ -176,7 +187,7 @@ export async function apiRequest(
       }
       throw new Error(`Forbidden (403): ${responseText}`);
     }
-    
+
     // Enhanced error handling for Conflict errors (typically dependency constraints)
     if (res.status === 409) {
       let errorDetails = "";
@@ -191,7 +202,7 @@ export async function apiRequest(
       } catch (e) {
         errorDetails = await res.text();
       }
-      
+
       console.error('Conflict error (409):', errorDetails);
       throw new Error(`409: ${errorDetails}`);
     }
@@ -208,7 +219,7 @@ export async function apiRequest(
       errorName: error.name,
       errorObject: error
     });
-    
+
     // Handle authentication errors gracefully
     if (error.message.includes('401') || error.message.includes('Unauthorized')) {
       // Don't log as error for expected auth failures
@@ -218,12 +229,12 @@ export async function apiRequest(
         headers: { 'Content-Type': 'application/json' }
       });
     }
-    
+
     // For network errors, provide more helpful message
     if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
       throw new Error(`Network error when connecting to ${url}. Please check your internet connection.`);
     }
-    
+
     throw error;
   }
 }
@@ -240,26 +251,26 @@ export async function secureFileUpload(
   // Enhanced debug - log form data keys
   console.log("DEBUG secureFileUpload - Preparing for upload to:", url);
   console.log("FormData keys:", Array.from(formData.keys()));
-  
+
   // Build headers with CSRF token only
   const headers: Record<string, string> = {};
-  
+
   // Add CSRF token
   let csrfToken = getCsrfToken();
   console.log("Initial CSRF token found:", csrfToken ? "Yes ("+csrfToken.substring(0,5)+"...)" : "No");
-  
+
   // If the token is missing, immediately try to refresh it
   if (!csrfToken) {
     console.warn('CSRF token not found when uploading to:', url);
     console.log('Current cookies:', document.cookie);
-    
+
     try {
       console.log("Attempting to refresh CSRF token...");
       const tokenResponse = await fetch("/api/csrf-token", { 
         method: "GET",
         credentials: "include"
       });
-      
+
       if (tokenResponse.ok) {
         // Wait longer for cookies to be set
         await new Promise(resolve => setTimeout(resolve, 150));
@@ -270,18 +281,18 @@ export async function secureFileUpload(
       console.error('Error refreshing CSRF token:', e);
     }
   }
-  
+
   // Set the token if we have it
   if (csrfToken) {
     headers['X-CSRF-Token'] = csrfToken;
     console.log(`Using CSRF token for ${method} request to ${url}`);
-    
+
     // Also add token to formData as a fallback
     formData.append("_csrf", csrfToken);
     console.log("Added CSRF token to formData as fallback");
   } else {
     console.warn("Failed to obtain CSRF token after refresh attempt");
-    
+
     // Create an additional fallback mechanism by trying to get token from another source
     try {
       console.log("Attempting direct CSRF token fetch...");
@@ -290,7 +301,7 @@ export async function secureFileUpload(
         headers: { "Accept": "application/json" },
         credentials: "include" 
       });
-      
+
       if (tokenResponse.ok) {
         const tokenData = await tokenResponse.json();
         if (tokenData && tokenData.csrfToken) {
@@ -303,7 +314,7 @@ export async function secureFileUpload(
       console.error("Error during direct token fetch:", err);
     }
   }
-  
+
   // Log request details for debugging regardless
   console.log('secureFileUpload request details:', {
     method,
@@ -321,7 +332,7 @@ export async function secureFileUpload(
 
   try {
     console.log(`Sending ${method} request to ${url} with ${formData ? Array.from(formData.keys()).length : 0} form fields`);
-    
+
     const res = await fetch(url, {
       method,
       headers,
@@ -340,14 +351,14 @@ export async function secureFileUpload(
       }
       throw new Error(`Forbidden (403): ${responseText}`);
     }
-    
+
     // Handle authentication errors
     if (res.status === 401) {
       const responseText = await res.text();
       console.error('Authentication error:', responseText);
       throw new Error(`Authentication Error (401): You must be logged in to perform this action. Please log in and try again.`);
     }
-    
+
     // Enhanced error handling for Conflict errors (typically dependency constraints)
     if (res.status === 409) {
       let errorDetails = "";
@@ -362,7 +373,7 @@ export async function secureFileUpload(
       } catch (e) {
         errorDetails = await res.text();
       }
-      
+
       console.error('Conflict error (409):', errorDetails);
       throw new Error(`409: ${errorDetails}`);
     }
@@ -373,7 +384,7 @@ export async function secureFileUpload(
       console.error(`Error ${res.status} from server:`, responseText);
       throw new Error(`Server Error (${res.status}): ${responseText}`);
     }
-    
+
     return res;
   } catch (error: any) {
     // Better error logging with more details
@@ -385,12 +396,12 @@ export async function secureFileUpload(
       errorName: error.name,
       errorObject: error
     });
-    
+
     // For network errors, provide more helpful message
     if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
       throw new Error(`Network error when uploading to ${url}. Please check your internet connection.`);
     }
-    
+
     throw error;
   }
 }
@@ -403,12 +414,12 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     // Build headers with CSRF token if needed
     const headers: Record<string, string> = {};
-    
+
     // For non-GET methods we need to include CSRF tokens
     // This applies to some query patterns that might use POST
     const url = queryKey[0] as string;
     const method = queryKey.length > 1 && typeof queryKey[1] === 'string' ? queryKey[1] : 'GET';
-    
+
     if (method !== 'GET') {
       const csrfToken = getCsrfToken();
       if (csrfToken) {
@@ -416,7 +427,7 @@ export const getQueryFn: <T>(options: {
         console.log(`Using CSRF token for query function ${method} request to ${url}`);
       } else {
         console.warn(`CSRF token not found for query ${url} with method ${method}`);
-        
+
         // If the token is missing, try to refresh it by making a GET request
         try {
           console.log("Attempting to refresh CSRF token for query function...");
@@ -424,7 +435,7 @@ export const getQueryFn: <T>(options: {
             method: "GET",
             credentials: "include"
           });
-          
+
           // Try again to get the token
           const refreshedToken = getCsrfToken();
           if (refreshedToken) {
@@ -439,7 +450,7 @@ export const getQueryFn: <T>(options: {
         }
       }
     }
-    
+
     try {
       const res = await fetch(url, {
         method,
@@ -450,7 +461,7 @@ export const getQueryFn: <T>(options: {
       if (unauthorizedBehavior === "returnNull" && res.status === 401) {
         return null;
       }
-      
+
       // Enhanced error handling for CSRF-specific errors
       if (res.status === 403) {
         const responseText = await res.text();
@@ -460,7 +471,7 @@ export const getQueryFn: <T>(options: {
         }
         throw new Error(`Forbidden (403): ${responseText}`);
       }
-      
+
       // Enhanced error handling for Conflict errors (typically dependency constraints)
       if (res.status === 409) {
         let errorDetails = "";
@@ -475,7 +486,7 @@ export const getQueryFn: <T>(options: {
         } catch (e) {
           errorDetails = await res.text();
         }
-        
+
         console.error('Conflict error (409) in query function:', errorDetails);
         throw new Error(`409: ${errorDetails}`);
       }
@@ -519,7 +530,7 @@ window.addEventListener('unhandledrejection', event => {
     event.preventDefault();
     return;
   }
-  
+
   // Check if this is a React Query related error
   const isReactQueryError = event.reason && (
     event.reason.name === 'QueryError' || 
@@ -533,7 +544,7 @@ window.addEventListener('unhandledrejection', event => {
       event.reason.message.includes('CSRF')
     ))
   );
-  
+
   if (isReactQueryError) {
     console.log('Handled React Query rejection:', event.reason?.message || event.reason);
     event.preventDefault();

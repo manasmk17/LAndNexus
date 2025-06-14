@@ -20,11 +20,11 @@ export default function Navbar() {
   // Close mobile menu when changing routes
   useEffect(() => {
     setMobileMenuOpen(false);
-    
+
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
-    
+
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [location]);
@@ -101,17 +101,7 @@ export default function Navbar() {
             {user ? (
               <div className="hidden md:flex items-center space-x-2">
                 {user.isAdmin ? (
-                  <>
-                    <Link href="/admin-dashboard" className="px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-md transition-colors">
-                      Admin Dashboard
-                    </Link>
-                    <Link href="/admin-page" className="px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-md transition-colors">
-                      Admin Page
-                    </Link>
-                    <Link href="/admin-test" className="px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-md transition-colors">
-                      Admin Test
-                    </Link>
-                  </>
+                  <></>
                 ) : user.userType === "professional" ? (
                   <Link href="/professional-dashboard" className="px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-md transition-colors">
                     Dashboard
@@ -196,7 +186,7 @@ export default function Navbar() {
             </button>
           </div>
         </div>
-        
+
         {/* Mobile menu */}
         {mobileMenuOpen && (
           <div className="md:hidden py-4 px-2 bg-white border-t border-slate-100 rounded-b-lg shadow-lg">
@@ -241,7 +231,7 @@ export default function Navbar() {
                   Community
                 </Link>
               </li>
-              
+
               {user ? (
                 <>
                   <li className="pt-2 mt-2 border-t border-slate-100">

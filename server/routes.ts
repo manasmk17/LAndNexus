@@ -3949,6 +3949,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error deleting forum post" });
     }
   });
+
+  // User preferences endpoints for Settings page
+  app.get("/api/user/preferences", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      
+      // Return default preferences structure for now
+      // In a real implementation, you would fetch from database
+      const preferences = {
+        notifications: {
+          email: true,
+          push: false,
+          messages: true,
+          jobAlerts: true,
+          marketing: false
+        },
+        privacy: {
+          profileVisibility: true,
+          showEmail: false,
+          showPhone: false,
+          activityStatus: true
+        }
+      };
+      
+      res.json(preferences);
+    } catch (err) {
+      console.error("Error fetching user preferences:", err);
+      res.status(500).json({ message: "Error fetching preferences" });
+    }
+  });
+
+  app.put("/api/user/preferences", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.id;
+      const { notifications, privacy } = req.body;
+      
+      // In a real implementation, you would save to database
+      // For now, just return success with the updated data
+      const updatedPreferences = {
+        notifications: notifications || {},
+        privacy: privacy || {}
+      };
+      
+      res.json({ 
+        message: "Preferences updated successfully",
+        preferences: updatedPreferences 
+      });
+    } catch (err) {
+      console.error("Error updating user preferences:", err);
+      res.status(500).json({ message: "Error updating preferences" });
+    }
+  });
   
   app.get("/api/resource-categories", async (req, res) => {
     try {

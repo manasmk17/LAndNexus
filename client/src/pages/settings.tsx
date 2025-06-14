@@ -39,10 +39,7 @@ export default function Settings() {
   // Update preferences mutation
   const updatePreferences = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('/api/user/preferences', {
-        method: 'PUT',
-        body: JSON.stringify(data)
-      });
+      return apiRequest('/api/user/preferences', 'PUT', data);
     },
     onSuccess: () => {
       toast({
@@ -62,9 +59,14 @@ export default function Settings() {
 
   // Load preferences from API when available
   useEffect(() => {
-    if (userPreferences) {
-      setNotifications(prev => ({ ...prev, ...userPreferences.notifications }));
-      setPrivacy(prev => ({ ...prev, ...userPreferences.privacy }));
+    if (userPreferences && typeof userPreferences === 'object') {
+      const prefs = userPreferences as any;
+      if (prefs.notifications) {
+        setNotifications(prev => ({ ...prev, ...prefs.notifications }));
+      }
+      if (prefs.privacy) {
+        setPrivacy(prev => ({ ...prev, ...prefs.privacy }));
+      }
     }
   }, [userPreferences]);
 

@@ -16,10 +16,7 @@ import ResetPassword from "@/pages/reset-password";
 import RecoverUsername from "@/pages/recover-username";
 import ProfessionalDashboard from "@/pages/professional-dashboard";
 import CompanyDashboard from "@/pages/company-dashboard";
-import AdminPage from "@/pages/admin-page";
-import AdminTest from "@/pages/admin-test";
-import AdminIndex from "@/pages/admin/index";
-import AdminLogin from "@/pages/admin-login";
+
 import Professionals from "@/pages/professionals";
 import ProfessionalProfile from "@/pages/professional-profile";
 import EditProfile from "@/pages/edit-profile";
@@ -56,7 +53,6 @@ function Router() {
       <Route path="/forgot-password" component={ForgotPassword} />
       <Route path="/reset-password" component={ResetPassword} />
       <Route path="/recover-username" component={RecoverUsername} />
-      <Route path="/admin-login" component={AdminLogin} />
       <Route path="/professionals" component={Professionals} />
       <Route path="/professional-profile/:id" component={ProfessionalProfile} />
       <Route path="/jobs" component={Jobs} />
@@ -66,8 +62,6 @@ function Router() {
       <Route path="/forum" component={Forum} />
       <Route path="/about" component={About} />
       <Route path="/pages/:slug" component={PageView} />
-      <Route path="/admin-test" component={AdminTest} />
-      <Route path="/admin-page" component={AdminPage} />
       
       {/* Job Applications Route */}
       <ProtectedRoute 
@@ -87,16 +81,7 @@ function Router() {
         component={CompanyDashboard} 
         userTypes={["company"]} 
       />
-      <ProtectedRoute 
-        path="/admin" 
-        component={AdminIndex} 
-        userTypes={["admin"]} 
-      />
-      <ProtectedRoute 
-        path="/admin-dashboard" 
-        component={AdminIndex} 
-        userTypes={["admin"]} 
-      />
+
       <ProtectedRoute 
         path="/edit-profile" 
         component={EditProfile} 
@@ -109,12 +94,12 @@ function Router() {
       <ProtectedRoute 
         path="/manage-resources" 
         component={ManageResources} 
-        userTypes={["professional", "admin"]} 
+        userTypes={["professional"]} 
       />
       <ProtectedRoute 
         path="/create-resource" 
         component={CreateResource} 
-        userTypes={["professional", "admin"]} 
+        userTypes={["professional"]} 
       />
       <ProtectedRoute 
         path="/career-recommendations" 

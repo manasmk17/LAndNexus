@@ -30,7 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Plus, Trash, Upload, X, User, Briefcase, Building, Star, Phone, Save, CheckCircle, FileText } from "lucide-react";
+import { Loader2, Plus, Trash, Upload, X } from "lucide-react";
 import { 
   insertProfessionalProfileSchema, 
   insertCompanyProfileSchema,
@@ -836,32 +836,11 @@ export default function EditProfileForm() {
 
   if (user.userType === "professional") {
     return (
-      <div className="max-w-6xl mx-auto bg-gradient-to-br from-blue-50 to-indigo-50 min-h-screen p-6">
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          {/* Header Section */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-8">
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-                <User className="w-8 h-8" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold">Professional Profile</h1>
-                <p className="text-blue-100 mt-1">Showcase your expertise and attract clients</p>
-              </div>
-            </div>
-          </div>
-          
-          <Form {...professionalForm}>
-            <form onSubmit={professionalForm.handleSubmit(onSubmitProfessional)} className="p-8 space-y-8">
-              <div className="space-y-8">
-                {/* Basic Information Card */}
-                <div className="bg-gradient-to-r from-white to-blue-50 border border-blue-200 p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-                  <div className="flex items-center mb-6">
-                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
-                      <User className="w-5 h-5 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-800">Basic Information</h2>
-                  </div>
+      <Form {...professionalForm}>
+        <form onSubmit={professionalForm.handleSubmit(onSubmitProfessional)} className="space-y-8">
+          <div className="space-y-6">
+            <div className="border p-6 rounded-md shadow-sm">
+              <h2 className="text-xl font-semibold mb-4">Basic Information</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <FormField
@@ -1068,14 +1047,8 @@ export default function EditProfileForm() {
               />
             </div>
 
-            {/* Professional Details Card */}
-                <div className="bg-gradient-to-r from-white to-green-50 border border-green-200 p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-                  <div className="flex items-center mb-6">
-                    <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center mr-3">
-                      <Briefcase className="w-5 h-5 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-800">Professional Details</h2>
-                  </div>
+            <div className="border p-6 rounded-md shadow-sm">
+              <h2 className="text-xl font-semibold mb-4">Professional Details</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <FormField
@@ -1337,15 +1310,10 @@ export default function EditProfileForm() {
               />
             </div>
 
-            {/* Work Experience Card */}
-                <div className="bg-gradient-to-r from-white to-purple-50 border border-purple-200 p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-                  <div className="flex justify-between items-center mb-6">
-                    <div className="flex items-center">
-                      <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center mr-3">
-                        <Building className="w-5 h-5 text-white" />
-                      </div>
-                      <h2 className="text-2xl font-bold text-gray-800">Work Experience</h2>
-                    </div>
+            {/* Work Experience Section */}
+            <div className="border p-6 rounded-md shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Work Experience</h2>
                 <Button
                   type="button"
                   variant="outline"
@@ -1504,15 +1472,10 @@ export default function EditProfileForm() {
               )}
             </div>
 
-            {/* Testimonials Card */}
-                <div className="bg-gradient-to-r from-white to-yellow-50 border border-yellow-200 p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-                  <div className="flex justify-between items-center mb-6">
-                    <div className="flex items-center">
-                      <div className="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center mr-3">
-                        <Star className="w-5 h-5 text-white" />
-                      </div>
-                      <h2 className="text-2xl font-bold text-gray-800">Client Testimonials</h2>
-                    </div>
+            {/* Testimonials Section */}
+            <div className="border p-6 rounded-md shadow-sm">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold">Client Testimonials</h2>
                 <Button
                   type="button"
                   variant="outline"
@@ -1638,14 +1601,9 @@ export default function EditProfileForm() {
               )}
             </div>
 
-            {/* Contact Information Card */}
-                <div className="bg-gradient-to-r from-white to-teal-50 border border-teal-200 p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-                  <div className="flex items-center mb-6">
-                    <div className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center mr-3">
-                      <Phone className="w-5 h-5 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-800">Contact Information</h2>
-                  </div>
+            {/* Contact Information Section */}
+            <div className="border p-6 rounded-md shadow-sm">
+              <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
@@ -1715,56 +1673,46 @@ export default function EditProfileForm() {
             </div>
           </div>
 
-          {/* Save Button Section */}
-              <div className="flex flex-col gap-6 items-center bg-gradient-to-r from-gray-50 to-blue-50 p-8 rounded-xl border border-gray-200 mt-8">
-                {/* Debug info for professional profile form */}
-                {process.env.NODE_ENV === 'development' && (
-                  <div className="text-xs text-red-500 mb-2">
-                    <div>isSubmitting: {isSubmitting ? "true" : "false"}</div>
-                    {Object.keys(professionalForm.formState.errors).length > 0 && (
-                      <div>
-                        Form has errors: {JSON.stringify(professionalForm.formState.errors)}
-                      </div>
-                    )}
-                  </div>
-                )}
+          <div className="flex flex-col gap-4 items-end">
+            {/* Debug info for professional profile form */}
+            <div className="text-xs text-red-500 mb-2">
+              <div>isSubmitting: {isSubmitting ? "true" : "false"}</div>
+              {Object.keys(professionalForm.formState.errors).length > 0 && (
+                <div>
+                  Form has errors: {JSON.stringify(professionalForm.formState.errors)}
+                </div>
+              )}
+            </div>
 
-                <Button 
-                  type="submit" 
-                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-12 py-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
-                  disabled={isSubmitting}
-                  onClick={(e) => {
-                    console.log("Professional Save button clicked");
-                    console.log("Form data:", professionalForm.getValues());
-                  }}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-3 h-5 w-5 animate-spin" /> Saving Your Profile...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-3 h-5 w-5" /> Save Professional Profile
-                    </>
-                  )}
-                </Button>
+            <Button 
+              type="submit" 
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-md cursor-pointer z-10 relative !important"
+              disabled={isSubmitting}
+              onClick={(e) => {
+                // Just log the click, don't prevent default or stop propagation
+                console.log("Professional Save button clicked");
+                console.log("Form data:", professionalForm.getValues());
+                // Let the native form submission happen naturally
+              }}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+                </>
+              ) : (
+                "Save Profile"
+              )}
+            </Button>
 
-                {saveSuccess && (
-                  <div className="w-full flex items-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 text-green-800 rounded-xl shadow-md">
-                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-4">
-                      <CheckCircle className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-semibold">Profile saved successfully!</p>
-                      <p className="text-sm text-green-600">Your professional profile has been updated and is now visible to potential clients.</p>
-                    </div>
-                  </div>
-                )}
+            {saveSuccess && (
+              <div className="w-full flex items-center p-3 bg-green-50 border border-green-200 text-green-700 rounded-md">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span>Profile saved successfully! Your changes have been applied.</span>
               </div>
-            </form>
-          </Form>
-        </div>
-      </div>
+            )}
+          </div>
         </form>
       </Form>
     );
@@ -1772,32 +1720,11 @@ export default function EditProfileForm() {
 
   if (user.userType === "company") {
     return (
-      <div className="max-w-6xl mx-auto bg-gradient-to-br from-emerald-50 to-teal-50 min-h-screen p-6">
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          {/* Header Section */}
-          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white p-8">
-            <div className="flex items-center space-x-4">
-              <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-                <Building className="w-8 h-8" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold">Company Profile</h1>
-                <p className="text-emerald-100 mt-1">Present your company and find L&D professionals</p>
-              </div>
-            </div>
-          </div>
-          
-          <Form {...companyForm}>
-            <form onSubmit={companyForm.handleSubmit(onSubmitCompany)} className="p-8 space-y-8">
-              <div className="space-y-8">
-                {/* Company Information Card */}
-                <div className="bg-gradient-to-r from-white to-emerald-50 border border-emerald-200 p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-                  <div className="flex items-center mb-6">
-                    <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center mr-3">
-                      <Building className="w-5 h-5 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-800">Company Information</h2>
-                  </div>
+      <Form {...companyForm}>
+        <form onSubmit={companyForm.handleSubmit(onSubmitCompany)} className="space-y-8">
+          <div className="space-y-6">
+            <div className="border p-6 rounded-md shadow-sm">
+              <h2 className="text-xl font-semibold mb-4">Company Information</h2>
 
               <FormField
                 control={companyForm.control}
@@ -1980,14 +1907,8 @@ export default function EditProfileForm() {
               />
             </div>
 
-            {/* Company Description Card */}
-                <div className="bg-gradient-to-r from-white to-blue-50 border border-blue-200 p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-                  <div className="flex items-center mb-6">
-                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center mr-3">
-                      <FileText className="w-5 h-5 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-800">Company Description</h2>
-                  </div>
+            <div className="border p-6 rounded-md shadow-sm">
+              <h2 className="text-xl font-semibold mb-4">Company Description</h2>
 
               <FormField
                 control={companyForm.control}
@@ -2012,56 +1933,48 @@ export default function EditProfileForm() {
             </div>
           </div>
 
-          {/* Save Button Section */}
-              <div className="flex flex-col gap-6 items-center bg-gradient-to-r from-gray-50 to-emerald-50 p-8 rounded-xl border border-gray-200 mt-8">
-                {/* Debug info for company profile form */}
-                {process.env.NODE_ENV === 'development' && (
-                  <div className="text-xs text-red-500 mb-2">
-                    <div>isSubmitting: {isSubmitting ? "true" : "false"}</div>
-                    {Object.keys(companyForm.formState.errors).length > 0 && (
-                      <div>
-                        Form has errors: {JSON.stringify(companyForm.formState.errors)}
-                      </div>
-                    )}
-                  </div>
-                )}
+          <div className="flex flex-col gap-4 items-end">
+            {/* Debug info for company profile form */}
+            <div className="text-xs text-red-500 mb-2">
+              <div>isSubmitting: {isSubmitting ? "true" : "false"}</div>
+              {Object.keys(companyForm.formState.errors).length > 0 && (
+                <div>
+                  Form has errors: {JSON.stringify(companyForm.formState.errors)}
+                </div>
+              )}
+            </div>
 
-                <Button 
-                  type="submit" 
-                  className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-12 py-4 rounded-xl text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
-                  disabled={isSubmitting}
-                  onClick={(e) => {
-                    console.log("Company Save button clicked");
-                    console.log("Form data:", companyForm.getValues());
-                  }}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-3 h-5 w-5 animate-spin" /> Saving Your Company Profile...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-3 h-5 w-5" /> Save Company Profile
-                    </>
-                  )}
-                </Button>
+            <Button 
+              type="submit" 
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-md cursor-pointer z-10 relative !important"
+              disabled={isSubmitting}
+              onClick={(e) => {
+                // Just log the click, don't prevent default or stop propagation
+                console.log("Company Save button clicked");
+                console.log("Form data:", companyForm.getValues());
+                // Let the native form submission happen naturally
+              }}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+                </>
+              ) : (
+                "Save Profile"
+              )}
+            </Button>
 
-                {saveSuccess && (
-                  <div className="w-full flex items-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 text-green-800 rounded-xl shadow-md">
-                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mr-4">
-                      <CheckCircle className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-semibold">Company profile saved successfully!</p>
-                      <p className="text-sm text-green-600">Your company profile has been updated and is now visible to L&D professionals.</p>
-                    </div>
-                  </div>
-                )}
+            {saveSuccess && (
+              <div className="w-full flex items-center p-3 bg-green-50 border border-green-200 text-green-700 rounded-md">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span>Company profile saved successfully! Your changes have been applied.</span>
               </div>
-            </form>
-          </Form>
-        </div>
-      </div>
+            )}
+          </div>
+        </form>
+      </Form>
     );
   }
 

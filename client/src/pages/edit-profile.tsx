@@ -26,5 +26,24 @@ export default function EditProfile() {
     return null; // Will redirect via useEffect
   }
 
-  return <EditProfileForm />;
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">
+            {user.userType === "professional" 
+              ? "Edit Your Professional Profile" 
+              : "Edit Your Company Profile"}
+          </h1>
+          <p className="text-gray-500">
+            {user.userType === "professional"
+              ? "Showcase your expertise and attract clients"
+              : "Present your company and find L&D professionals"}
+          </p>
+        </div>
+        
+        <EditProfileForm />
+      </div>
+    </div>
+  );
 }

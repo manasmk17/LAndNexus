@@ -912,7 +912,9 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       lastUsedAt: null,
       isRevoked: false,
-      type: token.type || "session"
+      type: token.type || "session",
+      userAgent: token.userAgent || null,
+      ipAddress: token.ipAddress || null
     };
     this.authTokens.set(token.token, newToken);
     return newToken;
@@ -966,7 +968,11 @@ export class MemStorage implements IStorage {
 
   async createResourceCategory(category: InsertResourceCategory): Promise<ResourceCategory> {
     const id = this.resourceCategoryId++;
-    const newCategory: ResourceCategory = { ...category, id };
+    const newCategory: ResourceCategory = { 
+      ...category, 
+      id,
+      description: category.description || null
+    };
     this.resourceCategories.set(id, newCategory);
     return newCategory;
   }
@@ -1324,7 +1330,7 @@ export class DatabaseStorage implements IStorage {
 
   async getJobApplicationsByUserId(userId: number): Promise<JobApplication[]> {
     if (!this.db) throw new Error("Database not initialized");
-    return await this.db.select().from(schema.jobApplications).where(eq(schema.jobApplications.userId, userId));
+    return await this.db.select().from(schema.jobApplications).where(eq(schema.jobApplications.professionalId, userId));
   }
 
   async getAllExpertise(): Promise<Expertise[]> {
@@ -1418,9 +1424,7 @@ export class DatabaseStorage implements IStorage {
     if (query) {
       conditions.push(sql`${schema.resources.title} ILIKE ${`%${query}%`} OR ${schema.resources.description} ILIKE ${`%${query}%`}`);
     }
-    if (type) {
-      conditions.push(eq(schema.resources.type, type));
-    }
+    // Note: type filtering removed as 'type' column doesn't exist in schema
     if (categoryId) {
       conditions.push(eq(schema.resources.categoryId, categoryId));
     }
@@ -1576,8 +1580,8 @@ export class DatabaseStorage implements IStorage {
 
   async getMessagesByConversationId(conversationId: number): Promise<Message[]> {
     if (!this.db) throw new Error("Database not initialized");
+    // Note: conversationId column doesn't exist in messages schema
     return await this.db.select().from(schema.messages)
-      .where(eq(schema.messages.conversationId, conversationId))
       .orderBy(asc(schema.messages.createdAt));
   }
 

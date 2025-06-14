@@ -17,7 +17,8 @@ import {
   Crown,
   Building,
   ArrowRight,
-  User
+  User,
+  CreditCard
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "@/lib/i18n";
@@ -320,12 +321,13 @@ export default function SubscriptionPlans() {
                   <Link href={`/subscribe?planId=${plan.id}&billing=${isYearly ? 'yearly' : 'monthly'}&currency=${currency}`}>
                     <Button 
                       className={`w-full group ${
-                        plan.name.toLowerCase() === 'pro'
+                        plan.name.toLowerCase().includes('pro') || plan.name.toLowerCase().includes('expert')
                           ? 'bg-purple-600 hover:bg-purple-700'
                           : 'bg-blue-600 hover:bg-blue-700'
                       }`}
                     >
-                      Get Started
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      Subscribe with Card
                       <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </Button>
                   </Link>
@@ -333,11 +335,12 @@ export default function SubscriptionPlans() {
                   <Link href={`/login?redirect=/subscribe?planId=${plan.id}&billing=${isYearly ? 'yearly' : 'monthly'}&currency=${currency}`}>
                     <Button 
                       className={`w-full group ${
-                        plan.name.toLowerCase() === 'pro'
+                        plan.name.toLowerCase().includes('pro') || plan.name.toLowerCase().includes('expert')
                           ? 'bg-purple-600 hover:bg-purple-700'
                           : 'bg-blue-600 hover:bg-blue-700'
                       }`}
                     >
+                      <CreditCard className="mr-2 h-4 w-4" />
                       Sign Up & Subscribe
                       <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </Button>

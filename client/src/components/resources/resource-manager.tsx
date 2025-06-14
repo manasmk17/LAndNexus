@@ -77,8 +77,8 @@ export function ResourceManager({
         const newItems = [...items, ...uploadedResources];
         setItems(newItems);
         
-        if (onResourcesReordered) {
-          onResourcesReordered(newItems);
+        if (onResourceAdded && uploadedResources.length > 0) {
+          uploadedResources.forEach((resource: Resource) => onResourceAdded(resource));
         }
         
         toast({

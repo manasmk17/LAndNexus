@@ -163,24 +163,16 @@ function Router() {
 }
 
 function App() {
-  const [isAdmin, setIsAdmin] = useState(false);
-  const location = window.location.pathname;
-  
-  useEffect(() => {
-    // Check if current route is admin route or admin login
-    setIsAdmin(location.startsWith('/admin') || location === '/admin-login');
-  }, [location]);
-
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <DragAndDropProvider>
           <div className="flex flex-col min-h-screen">
-            {!isAdmin && <Navbar />}
-            <main className={`flex-grow ${isAdmin ? 'bg-background' : ''}`}>
+            <Navbar />
+            <main className="flex-grow">
               <Router />
             </main>
-            {!isAdmin && <Footer />}
+            <Footer />
           </div>
           <Toaster />
         </DragAndDropProvider>

@@ -95,11 +95,11 @@ app.use((req, res, next) => {
     '/api/messages',
     '/api/create-test-admin',
     '/api/create-admin',
-    '/api/admin/make-admin',
-    '/api/admin/company-profiles',
-    '/api/admin/professional-profiles',
-    '/api/admin/job-postings',
-    '/api/admin/resources',
+    //'/api/admin/make-admin',
+    //'/api/admin/company-profiles',
+    //'/api/admin/professional-profiles',
+    //'/api/admin/job-postings',
+    //'/api/admin/resources',
     '/api/reviews',
     '/api/notifications',
     '/api/notifications/unread',
@@ -115,13 +115,13 @@ app.use((req, res, next) => {
     '/api/newsletter/subscribe',
     '/api/job-postings'
   ];
-  
+
   // Special handling for GET requests to /api/me/ routes
   if (req.method === 'GET' && req.path.startsWith('/api/me/')) {
     console.log(`CSRF protection bypassed for ${req.method} ${req.path}`);
     return next();
   }
-  
+
   // Special exempt routes handling for specific HTTP methods
   const methodSpecificExemptions = [
     { path: '/api/professionals/me', method: 'PUT' },
@@ -130,24 +130,24 @@ app.use((req, res, next) => {
     { path: '/api/company-profiles', method: 'POST' },
     { path: '/api/company-profiles/:id', method: 'PUT' }
   ];
-  
+
   // Function to check if a path matches a route pattern
   const matchesPattern = (path: string, pattern: string): boolean => {
     // Exact match
     if (path === pattern) return true;
-    
+
     // Check for pattern with ID params like '/api/company-profiles/:id'
     const patternParts = pattern.split('/');
     const pathParts = path.split('/');
-    
+
     if (patternParts.length !== pathParts.length) return false;
-    
+
     for (let i = 0; i < patternParts.length; i++) {
       // Skip parameter parts (starting with ':')
       if (patternParts[i].startsWith(':')) continue;
       if (patternParts[i] !== pathParts[i]) return false;
     }
-    
+
     return true;
   };
 
@@ -157,13 +157,13 @@ app.use((req, res, next) => {
     '/api/professionals/:id',
     '/api/job-postings/:id',
     '/api/resources/:id',
-    '/api/admin/company-profiles/:id/verify',
-    '/api/admin/company-profiles/:id/featured',
-    '/api/admin/professional-profiles/:id/featured',
-    '/api/admin/job-postings/:id/featured',
-    '/api/admin/job-postings/:id/status',
-    '/api/admin/resources/:id/featured',
-    '/api/admin/resources/:id',
+    //'/api/admin/company-profiles/:id/verify',
+    //'/api/admin/company-profiles/:id/featured',
+    //'/api/admin/professional-profiles/:id/featured',
+    //'/api/admin/job-postings/:id/featured',
+    //'/api/admin/job-postings/:id/status',
+    //'/api/admin/resources/:id/featured',
+    //'/api/admin/resources/:id',
     '/api/reviews/:id',
     '/api/professionals/:id/reviews',
     '/api/companies/:id/reviews',
@@ -171,7 +171,7 @@ app.use((req, res, next) => {
     '/api/notifications/:id',
     '/api/notifications/:id/read'
   ];
-  
+
   // Check if the current request path is in the exempt list, matches an ID-based pattern,
   // or matches a specific method+path combination
   if (
@@ -183,7 +183,7 @@ app.use((req, res, next) => {
     next();
     return;
   }
-  
+
   // For all other requests, apply CSRF protection
   csrfProtection(req, res, next);
 });
@@ -235,26 +235,26 @@ app.use((req, res, next) => {
   try {
     // Initialize database connection with retry capability
     await initializeDatabase();
-    
+
     // Add performance monitoring middleware first
     const { performanceMiddleware } = await import("./performance-middleware");
     app.use(performanceMiddleware());
-    
+
     // Initialize monitoring systems with controlled startup
     let monitoringInitialized = false;
     try {
       // Start performance monitoring with error handling
       const { performanceMonitor } = await import("./performance-monitor");
       performanceMonitor.startMonitoring();
-      
+
       // Memory leak detection disabled to prevent startup conflicts
       console.log('Memory leak detection disabled');
-      
+
       monitoringInitialized = true;
     } catch (monitoringErr) {
       console.warn('Monitoring systems failed to initialize, continuing without them:', monitoringErr);
     }
-    
+
     // Only set up garbage collection if monitoring is stable
     if (monitoringInitialized) {
       setInterval(() => {
@@ -267,13 +267,13 @@ app.use((req, res, next) => {
         }
       }, 10 * 60 * 1000); // Reduced frequency to every 10 minutes
     }
-  
+
   // Add static file serving for uploaded files - must come before routes
   app.use('/uploads', express.static('uploads', {
     maxAge: '1d', // Cache static files for 1 day
     etag: true
   }));
-  
+
   const server = await registerRoutes(app);
 
   app.use(async (err: any, req: Request, res: Response, _next: NextFunction) => {
@@ -291,17 +291,17 @@ app.use((req, res, next) => {
         details: "The form submission security token is invalid or expired. Please refresh the page and try again."
       });
     }
-    
+
     // Check for database connection errors and try to reconnect
     if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || 
         err.message?.includes('database') || err.message?.includes('pool') ||
         err.message?.includes('connection')) {
       console.error('Database connection error detected, attempting to reconnect:', err);
-      
+
       try {
         // Try to re-initialize the database connection
         await initializeDatabase();
-        
+
         // If the request was a database query, we can't retry it automatically
         // Just let the client know to retry
         return res.status(503).json({
@@ -312,7 +312,7 @@ app.use((req, res, next) => {
         console.error('Failed to reconnect to database:', reconnectErr);
       }
     }
-    
+
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
@@ -332,7 +332,7 @@ app.use((req, res, next) => {
     // Serve the app on port 5000 as expected by workflow
     // this serves both the API and the client.
     const port = 5000;
-    
+
     // Add error handling for port binding
     server.on('error', (err: any) => {
       if (err.code === 'EADDRINUSE') {
@@ -352,12 +352,12 @@ app.use((req, res, next) => {
     }, () => {
       log(`serving on port ${port}`);
     });
-    
+
   } catch (startupError) {
     console.error('Critical startup error:', startupError);
-    
+
     // Attempt graceful degradation - monitoring disabled
-    
+
     // Exit with error code
     process.exit(1);
   }

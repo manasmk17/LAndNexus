@@ -2663,8 +2663,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log("DEV MODE: Allowing unauthenticated /api/jobs/me/matches access for testing");
           
           // Use a default job ID for testing
-          console.log("DEV MODE: Using default job ID 2 for testing");
-          jobId = 2; // Using a sample job ID that exists in the database
+          console.log("DEV MODE: Using default job ID 10 for testing");
+          jobId = 10; // Using a sample job ID that exists in the database
         } else {
           const user = req.user as User;
           if (user.userType !== "company") {
@@ -2710,8 +2710,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!req.isAuthenticated()) {
           console.log("DEV MODE: Allowing unauthenticated /api/professionals/me/matches access for testing");
           
-          // Use a default professional ID for testing - ID 5 is a sample profile
-          professionalId = 5;
+          // Use a default professional ID for testing - ID 45 is a sample profile
+          console.log("DEV MODE: Using default professional ID 45 for testing");
+          professionalId = 45;
         } else {
           const user = req.user as User;
           const professionalProfile = await storage.getProfessionalProfileByUserId(user.id);

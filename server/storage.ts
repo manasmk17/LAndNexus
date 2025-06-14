@@ -35,12 +35,12 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, userData: Partial<User>): Promise<User | undefined>;
   deleteUser(id: number): Promise<boolean>;
-  
+
   // Password and account recovery operations
   createResetToken(email: string): Promise<string | null>;
   getUserByResetToken(token: string): Promise<User | undefined>;
   resetPassword(token: string, newPassword: string): Promise<boolean>;
-  
+
   // Authentication token operations for "Remember Me"
   createAuthToken(userId: number, type: string, expiresAt: Date, userAgent?: string, ipAddress?: string): Promise<AuthToken>;
   getAuthToken(token: string): Promise<AuthToken | undefined>;
@@ -48,21 +48,21 @@ export interface IStorage {
   revokeAuthToken(token: string): Promise<boolean>;
   revokeAllUserTokens(userId: number): Promise<boolean>;
   cleanupExpiredTokens(): Promise<number>;
-  
+
   // Stripe operations
   updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined>;
   updateStripeSubscriptionId(userId: number, subscriptionId: string): Promise<User | undefined>;
   updateUserSubscription(userId: number, tier: string, status: string): Promise<User | undefined>;
   getUserByStripeCustomerId(customerId: string): Promise<User | undefined>;
-  
+
   // Subscription plans operations
   getSubscriptionPlans(): Promise<SubscriptionPlan[]>;
-  
+
   // AI Matching operations
   getMatchingJobsForProfessional(professionalId: number, limit?: number): Promise<Array<{job: JobPosting, score: number}>>;
   getMatchingProfessionalsForJob(jobId: number, limit?: number): Promise<Array<{professional: ProfessionalProfile, score: number}>>;
   saveJobMatch(jobId: number, professionalId: number, score: number): Promise<boolean>;
-  
+
   // Professional Profile operations
   getProfessionalProfile(id: number): Promise<ProfessionalProfile | undefined>;
   getProfessionalProfileByUserId(userId: number): Promise<ProfessionalProfile | undefined>;
@@ -71,7 +71,7 @@ export interface IStorage {
   createProfessionalProfile(profile: InsertProfessionalProfile): Promise<ProfessionalProfile>;
   updateProfessionalProfile(id: number, profile: Partial<InsertProfessionalProfile>): Promise<ProfessionalProfile | undefined>;
   deleteProfessionalProfile(id: number): Promise<boolean>;
-  
+
   // Expertise operations
   getAllExpertise(): Promise<Expertise[]>;
   getExpertiseById(id: number): Promise<Expertise | undefined>;
@@ -79,20 +79,20 @@ export interface IStorage {
   getProfessionalExpertise(professionalId: number): Promise<Expertise[]>;
   addProfessionalExpertise(professionalExpertise: InsertProfessionalExpertise): Promise<ProfessionalExpertise>;
   deleteProfessionalExpertise(id: number): Promise<boolean>;
-  
+
   // Certification operations
   getCertification(id: number): Promise<Certification | undefined>;
   getProfessionalCertifications(professionalId: number): Promise<Certification[]>;
   createCertification(certification: InsertCertification): Promise<Certification>;
   deleteCertification(id: number): Promise<boolean>;
-  
+
   // Company Profile operations
   getCompanyProfile(id: number): Promise<CompanyProfile | undefined>;
   getCompanyProfileByUserId(userId: number): Promise<CompanyProfile | undefined>;
   getAllCompanyProfiles(): Promise<CompanyProfile[]>;
   createCompanyProfile(profile: InsertCompanyProfile): Promise<CompanyProfile>;
   updateCompanyProfile(id: number, profile: Partial<InsertCompanyProfile>): Promise<CompanyProfile | undefined>;
-  
+
   // Job Posting operations
   getJobPosting(id: number): Promise<JobPosting | undefined>;
   getAllJobPostings(): Promise<JobPosting[]>;
@@ -101,19 +101,19 @@ export interface IStorage {
   createJobPosting(job: InsertJobPosting): Promise<JobPosting>;
   updateJobPosting(id: number, job: Partial<InsertJobPosting>): Promise<JobPosting | undefined>;
   deleteJobPosting(id: number): Promise<boolean>;
-  
+
   // Job Application operations
   getJobApplication(id: number): Promise<JobApplication | undefined>;
   getJobApplicationsByJob(jobId: number): Promise<JobApplication[]>;
   getJobApplicationsByProfessional(professionalId: number): Promise<JobApplication[]>;
   createJobApplication(application: InsertJobApplication): Promise<JobApplication>;
   updateJobApplicationStatus(id: number, status: string): Promise<JobApplication | undefined>;
-  
+
   // Resource Category operations
   getResourceCategory(id: number): Promise<ResourceCategory | undefined>;
   getAllResourceCategories(): Promise<ResourceCategory[]>;
   createResourceCategory(category: InsertResourceCategory): Promise<ResourceCategory>;
-  
+
   // Resource operations
   getResource(id: number): Promise<Resource | undefined>;
   getAllResources(): Promise<Resource[]>;
@@ -125,27 +125,27 @@ export interface IStorage {
   updateResource(id: number, resource: Partial<Resource>): Promise<Resource | undefined>;
   setResourceFeatured(id: number, featured: boolean): Promise<Resource | undefined>;
   deleteResource(id: number): Promise<boolean>;
-  
+
   // Forum operations
   getForumPost(id: number): Promise<ForumPost | undefined>;
   getAllForumPosts(): Promise<ForumPost[]>;
   createForumPost(post: InsertForumPost): Promise<ForumPost>;
   getPostComments(postId: number): Promise<ForumComment[]>;
   createForumComment(comment: InsertForumComment): Promise<ForumComment>;
-  
+
   // Message operations
   getUserMessages(userId: number): Promise<Message[]>;
   getConversation(user1Id: number, user2Id: number): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
   markMessageAsRead(id: number): Promise<boolean>;
-  
+
   // Consultation operations
   getConsultation(id: number): Promise<Consultation | undefined>;
   getProfessionalConsultations(professionalId: number): Promise<Consultation[]>;
   getCompanyConsultations(companyId: number): Promise<Consultation[]>;
   createConsultation(consultation: InsertConsultation): Promise<Consultation>;
   updateConsultationStatus(id: number, status: string): Promise<Consultation | undefined>;
-  
+
   // Skill Recommendation operations
   getSkillRecommendation(id: number): Promise<SkillRecommendation | undefined>;
   getSkillRecommendationsByProfessional(professionalId: number): Promise<SkillRecommendation | undefined>;
@@ -159,7 +159,7 @@ export interface IStorage {
   createPageContent(content: InsertPageContent): Promise<PageContent>;
   updatePageContent(id: number, content: Partial<InsertPageContent>): Promise<PageContent | undefined>;
   deletePageContent(id: number): Promise<boolean>;
-  
+
   // Review operations
   getReview(id: number): Promise<Review | undefined>;
   getProfessionalReviews(professionalId: number): Promise<Review[]>;
@@ -169,13 +169,13 @@ export interface IStorage {
   updateReview(id: number, review: Partial<Review>): Promise<Review | undefined>;
   deleteReview(id: number): Promise<boolean>;
   updateProfessionalRating(professionalId: number): Promise<boolean>;
-  
+
   // Notification operations
   getNotificationType(id: number): Promise<NotificationType | undefined>;
   getNotificationTypeByName(name: string): Promise<NotificationType | undefined>;
   getAllNotificationTypes(): Promise<NotificationType[]>;
   createNotificationType(type: InsertNotificationType): Promise<NotificationType>;
-  
+
   getNotification(id: number): Promise<Notification | undefined>;
   getUserNotifications(userId: number): Promise<Notification[]>;
   getUserUnreadNotifications(userId: number): Promise<Notification[]>;
@@ -183,16 +183,16 @@ export interface IStorage {
   markNotificationAsRead(id: number): Promise<boolean>;
   markAllUserNotificationsAsRead(userId: number): Promise<boolean>;
   deleteNotification(id: number): Promise<boolean>;
-  
+
   // Notification Preferences operations
   getUserNotificationPreferences(userId: number): Promise<NotificationPreference[]>;
   getUserNotificationPreference(userId: number, typeId: number): Promise<NotificationPreference | undefined>;
   createOrUpdateNotificationPreference(preference: InsertNotificationPreference): Promise<NotificationPreference>;
-  
+
   // Subscription operations
   getUserSubscription(userId: number): Promise<any>;
   updateUserSubscription(userId: number, subscriptionData: any): Promise<any>;
-  
+
   // Simple auth token operations (simplified)
   createSimpleAuthToken?(userId: number): Promise<string>;
   validateSimpleAuthToken?(token: string): Promise<number | null>;
@@ -221,12 +221,12 @@ export class MemStorage implements IStorage {
   private notificationTypes: Map<number, NotificationType>;
   private notifications: Map<number, Notification>;
   private notificationPreferences: Map<number, NotificationPreference>;
-  
+
   // Performance optimization: Add caching for expensive operations
   private matchCache: Map<string, any> = new Map();
   private queryCache: Map<string, { data: any; timestamp: number }> = new Map();
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-  
+
   private userId: number;
   private profProfileId: number;
   private expertiseId: number;
@@ -271,11 +271,11 @@ export class MemStorage implements IStorage {
     this.notificationTypes = new Map();
     this.notifications = new Map();
     this.notificationPreferences = new Map();
-    
+
     // Initialize cache maps
     this.matchCache = new Map();
     this.queryCache = new Map();
-    
+
     this.userId = 1;
     this.profProfileId = 1;
     this.expertiseId = 1;
@@ -296,17 +296,17 @@ export class MemStorage implements IStorage {
     this.notificationTypeId = 1;
     this.notificationId = 1;
     this.notificationPreferenceId = 1;
-    
+
     // Initialize with some expertise areas
     this.initExpertise();
-    
+
     // Initialize with some resource categories
     this.initResourceCategories();
-    
+
     // Initialize demo data with professional images
     this.initDemoData();
   }
-  
+
   private initExpertise() {
     const expertiseAreas = [
       "Leadership Development", 
@@ -322,13 +322,13 @@ export class MemStorage implements IStorage {
       "Sales Training",
       "Onboarding"
     ];
-    
+
     expertiseAreas.forEach(name => {
       const id = this.expertiseId++;
       this.expertises.set(id, { id, name });
     });
   }
-  
+
   private initResourceCategories() {
     const categories = [
       { name: "Leadership", description: "Resources focused on leadership development and skills" },
@@ -337,7 +337,7 @@ export class MemStorage implements IStorage {
       { name: "Compliance", description: "Resources related to compliance and regulatory training" },
       { name: "Best Practices", description: "Best practices in Learning & Development" }
     ];
-    
+
     categories.forEach(cat => {
       const id = this.resourceCategoryId++;
       const category: ResourceCategory = {
@@ -352,16 +352,16 @@ export class MemStorage implements IStorage {
   private initDemoData() {
     // Create demo users
     this.createDemoUsers();
-    
+
     // Create demo professional profiles with images
     this.createDemoProfessionalProfiles();
-    
+
     // Create demo company profiles with logos
     this.createDemoCompanyProfiles();
-    
+
     // Create demo resources with images
     this.createDemoResources();
-    
+
     // Create demo job postings
     this.createDemoJobPostings();
   }
@@ -755,16 +755,16 @@ export class MemStorage implements IStorage {
       this.jobPostings.set(id, newJob);
     });
   }
-  
+
   // Resource Category operations
   async getResourceCategory(id: number): Promise<ResourceCategory | undefined> {
     return this.resourceCategories.get(id);
   }
-  
+
   async getAllResourceCategories(): Promise<ResourceCategory[]> {
     return Array.from(this.resourceCategories.values());
   }
-  
+
   async createResourceCategory(category: InsertResourceCategory): Promise<ResourceCategory> {
     const id = this.resourceCategoryId++;
     const newCategory: ResourceCategory = { 
@@ -775,7 +775,7 @@ export class MemStorage implements IStorage {
     this.resourceCategories.set(id, newCategory);
     return newCategory;
   }
-  
+
   // AI Matching operations
   async getMatchingJobsForProfessional(professionalId: number, limit: number = 5): Promise<Array<{job: JobPosting, score: number}>> {
     const professional = await this.getProfessionalProfile(professionalId);
@@ -791,127 +791,127 @@ export class MemStorage implements IStorage {
         // Get stored match score if available
         const key = `${job.id}-${professionalId}`;
         let score = this.jobMatches.get(key);
-        
+
         // If no stored score, calculate a basic match score
         if (score === undefined) {
           const profTitle = professional.title?.toLowerCase() || '';
           const profBio = professional.bio?.toLowerCase() || '';
           const profIndustry = professional.industryFocus?.toLowerCase() || '';
-          
+
           const jobTitle = job.title.toLowerCase();
           const jobDescription = job.description.toLowerCase();
           const jobRequirements = job.requirements.toLowerCase();
-          
+
           // Calculate text-based match score
           const titleMatch = profTitle && jobTitle.includes(profTitle) ? 0.3 : 0;
           const bioMatch = profBio && (jobDescription.includes(profBio) || jobRequirements.includes(profBio)) ? 0.2 : 0;
           const industryMatch = profIndustry && jobDescription.includes(profIndustry) ? 0.2 : 0;
-          
+
           // Assign a moderate score for location match
           const locationMatch = professional.location && 
             professional.location === job.location ? 0.3 : 0;
-          
+
           score = titleMatch + bioMatch + industryMatch + locationMatch;
-          
+
           // Save the calculated score
           this.jobMatches.set(key, score);
         }
-        
+
         return { job, score };
       });
-    
+
     // Sort by score (descending) and apply limit
     return matches
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);
   }
-  
+
   async getMatchingProfessionalsForJob(jobId: number, limit: number = 5): Promise<Array<{professional: ProfessionalProfile, score: number}>> {
     const job = await this.getJobPosting(jobId);
     if (!job) {
       return [];
     }
-    
+
     // Get all professionals and calculate match scores
     const professionals = await this.getAllProfessionalProfiles();
     const matches = professionals.map(professional => {
       // Get stored match score if available
       const key = `${jobId}-${professional.id}`;
       let score = this.jobMatches.get(key);
-      
+
       // If no stored score, calculate a basic match score
       if (score === undefined) {
         const profTitle = professional.title?.toLowerCase() || '';
         const profBio = professional.bio?.toLowerCase() || '';
         const profIndustry = professional.industryFocus?.toLowerCase() || '';
-        
+
         const jobTitle = job.title.toLowerCase();
         const jobDescription = job.description.toLowerCase();
         const jobRequirements = job.requirements.toLowerCase();
-        
+
         // Calculate text-based match score
         const titleMatch = profTitle && jobTitle.includes(profTitle) ? 0.3 : 0;
         const bioMatch = profBio && (jobDescription.includes(profBio) || jobRequirements.includes(profBio)) ? 0.2 : 0;
         const industryMatch = profIndustry && jobDescription.includes(profIndustry) ? 0.2 : 0;
-        
+
         // Assign a moderate score for location match
         const locationMatch = professional.location && 
           professional.location === job.location ? 0.3 : 0;
-        
+
         score = titleMatch + bioMatch + industryMatch + locationMatch;
-        
+
         // Save the calculated score
         this.jobMatches.set(key, score);
       }
-      
+
       return { professional, score };
     });
-    
+
     // Sort by score (descending) and apply limit
     return matches
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);
   }
-  
+
   async saveJobMatch(jobId: number, professionalId: number, score: number): Promise<boolean> {
     const key = `${jobId}-${professionalId}`;
     this.jobMatches.set(key, score);
     return true;
   }
-  
+
   // Additional Resource operations
   async getResourcesByCategory(categoryId: number): Promise<Resource[]> {
     return Array.from(this.resources.values())
       .filter(resource => resource.categoryId === categoryId)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
-  
+
   async getResourcesByAuthor(authorId: number): Promise<Resource[]> {
     return Array.from(this.resources.values())
       .filter(resource => resource.authorId === authorId)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
-  
+
   async searchResources(query?: string, type?: string, categoryId?: number): Promise<Resource[]> {
     return Array.from(this.resources.values())
       .filter(resource => {
         const matchesQuery = !query || 
           resource.title.toLowerCase().includes(query.toLowerCase()) ||
           resource.description.toLowerCase().includes(query.toLowerCase());
-          
+
         const matchesType = !type || resource.resourceType === type;
-        
+
         const matchesCategory = !categoryId || resource.categoryId === categoryId;
-        
+
         return matchesQuery && matchesType && matchesCategory;
       })
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
-  
+
   async setResourceFeatured(id: number, featured: boolean): Promise<Resource | undefined> {
     const resource = this.resources.get(id);
     if (!resource) return undefined;
-    
+
     const updated = { ...resource, featured };
     this.resources.set(id, updated);
     return updated;
@@ -927,18 +927,18 @@ export class MemStorage implements IStorage {
       (user) => user.username === username
     );
   }
-  
+
   async getUserByEmail(email: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
       (user) => user.email === email
     );
   }
-  
+
   async getAllUsers(): Promise<User[]> {
     const cacheKey = 'all-users';
     const cached = this.getFromCache(cacheKey);
     if (cached) return cached;
-    
+
     const users = Array.from(this.users.values());
     this.setCache(cacheKey, users);
     return users;
@@ -968,45 +968,45 @@ export class MemStorage implements IStorage {
     this.users.set(id, user);
     return user;
   }
-  
+
   // Password and account recovery operations
   async createResetToken(email: string): Promise<string | null> {
     const user = await this.getUserByEmail(email);
     if (!user) return null;
-    
+
     // Generate a random token
     const token = Math.random().toString(36).substring(2, 15) + 
                   Math.random().toString(36).substring(2, 15);
-    
+
     // Set expiry to 1 hour from now
     const expiryDate = new Date();
     expiryDate.setHours(expiryDate.getHours() + 1);
-    
+
     // Update user with token
     const updated = { 
       ...user, 
       resetToken: token,
       resetTokenExpiry: expiryDate 
     };
-    
+
     this.users.set(user.id, updated);
     return token;
   }
-  
+
   async getUserByResetToken(token: string): Promise<User | undefined> {
     const now = new Date();
-    
+
     return Array.from(this.users.values()).find(
       (user) => user.resetToken === token && 
                 user.resetTokenExpiry && 
                 user.resetTokenExpiry > now
     );
   }
-  
+
   async resetPassword(token: string, newPassword: string): Promise<boolean> {
     const user = await this.getUserByResetToken(token);
     if (!user) return false;
-    
+
     // Update user with new password and clear token
     const updated = { 
       ...user, 
@@ -1014,41 +1014,41 @@ export class MemStorage implements IStorage {
       resetToken: null,
       resetTokenExpiry: null
     };
-    
+
     this.users.set(user.id, updated);
     return true;
   }
-  
+
   // Professional Profile operations
   async getProfessionalProfile(id: number): Promise<ProfessionalProfile | undefined> {
     return this.professionalProfiles.get(id);
   }
-  
+
   async getProfessionalProfileByUserId(userId: number): Promise<ProfessionalProfile | undefined> {
     return Array.from(this.professionalProfiles.values()).find(
       (profile) => profile.userId === userId
     );
   }
-  
+
   async getAllProfessionalProfiles(): Promise<ProfessionalProfile[]> {
     const cacheKey = 'all-professional-profiles';
     const cached = this.getFromCache(cacheKey);
     if (cached) return cached;
-    
+
     const profiles = Array.from(this.professionalProfiles.values());
     this.setCache(cacheKey, profiles);
     return profiles;
   }
-  
+
   async getFeaturedProfessionalProfiles(limit: number): Promise<ProfessionalProfile[]> {
     return Array.from(this.professionalProfiles.values())
       .filter(profile => profile.featured)
       .slice(0, limit);
   }
-  
+
   async createProfessionalProfile(profile: InsertProfessionalProfile): Promise<ProfessionalProfile> {
     const id = this.profProfileId++;
-    
+
     // Explicitly construct the profile to match the schema exactly
     const newProfile: ProfessionalProfile = { 
       id,
@@ -1077,115 +1077,115 @@ export class MemStorage implements IStorage {
       workExperience: profile.workExperience || null,
       testimonials: profile.testimonials || null
     };
-    
+
     this.professionalProfiles.set(id, newProfile);
-    
+
     // Invalidate related cache
     this.invalidateCache('professional');
-    
+
     return newProfile;
   }
-  
+
   async updateProfessionalProfile(id: number, profile: Partial<InsertProfessionalProfile>): Promise<ProfessionalProfile | undefined> {
     const existing = this.professionalProfiles.get(id);
     if (!existing) return undefined;
-    
+
     const updated = { ...existing, ...profile };
     this.professionalProfiles.set(id, updated);
     return updated;
   }
-  
+
   async deleteProfessionalProfile(id: number): Promise<boolean> {
     return this.professionalProfiles.delete(id);
   }
-  
+
   // Expertise operations
   async getAllExpertise(): Promise<Expertise[]> {
     return Array.from(this.expertises.values());
   }
-  
+
   async getExpertiseById(id: number): Promise<Expertise | undefined> {
     return this.expertises.get(id);
   }
-  
+
   async createExpertise(insertExpertise: InsertExpertise): Promise<Expertise> {
     const id = this.expertiseId++;
     const expertise: Expertise = { ...insertExpertise, id };
     this.expertises.set(id, expertise);
     return expertise;
   }
-  
+
   async getProfessionalExpertise(professionalId: number): Promise<Expertise[]> {
     const profExpertiseEntries = Array.from(this.professionalExpertises.values())
       .filter(pe => pe.professionalId === professionalId);
-    
+
     return profExpertiseEntries.map(pe => this.expertises.get(pe.expertiseId)!)
       .filter(Boolean);
   }
-  
+
   async addProfessionalExpertise(insertProfExpertise: InsertProfessionalExpertise): Promise<ProfessionalExpertise> {
     // Check if it already exists
     const exists = Array.from(this.professionalExpertises.values()).some(
       pe => pe.professionalId === insertProfExpertise.professionalId && 
             pe.expertiseId === insertProfExpertise.expertiseId
     );
-    
+
     if (exists) {
       throw new Error("Professional already has this expertise");
     }
-    
+
     const id = this.profExpertiseId++;
     const profExpertise: ProfessionalExpertise = { ...insertProfExpertise, id };
     this.professionalExpertises.set(id, profExpertise);
     return profExpertise;
   }
-  
+
   // Delete professional expertise
   async deleteProfessionalExpertise(id: number): Promise<boolean> {
     if (!this.professionalExpertises.has(id)) {
       return false;
     }
-    
+
     this.professionalExpertises.delete(id);
     return true;
   }
-  
+
   // Certification operations
   async getCertification(id: number): Promise<Certification | undefined> {
     return this.certifications.get(id);
   }
-  
+
   async getProfessionalCertifications(professionalId: number): Promise<Certification[]> {
     return Array.from(this.certifications.values())
       .filter(cert => cert.professionalId === professionalId);
   }
-  
+
   async createCertification(insertCertification: InsertCertification): Promise<Certification> {
     const id = this.certificationId++;
     const certification: Certification = { ...insertCertification, id };
     this.certifications.set(id, certification);
     return certification;
   }
-  
+
   async deleteCertification(id: number): Promise<boolean> {
     return this.certifications.delete(id);
   }
-  
+
   // Company Profile operations
   async getCompanyProfile(id: number): Promise<CompanyProfile | undefined> {
     return this.companyProfiles.get(id);
   }
-  
+
   async getCompanyProfileByUserId(userId: number): Promise<CompanyProfile | undefined> {
     return Array.from(this.companyProfiles.values()).find(
       (profile) => profile.userId === userId
     );
   }
-  
+
   async getAllCompanyProfiles(): Promise<CompanyProfile[]> {
     return Array.from(this.companyProfiles.values());
   }
-  
+
   async createCompanyProfile(profile: InsertCompanyProfile): Promise<CompanyProfile> {
     const id = this.companyProfileId++;
     const newProfile: CompanyProfile = { 
@@ -1205,52 +1205,52 @@ export class MemStorage implements IStorage {
     this.companyProfiles.set(id, newProfile);
     return newProfile;
   }
-  
+
   async updateCompanyProfile(id: number, profile: Partial<InsertCompanyProfile>): Promise<CompanyProfile | undefined> {
     const existing = this.companyProfiles.get(id);
     if (!existing) return undefined;
-    
+
     const updated = { ...existing, ...profile };
     this.companyProfiles.set(id, updated);
     return updated;
   }
-  
+
   // Delete company profile
   async deleteCompanyProfile(id: number): Promise<boolean> {
     if (!this.companyProfiles.has(id)) {
       return false;
     }
-    
+
     this.companyProfiles.delete(id);
     return true;
   }
-  
+
   // Job Posting operations
   async getJobPosting(id: number): Promise<JobPosting | undefined> {
     return this.jobPostings.get(id);
   }
-  
+
   async getAllJobPostings(): Promise<JobPosting[]> {
     const cacheKey = 'all-job-postings';
     const cached = this.getFromCache(cacheKey);
     if (cached) return cached;
-    
+
     const jobPostings = Array.from(this.jobPostings.values());
     this.setCache(cacheKey, jobPostings);
     return jobPostings;
   }
-  
+
   async getLatestJobPostings(limit: number): Promise<JobPosting[]> {
     return Array.from(this.jobPostings.values())
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .slice(0, limit);
   }
-  
+
   async getCompanyJobPostings(companyId: number): Promise<JobPosting[]> {
     return Array.from(this.jobPostings.values())
       .filter(job => job.companyId === companyId);
   }
-  
+
   async createJobPosting(job: InsertJobPosting): Promise<JobPosting> {
     const id = this.jobPostingId++;
     const newJob: JobPosting = { 
@@ -1276,45 +1276,45 @@ export class MemStorage implements IStorage {
     this.jobPostings.set(id, newJob);
     return newJob;
   }
-  
+
   async updateJobPosting(id: number, job: Partial<InsertJobPosting>): Promise<JobPosting | undefined> {
     const existing = this.jobPostings.get(id);
     if (!existing) return undefined;
-    
+
     const updated = { ...existing, ...job };
     this.jobPostings.set(id, updated);
     return updated;
   }
-  
+
   async deleteJobPosting(id: number): Promise<boolean> {
     return this.jobPostings.delete(id);
   }
-  
+
   // Job Application operations
   async getJobApplication(id: number): Promise<JobApplication | undefined> {
     return this.jobApplications.get(id);
   }
-  
+
   async getJobApplicationsByJob(jobId: number): Promise<JobApplication[]> {
     return Array.from(this.jobApplications.values())
       .filter(app => app.jobId === jobId);
   }
-  
+
   async getJobApplicationsByProfessional(professionalId: number): Promise<JobApplication[]> {
     return Array.from(this.jobApplications.values())
       .filter(app => app.professionalId === professionalId);
   }
-  
+
   async createJobApplication(application: InsertJobApplication): Promise<JobApplication> {
     // Check if application already exists
     const exists = Array.from(this.jobApplications.values()).some(
       app => app.jobId === application.jobId && app.professionalId === application.professionalId
     );
-    
+
     if (exists) {
       throw new Error("Professional has already applied to this job");
     }
-    
+
     const id = this.jobApplicationId++;
     const newApplication: JobApplication = { 
       ...application, 
@@ -1325,36 +1325,36 @@ export class MemStorage implements IStorage {
     this.jobApplications.set(id, newApplication);
     return newApplication;
   }
-  
+
   async updateJobApplicationStatus(id: number, status: string): Promise<JobApplication | undefined> {
     const existing = this.jobApplications.get(id);
     if (!existing) return undefined;
-    
+
     const updated = { ...existing, status };
     this.jobApplications.set(id, updated);
     return updated;
   }
-  
+
   // Delete job application
   async deleteJobApplication(id: number): Promise<boolean> {
     if (!this.jobApplications.has(id)) {
       return false;
     }
-    
+
     this.jobApplications.delete(id);
     return true;
   }
-  
+
   // Resource operations
   async getResource(id: number): Promise<Resource | undefined> {
     return this.resources.get(id);
   }
-  
+
   async getAllResources(): Promise<Resource[]> {
     const cacheKey = 'all-resources';
     const cached = this.getFromCache(cacheKey);
     if (cached) return cached;
-    
+
     const resources = Array.from(this.resources.values());
     this.setCache(cacheKey, resources);
     return resources;
@@ -1364,13 +1364,13 @@ export class MemStorage implements IStorage {
   private getFromCache(key: string): any {
     const cached = this.queryCache.get(key);
     if (!cached) return null;
-    
+
     // Check if cache is expired
     if (Date.now() - cached.timestamp > this.CACHE_TTL) {
       this.queryCache.delete(key);
       return null;
     }
-    
+
     return cached.data;
   }
 
@@ -1393,17 +1393,17 @@ export class MemStorage implements IStorage {
       // Clear all cache
       this.queryCache.clear();
     }
-    
+
     // Also clear match cache
     this.matchCache.clear();
   }
-  
+
   async getFeaturedResources(limit: number): Promise<Resource[]> {
     return Array.from(this.resources.values())
       .filter(resource => resource.featured)
       .slice(0, limit);
   }
-  
+
   async createResource(resource: InsertResource): Promise<Resource> {
     const id = this.resourceId++;
     const newResource: Resource = { 
@@ -1419,30 +1419,30 @@ export class MemStorage implements IStorage {
     this.resources.set(id, newResource);
     return newResource;
   }
-  
+
   async updateResource(id: number, resource: Partial<Resource>): Promise<Resource | undefined> {
     const existing = this.resources.get(id);
     if (!existing) return undefined;
-    
+
     const updated = { ...existing, ...resource };
     this.resources.set(id, updated);
     return updated;
   }
-  
+
   async deleteResource(id: number): Promise<boolean> {
     return this.resources.delete(id);
   }
-  
+
   // Forum operations
   async getForumPost(id: number): Promise<ForumPost | undefined> {
     return this.forumPosts.get(id);
   }
-  
+
   async getAllForumPosts(): Promise<ForumPost[]> {
     return Array.from(this.forumPosts.values())
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
-  
+
   async createForumPost(post: InsertForumPost): Promise<ForumPost> {
     const id = this.forumPostId++;
     const newPost: ForumPost = { 
@@ -1453,13 +1453,13 @@ export class MemStorage implements IStorage {
     this.forumPosts.set(id, newPost);
     return newPost;
   }
-  
+
   async getPostComments(postId: number): Promise<ForumComment[]> {
     return Array.from(this.forumComments.values())
       .filter(comment => comment.postId === postId)
       .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
   }
-  
+
   async createForumComment(comment: InsertForumComment): Promise<ForumComment> {
     const id = this.forumCommentId++;
     const newComment: ForumComment = { 
@@ -1470,14 +1470,14 @@ export class MemStorage implements IStorage {
     this.forumComments.set(id, newComment);
     return newComment;
   }
-  
+
   // Message operations
   async getUserMessages(userId: number): Promise<Message[]> {
     return Array.from(this.messages.values())
       .filter(msg => msg.senderId === userId || msg.receiverId === userId)
       .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
   }
-  
+
   async getConversation(user1Id: number, user2Id: number): Promise<Message[]> {
     return Array.from(this.messages.values())
       .filter(msg => 
@@ -1486,7 +1486,7 @@ export class MemStorage implements IStorage {
       )
       .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
   }
-  
+
   async createMessage(message: InsertMessage): Promise<Message> {
     const id = this.messageId++;
     const newMessage: Message = { 
@@ -1498,33 +1498,33 @@ export class MemStorage implements IStorage {
     this.messages.set(id, newMessage);
     return newMessage;
   }
-  
+
   async markMessageAsRead(id: number): Promise<boolean> {
     const message = this.messages.get(id);
     if (!message) return false;
-    
+
     message.read = true;
     this.messages.set(id, message);
     return true;
   }
-  
+
   // Consultation operations
   async getConsultation(id: number): Promise<Consultation | undefined> {
     return this.consultations.get(id);
   }
-  
+
   async getProfessionalConsultations(professionalId: number): Promise<Consultation[]> {
     return Array.from(this.consultations.values())
       .filter(consult => consult.professionalId === professionalId)
       .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
   }
-  
+
   async getCompanyConsultations(companyId: number): Promise<Consultation[]> {
     return Array.from(this.consultations.values())
       .filter(consult => consult.companyId === companyId)
       .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
   }
-  
+
   async createConsultation(consultation: InsertConsultation): Promise<Consultation> {
     const id = this.consultationId++;
     const newConsultation: Consultation = { 
@@ -1537,11 +1537,11 @@ export class MemStorage implements IStorage {
     this.consultations.set(id, newConsultation);
     return newConsultation;
   }
-  
+
   async updateConsultationStatus(id: number, status: string): Promise<Consultation | undefined> {
     const existing = this.consultations.get(id);
     if (!existing) return undefined;
-    
+
     const updated = { ...existing, status };
     this.consultations.set(id, updated);
     return updated;
@@ -1551,12 +1551,12 @@ export class MemStorage implements IStorage {
   async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
     const existing = this.users.get(id);
     if (!existing) return undefined;
-    
+
     const updated = { ...existing, ...userData };
     this.users.set(id, updated);
     return updated;
   }
-  
+
   async deleteUser(id: number): Promise<boolean> {
     return this.users.delete(id);
   }
@@ -1565,25 +1565,25 @@ export class MemStorage implements IStorage {
   async updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined> {
     const user = await this.getUser(userId);
     if (!user) return undefined;
-    
+
     const updated = { ...user, stripeCustomerId: customerId };
     this.users.set(userId, updated);
     return updated;
   }
-  
+
   async updateStripeSubscriptionId(userId: number, subscriptionId: string): Promise<User | undefined> {
     const user = await this.getUser(userId);
     if (!user) return undefined;
-    
+
     const updated = { ...user, stripeSubscriptionId: subscriptionId };
     this.users.set(userId, updated);
     return updated;
   }
-  
+
   async updateUserSubscription(userId: number, tier: string, status: string): Promise<User | undefined> {
     const user = await this.getUser(userId);
     if (!user) return undefined;
-    
+
     const updated = { 
       ...user, 
       subscriptionTier: tier, 
@@ -1592,7 +1592,7 @@ export class MemStorage implements IStorage {
     this.users.set(userId, updated);
     return updated;
   }
-  
+
   async getUserByStripeCustomerId(customerId: string): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
       (user) => user.stripeCustomerId === customerId
@@ -1625,7 +1625,7 @@ export class MemStorage implements IStorage {
   async updateSkillRecommendation(id: number, recommendation: Partial<InsertSkillRecommendation>): Promise<SkillRecommendation | undefined> {
     const existing = this.skillRecommendations.get(id);
     if (!existing) return undefined;
-    
+
     const updated = { 
       ...existing, 
       ...recommendation,
@@ -1639,17 +1639,17 @@ export class MemStorage implements IStorage {
   async getPageContent(id: number): Promise<PageContent | undefined> {
     return this.pageContents.get(id);
   }
-  
+
   async getPageContentBySlug(slug: string): Promise<PageContent | undefined> {
     return Array.from(this.pageContents.values()).find(
       (content) => content.slug === slug
     );
   }
-  
+
   async getAllPageContents(): Promise<PageContent[]> {
     return Array.from(this.pageContents.values());
   }
-  
+
   async createPageContent(content: InsertPageContent): Promise<PageContent> {
     const id = this.pageContentId++;
     const newContent: PageContent = {
@@ -1662,11 +1662,11 @@ export class MemStorage implements IStorage {
     this.pageContents.set(id, newContent);
     return newContent;
   }
-  
+
   async updatePageContent(id: number, content: Partial<InsertPageContent>): Promise<PageContent | undefined> {
     const existing = this.pageContents.get(id);
     if (!existing) return undefined;
-    
+
     const updated = { 
       ...existing, 
       ...content,
@@ -1676,33 +1676,33 @@ export class MemStorage implements IStorage {
     this.pageContents.set(id, updated);
     return updated;
   }
-  
+
   async deletePageContent(id: number): Promise<boolean> {
     return this.pageContents.delete(id);
   }
-  
+
   // Review operations
   async getReview(id: number): Promise<Review | undefined> {
     return this.reviews.get(id);
   }
-  
+
   async getProfessionalReviews(professionalId: number): Promise<Review[]> {
     return Array.from(this.reviews.values())
       .filter(review => review.professionalId === professionalId)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
-  
+
   async getCompanyReviews(companyId: number): Promise<Review[]> {
     return Array.from(this.reviews.values())
       .filter(review => review.companyId === companyId)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
-  
+
   async getConsultationReview(consultationId: number): Promise<Review | undefined> {
     return Array.from(this.reviews.values())
       .find(review => review.consultationId === consultationId);
   }
-  
+
   async createReview(review: InsertReview): Promise<Review> {
     const id = this.reviewId++;
     const newReview: Review = {
@@ -1711,48 +1711,48 @@ export class MemStorage implements IStorage {
       createdAt: new Date()
     };
     this.reviews.set(id, newReview);
-    
+
     // Update the professional's rating
     await this.updateProfessionalRating(review.professionalId);
-    
+
     return newReview;
   }
-  
+
   async updateReview(id: number, review: Partial<Review>): Promise<Review | undefined> {
     const existing = this.reviews.get(id);
     if (!existing) return undefined;
-    
+
     const updated = { ...existing, ...review };
     this.reviews.set(id, updated);
-    
+
     // Update the professional's rating if the rating was changed
     if (review.rating) {
       await this.updateProfessionalRating(existing.professionalId);
     }
-    
+
     return updated;
   }
-  
+
   async deleteReview(id: number): Promise<boolean> {
     const review = this.reviews.get(id);
     if (!review) return false;
-    
+
     const result = this.reviews.delete(id);
-    
+
     // Update the professional's rating
     if (result) {
       await this.updateProfessionalRating(review.professionalId);
     }
-    
+
     return result;
   }
-  
+
   async updateProfessionalRating(professionalId: number): Promise<boolean> {
     const professional = await this.getProfessionalProfile(professionalId);
     if (!professional) return false;
-    
+
     const reviews = await this.getProfessionalReviews(professionalId);
-    
+
     if (reviews.length === 0) {
       // Reset rating if no reviews
       const updated = {
@@ -1763,35 +1763,35 @@ export class MemStorage implements IStorage {
       this.professionalProfiles.set(professionalId, updated);
       return true;
     }
-    
+
     // Calculate average rating
     const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
     const averageRating = Math.round(totalRating / reviews.length);
-    
+
     const updated = {
       ...professional,
       rating: averageRating,
       reviewCount: reviews.length
     };
-    
+
     this.professionalProfiles.set(professionalId, updated);
     return true;
   }
-  
+
   // Notification Type operations
   async getNotificationType(id: number): Promise<NotificationType | undefined> {
     return this.notificationTypes.get(id);
   }
-  
+
   async getNotificationTypeByName(name: string): Promise<NotificationType | undefined> {
     return Array.from(this.notificationTypes.values())
       .find(type => type.name === name);
   }
-  
+
   async getAllNotificationTypes(): Promise<NotificationType[]> {
     return Array.from(this.notificationTypes.values());
   }
-  
+
   async createNotificationType(type: InsertNotificationType): Promise<NotificationType> {
     const id = this.notificationTypeId++;
     const newType: NotificationType = {
@@ -1801,24 +1801,24 @@ export class MemStorage implements IStorage {
     this.notificationTypes.set(id, newType);
     return newType;
   }
-  
+
   // Notification operations
   async getNotification(id: number): Promise<Notification | undefined> {
     return this.notifications.get(id);
   }
-  
+
   async getUserNotifications(userId: number): Promise<Notification[]> {
     return Array.from(this.notifications.values())
       .filter(notification => notification.userId === userId)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
-  
+
   async getUserUnreadNotifications(userId: number): Promise<Notification[]> {
     return Array.from(this.notifications.values())
       .filter(notification => notification.userId === userId && !notification.read)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
-  
+
   async createNotification(notification: InsertNotification): Promise<Notification> {
     const id = this.notificationId++;
     const newNotification: Notification = {
@@ -1830,46 +1830,46 @@ export class MemStorage implements IStorage {
     this.notifications.set(id, newNotification);
     return newNotification;
   }
-  
+
   async markNotificationAsRead(id: number): Promise<boolean> {
     const notification = this.notifications.get(id);
     if (!notification) return false;
-    
+
     const updated = { ...notification, read: true };
     this.notifications.set(id, updated);
     return true;
   }
-  
+
   async markAllUserNotificationsAsRead(userId: number): Promise<boolean> {
     const userNotifications = await this.getUserNotifications(userId);
-    
+
     userNotifications.forEach(notification => {
       const updated = { ...notification, read: true };
       this.notifications.set(notification.id, updated);
     });
-    
+
     return true;
   }
-  
+
   async deleteNotification(id: number): Promise<boolean> {
     return this.notifications.delete(id);
   }
-  
+
   // Notification Preferences operations
   async getUserNotificationPreferences(userId: number): Promise<NotificationPreference[]> {
     return Array.from(this.notificationPreferences.values())
       .filter(pref => pref.userId === userId);
   }
-  
+
   async getUserNotificationPreference(userId: number, typeId: number): Promise<NotificationPreference | undefined> {
     return Array.from(this.notificationPreferences.values())
       .find(pref => pref.userId === userId && pref.typeId === typeId);
   }
-  
+
   async createOrUpdateNotificationPreference(preference: InsertNotificationPreference): Promise<NotificationPreference> {
     // Check if preference already exists
     const existing = await this.getUserNotificationPreference(preference.userId, preference.typeId);
-    
+
     if (existing) {
       // Update existing preference
       const updated = { ...existing, ...preference };
@@ -1891,7 +1891,7 @@ export class MemStorage implements IStorage {
   async createAuthToken(userId: number, type: string, expiresAt: Date, userAgent?: string, ipAddress?: string): Promise<AuthToken> {
     const crypto = await import('crypto');
     const token = crypto.randomBytes(32).toString('hex');
-    
+
     const authToken: AuthToken = {
       id: Date.now(), // Simple ID generation for in-memory storage
       userId,
@@ -1915,7 +1915,7 @@ export class MemStorage implements IStorage {
 
   async validateAuthToken(token: string): Promise<User | undefined> {
     const authToken = this.authTokens.get(token);
-    
+
     if (!authToken || authToken.isRevoked || authToken.expiresAt < new Date()) {
       return undefined;
     }
@@ -1950,14 +1950,14 @@ export class MemStorage implements IStorage {
   async cleanupExpiredTokens(): Promise<number> {
     const now = new Date();
     let cleanedCount = 0;
-    
+
     for (const [token, authToken] of this.authTokens.entries()) {
       if (authToken.expiresAt < now || authToken.isRevoked) {
         this.authTokens.delete(token);
         cleanedCount++;
       }
     }
-    
+
     return cleanedCount;
   }
 
@@ -2031,7 +2031,7 @@ export class DatabaseStorage implements IStorage {
     const [review] = await db?.select().from(reviews).where(eq(reviews.id, id)) || [];
     return review;
   }
-  
+
   async getProfessionalReviews(professionalId: number): Promise<Review[]> {
     const results = await db?.select()
       .from(reviews)
@@ -2039,7 +2039,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(reviews.createdAt)) || [];
     return results;
   }
-  
+
   async getCompanyReviews(companyId: number): Promise<Review[]> {
     const results = await db?.select()
       .from(reviews)
@@ -2047,55 +2047,55 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(reviews.createdAt)) || [];
     return results;
   }
-  
+
   async getConsultationReview(consultationId: number): Promise<Review | undefined> {
     const [review] = await db?.select()
       .from(reviews)
       .where(eq(reviews.consultationId, consultationId)) || [];
     return review;
   }
-  
+
   async createReview(review: InsertReview): Promise<Review> {
     const [newReview] = await db?.insert(reviews)
       .values(review)
       .returning() || [];
-    
+
     // Update the professional's rating
     await this.updateProfessionalRating(review.professionalId);
-    
+
     return newReview;
   }
-  
+
   async updateReview(id: number, reviewData: Partial<Review>): Promise<Review | undefined> {
     const [updatedReview] = await db?.update(reviews)
       .set(reviewData)
       .where(eq(reviews.id, id))
       .returning() || [];
-    
+
     if (updatedReview && reviewData.rating !== undefined) {
       await this.updateProfessionalRating(updatedReview.professionalId);
     }
-    
+
     return updatedReview;
   }
-  
+
   async deleteReview(id: number): Promise<boolean> {
     const [deletedReview] = await db?.delete(reviews)
       .where(eq(reviews.id, id))
       .returning() || [];
-    
+
     if (deletedReview) {
       await this.updateProfessionalRating(deletedReview.professionalId);
       return true;
     }
-    
+
     return false;
   }
-  
+
   async updateProfessionalRating(professionalId: number): Promise<boolean> {
     // Get all reviews for this professional
     const professionalReviews = await this.getProfessionalReviews(professionalId);
-    
+
     if (professionalReviews.length === 0) {
       // Reset rating if no reviews
       await db?.update(professionalProfiles)
@@ -2106,11 +2106,11 @@ export class DatabaseStorage implements IStorage {
         .where(eq(professionalProfiles.id, professionalId));
       return true;
     }
-    
+
     // Calculate average rating
     const totalRating = professionalReviews.reduce((sum, review) => sum + review.rating, 0);
     const averageRating = Math.round(totalRating / professionalReviews.length);
-    
+
     // Update the professional profile
     await db?.update(professionalProfiles)
       .set({
@@ -2118,7 +2118,7 @@ export class DatabaseStorage implements IStorage {
         reviewCount: professionalReviews.length
       })
       .where(eq(professionalProfiles.id, professionalId));
-    
+
     return true;
   }
 
@@ -2129,33 +2129,33 @@ export class DatabaseStorage implements IStorage {
       .where(eq(notificationTypes.id, id)) || [];
     return notificationType;
   }
-  
+
   async getNotificationTypeByName(name: string): Promise<NotificationType | undefined> {
     const [notificationType] = await db?.select()
       .from(notificationTypes)
       .where(eq(notificationTypes.name, name)) || [];
     return notificationType;
   }
-  
+
   async getAllNotificationTypes(): Promise<NotificationType[]> {
     const results = await db?.select().from(notificationTypes) || [];
     return results;
   }
-  
+
   async createNotificationType(type: InsertNotificationType): Promise<NotificationType> {
     const [newType] = await db?.insert(notificationTypes)
       .values(type)
       .returning() || [];
     return newType;
   }
-  
+
   async getNotification(id: number): Promise<Notification | undefined> {
     const [notification] = await db?.select()
       .from(notifications)
       .where(eq(notifications.id, id)) || [];
     return notification;
   }
-  
+
   async getUserNotifications(userId: number): Promise<Notification[]> {
     const results = await db?.select()
       .from(notifications)
@@ -2163,7 +2163,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(notifications.createdAt)) || [];
     return results;
   }
-  
+
   async getUserUnreadNotifications(userId: number): Promise<Notification[]> {
     if (!db) return [];
     try {
@@ -2180,7 +2180,7 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
-  
+
   async createNotification(notification: InsertNotification): Promise<Notification> {
     const [newNotification] = await db?.insert(notifications)
       .values({
@@ -2190,7 +2190,7 @@ export class DatabaseStorage implements IStorage {
       .returning() || [];
     return newNotification;
   }
-  
+
   async markNotificationAsRead(id: number): Promise<boolean> {
     const [updated] = await db?.update(notifications)
       .set({ read: true })
@@ -2198,21 +2198,21 @@ export class DatabaseStorage implements IStorage {
       .returning() || [];
     return !!updated;
   }
-  
+
   async markAllUserNotificationsAsRead(userId: number): Promise<boolean> {
     await db?.update(notifications)
       .set({ read: true })
       .where(eq(notifications.userId, userId));
     return true;
   }
-  
+
   async deleteNotification(id: number): Promise<boolean> {
     const [deleted] = await db?.delete(notifications)
       .where(eq(notifications.id, id))
       .returning() || [];
     return !!deleted;
   }
-  
+
   async getUserNotificationPreference(userId: number, typeId: number): Promise<NotificationPreference | undefined> {
     const [preference] = await db?.select()
       .from(notificationPreferences)
@@ -2220,21 +2220,21 @@ export class DatabaseStorage implements IStorage {
       .where(eq(notificationPreferences.typeId, typeId)) || [];
     return preference;
   }
-  
+
   async getUserNotificationPreferences(userId: number): Promise<NotificationPreference[]> {
     const preferences = await db?.select()
       .from(notificationPreferences)
       .where(eq(notificationPreferences.userId, userId)) || [];
     return preferences;
   }
-  
+
   async createOrUpdateNotificationPreference(preference: InsertNotificationPreference): Promise<NotificationPreference> {
     // Check if preference already exists
     const existingPreference = await this.getUserNotificationPreference(
       preference.userId, 
       preference.typeId
     );
-    
+
     if (existingPreference) {
       // Update existing preference
       const [updated] = await db?.update(notificationPreferences)
@@ -2253,27 +2253,27 @@ export class DatabaseStorage implements IStorage {
       return newPreference;
     }
   }
-  
+
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
-  
+
   // Password and account recovery operations
   async createResetToken(email: string): Promise<string | null> {
     try {
       const [user] = await db.select().from(users).where(eq(users.email, email));
       if (!user) return null;
-      
+
       // Generate a random token
       const token = Math.random().toString(36).substring(2, 15) + 
                     Math.random().toString(36).substring(2, 15);
-      
+
       // Set expiry to 1 hour from now
       const expiryDate = new Date();
       expiryDate.setHours(expiryDate.getHours() + 1);
-      
+
       // Update user with token
       await db.update(users)
         .set({
@@ -2281,14 +2281,14 @@ export class DatabaseStorage implements IStorage {
           resetTokenExpiry: expiryDate
         })
         .where(eq(users.id, user.id));
-      
+
       return token;
     } catch (error) {
       console.error("Error creating reset token:", error);
       return null;
     }
   }
-  
+
   async getUserByResetToken(token: string): Promise<User | undefined> {
     try {
       const now = new Date();
@@ -2300,19 +2300,19 @@ export class DatabaseStorage implements IStorage {
             sql`${users.resetTokenExpiry} > ${now}`
           )
         );
-      
+
       return user;
     } catch (error) {
       console.error("Error getting user by reset token:", error);
       return undefined;
     }
   }
-  
+
   async resetPassword(token: string, newPassword: string): Promise<boolean> {
     try {
       const user = await this.getUserByResetToken(token);
       if (!user) return false;
-      
+
       // Update user with new password and clear token
       await db.update(users)
         .set({
@@ -2321,7 +2321,7 @@ export class DatabaseStorage implements IStorage {
           resetTokenExpiry: null
         })
         .where(eq(users.id, user.id));
-      
+
       return true;
     } catch (error) {
       console.error("Error resetting password:", error);
@@ -2338,7 +2338,7 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db.select().from(users).where(eq(users.email, email));
     return user;
   }
-  
+
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users);
   }
@@ -2361,11 +2361,11 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedUser;
   }
-  
+
   async deleteUser(id: number): Promise<boolean> {
     try {
       console.log(`Storage: Attempting to delete user with ID: ${id}`);
-      
+
       // Start a transaction to handle related records
       return await db.transaction(async (tx) => {
         // Check for company profiles associated with this user
@@ -2373,32 +2373,32 @@ export class DatabaseStorage implements IStorage {
           .select({ id: companyProfiles.id })
           .from(companyProfiles)
           .where(eq(companyProfiles.userId, id));
-          
+
         if (companyProfileResults.length > 0) {
           console.log(`Cannot delete user ${id}: Found ${companyProfileResults.length} associated company profiles`);
           throw new Error(`User is associated with company profiles. Please delete those first.`);
         }
-        
+
         // Check for professional profiles associated with this user
         const professionalProfileResults = await tx
           .select({ id: professionalProfiles.id })
           .from(professionalProfiles)
           .where(eq(professionalProfiles.userId, id));
-          
+
         if (professionalProfileResults.length > 0) {
           console.log(`Cannot delete user ${id}: Found ${professionalProfileResults.length} associated professional profiles`);
           throw new Error(`User is associated with professional profiles. Please delete those first.`);
         }
-        
+
         // Check for job postings, resources, etc. associated with this user
         // Check for other dependencies as needed...
-        
+
         // If no dependencies found, proceed with deletion
         const result = await tx
           .delete(users)
           .where(eq(users.id, id))
           .returning({ id: users.id });
-          
+
         const success = result.length > 0;
         console.log(`User deletion ${success ? 'successful' : 'failed'} for ID: ${id}`);
         return success;
@@ -2409,7 +2409,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Stripe operations
+  // Stripe methods
   async updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined> {
     return this.updateUser(userId, { stripeCustomerId: customerId });
   }
@@ -2486,7 +2486,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedProfile;
   }
-  
+
   async deleteProfessionalProfile(id: number): Promise<boolean> {
     const result = await db
       .delete(professionalProfiles)
@@ -2549,7 +2549,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(certifications.id, id));
     return certification;
   }
-  
+
   async getProfessionalCertifications(professionalId: number): Promise<Certification[]> {
     return db
       .select()
@@ -2759,7 +2759,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(resources.createdAt))
       .limit(limit);
   }
-  
+
   async getResourcesByCategory(categoryId: number): Promise<Resource[]> {
     return db
       .select()
@@ -2767,7 +2767,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(resources.categoryId, categoryId))
       .orderBy(desc(resources.createdAt));
   }
-  
+
   async getResourcesByAuthor(authorId: number): Promise<Resource[]> {
     return db
       .select()
@@ -2775,11 +2775,11 @@ export class DatabaseStorage implements IStorage {
       .where(eq(resources.authorId, authorId))
       .orderBy(desc(resources.createdAt));
   }
-  
+
   async searchResources(query?: string, type?: string, categoryId?: number): Promise<Resource[]> {
     // Start with base query conditions
     const conditions: SQL<unknown>[] = [];
-    
+
     // Add search conditions if query provided
     if (query) {
       const searchTerm = `%${query.toLowerCase()}%`;
@@ -2788,17 +2788,17 @@ export class DatabaseStorage implements IStorage {
         sql`(LOWER(${resources.title}) LIKE ${searchTerm} OR LOWER(${resources.description}) LIKE ${searchTerm})`
       );
     }
-    
+
     // Add type filter if provided
     if (type) {
       conditions.push(eq(resources.resourceType, type));
     }
-    
+
     // Add category filter if provided
     if (categoryId) {
       conditions.push(eq(resources.categoryId, categoryId));
     }
-    
+
     // Execute query with all conditions
     let query_result;
     if (conditions.length > 0) {
@@ -2814,10 +2814,10 @@ export class DatabaseStorage implements IStorage {
         .from(resources)
         .orderBy(desc(resources.createdAt));
     }
-    
+
     return query_result;
   }
-  
+
   async getResourceCategory(id: number): Promise<ResourceCategory | undefined> {
     const [category] = await db
       .select()
@@ -2825,7 +2825,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(resourceCategories.id, id));
     return category;
   }
-  
+
   async getAllResourceCategories(): Promise<ResourceCategory[]> {
     if (!db) {
       console.warn("Database not available, using empty result for getAllResourceCategories");
@@ -2833,7 +2833,7 @@ export class DatabaseStorage implements IStorage {
     }
     return db.select().from(resourceCategories);
   }
-  
+
   async createResourceCategory(category: InsertResourceCategory): Promise<ResourceCategory> {
     const [newCategory] = await db
       .insert(resourceCategories)
@@ -2841,7 +2841,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return newCategory;
   }
-  
+
   async setResourceFeatured(id: number, featured: boolean): Promise<Resource | undefined> {
     const [updatedResource] = await db
       .update(resources)
@@ -2867,7 +2867,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return updatedResource;
   }
-  
+
   async deleteResource(id: number): Promise<boolean> {
     const result = await db
       .delete(resources)
@@ -3050,12 +3050,12 @@ export class DatabaseStorage implements IStorage {
   async deleteProfessionalExpertise(id: number): Promise<boolean> {
     try {
       console.log(`Storage: Attempting to delete professional expertise with ID: ${id}`);
-      
+
       const result = await db
         .delete(professionalExpertise)
         .where(eq(professionalExpertise.id, id))
         .returning({ id: professionalExpertise.id });
-        
+
       const success = result.length > 0;
       console.log(`Professional expertise deletion ${success ? 'successful' : 'failed'} for ID: ${id}`);
       return success;
@@ -3064,17 +3064,17 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   // Job Application operations
   async deleteJobApplication(id: number): Promise<boolean> {
     try {
       console.log(`Storage: Attempting to delete job application with ID: ${id}`);
-      
+
       const result = await db
         .delete(jobApplications)
         .where(eq(jobApplications.id, id))
         .returning({ id: jobApplications.id });
-        
+
       const success = result.length > 0;
       console.log(`Job application deletion ${success ? 'successful' : 'failed'} for ID: ${id}`);
       return success;
@@ -3083,17 +3083,17 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   // Company Profile operations
   async deleteCompanyProfile(id: number): Promise<boolean> {
     try {
       console.log(`Storage: Attempting to delete company profile with ID: ${id}`);
-      
+
       const result = await db
         .delete(companyProfiles)
         .where(eq(companyProfiles.id, id))
         .returning({ id: companyProfiles.id });
-        
+
       const success = result.length > 0;
       console.log(`Company profile deletion ${success ? 'successful' : 'failed'} for ID: ${id}`);
       return success;
@@ -3155,52 +3155,52 @@ export class DatabaseStorage implements IStorage {
   async deletePageContent(id: number): Promise<boolean> {
     try {
       console.log(`Storage: Attempting to delete page content with ID: ${id}`);
-      
+
       // First verify the record exists to avoid unnecessary delete operations
       const existing = await db
         .select({ id: pageContents.id })
         .from(pageContents)
         .where(eq(pageContents.id, id));
-        
+
       if (existing.length === 0) {
         console.log(`Storage: Page content with ID ${id} not found, nothing to delete`);
         return false;
       }
-      
+
       // If it exists, proceed with deletion
       const result = await db
         .delete(pageContents)
         .where(eq(pageContents.id, id))
         .returning({ id: pageContents.id });
-        
+
       const success = result.length > 0;
       console.log(`Storage: Delete operation for page content ID ${id} result:`, success ? 'Success' : 'Failed');
-      
+
       return success;
     } catch (error) {
       console.error(`Storage: Error deleting page content with ID ${id}:`, error);
       throw error; // Re-throw to allow proper error handling
     }
   }
-  
+
   // AI Matching operations
   async getMatchingJobsForProfessional(professionalId: number, limit: number = 5): Promise<Array<{job: JobPosting, score: number}>> {
     try {
       // Get the professional profile
       const [professional] = await db.select().from(professionalProfiles)
         .where(eq(professionalProfiles.id, professionalId));
-      
+
       if (!professional) {
         return [];
       }
-      
+
       // Get all open job postings
       const jobs = await db.select().from(jobPostings)
         .where(eq(jobPostings.status, "open"));
-      
+
       // Import AI services locally to avoid circular dependencies
       const { calculateProfileJobMatchScore } = await import('./ai-services');
-      
+
       // Generate match scores using AI services
       const matchPromises = jobs.map(async (job) => {
         try {
@@ -3213,10 +3213,10 @@ export class DatabaseStorage implements IStorage {
           return { job, score: 0.01 };
         }
       });
-      
+
       // Resolve all match promises
       const matches = await Promise.all(matchPromises);
-      
+
       // Sort by score (descending) and apply limit
       return matches
         .sort((a, b) => b.score - a.score)
@@ -3226,50 +3226,60 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
-  
+
   async getMatchingProfessionalsForJob(jobId: number, limit: number = 5): Promise<Array<{professional: ProfessionalProfile, score: number}>> {
     try {
       // Get the job posting
       const [job] = await db.select().from(jobPostings)
         .where(eq(jobPostings.id, jobId));
-      
+
       if (!job) {
         return [];
       }
-      
+
       // Get all professional profiles
-      const professionals = await db.select().from(professionalProfiles);
-      
-      // Import AI services locally to avoid circular dependencies
-      const { calculateProfileJobMatchScore } = await import('./ai-services');
-      
-      // Generate match scores using AI services
-      const matchPromises = professionals.map(async (professional) => {
+      const profiles = await db.select().from(professionalProfiles);
+      console.log(`Found ${profiles.length} professionals to evaluate for job: ${job.title}`);
+
+      if (profiles.length === 0) {
+        return [];
+      }
+
+      // Calculate match scores for each professional
+      const matches: Array<{professional: ProfessionalProfile, score: number}> = [];
+
+      for (const profile of profiles) {
         try {
-          // Calculate match score using AI embeddings with fallback
-          // We'll use the same function but invert the parameters order in the results
-          const score = await calculateProfileJobMatchScore(professional, job);
-          return { professional, score };
+          const score = await calculateProfileJobMatchScore(profile, job);
+          console.log(`Match score for professional "${profile.title || profile.firstName}": ${(score * 100).toFixed(1)}%`);
+
+          matches.push({
+            professional: profile,
+            score
+          });
         } catch (error) {
-          console.error(`Error matching professional ${professional.id} with job ${jobId}:`, error);
-          // Return a very low score if there was an error
-          return { professional, score: 0.01 };
+          console.error(`Error calculating match score for professional ${profile.id}:`, error);
+          // Add with minimum score if calculation fails
+          matches.push({
+            professional: profile,
+            score: 0.2
+          });
         }
-      });
-      
-      // Resolve all match promises
-      const matches = await Promise.all(matchPromises);
-      
-      // Sort by score (descending) and apply limit
-      return matches
+      }
+
+      // Sort by score (highest first) and return top matches
+      const topMatches = matches
         .sort((a, b) => b.score - a.score)
         .slice(0, limit);
+
+      console.log(`Returning top ${topMatches.length} matches for job ${jobId}`);
+      return topMatches;
     } catch (error) {
       console.error("Error getting matching professionals:", error);
       return [];
     }
   }
-  
+
   async saveJobMatch(jobId: number, professionalId: number, score: number): Promise<boolean> {
     try {
       // In a real implementation, we would add a job_matches table

@@ -137,64 +137,126 @@ export async function calculateProfileJobMatchScore(
   job: JobPosting
 ): Promise<number> {
   try {
+    console.log(`Calculating match score between "${profile.title || profile.firstName}" and "${job.title}"`);
+    
     // Generate embeddings for the profile and job
     const profileEmbedding = await generateProfileEmbedding(profile);
     const jobEmbedding = await generateJobEmbedding(job);
     
     // If embeddings could not be generated, fall back to a simpler method
     if (!profileEmbedding || !jobEmbedding) {
-      return fallbackMatchScore(profile, job);
+      console.log("Using fallback matching algorithm (OpenAI not available)");
+      const fallbackScore = fallbackMatchScore(profile, job);
+      console.log(`Fallback score: ${(fallbackScore * 100).toFixed(1)}%`);
+      return fallbackScore;
     }
     
     // Calculate cosine similarity between embeddings
     const similarity = calculateCosineSimilarity(profileEmbedding, jobEmbedding);
+    console.log(`AI embedding similarity: ${similarity.toFixed(3)}`);
     
     // Normalize similarity to a 0-1 scale (cosine similarity ranges from -1 to 1)
-    return (similarity + 1) / 2;
+    const aiScore = (similarity + 1) / 2;
+    console.log(`AI normalized score: ${(aiScore * 100).toFixed(1)}%`);
+    return aiScore;
   } catch (error) {
     console.error("Error calculating match score:", error);
-    return fallbackMatchScore(profile, job);
+    const fallbackScore = fallbackMatchScore(profile, job);
+    console.log(`Error fallback score: ${(fallbackScore * 100).toFixed(1)}%`);
+    return fallbackScore;
   }
 }
 
-// Fallback scoring method when AI is not available
+// Enhanced fallback scoring method when AI is not available
 function fallbackMatchScore(profile: ProfessionalProfile, job: JobPosting): number {
   let score = 0;
+  let maxPossibleScore = 0;
   
-  // Title match
+  // Title and role matching (40% weight)
+  maxPossibleScore += 0.4;
   if (profile.title && job.title) {
     const profileTitle = profile.title.toLowerCase();
     const jobTitle = job.title.toLowerCase();
-    if (profileTitle.includes(jobTitle) || jobTitle.includes(profileTitle)) {
+    
+    // Exact match
+    if (profileTitle === jobTitle) {
+      score += 0.4;
+    }
+    // Contains match
+    else if (profileTitle.includes(jobTitle) || jobTitle.includes(profileTitle)) {
       score += 0.3;
+    }
+    // Keyword overlap
+    else {
+      const profileWords = profileTitle.split(/\s+/);
+      const jobWords = jobTitle.split(/\s+/);
+      const commonWords = profileWords.filter(word => 
+        jobWords.some(jWord => jWord.includes(word) || word.includes(jWord))
+      );
+      if (commonWords.length > 0) {
+        score += 0.2 * (commonWords.length / Math.max(profileWords.length, jobWords.length));
+      }
     }
   }
   
-  // Location match
-  if (profile.location && job.location && profile.location === job.location) {
-    score += 0.2;
+  // Skills and experience matching (30% weight)
+  maxPossibleScore += 0.3;
+  if (profile.bio && job.description) {
+    const profileText = profile.bio.toLowerCase();
+    const jobText = (job.description + ' ' + (job.requirements || '')).toLowerCase();
+    
+    // Look for common skill keywords
+    const skillKeywords = [
+      'leadership', 'management', 'training', 'development', 'coaching', 'mentoring',
+      'project', 'team', 'communication', 'strategy', 'planning', 'analysis',
+      'design', 'implementation', 'evaluation', 'assessment', 'facilitation'
+    ];
+    
+    const profileSkills = skillKeywords.filter(skill => profileText.includes(skill));
+    const jobSkills = skillKeywords.filter(skill => jobText.includes(skill));
+    const commonSkills = profileSkills.filter(skill => jobSkills.includes(skill));
+    
+    if (commonSkills.length > 0) {
+      score += 0.3 * (commonSkills.length / Math.max(profileSkills.length, jobSkills.length, 1));
+    }
   }
   
-  // Remote work preference
+  // Location compatibility (15% weight)
+  maxPossibleScore += 0.15;
   if (job.remote) {
-    score += 0.1;
+    score += 0.15; // Remote jobs are always compatible
+  } else if (profile.location && job.location) {
+    if (profile.location.toLowerCase() === job.location.toLowerCase()) {
+      score += 0.15;
+    } else if (profile.location.toLowerCase().includes(job.location.toLowerCase()) || 
+               job.location.toLowerCase().includes(profile.location.toLowerCase())) {
+      score += 0.1;
+    }
   }
   
-  // Industry match
+  // Compensation alignment (10% weight)
+  maxPossibleScore += 0.1;
+  if (profile.ratePerHour && job.minCompensation && job.maxCompensation) {
+    if (profile.ratePerHour >= job.minCompensation && profile.ratePerHour <= job.maxCompensation) {
+      score += 0.1;
+    } else if (profile.ratePerHour * 0.9 <= job.maxCompensation && profile.ratePerHour * 1.1 >= job.minCompensation) {
+      score += 0.05; // Close range
+    }
+  }
+  
+  // Industry alignment (5% weight)
+  maxPossibleScore += 0.05;
   if (profile.industryFocus && job.description) {
     const industry = profile.industryFocus.toLowerCase();
     const description = job.description.toLowerCase();
     if (description.includes(industry)) {
-      score += 0.2;
+      score += 0.05;
     }
   }
   
-  // Rate within compensation range
-  if (profile.ratePerHour && job.minCompensation && job.maxCompensation) {
-    if (profile.ratePerHour >= job.minCompensation && profile.ratePerHour <= job.maxCompensation) {
-      score += 0.2;
-    }
-  }
+  // Ensure minimum viable score and normalize
+  const normalizedScore = score / maxPossibleScore;
+  const minimumScore = 0.2; // 20% minimum for any reasonable match
   
-  return Math.min(score, 1.0);
+  return Math.max(Math.min(normalizedScore, 1.0), minimumScore);
 }

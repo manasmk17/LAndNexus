@@ -1967,7 +1967,8 @@ export default function EditProfileForm() {
                         <Button
                           type="button"
                           variant="ghost"
-                          size="sm"Applying the provided changes to the original code to add new features and functionalities to the professional profile edit section.                  onClick={() => removeTrainingMaterial(index)}
+                          size="sm"
+                          onClick={() => removeTrainingMaterial(index)}
                           className="text-red-500 hover:text-red-700"
                         >
                           <X className="h-4 w-4" />

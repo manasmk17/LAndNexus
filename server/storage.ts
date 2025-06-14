@@ -747,8 +747,7 @@ export class MemStorage implements IStorage {
         id,
         createdAt: new Date(),
         modifiedAt: new Date(),
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // ```python
-30 days from now
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
         featured: false,
         archived: false,
         remote: null,
@@ -2469,9 +2468,7 @@ export class DatabaseStorage implements IStorage {
     return this.updateUser(userId, { stripeSubscriptionId: subscriptionId });
   }
 
-  async updateUserSubscription(userId: number, tier: string, status: string): Promise<User | undefined> {
-    return this.updateUser(userId, { subscriptionTier: tier, subscriptionStatus: status });
-  }
+
 
   async getUserByStripeCustomerId(customerId: string): Promise<User | undefined> {
     const [user] = await db
@@ -3520,22 +3517,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateUserSubscription(userId: number, subscriptionData: any): Promise<any> {
-    if (!db) {
-      throw new Error('Database not initialized');
-    }
 
-    try {
-      return {
-        ...subscriptionData,
-        userId: userId,
-        updatedAt: new Date()
-      };
-    } catch (error) {
-      console.error("Error updating user subscription:", error);
-      return null;
-    }
-  }
 
   // Subscription plans operations
   async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {

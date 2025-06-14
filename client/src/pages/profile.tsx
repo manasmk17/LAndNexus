@@ -85,7 +85,7 @@ export default function Profile() {
                     
                     <div className="flex items-center gap-2 text-slate-600">
                       <Calendar className="h-4 w-4" />
-                      <span>Member since {new Date(user.createdAt).getFullYear()}</span>
+                      <span>Member since {user.createdAt ? new Date(user.createdAt).getFullYear() : '2024'}</span>
                     </div>
 
                     {user.userType === "professional" && (
@@ -213,7 +213,7 @@ export default function Profile() {
                   <div>
                     <label className="text-sm font-medium text-slate-900">Member Since</label>
                     <p className="text-slate-600 mt-1">
-                      {new Date(user.createdAt).toLocaleDateString()}
+                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                     </p>
                   </div>
                 </div>

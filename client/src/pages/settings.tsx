@@ -1,14 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Bell, Shield, User, Eye, Mail, Phone } from "lucide-react";
 
 export default function Settings() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
   const [notifications, setNotifications] = useState({
     email: true,
     push: false,
@@ -24,12 +30,54 @@ export default function Settings() {
     activityStatus: true
   });
 
+  // Fetch user preferences
+  const { data: userPreferences } = useQuery({
+    queryKey: ['/api/user/preferences'],
+    enabled: !!user
+  });
+
+  // Update preferences mutation
+  const updatePreferences = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest('/api/user/preferences', {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "Settings Updated",
+        description: "Your preferences have been saved successfully."
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/user/preferences'] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update settings. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Load preferences from API when available
+  useEffect(() => {
+    if (userPreferences) {
+      setNotifications(prev => ({ ...prev, ...userPreferences.notifications }));
+      setPrivacy(prev => ({ ...prev, ...userPreferences.privacy }));
+    }
+  }, [userPreferences]);
+
   const handleNotificationChange = (key: string, value: boolean) => {
-    setNotifications(prev => ({ ...prev, [key]: value }));
+    const newNotifications = { ...notifications, [key]: value };
+    setNotifications(newNotifications);
+    updatePreferences.mutate({ notifications: newNotifications });
   };
 
   const handlePrivacyChange = (key: string, value: boolean) => {
-    setPrivacy(prev => ({ ...prev, [key]: value }));
+    const newPrivacy = { ...privacy, [key]: value };
+    setPrivacy(newPrivacy);
+    updatePreferences.mutate({ privacy: newPrivacy });
   };
 
   return (

@@ -175,9 +175,15 @@ export default function ResourceManagement() {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="cards" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-4">
-          <TabsTrigger value="cards">Card View</TabsTrigger>
-          <TabsTrigger value="drag">Drag & Drop</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 mb-4 h-auto gap-1 p-1">
+          <TabsTrigger value="cards" className="text-xs sm:text-sm px-2 py-2">
+            <span className="hidden sm:inline">Card View</span>
+            <span className="sm:hidden">Cards</span>
+          </TabsTrigger>
+          <TabsTrigger value="drag" className="text-xs sm:text-sm px-2 py-2">
+            <span className="hidden sm:inline">Drag & Drop</span>
+            <span className="sm:hidden">Drag</span>
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="cards" className="space-y-4">

@@ -75,10 +75,19 @@ export default function AnalyticsDashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="engagement">Engagement</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
+        <TabsList className="w-full grid grid-cols-3 h-auto gap-1 p-1">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 py-2">
+            <span className="hidden sm:inline">Overview</span>
+            <span className="sm:hidden">Over</span>
+          </TabsTrigger>
+          <TabsTrigger value="engagement" className="text-xs sm:text-sm px-2 py-2">
+            <span className="hidden sm:inline">Engagement</span>
+            <span className="sm:hidden">Engage</span>
+          </TabsTrigger>
+          <TabsTrigger value="performance" className="text-xs sm:text-sm px-2 py-2">
+            <span className="hidden sm:inline">Performance</span>
+            <span className="sm:hidden">Perf</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">

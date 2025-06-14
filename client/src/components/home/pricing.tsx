@@ -125,9 +125,15 @@ export default function Pricing() {
             className="w-full max-w-md"
             onValueChange={(value) => setPricingType(value as "professional" | "company")}
           >
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="professional">L&D Professionals</TabsTrigger>
-              <TabsTrigger value="company">Companies</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 h-auto gap-1 p-1">
+              <TabsTrigger value="professional" className="text-xs sm:text-sm px-2 py-2">
+                <span className="hidden sm:inline">L&D Professionals</span>
+                <span className="sm:hidden">Professionals</span>
+              </TabsTrigger>
+              <TabsTrigger value="company" className="text-xs sm:text-sm px-2 py-2">
+                <span className="hidden sm:inline">Companies</span>
+                <span className="sm:hidden">Company</span>
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>

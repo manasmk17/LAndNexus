@@ -38,9 +38,15 @@ export default function ManageResources() {
         onValueChange={setActiveTab}
         className="max-w-4xl mx-auto"
       >
-        <TabsList className="grid w-full grid-cols-2 mb-8">
-          <TabsTrigger value="manage">Manage Resources</TabsTrigger>
-          <TabsTrigger value="create">Create New Resource</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 mb-8 h-auto gap-1 p-1">
+          <TabsTrigger value="manage" className="text-xs sm:text-sm px-2 py-2">
+            <span className="hidden sm:inline">Manage Resources</span>
+            <span className="sm:hidden">Manage</span>
+          </TabsTrigger>
+          <TabsTrigger value="create" className="text-xs sm:text-sm px-2 py-2">
+            <span className="hidden sm:inline">Create New Resource</span>
+            <span className="sm:hidden">Create</span>
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="manage">

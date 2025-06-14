@@ -64,11 +64,11 @@ export default function Forum() {
             onValueChange={handleCategoryChange}
             className="mb-6"
           >
-            <TabsList className="w-full md:w-auto grid grid-cols-4 md:inline-flex">
-              <TabsTrigger value="all">All Topics</TabsTrigger>
-              <TabsTrigger value="discussion">Discussions</TabsTrigger>
-              <TabsTrigger value="question">Questions</TabsTrigger>
-              <TabsTrigger value="resource">Resources</TabsTrigger>
+            <TabsList className="w-full grid grid-cols-2 sm:grid-cols-4 h-auto gap-1 p-1">
+              <TabsTrigger value="all" className="text-xs sm:text-sm px-2 py-2">All Topics</TabsTrigger>
+              <TabsTrigger value="discussion" className="text-xs sm:text-sm px-2 py-2">Discussions</TabsTrigger>
+              <TabsTrigger value="question" className="text-xs sm:text-sm px-2 py-2">Questions</TabsTrigger>
+              <TabsTrigger value="resource" className="text-xs sm:text-sm px-2 py-2">Resources</TabsTrigger>
             </TabsList>
           </Tabs>
           

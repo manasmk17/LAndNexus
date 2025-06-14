@@ -275,41 +275,44 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                 )}
               </div>
 
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold mb-1">{profile.title}</h1>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl sm:text-2xl font-bold mb-1 truncate" title={profile.title}>{profile.title}</h1>
                 <div className="flex items-center text-gray-600 mb-1">
-                  <MapPin className="w-4 h-4 mr-1" />
-                  <span>{profile.location}</span>
+                  <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
+                  <span className="truncate">{profile.location}</span>
                 </div>
                 <div className="flex items-center text-gray-600 mb-3">
-                  <Star className="w-4 h-4 text-yellow-400 mr-1" />
+                  <Star className="w-4 h-4 text-yellow-400 mr-1 flex-shrink-0" />
                   <span>{((profile.rating || 0) / 20).toFixed(1)}</span>
                   <span className="ml-1 text-gray-500">({profile.reviewCount || 0} reviews)</span>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {profile.featured && (
-                    <Badge className="bg-amber-100 text-amber-800">Featured Professional</Badge>
+                    <Badge className="bg-amber-100 text-amber-800 text-xs sm:text-sm">
+                      <span className="hidden sm:inline">Featured Professional</span>
+                      <span className="sm:hidden">Featured</span>
+                    </Badge>
                   )}
                   {profile.ratePerHour && (
-                    <Badge className="bg-green-100 text-green-800">
-                      ${profile.ratePerHour}/hour
+                    <Badge className="bg-green-100 text-green-800 text-xs sm:text-sm">
+                      ${profile.ratePerHour}/hr
                     </Badge>
                   )}
                   {isLoadingExpertise ? (
                     <>
-                      <Skeleton className="h-6 w-20 rounded-full" />
-                      <Skeleton className="h-6 w-24 rounded-full" />
+                      <Skeleton className="h-6 w-16 sm:w-20 rounded-full" />
+                      <Skeleton className="h-6 w-20 sm:w-24 rounded-full" />
                     </>
                   ) : (
                     expertise?.slice(0, 2).map(area => (
-                      <Badge key={area.id} variant="secondary" className="bg-blue-100 text-blue-800">
+                      <Badge key={area.id} variant="secondary" className="bg-blue-100 text-blue-800 text-xs sm:text-sm max-w-[120px] truncate" title={area.name}>
                         {area.name}
                       </Badge>
                     ))
                   )}
                   {expertise && expertise.length > 2 && (
-                    <Badge variant="outline">+{expertise.length - 2} more</Badge>
+                    <Badge variant="outline" className="text-xs sm:text-sm">+{expertise.length - 2}</Badge>
                   )}
                 </div>
               </div>
@@ -331,23 +334,32 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
         {/* Profile Content Tabs */}
         <div className="mt-8">
           <Tabs defaultValue="about">
-            <TabsList className="w-full">
-              <TabsTrigger value="about">About</TabsTrigger>
-              <TabsTrigger value="expertise">Expertise & Certifications</TabsTrigger>
-              <TabsTrigger value="experience">
-                <span className="flex items-center">
-                  <Briefcase className="mr-1 h-4 w-4" />
-                  Experience & Testimonials
-                </span>
+            <TabsList className="w-full grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 h-auto gap-1 p-1">
+              <TabsTrigger value="about" className="text-xs sm:text-sm px-2 py-2">About</TabsTrigger>
+              <TabsTrigger value="expertise" className="text-xs sm:text-sm px-2 py-2 text-center">
+                <span className="hidden sm:inline">Expertise & Certs</span>
+                <span className="sm:hidden">Skills</span>
               </TabsTrigger>
-              <TabsTrigger value="skill-recommendations">
-                <span className="flex items-center">
-                  <Lightbulb className="mr-1 h-4 w-4" />
-                  Skill Recommendations
+              <TabsTrigger value="experience" className="text-xs sm:text-sm px-2 py-2 text-center">
+                <span className="hidden lg:flex items-center">
+                  <Briefcase className="mr-1 h-3 w-3" />
+                  Experience
                 </span>
+                <span className="lg:hidden">Experience</span>
               </TabsTrigger>
-              {profile.videoIntroUrl && <TabsTrigger value="video">Video Introduction</TabsTrigger>}
-
+              <TabsTrigger value="skill-recommendations" className="text-xs sm:text-sm px-2 py-2 text-center">
+                <span className="hidden lg:flex items-center">
+                  <Lightbulb className="mr-1 h-3 w-3" />
+                  Recommendations
+                </span>
+                <span className="lg:hidden">Recs</span>
+              </TabsTrigger>
+              {profile.videoIntroUrl && (
+                <TabsTrigger value="video" className="text-xs sm:text-sm px-2 py-2 text-center">
+                  <span className="hidden sm:inline">Video Intro</span>
+                  <span className="sm:hidden">Video</span>
+                </TabsTrigger>
+              )}
             </TabsList>
 
             <TabsContent value="about" className="mt-6">
@@ -357,37 +369,37 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
 
               {/* Name and title */}
               <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="text-md font-medium text-gray-500">Full Name</h3>
-                    <p className="text-lg font-semibold">{profile.firstName} {profile.lastName}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-medium text-gray-500">Full Name</h3>
+                    <p className="text-base sm:text-lg font-semibold truncate" title={`${profile.firstName} ${profile.lastName}`}>{profile.firstName} {profile.lastName}</p>
                   </div>
-                  <div>
-                    <h3 className="text-md font-medium text-gray-500">Professional Title</h3>
-                    <p className="text-lg font-semibold">{profile.title}</p>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-medium text-gray-500">Professional Title</h3>
+                    <p className="text-base sm:text-lg font-semibold truncate" title={profile.title}>{profile.title}</p>
                   </div>
                   {profile.yearsExperience && profile.yearsExperience > 0 && (
-                    <div>
-                      <h3 className="text-md font-medium text-gray-500">Years of Experience</h3>
-                      <p className="text-lg font-semibold">{profile.yearsExperience} years</p>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-medium text-gray-500">Years of Experience</h3>
+                      <p className="text-base sm:text-lg font-semibold">{profile.yearsExperience} years</p>
                     </div>
                   )}
                   {profile.availability && profile.availability !== "false" && (
-                    <div>
-                      <h3 className="text-md font-medium text-gray-500">Availability</h3>
-                      <p className="text-lg font-semibold">{profile.availability}</p>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-medium text-gray-500">Availability</h3>
+                      <p className="text-base sm:text-lg font-semibold truncate" title={profile.availability}>{profile.availability}</p>
                     </div>
                   )}
                   {profile.email && (
-                    <div>
-                      <h3 className="text-md font-medium text-gray-500">Email</h3>
-                      <p className="text-lg font-semibold">{profile.email}</p>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-medium text-gray-500">Email</h3>
+                      <p className="text-base sm:text-lg font-semibold truncate" title={profile.email}>{profile.email}</p>
                     </div>
                   )}
                   {profile.phone && (
-                    <div>
-                      <h3 className="text-md font-medium text-gray-500">Phone</h3>
-                      <p className="text-lg font-semibold">{profile.phone}</p>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-medium text-gray-500">Phone</h3>
+                      <p className="text-base sm:text-lg font-semibold truncate" title={profile.phone}>{profile.phone}</p>
                     </div>
                   )}
                 </div>
@@ -424,8 +436,8 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
             </TabsContent>
 
             <TabsContent value="expertise" className="mt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="min-w-0">
                   <h2 className="text-xl font-semibold mb-4">Areas of Expertise</h2>
                   {isLoadingExpertise ? (
                     <div className="space-y-2">
@@ -437,7 +449,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                     <div className="space-y-2">
                       {expertise.map(area => (
                         <div key={area.id} className="flex items-center p-2 bg-blue-50 rounded-md">
-                          <Badge className="bg-blue-100 text-blue-800 mr-2">{area.name}</Badge>
+                          <Badge className="bg-blue-100 text-blue-800 mr-2 max-w-full truncate" title={area.name}>{area.name}</Badge>
                         </div>
                       ))}
                     </div>

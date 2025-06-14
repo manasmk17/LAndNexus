@@ -114,26 +114,29 @@ export default function JobApplications() {
         </Link>
         
         <div className="mb-4">
-          <h1 className="text-3xl font-bold mb-2">Job Applications</h1>
-          <div className="flex items-center gap-4 text-gray-600">
-            <h2 className="text-xl">{job.title}</h2>
-            <Badge variant="outline">{job.jobType}</Badge>
-            <span className="flex items-center gap-1">
-              <MapPin className="w-4 h-4" />
-              {job.location}
-            </span>
+          <h1 className="text-2xl sm:text-3xl font-bold mb-2">Job Applications</h1>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-gray-600">
+            <h2 className="text-lg sm:text-xl truncate" title={job.title}>{job.title}</h2>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant="outline" className="text-xs">{job.jobType}</Badge>
+              <span className="flex items-center gap-1 text-sm">
+                <MapPin className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span className="truncate">{job.location}</span>
+              </span>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <p className="text-gray-600">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <p className="text-gray-600 text-sm sm:text-base">
             {applications?.length || 0} application{applications?.length !== 1 ? 's' : ''} received
           </p>
           
           <Link href={`/job/${jobId}`}>
-            <Button variant="outline">
+            <Button variant="outline" size="sm" className="w-full sm:w-auto">
               <ExternalLink className="w-4 h-4 mr-2" />
-              View Job Posting
+              <span className="hidden sm:inline">View Job Posting</span>
+              <span className="sm:hidden">View Job</span>
             </Button>
           </Link>
         </div>

@@ -62,8 +62,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2024-12-18.acacia" as any,
 });
 
-import { trackApiPerformance } from "./api-performance";
-import { cacheManager } from "./cache-manager";
+
+
 
 const MemoryStore = memorystore(session);
 
@@ -83,41 +83,15 @@ async function initializeResourceCategories() {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Add API performance tracking
-  app.use('/api', trackApiPerformance());
+
   
   // SEO Routes - Must be first to avoid frontend routing conflicts
-  app.get("/sitemap.xml", async (req, res) => {
-    try {
-      const { sitemapGenerator } = await import("./sitemap-generator");
-      const sitemap = await sitemapGenerator.generateSitemap();
-      res.setHeader('Content-Type', 'application/xml');
-      res.send(sitemap);
-    } catch (error) {
-      console.error("Error generating sitemap:", error);
-      res.status(500).send("Error generating sitemap");
-    }
-  });
 
-  app.get("/robots.txt", async (req, res) => {
-    try {
-      const { sitemapGenerator } = await import("./sitemap-generator");
-      const robotsTxt = await sitemapGenerator.generateRobotsTxt();
-      res.setHeader('Content-Type', 'text/plain');
-      res.send(robotsTxt);
-    } catch (error) {
-      console.error("Error generating robots.txt:", error);
-      res.status(500).send("Error generating robots.txt");
-    }
-  });
 
   // Initialize resource categories
   await initializeResourceCategories();
   
-  // Start image health monitoring
-  setTimeout(() => {
-    imageHealthMonitor.startMonitoring();
-  }, 5000); // Start after 5 seconds to allow server to fully initialize
+
   
   // Configure multer storage for file uploads
   const storage25MB = multer.diskStorage({
@@ -1172,17 +1146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid user ID format" });
       }
       
-      // Check cache first
-      const cacheKey = 'user-profile';
-      const cached = responseCache.get(cacheKey, { userId });
-      if (cached) {
-        res.set('ETag', cached.etag);
-        return res.json(cached.data);
-      }
-      
-      const user = await requestDeduplicator.deduplicate(`user-${userId}`, async () => {
-        return await storage.getUser(userId);
-      });
+      const user = await storage.getUser(userId);
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -1197,9 +1161,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userType: user.userType
       };
       
-      // Cache the result
-      const etag = responseCache.set(cacheKey, userInfo, { userId });
-      res.set('ETag', etag);
       res.json(userInfo);
     } catch (err) {
       console.error("Error fetching user by ID:", err);

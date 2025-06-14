@@ -68,36 +68,49 @@ function Navbar() {
 
   return (
     <nav className="bg-white shadow-sm border-b sticky top-0 z-50">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">L&D</span>
+      <div className="container mx-auto px-3 sm:px-4 lg:px-6">
+        <div className="flex justify-between items-center h-14 sm:h-16">
+          {/* Logo - Responsive sizing */}
+          <Link href="/" className="flex items-center space-x-2 flex-shrink-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 bg-primary rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-xs sm:text-sm">L&D</span>
             </div>
-            <span className="font-semibold text-xl hidden sm:block">L&D Nexus</span>
+            <span className="font-semibold text-lg sm:text-xl hidden xs:block">L&D Nexus</span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-6 nav-menu">
+          <div className="hidden md:flex items-center space-x-4 lg:space-x-6 nav-menu">
             {navigationItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`flex items-center space-x-1 px-2 lg:px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   isActive(item.href)
                     ? "text-primary bg-primary/10"
                     : "text-gray-700 hover:text-primary hover:bg-primary/5"
                 }`}
               >
                 <item.icon className="h-4 w-4" />
-                <span>{item.label}</span>
+                <span className="hidden lg:inline">{item.label}</span>
               </Link>
             ))}
           </div>
 
+          {/* Mobile Menu Button */}
+          <button
+            className="md:hidden p-2 rounded-md text-gray-600 hover:text-primary hover:bg-gray-100 transition-colors"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
+          </button>
+
           {/* Right side - User Menu */}
-          <div className="flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-2 lg:space-x-4">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -199,27 +212,102 @@ function Navbar() {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile Navigation - Slide-out Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t mobile-nav">
-            <div className="flex flex-col space-y-2">
-              {navigationItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    isActive(item.href)
-                      ? "text-primary bg-primary/10"
-                      : "text-gray-700 hover:text-primary hover:bg-primary/5"
-                  }`}
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.label}</span>
-                </Link>
-              ))}
+          <div className="md:hidden fixed inset-0 top-14 sm:top-16 z-40 bg-white shadow-lg transform transition-transform duration-300 ease-in-out mobile-nav">
+            <div className="flex flex-col h-full overflow-y-auto">
+              {/* Navigation Items */}
+              <div className="flex flex-col space-y-1 p-4">
+                {navigationItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-base font-medium transition-colors min-h-[44px] ${
+                      isActive(item.href)
+                        ? "text-primary bg-primary/10"
+                        : "text-gray-700 hover:text-primary hover:bg-primary/5 active:bg-primary/10"
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <item.icon className="h-5 w-5 flex-shrink-0" />
+                    <span>{item.label}</span>
+                  </Link>
+                ))}
+              </div>
+
+              {/* Mobile User Menu */}
+              <div className="border-t p-4 mt-auto">
+                {user ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center space-x-3 px-4 py-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-primary text-white text-sm">
+                          {user.firstName?.[0]}{user.lastName?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="text-sm">
+                        <div className="font-medium">{user.firstName} {user.lastName}</div>
+                        <div className="text-gray-500">{user.email}</div>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <Link
+                        href="/profile"
+                        className="flex items-center space-x-3 px-4 py-3 text-gray-700 hover:text-primary hover:bg-primary/5 rounded-lg min-h-[44px]"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <User className="h-5 w-5" />
+                        <span>Profile</span>
+                      </Link>
+                      <Link
+                        href="/settings"
+                        className="flex items-center space-x-3 px-4 py-3 text-gray-700 hover:text-primary hover:bg-primary/5 rounded-lg min-h-[44px]"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <Settings className="h-5 w-5" />
+                        <span>Settings</span>
+                      </Link>
+                      <button
+                        onClick={() => {
+                          handleLogout();
+                          setMobileMenuOpen(false);
+                        }}
+                        className="flex items-center space-x-3 px-4 py-3 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg w-full text-left min-h-[44px]"
+                      >
+                        <LogOut className="h-5 w-5" />
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Link
+                      href="/login"
+                      className="block w-full px-4 py-3 text-center text-primary border border-primary rounded-lg hover:bg-primary/5 min-h-[44px] flex items-center justify-center"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Login
+                    </Link>
+                    <Link
+                      href="/register"
+                      className="block w-full px-4 py-3 text-center text-white bg-primary rounded-lg hover:bg-primary/90 min-h-[44px] flex items-center justify-center"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Register
+                    </Link>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
+        )}
+
+        {/* Mobile Menu Overlay */}
+        {mobileMenuOpen && (
+          <div 
+            className="md:hidden fixed inset-0 bg-black bg-opacity-20 z-30"
+            onClick={() => setMobileMenuOpen(false)}
+          />
         )}
       </div>
     </nav>

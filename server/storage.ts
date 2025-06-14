@@ -572,7 +572,11 @@ export class MemStorage implements IStorage {
         services: profile.services,
         availability: profile.availability,
         workExperience: profile.workExperience,
-        testimonials: profile.testimonials
+        testimonials: profile.testimonials,
+        awards: null,
+        trainingMaterials: null,
+        certificationPortfolio: null,
+        externalPortfolioUrl: null
       };
       this.professionalProfiles.set(id, newProfile);
     });
@@ -743,7 +747,8 @@ export class MemStorage implements IStorage {
         id,
         createdAt: new Date(),
         modifiedAt: new Date(),
-        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // ```python
+30 days from now
         featured: false,
         archived: false,
         remote: null,
@@ -1103,7 +1108,11 @@ export class MemStorage implements IStorage {
       services: profile.services || null,
       availability: profile.availability || null,
       workExperience: profile.workExperience || null,
-      testimonials: profile.testimonials || null
+      testimonials: profile.testimonials || null,
+      awards: profile.awards || null,
+      trainingMaterials: profile.trainingMaterials || null,
+      certificationPortfolio: profile.certificationPortfolio || null,
+      externalPortfolioUrl: profile.externalPortfolioUrl || null
     };
 
     this.professionalProfiles.set(id, newProfile);
@@ -1241,7 +1250,7 @@ export class MemStorage implements IStorage {
       location: profile.location,
       website: profile.website || null,
       logoUrl: profile.logoUrl || null,
-      logoImagePath: profile.logoImagePath || null,
+      logoImagePath: null,
       featured: profile.featured || false,
       verified: profile.verified || false
     };
@@ -1685,8 +1694,7 @@ export class MemStorage implements IStorage {
 
   async getPageContentBySlug(slug: string): Promise<PageContent | undefined> {
     return Array.from(this.pageContents.values()).find(
-      (content) => content.slug === slug
-    );
+      (content) => content.slug === slug    );
   }
 
   async getAllPageContents(): Promise<PageContent[]> {

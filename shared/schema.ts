@@ -61,6 +61,10 @@ export const professionalProfiles = pgTable("professional_profiles", {
   profileImageUrl: text("profile_image_url"),
   profileImagePath: text("profile_image_path"), // For uploaded files
   galleryImages: jsonb("gallery_images"), // Array of image paths for portfolio/gallery
+  awards: jsonb("awards"), // Awards and recognition entries
+  trainingMaterials: jsonb("training_materials"), // Training materials library
+  certificationPortfolio: jsonb("certification_portfolio"), // Certification portfolio with images
+  externalPortfolioUrl: text("external_portfolio_url"), // Link to external portfolio website
   featured: boolean("featured").default(false),
   rating: integer("rating").default(0),
   reviewCount: integer("review_count").default(0),

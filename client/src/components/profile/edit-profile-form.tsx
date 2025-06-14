@@ -151,6 +151,14 @@ export default function EditProfileForm() {
   const [showWorkExpForm, setShowWorkExpForm] = useState(false);
   const [showTestimonialForm, setShowTestimonialForm] = useState(false);
 
+  const [awards, setAwards] = useState<any[]>([]);
+  const [trainingMaterials, setTrainingMaterials] = useState<any[]>([]);
+  const [certificationPortfolio, setCertificationPortfolio] = useState<any[]>([]);
+
+  const [showAwardForm, setShowAwardForm] = useState(false);
+  const [showTrainingMaterialForm, setShowTrainingMaterialForm] = useState(false);
+  const [showCertificationPortfolioForm, setShowCertificationPortfolioForm] = useState(false);
+
   // Set up form for professional profile
   const professionalForm = useForm<z.infer<typeof professionalProfileFormSchema>>({
     resolver: zodResolver(professionalProfileFormSchema),
@@ -233,6 +241,43 @@ export default function EditProfileForm() {
           console.error("Error parsing testimonial data:", e);
           setTestimonials([]);
         }
+      }
+
+      // Initialize new features from profile data
+      if (professionalProfile.awards) {
+          try {
+              const awardsData = typeof professionalProfile.awards === 'string'
+                  ? JSON.parse(professionalProfile.awards)
+                  : professionalProfile.awards;
+              setAwards(Array.isArray(awardsData) ? awardsData : []);
+          } catch (e) {
+              console.error("Error parsing awards data:", e);
+              setAwards([]);
+          }
+      }
+
+      if (professionalProfile.trainingMaterials) {
+          try {
+              const trainingMaterialsData = typeof professionalProfile.trainingMaterials === 'string'
+                  ? JSON.parse(professionalProfile.trainingMaterials)
+                  : professionalProfile.trainingMaterials;
+              setTrainingMaterials(Array.isArray(trainingMaterialsData) ? trainingMaterialsData : []);
+          } catch (e) {
+              console.error("Error parsing training materials data:", e);
+              setTrainingMaterials([]);
+          }
+      }
+
+      if (professionalProfile.certificationPortfolio) {
+          try {
+              const certificationPortfolioData = typeof professionalProfile.certificationPortfolio === 'string'
+                  ? JSON.parse(professionalProfile.certificationPortfolio)
+                  : professionalProfile.certificationPortfolio;
+              setCertificationPortfolio(Array.isArray(certificationPortfolioData) ? certificationPortfolioData : []);
+          } catch (e) {
+              console.error("Error parsing certification portfolio data:", e);
+              setCertificationPortfolio([]);
+          }
       }
 
       professionalForm.reset({
@@ -463,37 +508,103 @@ export default function EditProfileForm() {
   };
 
   const handleAddTestimonial = () => {
-    const testimonial = professionalForm.getValues("newTestimonial");
-    // Make testimonials more flexible - only require client name at minimum
-    if (!testimonial || !testimonial.clientName) {
-      toast({
-        title: "Client name required",
-        description: "Please enter at least the client name",
-        variant: "destructive"
-      });
-      return;
+    const newTestimonialData = professionalForm.getValues("newTestimonial");
+
+    if (newTestimonialData && (newTestimonialData.clientName || newTestimonialData.text)) {
+      const testimonialToAdd = {
+        id: Date.now(),
+        clientName: newTestimonialData.clientName || "",
+        company: newTestimonialData.company || "",
+        text: newTestimonialData.text || "",
+        date: newTestimonialData.date || new Date().toISOString().split('T')[0]
+      };
+
+      setTestimonials(prev => [...prev, testimonialToAdd]);
+
+      // Reset form
+      professionalForm.setValue("newTestimonial", {});
+      setShowTestimonialForm(false);
     }
-
-    // Add to testimonials array
-    setTestimonials([...testimonials, testimonial]);
-
-    // Reset form
-    professionalForm.setValue("newTestimonial.clientName", "");
-    professionalForm.setValue("newTestimonial.company", "");
-    professionalForm.setValue("newTestimonial.text", "");
-    professionalForm.setValue("newTestimonial.date", "");
-
-    // Hide form
-    setShowTestimonialForm(false);
-
-    toast({
-      title: "Testimonial added",
-      description: "The client testimonial has been added to your profile"
-    });
   };
 
-  const handleRemoveTestimonial = (index: number) => {
-    setTestimonials(testimonials.filter((_, i) => i !== index));
+  const handleAddAward = () => {
+    const newAwardData = professionalForm.getValues("newAward");
+
+    if (newAwardData && (newAwardData.title || newAwardData.organization)) {
+      const awardToAdd = {
+        id: Date.now(),
+        title: newAwardData.title || "",
+        organization: newAwardData.organization || "",
+        year: newAwardData.year || "",
+        description: newAwardData.description || "",
+        imageUrl: newAwardData.imageUrl || ""
+      };
+
+      setAwards(prev => [...prev, awardToAdd]);
+
+      // Reset form
+      professionalForm.setValue("newAward", {});
+      setShowAwardForm(false);
+    }
+  };
+
+  const handleAddTrainingMaterial = () => {
+    const newMaterialData = professionalForm.getValues("newTrainingMaterial");
+
+    if (newMaterialData && (newMaterialData.title || newMaterialData.description)) {
+      const materialToAdd = {
+        id: Date.now(),
+        title: newMaterialData.title || "",
+        description: newMaterialData.description || "",
+        type: newMaterialData.type || "",
+        url: newMaterialData.url || "",
+        fileUrl: newMaterialData.fileUrl || ""
+      };
+
+      setTrainingMaterials(prev => [...prev, materialToAdd]);
+
+      // Reset form
+      professionalForm.setValue("newTrainingMaterial", {});
+      setShowTrainingMaterialForm(false);
+    }
+  };
+
+  const handleAddCertificationPortfolio = () => {
+    const newCertData = professionalForm.getValues("newCertificationPortfolio");
+
+    if (newCertData && (newCertData.name || newCertData.issuer)) {
+      const certToAdd = {
+        id: Date.now(),
+        name: newCertData.name || "",
+        issuer: newCertData.issuer || "",
+        year: newCertData.year || "",
+        description: newCertData.description || "",
+        imageUrl: newCertData.imageUrl || "",
+        verificationUrl: newCertData.verificationUrl || ""
+      };
+
+      setCertificationPortfolio(prev => [...prev, certToAdd]);
+
+      // Reset form
+      professionalForm.setValue("newCertificationPortfolio", {});
+      setShowCertificationPortfolioForm(false);
+    }
+  };
+
+  const removeTestimonial = (indexToRemove: number) => {
+    setTestimonials(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
+  const removeAward = (indexToRemove: number) => {
+    setAwards(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
+  const removeTrainingMaterial = (indexToRemove: number) => {
+    setTrainingMaterials(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
+  const removeCertificationPortfolio = (indexToRemove: number) => {
+    setCertificationPortfolio(prev => prev.filter((_, index) => index !== indexToRemove));
   };
 
   // BUG KILLER: Helper function to sanitize numeric fields
@@ -1671,9 +1782,498 @@ export default function EditProfileForm() {
                 )}
               />
             </div>
-          </div>
 
-          <div className="flex flex-col gap-4 items-end">
+            {/* Awards & Recognition Section */}
+            <div className="mt-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Awards & Recognition</h3>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowAwardForm(!showAwardForm)}
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Add Award
+                </Button>
+              </div>
+
+              {awards.length > 0 && (
+                <div className="grid gap-4 mb-4">
+                  {awards.map((award, index) => (
+                    <div key={award.id || index} className="p-4 border rounded-lg bg-muted/50">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h4 className="font-medium">{award.title}</h4>
+                          {award.organization && (
+                            <p className="text-sm text-muted-foreground">
+                              {award.organization} {award.year && `• ${award.year}`}
+                            </p>
+                          )}
+                          {award.description && (
+                            <p className="text-sm mt-2">{award.description}</p>
+                          )}
+                          {award.imageUrl && (
+                            <p className="text-xs text-blue-600 mt-1">
+                              Image: {award.imageUrl}
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeAward(index)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {showAwardForm && (
+                <div className="p-4 border rounded-md bg-muted/50 mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={professionalForm.control}
+                      name="newAward.title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Award Title</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. Excellence in Training Award" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={professionalForm.control}
+                      name="newAward.organization"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Awarding Organization</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. International Training Institute" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <FormField
+                      control={professionalForm.control}
+                      name="newAward.year"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Year</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. 2023" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={professionalForm.control}
+                      name="newAward.imageUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Award Image URL (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://example.com/award-image.jpg" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={professionalForm.control}
+                    name="newAward.description"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Describe the award and what it recognizes..." 
+                            {...field} 
+                            value={field.value || ''}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button 
+                    type="button" 
+                    onClick={handleAddAward} 
+                    className="mt-4 w-full"
+                  >
+                    <Plus className="mr-2 h-4 w-4" /> Add Award
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Training Materials Library Section */}
+            <div className="mt-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Training Materials Library</h3>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowTrainingMaterialForm(!showTrainingMaterialForm)}
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Add Material
+                </Button>
+              </div>
+
+              {trainingMaterials.length > 0 && (
+                <div className="grid gap-4 mb-4">
+                  {trainingMaterials.map((material, index) => (
+                    <div key={material.id || index} className="p-4 border rounded-lg bg-muted/50">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h4 className="font-medium">{material.title}</h4>
+                          {material.type && (
+                            <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mt-1">
+                              {material.type}
+                            </span>
+                          )}
+                          {material.description && (
+                            <p className="text-sm mt-2">{material.description}</p>
+                          )}
+                          {material.url && (
+                            <p className="text-xs text-blue-600 mt-1">
+                              URL: {material.url}
+                            </p>
+                          )}
+                          {material.fileUrl && (
+                            <p className="text-xs text-green-600 mt-1">
+                              File: {material.fileUrl}
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"Applying the provided changes to the original code to add new features and functionalities to the professional profile edit section.                  onClick={() => removeTrainingMaterial(index)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {showTrainingMaterialForm && (
+                <div className="p-4 border rounded-md bg-muted/50 mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={professionalForm.control}
+                      name="newTrainingMaterial.title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Material Title</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. Leadership Workshop Manual" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={professionalForm.control}
+                      name="newTrainingMaterial.type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Material Type</FormLabel>
+                          <FormControl>
+                            <select 
+                              {...field} 
+                              className="w-full p-2 border border-gray-300 rounded-md"
+                            >
+                              <option value="">Select Type</option>
+                              <option value="Course">Course</option>
+                              <option value="Workshop">Workshop</option>
+                              <option value="Manual">Manual</option>
+                              <option value="Video">Video</option>
+                              <option value="Presentation">Presentation</option>
+                              <option value="Template">Template</option>
+                              <option value="Assessment">Assessment</option>
+                              <option value="Workbook">Workbook</option>
+                            </select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={professionalForm.control}
+                    name="newTrainingMaterial.description"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Describe the training material and its purpose..." 
+                            {...field} 
+                            value={field.value || ''}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <FormField
+                      control={professionalForm.control}
+                      name="newTrainingMaterial.url"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>External URL (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://example.com/material" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={professionalForm.control}
+                      name="newTrainingMaterial.fileUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>File URL (Optional)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Upload file URL or cloud storage link" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <Button 
+                    type="button" 
+                    onClick={handleAddTrainingMaterial} 
+                    className="mt-4 w-full"
+                  >
+                    <Plus className="mr-2 h-4 w-4" /> Add Training Material
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Certification Portfolio Section */}
+            <div className="mt-8">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Certification Portfolio</h3>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowCertificationPortfolioForm(!showCertificationPortfolioForm)}
+                >
+                  <Plus className="mr-2 h-4 w-4" /> Add Certification
+                </Button>
+              </div>
+
+              {certificationPortfolio.length > 0 && (
+                <div className="grid gap-4 mb-4">
+                  {certificationPortfolio.map((cert, index) => (
+                    <div key={cert.id || index} className="p-4 border rounded-lg bg-muted/50">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h4 className="font-medium">{cert.name}</h4>
+                          {cert.issuer && (
+                            <p className="text-sm text-muted-foreground">
+                              {cert.issuer} {cert.year && `• ${cert.year}`}
+                            </p>
+                          )}
+                          {cert.description && (
+                            <p className="text-sm mt-2">{cert.description}</p>
+                          )}
+                          {cert.imageUrl && (
+                            <p className="text-xs text-blue-600 mt-1">
+                              Certificate Image: {cert.imageUrl}
+                            </p>
+                          )}
+                          {cert.verificationUrl && (
+                            <p className="text-xs text-green-600 mt-1">
+                              Verification: {cert.verificationUrl}
+                            </p>
+                          )}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeCertificationPortfolio(index)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {showCertificationPortfolioForm && (
+                <div className="p-4 border rounded-md bg-muted/50 mb-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={professionalForm.control}
+                      name="newCertificationPortfolio.name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Certification Name</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. Certified Professional in Learning and Performance" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={professionalForm.control}
+                      name="newCertificationPortfolio.issuer"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Issuing Organization</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. Association for Talent Development" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <FormField
+                      control={professionalForm.control}
+                      name="newCertificationPortfolio.year"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Year Obtained</FormLabel>
+                          <FormControl>
+                            <Input placeholder="e.g. 2023" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={professionalForm.control}
+                      name="newCertificationPortfolio.imageUrl"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Certificate Image URL</FormLabel>
+                          <FormControl>
+                            <Input placeholder="https://example.com/certificate.jpg" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={professionalForm.control}
+                    name="newCertificationPortfolio.description"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Textarea 
+                            placeholder="Describe what this certification demonstrates..." 
+                            {...field} 
+                            value={field.value || ''}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={professionalForm.control}
+                    name="newCertificationPortfolio.verificationUrl"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <FormLabel>Verification URL (Optional)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="https://verify.organization.com/certification/123" 
+                            {...field} 
+                            value={field.value || ''}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Link to verify the authenticity of this certification
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button 
+                    type="button" 
+                    onClick={handleAddCertificationPortfolio} 
+                    className="mt-4 w-full"
+                  >
+                    <Plus className="mr-2 h-4 w-4" /> Add Certification
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* External Portfolio Link Section */}
+            <div className="mt-8">
+                <h3 className="text-lg font-semibold mb-4">External Portfolio Link</h3>
+                <FormField
+                    control={professionalForm.control}
+                    name="externalPortfolioUrl"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Portfolio Website</FormLabel>
+                            <FormControl>
+                                <Input placeholder="e.g. https://yourportfolio.com" {...field} value={field.value || ''} />
+                            </FormControl>
+                            <FormDescription>
+                                Link to your personal portfolio website.
+                            </FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-col gap-4 items-end">
             {/* Debug info for professional profile form */}
             <div className="text-xs text-red-500 mb-2">
               <div>isSubmitting: {isSubmitting ? "true" : "false"}</div>

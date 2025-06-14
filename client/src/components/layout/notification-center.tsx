@@ -33,17 +33,8 @@ export default function NotificationCenter() {
     // Fetch initial notifications
     fetchNotifications();
 
-    // Listen for real-time notifications
-    if (socket) {
-      socket.addEventListener('message', (event) => {
-        const data = JSON.parse(event.data);
-        if (data.type === 'new_notification') {
-          setNotifications(prev => [data.data, ...prev]);
-          setUnreadCount(prev => prev + 1);
-        }
-      });
-    }
-  }, [user, socket]);
+    // Real-time notifications disabled
+  }, [user]);
 
   const fetchNotifications = async () => {
     try {

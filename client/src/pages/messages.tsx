@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
-import { useWebSocket } from "@/hooks/use-websocket";
+
 import { 
   Card, 
   CardContent,
@@ -22,7 +22,7 @@ import type { Message, User as UserType } from "@shared/schema";
 export default function Messages() {
   const [, setLocation] = useLocation();
   const { user, isLoading: isLoadingAuth } = useAuth();
-  const { isConnected, connectionError } = useWebSocket();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   
@@ -139,17 +139,7 @@ export default function Messages() {
           Stay connected with your professional network
         </p>
         
-        {connectionError && (
-          <div className="mt-4 p-4 bg-destructive/10 text-destructive rounded-lg">
-            Connection error: {connectionError}. Messages may not update in real-time.
-          </div>
-        )}
-        
-        {!isConnected && (
-          <div className="mt-4 p-4 bg-yellow-100 text-yellow-800 rounded-lg">
-            Connecting to message service...
-          </div>
-        )}
+
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6 h-[600px]">

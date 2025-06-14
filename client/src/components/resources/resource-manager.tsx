@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Plus, GripVertical, Trash2 } from 'lucide-react';
 import { Resource } from '@shared/schema';
-import { ReorderableList, FileUploadZone } from '@/components/dnd';
+
 import { useToast } from '@/hooks/use-toast';
 
 interface ResourceManagerProps {

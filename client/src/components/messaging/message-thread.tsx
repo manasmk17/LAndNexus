@@ -101,14 +101,7 @@ export default function MessageThread({ otherUserId }: MessageThreadProps) {
       return;
     }
 
-    // Check connection status
-    if (connectionError) {
-      toast({
-        title: "Connection issue",
-        description: "Real-time messaging may be affected. Your message will still be sent.",
-        variant: "default",
-      });
-    }
+
     
     sendMessageMutation.mutate({
       content: newMessage.trim(),
@@ -205,11 +198,7 @@ export default function MessageThread({ otherUserId }: MessageThreadProps) {
           <h3 className="font-semibold">{getDisplayName()}</h3>
           <p className="text-sm text-muted-foreground capitalize">{otherUser.userType}</p>
         </div>
-        {!isConnected && (
-          <div className="ml-auto">
-            <span className="text-xs text-amber-600">Offline</span>
-          </div>
-        )}
+
       </div>
 
       {/* Messages */}

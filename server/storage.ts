@@ -1445,7 +1445,8 @@ export class MemStorage implements IStorage {
 
   private cleanupExpiredCache(): void {
     const now = Date.now();
-    for (const [key, cached] of this.queryCache.entries()) {
+    const entries = Array.from(this.queryCache.entries());
+    for (const [key, cached] of entries) {
       if (now - cached.timestamp > this.CACHE_TTL) {
         this.queryCache.delete(key);
       }
@@ -1455,7 +1456,8 @@ export class MemStorage implements IStorage {
   private invalidateCache(pattern?: string): void {
     if (pattern) {
       // Invalidate specific cache entries
-      for (const key of this.queryCache.keys()) {
+      const keys = Array.from(this.queryCache.keys());
+      for (const key of keys) {
         if (key.includes(pattern)) {
           this.queryCache.delete(key);
         }
@@ -1779,7 +1781,10 @@ export class MemStorage implements IStorage {
     const newReview: Review = {
       ...review,
       id,
-      createdAt: new Date()
+      createdAt: new Date(),
+      consultationId: review.consultationId ?? null,
+      comment: review.comment ?? null,
+      isPublic: review.isPublic ?? null
     };
     this.reviews.set(id, newReview);
 
@@ -1867,7 +1872,8 @@ export class MemStorage implements IStorage {
     const id = this.notificationTypeId++;
     const newType: NotificationType = {
       ...type,
-      id
+      id,
+      description: type.description ?? null
     };
     this.notificationTypes.set(id, newType);
     return newType;
@@ -1896,7 +1902,8 @@ export class MemStorage implements IStorage {
       ...notification,
       id,
       read: false,
-      createdAt: new Date()
+      createdAt: new Date(),
+      link: notification.link ?? null
     };
     this.notifications.set(id, newNotification);
     return newNotification;
@@ -1951,7 +1958,9 @@ export class MemStorage implements IStorage {
       const id = this.notificationPreferenceId++;
       const newPreference: NotificationPreference = {
         ...preference,
-        id
+        id,
+        email: preference.email ?? null,
+        inApp: preference.inApp ?? null
       };
       this.notificationPreferences.set(id, newPreference);
       return newPreference;
@@ -2009,7 +2018,8 @@ export class MemStorage implements IStorage {
   }
 
   async revokeAllUserTokens(userId: number): Promise<boolean> {
-    for (const [token, authToken] of this.authTokens.entries()) {
+    const entries = Array.from(this.authTokens.entries());
+    for (const [token, authToken] of entries) {
       if (authToken.userId === userId) {
         authToken.isRevoked = true;
         this.authTokens.set(token, authToken);
@@ -2022,7 +2032,8 @@ export class MemStorage implements IStorage {
     const now = new Date();
     let cleanedCount = 0;
 
-    for (const [token, authToken] of this.authTokens.entries()) {
+    const entries = Array.from(this.authTokens.entries());
+    for (const [token, authToken] of entries) {
       if (authToken.expiresAt < now || authToken.isRevoked) {
         this.authTokens.delete(token);
         cleanedCount++;
@@ -2040,21 +2051,39 @@ export class MemStorage implements IStorage {
         id: 21,
         name: "Starter",
         description: null,
-        userType: "professional",
-        monthlyPriceUsd: 0,
-        yearlyPriceUsd: 0,
-        monthlyPriceAed: 0,
-        yearlyPriceAed: 0,
-        jobApplicationLimit: 0,
-        teamMemberLimit: null,
-        resourceDownloadLimit: 3,
-        isActive: true
+        priceMonthlyUSD: 0,
+        priceYearlyUSD: 0,
+        features: {},
+        planType: "free" as const,
+        createdAt: new Date(),
+        isActive: true,
+        applicationLimit: 0,
+        featuredJobsLimit: null,
+        prioritySupportAccess: false,
+        customBrandingAccess: false,
+        advancedAnalyticsAccess: false,
+        bulkJobPostingAccess: false,
+        resumeDatabaseAccess: false,
+        professionalNetworkingAccess: false,
+        exclusiveContentAccess: false,
+        earlyAccessToFeatures: false,
+        dedicatedAccountManager: false,
+        videoInterviewingAccess: false,
+        aiRecommendationsAccess: false,
+        customIntegrationsAccess: false,
+        priorityCustomerSupport: false,
+        advancedReportingAccess: false,
+        teamCollaborationAccess: false,
+        premiumResourceAccess: false,
+        mentorshipProgramAccess: false,
+        certificationProgramAccess: false,
+        exclusiveEventsAccess: false,
+        sortOrder: 1
       },
       {
         id: 22,
         name: "Professional",
         description: null,
-        userType: "professional",
         monthlyPriceUsd: 1900,
         yearlyPriceUsd: 19000,
         monthlyPriceAed: 7000,

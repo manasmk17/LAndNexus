@@ -42,7 +42,6 @@ import {
 } from "./ai-matching";
 import { registerEscrowRoutes } from "./escrow-routes";
 import { registerSubscriptionRoutes } from "./subscription-routes";
-import { registerSettingsRoutes } from "./settings-routes";
 import { subscriptionService } from "./subscription-service";
 import { requireUsageLimit, incrementUserUsage, canUserPerformAction } from "./feature-gate";
 import { z } from "zod";
@@ -4865,9 +4864,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register subscription payment routes
   registerSubscriptionRoutes(app);
-
-  // Register settings routes
-  registerSettingsRoutes(app);
   
   // Initialize subscription plans
   await subscriptionService.initializeSubscriptionPlans();

@@ -109,17 +109,76 @@ export const insertProfessionalExpertiseSchema = createInsertSchema(professional
   id: true,
 });
 
-// Certifications
+// Enhanced Certifications with Portfolio Features
 export const certifications = pgTable("certifications", {
   id: serial("id").primaryKey(),
   professionalId: integer("professional_id").notNull().references(() => professionalProfiles.id),
   name: text("name").notNull(),
   issuer: text("issuer").notNull(),
   year: integer("year").notNull(),
+  imageUrl: text("image_url"), // Certificate image
+  description: text("description"), // Additional details
+  verificationUrl: text("verification_url"), // Link to verify certificate
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const insertCertificationSchema = createInsertSchema(certifications).omit({
   id: true,
+  createdAt: true,
+});
+
+// Awards & Recognition Gallery
+export const awards = pgTable("awards", {
+  id: serial("id").primaryKey(),
+  professionalId: integer("professional_id").notNull().references(() => professionalProfiles.id),
+  title: text("title").notNull(),
+  organization: text("organization").notNull(),
+  year: integer("year").notNull(),
+  description: text("description"),
+  imageUrl: text("image_url"), // Award image/certificate
+  category: text("category"), // e.g., "Training Excellence", "Leadership", etc.
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertAwardSchema = createInsertSchema(awards).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Training Materials Library
+export const trainingMaterials = pgTable("training_materials", {
+  id: serial("id").primaryKey(),
+  professionalId: integer("professional_id").notNull().references(() => professionalProfiles.id),
+  title: text("title").notNull(),
+  type: text("type").notNull(), // "document", "video", "presentation", "course"
+  description: text("description"),
+  url: text("url"), // External link
+  fileUrl: text("file_url"), // Uploaded file path
+  tags: text("tags"), // Comma-separated tags
+  isPublic: boolean("is_public").default(true), // Whether visible to others
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertTrainingMaterialSchema = createInsertSchema(trainingMaterials).omit({
+  id: true,
+  createdAt: true,
+});
+
+// External Portfolio Links
+export const portfolioLinks = pgTable("portfolio_links", {
+  id: serial("id").primaryKey(),
+  professionalId: integer("professional_id").notNull().references(() => professionalProfiles.id),
+  title: text("title").notNull(), // e.g., "Personal Website", "LinkedIn"
+  url: text("url").notNull(),
+  type: text("type").notNull(), // "website", "linkedin", "portfolio", "blog", "other"
+  description: text("description"),
+  isPrimary: boolean("is_primary").default(false), // Primary portfolio link
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertPortfolioLinkSchema = createInsertSchema(portfolioLinks).omit({
+  id: true,
+  createdAt: true,
 });
 
 // Company Profiles

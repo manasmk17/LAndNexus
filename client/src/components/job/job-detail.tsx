@@ -24,8 +24,7 @@ import {
   Users, 
   CheckCircle, 
   Bookmark,
-  MessageSquare,
-  ExternalLink
+  MessageSquare
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";

@@ -103,9 +103,9 @@ import ImageGallery from "@/components/profile/image-gallery";
 import type { 
   ProfessionalProfile, 
   Expertise, 
-  Certification
+  Certification, 
+  Resource 
 } from "@shared/schema";
-import { format } from 'date-fns';
 
 interface ProfessionalProfileProps {
   professionalId: number;
@@ -335,7 +335,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                 </span>
               </TabsTrigger>
               {profile.videoIntroUrl && <TabsTrigger value="video">Video Introduction</TabsTrigger>}
-
+              {resources && resources.length > 0 && <TabsTrigger value="resources">Resources</TabsTrigger>}
             </TabsList>
 
             <TabsContent value="about" className="mt-6">
@@ -550,51 +550,38 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                     <Briefcase className="mr-2 h-5 w-5" />
                     Work Experience
                   </h2>
-                  {(() => {
-                    // Parse work experience from string if needed
-                    let workExperience = profile.workExperience;
-                    if (typeof workExperience === 'string') {
-                      try {
-                        workExperience = JSON.parse(workExperience);
-                      } catch (e) {
-                        console.error('Error parsing work experience:', e);
-                        workExperience = [];
-                      }
-                    }
-
-                    return workExperience && Array.isArray(workExperience) && workExperience.length > 0 ? (
-                      <div className="space-y-4">
-                        {workExperience.map((exp, index) => (
-                          <div key={index} className="p-4 border rounded-lg bg-gray-50">
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <h3 className="font-semibold text-lg">{exp.position || 'Position'}</h3>
-                                <p className="text-gray-600">{exp.company || 'Company'}</p>
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                {exp.startDate && (
-                                  <span>
-                                    {exp.startDate} - {exp.current ? 'Present' : exp.endDate || 'Present'}
-                                  </span>
-                                )}
-                              </div>
+                  {profile.workExperiences && profile.workExperiences.length > 0 ? (
+                    <div className="space-y-4">
+                      {profile.workExperiences.map((exp, index) => (
+                        <div key={index} className="p-4 border rounded-lg bg-gray-50">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h3 className="font-semibold text-lg">{exp.position || 'Position'}</h3>
+                              <p className="text-gray-600">{exp.company || 'Company'}</p>
                             </div>
-                            {exp.description && (
-                              <p className="text-gray-700 whitespace-pre-line">{exp.description}</p>
-                            )}
-                            {exp.current && (
-                              <Badge className="mt-2 bg-green-100 text-green-800">Current Position</Badge>
-                            )}
+                            <div className="text-sm text-gray-500">
+                              {exp.startDate && (
+                                <span>
+                                  {exp.startDate} - {exp.current ? 'Present' : exp.endDate || 'Present'}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="p-6 text-center bg-gray-50 rounded-lg">
-                        <Briefcase className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-                        <p className="text-gray-500">No work experience listed</p>
-                      </div>
-                    );
-                  })()}
+                          {exp.description && (
+                            <p className="text-gray-700 whitespace-pre-line">{exp.description}</p>
+                          )}
+                          {exp.current && (
+                            <Badge className="mt-2 bg-green-100 text-green-800">Current Position</Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-6 text-center bg-gray-50 rounded-lg">
+                      <Briefcase className="mx-auto h-12 w-12 text-gray-400 mb-3" />
+                      <p className="text-gray-500">No work experience listed</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Testimonials Section */}
@@ -603,59 +590,46 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                     <MessageSquare className="mr-2 h-5 w-5" />
                     Client Testimonials
                   </h2>
-                  {(() => {
-                    // Parse testimonials from string if needed
-                    let testimonials = profile.testimonials;
-                    if (typeof testimonials === 'string') {
-                      try {
-                        testimonials = JSON.parse(testimonials);
-                      } catch (e) {
-                        console.error('Error parsing testimonials:', e);
-                        testimonials = [];
-                      }
-                    }
-
-                    return testimonials && Array.isArray(testimonials) && testimonials.length > 0 ? (
-                      <div className="space-y-4">
-                        {testimonials.map((testimonial, index) => (
-                          <div key={index} className="p-4 border rounded-lg bg-blue-50 border-blue-200">
-                            <div className="flex items-start mb-3">
-                              <div className="flex-1">
-                                <div className="flex items-center mb-2">
-                                  <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3">
-                                    <span className="text-white font-semibold text-sm">
-                                      {testimonial.clientName ? testimonial.clientName.charAt(0).toUpperCase() : 'C'}
-                                    </span>
-                                  </div>
-                                  <div>
-                                    <h4 className="font-semibold text-gray-900">
-                                      {testimonial.clientName || 'Anonymous Client'}
-                                    </h4>
-                                    {testimonial.company && (
-                                      <p className="text-sm text-gray-600">{testimonial.company}</p>
-                                    )}
-                                    {testimonial.date && (
-                                      <p className="text-xs text-gray-500">{testimonial.date}</p>
-                                    )}
-                                  </div>
+                  {profile.testimonials && profile.testimonials.length > 0 ? (
+                    <div className="space-y-4">
+                      {profile.testimonials.map((testimonial, index) => (
+                        <div key={index} className="p-4 border rounded-lg bg-blue-50 border-blue-200">
+                          <div className="flex items-start mb-3">
+                            <div className="flex-1">
+                              <div className="flex items-center mb-2">
+                                <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center mr-3">
+                                  <span className="text-white font-semibold text-sm">
+                                    {testimonial.clientName ? testimonial.clientName.charAt(0).toUpperCase() : 'C'}
+                                  </span>
+                                </div>
+                                <div>
+                                  <h4 className="font-semibold text-gray-900">
+                                    {testimonial.clientName || 'Anonymous Client'}
+                                  </h4>
+                                  {testimonial.company && (
+                                    <p className="text-sm text-gray-600">{testimonial.company}</p>
+                                  )}
+                                  {testimonial.date && (
+                                    <p className="text-xs text-gray-500">{testimonial.date}</p>
+                                  )}
                                 </div>
                               </div>
                             </div>
-                            {testimonial.text && (
-                              <blockquote className="text-gray-700 italic border-l-4 border-blue-400 pl-4">
-                                "{testimonial.text}"
-                              </blockquote>
-                            )}
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="p-6 text-center bg-gray-50 rounded-lg">
-                        <MessageSquare className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-                        <p className="text-gray-500">No client testimonials yet</p>
-                      </div>
-                    );
-                  })()}
+                          {testimonial.text && (
+                            <blockquote className="text-gray-700 italic border-l-4 border-blue-400 pl-4">
+                              "{testimonial.text}"
+                            </blockquote>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-6 text-center bg-gray-50 rounded-lg">
+                      <MessageSquare className="mx-auto h-12 w-12 text-gray-400 mb-3" />
+                      <p className="text-gray-500">No client testimonials yet</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </TabsContent>
@@ -667,7 +641,29 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
               />
             </TabsContent>
 
-
+            {resources && resources.length > 0 && (
+              <TabsContent value="resources" className="mt-6">
+                <h2 className="text-xl font-semibold mb-4">Resources & Articles</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {resources.map(resource => (
+                    <Card key={resource.id}>
+                      <CardHeader className="p-4">
+                        <CardTitle className="text-lg">{resource.title}</CardTitle>
+                        <CardDescription>
+                          {resource.resourceType.charAt(0).toUpperCase() + resource.resourceType.slice(1)}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="p-4 pt-0">
+                        <p className="text-gray-700 line-clamp-2 mb-3">{resource.description}</p>
+                        <Link href={`/resource/${resource.id}`}>
+                          <Button variant="outline" size="sm">View Resource</Button>
+                        </Link>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+            )}
           </Tabs>
         </div>
 

@@ -527,12 +527,8 @@ export default function EditProfileForm() {
       const formData = new FormData();
 
       // Prepare work experience and testimonials as JSON
-      // Ensure work experience and testimonials are valid arrays before converting to JSON
-      const validWorkExperiences = Array.isArray(workExperiences) ? workExperiences : [];
-      const validTestimonials = Array.isArray(testimonials) ? testimonials : [];
-
-      const workExperienceJSON = JSON.stringify(validWorkExperiences);
-      const testimonialsJSON = JSON.stringify(validTestimonials);
+      const workExperienceJSON = JSON.stringify(workExperiences);
+      const testimonialsJSON = JSON.stringify(testimonials);
 
       // Sanitize numeric values before submission - BUG KILLER
       console.log("BUG KILLER: Sanitizing numeric values for profile submission");

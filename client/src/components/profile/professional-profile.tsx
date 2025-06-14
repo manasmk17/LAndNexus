@@ -1,3 +1,4 @@
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { 
@@ -138,39 +139,26 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
   });
 
   // Fetch work experiences
-  const { 
-    data: workExperiences, 
-    isLoading: isLoadingWorkExperiences 
-  } = useQuery<any[]>({
-    queryKey: [`/api/professional-profiles/${professionalId}/work-experiences`],
-    enabled: !!profile,
-    retry: false,
-    select: (data) => data || [],
-  });
+  // const { 
+  //   data: workExperiences, 
+  //   isLoading: isLoadingWorkExperiences 
+  // } = useQuery<any[]>({
+  //   queryKey: [`/api/professional-profiles/${professionalId}/work-experiences`],
+  //   enabled: !!profile,
+  //   retry: false,
+  //   select: (data) => data || [],
+  // });
 
-  // Fetch testimonials
-  const { 
-    data: testimonials, 
-    isLoading: isLoadingTestimonials 
-  } = useQuery<any[]>({
-    queryKey: [`/api/professional-profiles/${professionalId}/testimonials`],
-    enabled: !!profile,
-    retry: false,
-    select: (data) => data || [],
-  });
-
-  // Type-safe resource query
-  const { 
-    data: resources = [] as Resource[],
-    isError: isResourcesError 
-  } = useQuery<Resource[], Error, Resource[]>({
-    queryKey: [`/api/professional-profiles/${professionalId}/resources`],
-    enabled: !!profile,
-    // Add default empty array to prevent JSON parsing error when empty response is returned
-    select: (data) => data || [],
-    // Use retry: false to prevent excessive retries on error
-    retry: false,
-  });
+  // // Fetch testimonials
+  // const { 
+  //   data: testimonials, 
+  //   isLoading: isLoadingTestimonials 
+  // } = useQuery<any[]>({
+  //   queryKey: [`/api/professional-profiles/${professionalId}/testimonials`],
+  //   enabled: !!profile,
+  //   retry: false,
+  //   select: (data) => data || [],
+  // });
 
   const handleMessageClick = () => {
     if (!user) {
@@ -562,14 +550,9 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                     <Briefcase className="mr-2 h-5 w-5" />
                     Work Experience
                   </h2>
-                  {isLoadingWorkExperiences ? (
+                  {profile.workExperiences && profile.workExperiences.length > 0 ? (
                     <div className="space-y-4">
-                      <Skeleton className="h-24 w-full" />
-                      <Skeleton className="h-24 w-full" />
-                    </div>
-                  ) : workExperiences && workExperiences.length > 0 ? (
-                    <div className="space-y-4">
-                      {workExperiences.map((exp, index) => (
+                      {profile.workExperiences.map((exp, index) => (
                         <div key={index} className="p-4 border rounded-lg bg-gray-50">
                           <div className="flex justify-between items-start mb-2">
                             <div>
@@ -607,14 +590,9 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                     <MessageSquare className="mr-2 h-5 w-5" />
                     Client Testimonials
                   </h2>
-                  {isLoadingTestimonials ? (
+                  {profile.testimonials && profile.testimonials.length > 0 ? (
                     <div className="space-y-4">
-                      <Skeleton className="h-32 w-full" />
-                      <Skeleton className="h-32 w-full" />
-                    </div>
-                  ) : testimonials && testimonials.length > 0 ? (
-                    <div className="space-y-4">
-                      {testimonials.map((testimonial, index) => (
+                      {profile.testimonials.map((testimonial, index) => (
                         <div key={index} className="p-4 border rounded-lg bg-blue-50 border-blue-200">
                           <div className="flex items-start mb-3">
                             <div className="flex-1">

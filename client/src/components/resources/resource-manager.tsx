@@ -8,7 +8,6 @@ import { useToast } from '@/hooks/use-toast';
 
 interface ResourceManagerProps {
   resources: Resource[];
-  onResourcesReordered?: (resources: Resource[]) => void;
   onResourceRemoved?: (resource: Resource) => void;
   onResourceAdded?: (resource: Resource) => void;
   onFileUpload?: (files: File[]) => Promise<void>;
@@ -19,7 +18,6 @@ interface ResourceManagerProps {
  */
 export function ResourceManager({
   resources,
-  onResourcesReordered,
   onResourceRemoved,
   onResourceAdded,
   onFileUpload
@@ -27,11 +25,12 @@ export function ResourceManager({
   const [items, setItems] = useState<Resource[]>(resources);
   const { toast } = useToast();
 
-  // Handle reordering of resources
-  const handleReorder = (reorderedItems: Resource[]) => {
-    setItems(reorderedItems);
-    if (onResourcesReordered) {
-      onResourcesReordered(reorderedItems);
+  // Handle removing resources
+  const handleRemove = (resource: Resource) => {
+    const updatedItems = items.filter(item => item.id !== resource.id);
+    setItems(updatedItems);
+    if (onResourceRemoved) {
+      onResourceRemoved(resource);
     }
   };
 
@@ -107,30 +106,32 @@ export function ResourceManager({
         </CardHeader>
         <CardContent>
           {/* File upload area */}
-          <div className="mb-6">
-            <FileUploadZone
-              onFilesAdded={handleFilesAdded}
-              maxFiles={5}
-              maxFileSizeMB={10}
-              acceptedFileTypes={['application/pdf', 'image/jpeg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']}
-              supportedFileTypesText="Supported formats: PDF, JPEG, PNG, DOC, DOCX"
+          <div className="mb-6 p-6 border-2 border-dashed border-muted-foreground/25 rounded-lg text-center">
+            <input
+              type="file"
+              multiple
+              accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                if (onFileUpload) {
+                  onFileUpload(files);
+                }
+              }}
+              className="w-full"
             />
+            <p className="text-sm text-muted-foreground mt-2">
+              Supported formats: PDF, JPEG, PNG, DOC, DOCX (max 10MB each)
+            </p>
           </div>
 
-          {/* Reorderable resource list */}
+          {/* Resource list */}
           <div className="space-y-2">
-            <div className="font-medium">Resource Order</div>
-            <ReorderableList
-              items={items}
-              keyExtractor={(item) => item.id}
-              onReorder={handleReorder}
-              className="space-y-2"
-              dragType="resource-item"
-              renderItem={(item) => (
-                <Card className="cursor-move">
+            <div className="font-medium">Current Resources</div>
+            <div className="space-y-2">
+              {items.map((item) => (
+                <Card key={item.id}>
                   <CardContent className="p-3 flex items-center justify-between">
                     <div className="flex items-center">
-                      <GripVertical className="h-5 w-5 text-gray-400 mr-2" />
                       <div>
                         <div className="font-medium">{item.title}</div>
                         <div className="text-sm text-gray-500">{item.resourceType}</div>
@@ -151,8 +152,8 @@ export function ResourceManager({
                     </Button>
                   </CardContent>
                 </Card>
-              )}
-            />
+              ))}
+            </div>
           </div>
 
           {/* Action button */}

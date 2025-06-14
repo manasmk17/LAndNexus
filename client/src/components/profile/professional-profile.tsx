@@ -347,7 +347,7 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                 </span>
               </TabsTrigger>
               {profile.videoIntroUrl && <TabsTrigger value="video">Video Introduction</TabsTrigger>}
-              {resources && resources.length > 0 && <TabsTrigger value="resources">Resources</TabsTrigger>}
+
             </TabsList>
 
             <TabsContent value="about" className="mt-6">

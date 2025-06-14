@@ -2151,6 +2151,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Internal server error" });
     }
   });
+
+  // Work Experience Routes
+  app.get("/api/professional-profiles/:id/work-experiences", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid profile ID" });
+      }
+      
+      const profile = await storage.getProfessionalProfile(id);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+      
+      // Return work experience from profile's workExperience field
+      const workExperiences = profile.workExperience || [];
+      res.json(Array.isArray(workExperiences) ? workExperiences : []);
+    } catch (err) {
+      console.error("Error fetching work experiences:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Testimonials Routes
+  app.get("/api/professional-profiles/:id/testimonials", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid profile ID" });
+      }
+      
+      const profile = await storage.getProfessionalProfile(id);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+      
+      // Return testimonials from profile's testimonials field
+      const testimonials = profile.testimonials || [];
+      res.json(Array.isArray(testimonials) ? testimonials : []);
+    } catch (err) {
+      console.error("Error fetching testimonials:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
   
   // Gallery Image Routes
   

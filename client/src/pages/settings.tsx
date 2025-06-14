@@ -107,7 +107,7 @@ export default function SettingsPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Settings</h1>
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Account</h1>
         <p className="text-slate-600">Manage your account preferences and settings</p>
       </div>
 

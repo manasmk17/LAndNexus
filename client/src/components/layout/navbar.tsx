@@ -152,9 +152,9 @@ function Navbar() {
                   </DropdownMenuItem>
 
                   <DropdownMenuItem asChild>
-                    <Link href="/edit-profile" className="cursor-pointer">
+                    <Link href="/settings" className="cursor-pointer">
                       <Settings className="me-2 h-4 w-4" />
-                      <span>{t("nav.profile")}</span>
+                      <span>Account</span>
                     </Link>
                   </DropdownMenuItem>
 
@@ -265,7 +265,7 @@ function Navbar() {
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         <Settings className="h-5 w-5" />
-                        <span>Settings</span>
+                        <span>Account</span>
                       </Link>
                       <button
                         onClick={() => {

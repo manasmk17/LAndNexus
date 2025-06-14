@@ -157,7 +157,7 @@ export default function Navbar() {
                     <DropdownMenuItem asChild>
                       <Link href="/settings" className="flex items-center cursor-pointer">
                         <Settings className="mr-2 h-4 w-4 text-slate-500" />
-                        <span>Settings</span>
+                        <span>Account</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>

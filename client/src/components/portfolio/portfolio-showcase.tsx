@@ -169,7 +169,7 @@ function AwardCard({ award, isOwner }: { award: any; isOwner: boolean }) {
         </div>
         <CardTitle className="text-lg">{award.title}</CardTitle>
         <CardDescription className="text-sm">
-          {award.awardingOrganization} • {format(new Date(award.dateReceived), 'MMM yyyy')}
+          {award.awardingOrganization} • {award.dateReceived ? format(new Date(award.dateReceived), 'MMM yyyy') : 'Date not specified'}
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-0">

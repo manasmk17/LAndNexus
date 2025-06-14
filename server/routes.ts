@@ -1781,7 +1781,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: user.id
       };
 
-      // BUG KILLER: Enhanced type conversion for numeric fields with NaN protection
       // Handle rate per hour (can be empty string, undefined, or a valid number)
       if (profileData.ratePerHour !== undefined) {
         if (profileData.ratePerHour === '' || profileData.ratePerHour === null) {
@@ -1790,7 +1789,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const parsedRate = Number(profileData.ratePerHour);
           profileData.ratePerHour = isNaN(parsedRate) ? null : parsedRate;
         }
-        console.log(`Rate per hour processed: ${profileData.ratePerHour} (original: ${req.body.ratePerHour})`);
       }
       
       // Handle years experience (can be empty string, undefined, or a valid number)
@@ -1801,7 +1799,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const parsedYears = Number(profileData.yearsExperience);
           profileData.yearsExperience = isNaN(parsedYears) ? null : parsedYears;
         }
-        console.log(`Years experience processed: ${profileData.yearsExperience} (original: ${req.body.yearsExperience})`);
       }
       
       // Keep availability as string but default to "Not specified" if empty

@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "@/lib/i18n";
-import { SEOMeta, createPricingSchema } from "@/components/seo/seo-meta";
+
 
 interface SubscriptionPlan {
   id: number;

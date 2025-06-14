@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 import { useTranslation } from "@/lib/i18n";
-import { SEOMeta } from "@/components/seo/seo-meta";
+
 import { SubscriptionPayment } from "@/components/payment/subscription-payment";
 import { CheckCircle, ArrowLeft } from "lucide-react";
 

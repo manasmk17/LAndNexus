@@ -368,8 +368,7 @@ export type InsertExpertise = z.infer<typeof insertExpertiseSchema>;
 export type ProfessionalExpertise = typeof professionalExpertise.$inferSelect;
 export type InsertProfessionalExpertise = z.infer<typeof insertProfessionalExpertiseSchema>;
 
-export type Certification = typeof certifications.$inferSelect;
-export type InsertCertification = z.infer<typeof insertCertificationSchema>;
+
 
 export type CompanyProfile = typeof companyProfiles.$inferSelect;
 export type InsertCompanyProfile = z.infer<typeof insertCompanyProfileSchema>;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { 
@@ -30,12 +30,31 @@ import {
   User,
   Calendar,
   Eye,
-  Tag
+  Tag,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/use-auth";
 import type { Resource, User as UserType, ResourceCategory } from "@shared/schema";
 import { ImageWithFallback } from "@/components/ui/image-with-fallback";
+
+// Custom hook for debounced search
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 export default function Resources() {
   const [location] = useLocation();
@@ -43,6 +62,11 @@ export default function Resources() {
   const [searchTerm, setSearchTerm] = useState("");
   const [resourceType, setResourceType] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(9);
+  
+  // Debounce search term to prevent excessive API calls
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
   
   // Get type and category from query parameters if any
   const params = new URLSearchParams(window.location.search);
@@ -68,14 +92,14 @@ export default function Resources() {
     queryKey: ["/api/resource-categories"],
   });
   
-  // Fetch resources with search and filter
+  // Fetch resources with search and filter using debounced search term
   const { 
     data: resources, 
     isLoading: isLoadingResources,
     error: resourcesError
   } = useQuery<Resource[]>({
     queryKey: ["/api/resources", { 
-      query: searchTerm, 
+      query: debouncedSearchTerm, 
       type: resourceType,
       categoryId: selectedCategory 
     }],
@@ -133,6 +157,18 @@ export default function Resources() {
   const sortedResources = resources 
     ? [...resources].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     : [];
+
+  // Calculate pagination
+  const totalItems = sortedResources.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentResources = sortedResources.slice(startIndex, endIndex);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm, resourceType, selectedCategory]);
   
   // Helper to get resource type icon
   const getResourceTypeIcon = (type: string) => {
@@ -355,10 +391,10 @@ export default function Resources() {
               <Button onClick={() => window.location.reload()}>Retry</Button>
             </CardContent>
           </Card>
-        ) : sortedResources.length > 0 ? (
+        ) : currentResources.length > 0 ? (
           // Resource cards
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sortedResources.map((resource) => (
+            {currentResources.map((resource) => (
               <Card key={resource.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                 <div className="w-full h-48 overflow-hidden">
                   <ImageWithFallback
@@ -431,13 +467,66 @@ export default function Resources() {
         )}
       </div>
       
-      {/* Pagination (simplified for now) */}
-      {sortedResources.length > 0 && (
-        <div className="flex justify-center mt-8">
-          <Button variant="outline" className="mx-1">1</Button>
-          <Button variant="outline" className="mx-1">2</Button>
-          <Button variant="outline" className="mx-1">3</Button>
-          <Button variant="outline" className="mx-1">Next</Button>
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center space-x-2 mt-8">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="flex items-center"
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Previous
+          </Button>
+          
+          <div className="flex items-center space-x-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(page => {
+                // Show first page, last page, current page, and pages around current
+                if (page === 1 || page === totalPages || 
+                    Math.abs(page - currentPage) <= 1) {
+                  return true;
+                }
+                return false;
+              })
+              .map((page, index, array) => {
+                // Add ellipsis if there's a gap
+                const showEllipsis = index > 0 && array[index - 1] < page - 1;
+                return (
+                  <div key={page} className="flex items-center">
+                    {showEllipsis && <span className="px-2 text-gray-500">...</span>}
+                    <Button
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(page)}
+                      className="w-10 h-10"
+                    >
+                      {page}
+                    </Button>
+                  </div>
+                );
+              })}
+          </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="flex items-center"
+          >
+            Next
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      )}
+      
+      {/* Results summary */}
+      {totalItems > 0 && (
+        <div className="text-center text-sm text-gray-500 mt-4">
+          Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of {totalItems} resources
         </div>
       )}
     </div>

@@ -27,21 +27,21 @@ export default function ResourceHub() {
         
         {/* Resource Categories */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-          <Link href="/resources?type=templates" className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+          <Link href="/resources?type=template" className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
             <div className="bg-blue-100 text-primary p-4 rounded-full mb-3">
               <FileText className="h-6 w-6" />
             </div>
             <h3 className="font-heading font-medium text-center">Templates</h3>
           </Link>
           
-          <Link href="/resources?type=articles" className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+          <Link href="/resources?type=article" className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
             <div className="bg-teal-100 text-teal-600 p-4 rounded-full mb-3">
               <BookOpen className="h-6 w-6" />
             </div>
             <h3 className="font-heading font-medium text-center">Articles</h3>
           </Link>
           
-          <Link href="/resources?type=videos" className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+          <Link href="/resources?type=video" className="flex flex-col items-center p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
             <div className="bg-amber-100 text-amber-600 p-4 rounded-full mb-3">
               <Video className="h-6 w-6" />
             </div>

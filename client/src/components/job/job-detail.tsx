@@ -231,115 +231,146 @@ export default function JobDetail({ jobId }: JobDetailProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">{job.title}</h1>
-          <div className="flex flex-wrap items-center gap-3 text-gray-600">
-            {company && (
-              <span className="flex items-center">
-                <Building className="mr-1 h-4 w-4" />
-                {company.companyName}
-              </span>
-            )}
-            <span className="flex items-center">
-              <MapPin className="mr-1 h-4 w-4" />
-              {job.location} {job.remote && "(Remote)"}
-            </span>
-            <span className="flex items-center">
-              <Calendar className="mr-1 h-4 w-4" />
-              Posted {formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
-            </span>
+    <div className="max-w-7xl mx-auto space-y-6">
+      {/* Header Section with Company Branding */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-8 py-6">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-6">
+            <div className="flex items-start gap-4">
+              {/* Company Logo */}
+              <div className="w-16 h-16 bg-white rounded-lg border border-gray-200 flex items-center justify-center shadow-sm flex-shrink-0">
+                {company?.logoUrl ? (
+                  <img 
+                    src={company.logoUrl?.startsWith('uploads/') ? `/${company.logoUrl}` : company.logoUrl} 
+                    alt={company?.companyName || "Company logo"} 
+                    className="max-w-full max-h-full object-contain"
+                  />
+                ) : (
+                  <Building className="w-8 h-8 text-gray-400" />
+                )}
+              </div>
+              
+              {/* Job Title and Company Info */}
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2 leading-tight">{job.title}</h1>
+                <div className="space-y-2">
+                  {company && (
+                    <div className="flex items-center text-lg font-medium text-blue-700">
+                      <span>{company.companyName}</span>
+                    </div>
+                  )}
+                  <div className="flex flex-wrap items-center gap-4 text-gray-600">
+                    <span className="flex items-center gap-1 text-sm">
+                      <MapPin className="h-4 w-4" />
+                      {job.location} {job.remote && "• Remote"}
+                    </span>
+                    <span className="flex items-center gap-1 text-sm">
+                      <Calendar className="h-4 w-4" />
+                      Posted {formatDistanceToNow(new Date(job.createdAt), { addSuffix: true })}
+                    </span>
+                    <Badge className={`text-xs font-medium
+                      ${job.jobType === "full-time" ? "bg-blue-100 text-blue-800 border-blue-200" : ""}
+                      ${job.jobType === "part-time" ? "bg-purple-100 text-purple-800 border-purple-200" : ""}
+                      ${job.jobType === "contract" ? "bg-amber-100 text-amber-800 border-amber-200" : ""}
+                      ${job.jobType === "freelance" ? "bg-green-100 text-green-800 border-green-200" : ""}
+                    `}>
+                      {job.jobType.charAt(0).toUpperCase() + job.jobType.slice(1)}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex gap-3 flex-shrink-0">
+              <Button variant="outline" size="icon" className="border-gray-300 bg-white hover:bg-gray-50 shadow-sm">
+                <Bookmark className="h-4 w-4" />
+              </Button>
+
+              {user?.userType === "professional" && !hasAlreadyApplied && (
+                <Button 
+                  onClick={handleApplyClick} 
+                  disabled={!professionalProfile}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 shadow-sm font-medium transition-colors"
+                >
+                  Easy Apply
+                </Button>
+              )}
+
+              {user?.userType === "professional" && hasAlreadyApplied && (
+                <Button 
+                  disabled
+                  className="bg-green-600 text-white px-6 py-2 opacity-80 cursor-not-allowed"
+                >
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Applied
+                </Button>
+              )}
+
+              <Button 
+                onClick={handleMessageCompany}
+                variant="outline"
+                className="border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 shadow-sm"
+              >
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Message
+              </Button>
+            </div>
           </div>
-        </div>
-        
-        <div className="flex gap-2 mt-4 md:mt-0">
-          <Button variant="outline" size="icon" className="border-slate-300 text-slate-700 hover:bg-slate-100">
-            <Bookmark className="h-4 w-4" />
-          </Button>
-
-          {user?.userType === "professional" && !hasAlreadyApplied && (
-            <Button 
-              onClick={handleApplyClick} 
-              disabled={!professionalProfile}
-              className="bg-gradient-to-r from-slate-800 to-blue-700 hover:from-slate-900 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4">
-                <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14" />
-                <path d="M16.5 9.4 7.55 4.24" />
-                <polyline points="3.29 7 12 12 20.71 7" />
-                <line x1="12" y1="22" x2="12" y2="12" />
-                <circle cx="18" cy="16" r="3" />
-                <path d="m21 16-6 6-6-6h4v-4h4v4Z" />
-              </svg>
-              Apply Now
-            </Button>
-          )}
-
-          {user?.userType === "professional" && hasAlreadyApplied && (
-            <Button 
-              disabled
-              className="bg-gradient-to-r from-green-600 to-green-800 opacity-80 cursor-not-allowed"
-            >
-              <CheckCircle className="mr-2 h-4 w-4" />
-              Already Applied
-            </Button>
-          )}
-
-          <Button 
-            onClick={handleMessageCompany}
-            className="border-slate-300 bg-white hover:bg-slate-100 text-slate-700"
-            variant="outline"
-          >
-            <MessageSquare className="mr-2 h-4 w-4" />
-            Message
-          </Button>
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Job Description</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="prose max-w-none">
-                <p className="whitespace-pre-line">{job.description}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+          {/* Job Description */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div className="px-8 py-6 border-b border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-900">About the job</h2>
+            </div>
+            <div className="px-8 py-6">
+              <div className="prose prose-gray max-w-none">
+                <div className="text-gray-700 leading-relaxed whitespace-pre-line text-base">
+                  {job.description}
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
           
-          <Card>
-            <CardHeader>
-              <CardTitle>Requirements</CardTitle>
-            </CardHeader>
-            <CardContent>
+          {/* Skills and Requirements */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+            <div className="px-8 py-6 border-b border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-900">Skills and qualifications</h2>
+            </div>
+            <div className="px-8 py-6">
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-2">
                   {job.requirements.split(',').map((skill, index) => (
-                    <Badge key={index} variant="secondary" className="bg-blue-100 text-blue-800">
+                    <Badge 
+                      key={index} 
+                      variant="secondary" 
+                      className="bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 text-sm font-medium rounded-full hover:bg-blue-100 transition-colors"
+                    >
                       {skill.trim()}
                     </Badge>
                   ))}
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
           
           {!showApplicationForm && user?.userType === "professional" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Apply for this Position</CardTitle>
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+              <div className="px-6 py-5 border-b border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900">Apply for this position</h3>
                 {hasAlreadyApplied && (
-                  <CardDescription className="text-green-600 flex items-center mt-2">
+                  <div className="flex items-center mt-2 text-green-600 text-sm">
                     <CheckCircle className="mr-2 h-4 w-4" />
                     You have already applied for this job
-                  </CardDescription>
+                  </div>
                 )}
-              </CardHeader>
-              <CardContent>
-                <p className="mb-4">
+              </div>
+              <div className="px-6 py-5">
+                <p className="text-gray-600 mb-6 leading-relaxed">
                   {hasAlreadyApplied
                     ? "You can check the status of your application in your dashboard."
                     : "Interested in this position? Submit your application now to connect with the employer."}
@@ -347,18 +378,15 @@ export default function JobDetail({ jobId }: JobDetailProps) {
                 <Button 
                   onClick={handleApplyClick} 
                   disabled={hasAlreadyApplied || !professionalProfile}
-                  className={`w-full ${!hasAlreadyApplied && professionalProfile 
-                    ? "bg-gradient-to-r from-slate-800 to-blue-700 hover:from-slate-900 hover:to-blue-800 shadow-md hover:shadow-lg transition-all duration-200" 
+                  className={`w-full py-3 font-medium ${!hasAlreadyApplied && professionalProfile 
+                    ? "bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-colors" 
                     : hasAlreadyApplied 
-                      ? "bg-gradient-to-r from-green-600 to-green-800 opacity-80 cursor-not-allowed"
-                      : "bg-gradient-to-r from-slate-600 to-slate-800 opacity-70"}`}
+                      ? "bg-green-600 text-white opacity-80 cursor-not-allowed"
+                      : "bg-gray-400 text-white opacity-70"}`}
                 >
                   {!professionalProfile ? (
                     <>
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4">
-                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                      </svg>
+                      <User className="mr-2 h-4 w-4" />
                       Complete Your Profile to Apply
                     </>
                   ) : hasAlreadyApplied ? (
@@ -368,16 +396,12 @@ export default function JobDetail({ jobId }: JobDetailProps) {
                     </>
                   ) : (
                     <>
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4">
-                        <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14" />
-                        <path d="m21 16-6 6-6-6h4v-4h4v4Z" />
-                      </svg>
-                      Apply for This Position
+                      Easy Apply
                     </>
                   )}
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
           
           {showApplicationForm && (
@@ -389,157 +413,176 @@ export default function JobDetail({ jobId }: JobDetailProps) {
           )}
         </div>
         
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Job Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="flex items-center text-gray-600">
-                    <Briefcase className="mr-2 h-5 w-5" />
-                    Job Type
-                  </span>
-                  <Badge className={`
-                    ${job.jobType === "full-time" ? "bg-blue-100 text-blue-800" : ""}
-                    ${job.jobType === "part-time" ? "bg-indigo-100 text-indigo-800" : ""}
-                    ${job.jobType === "contract" ? "bg-amber-100 text-amber-800" : ""}
-                    ${job.jobType === "freelance" ? "bg-green-100 text-green-800" : ""}
-                  `}>
-                    {job.jobType.charAt(0).toUpperCase() + job.jobType.slice(1)}
-                  </Badge>
+        <div className="space-y-8">
+          {/* Job Details Card */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm sticky top-6">
+            <div className="px-6 py-5 border-b border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900">Job details</h3>
+            </div>
+            <div className="px-6 py-5">
+              <div className="space-y-6">
+                {/* Salary */}
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <DollarSign className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 font-medium">Salary</p>
+                    <p className="text-base font-semibold text-gray-900">{formatCompensation()}</p>
+                  </div>
                 </div>
                 
+                {/* Job Type */}
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Briefcase className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 font-medium">Job type</p>
+                    <p className="text-base font-semibold text-gray-900">
+                      {job.jobType.charAt(0).toUpperCase() + job.jobType.slice(1)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <MapPin className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 font-medium">Location</p>
+                    <p className="text-base font-semibold text-gray-900">
+                      {job.location} {job.remote && "• Remote"}
+                    </p>
+                  </div>
+                </div>
+
                 {job.duration && (
-                  <div className="flex justify-between">
-                    <span className="flex items-center text-gray-600">
-                      <Clock className="mr-2 h-5 w-5" />
-                      Duration
-                    </span>
-                    <span>{job.duration}</span>
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 bg-orange-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Clock className="h-5 w-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 font-medium">Duration</p>
+                      <p className="text-base font-semibold text-gray-900">{job.duration}</p>
+                    </div>
                   </div>
                 )}
-                
-                <div className="flex justify-between">
-                  <span className="flex items-center text-gray-600">
-                    <DollarSign className="mr-2 h-5 w-5" />
-                    Compensation
-                  </span>
-                  <span className="font-medium">{formatCompensation()}</span>
-                </div>
-                
+
                 {job.remote && (
-                  <div className="flex justify-between">
-                    <span className="flex items-center text-gray-600">
-                      <Globe className="mr-2 h-5 w-5" />
-                      Remote Work
-                    </span>
-                    <Badge variant="outline" className="text-green-600 border-green-200">
-                      Available
-                    </Badge>
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 bg-teal-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Globe className="h-5 w-5 text-teal-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500 font-medium">Remote work</p>
+                      <p className="text-base font-semibold text-green-700">Available</p>
+                    </div>
                   </div>
                 )}
                 
-                <div className="flex justify-between">
-                  <span className="flex items-center text-gray-600">
-                    <Calendar className="mr-2 h-5 w-5" />
-                    Closing Date
-                  </span>
-                  <span>
-                    {job.expiresAt 
-                      ? format(new Date(job.expiresAt), "MMM d, yyyy")
-                      : "Not specified"}
-                  </span>
+                <Separator />
+                
+                {/* Application Deadline */}
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Calendar className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 font-medium">Application deadline</p>
+                    <p className="text-base font-semibold text-gray-900">
+                      {job.expiresAt 
+                        ? format(new Date(job.expiresAt), "MMM d, yyyy")
+                        : "Not specified"}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
           
           {isLoadingCompany ? (
-            <Card>
-              <CardHeader>
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+              <div className="px-6 py-5 border-b border-gray-100">
                 <Skeleton className="h-7 w-40" />
-              </CardHeader>
-              <CardContent className="space-y-4">
+              </div>
+              <div className="px-6 py-5 space-y-4">
                 <div className="flex items-center">
-                  <Skeleton className="h-12 w-12 rounded mr-3" />
-                  <Skeleton className="h-6 w-40" />
+                  <Skeleton className="h-16 w-16 rounded-lg mr-4" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-6 w-40" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
                 </div>
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-full" />
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ) : company ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>About the Company</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center mr-3">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+              <div className="px-6 py-5 border-b border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900">About the company</h3>
+              </div>
+              <div className="px-6 py-5">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="w-16 h-16 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-center flex-shrink-0">
                     {company.logoUrl ? (
                       <img 
                         src={company.logoUrl?.startsWith('uploads/') ? `/${company.logoUrl}` : company.logoUrl} 
                         alt={company.companyName} 
-                        className="w-full h-full object-contain p-1" 
+                        className="w-full h-full object-contain p-2 rounded-lg" 
                       />
                     ) : (
-                      <Building className="h-6 w-6 text-gray-400" />
+                      <Building className="h-8 w-8 text-gray-400" />
                     )}
                   </div>
-                  <div>
-                    <h3 className="font-medium">{company.companyName}</h3>
-                    <div className="text-sm text-gray-500 flex items-center">
-                      <Globe className="h-3 w-3 mr-1" /> {company.industry}
+                  <div className="flex-1">
+                    <h4 className="text-xl font-semibold text-gray-900 mb-1">{company.companyName}</h4>
+                    <p className="text-sm text-gray-600 mb-2">{company.industry}</p>
+                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <Users className="h-4 w-4" />
+                        {company.size === "small" && "1-50 employees"}
+                        {company.size === "medium" && "51-500 employees"}
+                        {company.size === "large" && "501-5000 employees"}
+                        {company.size === "enterprise" && "5000+ employees"}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        {company.location}
+                      </span>
                     </div>
                   </div>
                 </div>
                 
-                <div className="space-y-2 text-sm">
-                  <div className="flex gap-2">
-                    <Users className="h-4 w-4 text-gray-500 flex-shrink-0 mt-1" />
-                    <span>
-                      {company.size === "small" && "Small (1-50 employees)"}
-                      {company.size === "medium" && "Medium (51-500 employees)"}
-                      {company.size === "large" && "Large (501-5000 employees)"}
-                      {company.size === "enterprise" && "Enterprise (5000+ employees)"}
-                    </span>
-                  </div>
+                <div className="space-y-4">
+                  <p className="text-gray-700 leading-relaxed text-sm">
+                    {company.description}
+                  </p>
                   
-                  <div className="flex gap-2">
-                    <MapPin className="h-4 w-4 text-gray-500 flex-shrink-0 mt-1" />
-                    <span>{company.location}</span>
-                  </div>
-                  
-                  {company.website && (
-                    <div className="flex gap-2">
-                      <Globe className="h-4 w-4 text-gray-500 flex-shrink-0 mt-1" />
+                  <div className="flex gap-3 pt-2">
+                    <Link href={`/company/${company.id}`}>
+                      <Button variant="outline" size="sm" className="text-blue-600 border-blue-200 hover:bg-blue-50">
+                        View company page
+                      </Button>
+                    </Link>
+                    {company.website && (
                       <a 
                         href={company.website} 
                         target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="text-primary hover:underline"
+                        rel="noopener noreferrer"
                       >
-                        Company Website
+                        <Button variant="outline" size="sm" className="text-gray-600 border-gray-200 hover:bg-gray-50">
+                          <ExternalLink className="h-4 w-4 mr-1" />
+                          Website
+                        </Button>
                       </a>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-                
-                <Separator className="my-4" />
-                
-                <p className="text-sm text-gray-600 line-clamp-4">
-                  {company.description}
-                </p>
-                
-                <div className="mt-3">
-                  <Link href={`/company/${company.id}`}>
-                    <Button variant="link" className="px-0">View Company Profile</Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           ) : null}
           
           {(user?.userType === "company" || user?.isAdmin) && (

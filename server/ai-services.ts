@@ -1,42 +1,43 @@
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { JobPosting, ProfessionalProfile } from "@shared/schema";
 
-// Initialize OpenAI client with API key validation
-let openai: OpenAI | null = null;
+// Initialize Gemini client with API key validation
+let gemini: GoogleGenerativeAI | null = null;
+let model: any = null;
 let apiKeyValid = false;
 
-async function initializeOpenAI(): Promise<boolean> {
-  if (!process.env.OPENAI_API_KEY) {
-    console.warn("OpenAI API key not found - AI features disabled");
+async function initializeGemini(): Promise<boolean> {
+  if (!process.env.GEMINI_API_KEY) {
+    console.warn("Gemini API key not found - AI features disabled");
     return false;
   }
 
   try {
-    openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    });
+    gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    model = gemini.getGenerativeModel({ model: "text-embedding-004" });
 
     // Test the API key with a minimal request
-    await openai.models.list();
+    await model.embedContent("test");
     apiKeyValid = true;
-    console.log("OpenAI API key validated successfully");
+    console.log("Gemini API key validated successfully");
     return true;
   } catch (error: any) {
-    console.error("OpenAI API key validation failed:", error.message);
+    console.error("Gemini API key validation failed:", error.message);
     apiKeyValid = false;
-    openai = null;
+    gemini = null;
+    model = null;
     return false;
   }
 }
 
 // Initialize on startup
-initializeOpenAI();
+initializeGemini();
 
-// Generates text embeddings using OpenAI's embedding model
+// Generates text embeddings using Gemini's embedding model
 export async function generateEmbedding(text: string): Promise<number[] | null> {
   try {
-    if (!apiKeyValid || !openai) {
-      console.warn("OpenAI API not available - embedding generation disabled");
+    if (!apiKeyValid || !model) {
+      console.warn("Gemini API not available - embedding generation disabled");
       return null;
     }
 
@@ -45,19 +46,15 @@ export async function generateEmbedding(text: string): Promise<number[] | null> 
       return null;
     }
 
-    const response = await openai.embeddings.create({
-      model: "text-embedding-3-small",
-      input: text,
-      dimensions: 256, // Smaller dimension for efficiency
-    });
-
-    return response.data[0].embedding;
+    const result = await model.embedContent(text);
+    return result.embedding.values;
   } catch (error: any) {
     console.error("Error generating embedding:", error.message);
-    if (error.status === 401) {
-      console.error("OpenAI API key is invalid or expired");
+    if (error.message.includes("API_KEY_INVALID") || error.message.includes("401")) {
+      console.error("Gemini API key is invalid or expired");
       apiKeyValid = false;
-      openai = null;
+      gemini = null;
+      model = null;
     }
     return null;
   }
@@ -145,7 +142,7 @@ export async function calculateProfileJobMatchScore(
     
     // If embeddings could not be generated, fall back to a simpler method
     if (!profileEmbedding || !jobEmbedding) {
-      console.log("Using fallback matching algorithm (OpenAI not available)");
+      console.log("Using fallback matching algorithm (Gemini not available)");
       const fallbackScore = fallbackMatchScore(profile, job);
       console.log(`Fallback score: ${(fallbackScore * 100).toFixed(1)}%`);
       return fallbackScore;

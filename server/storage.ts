@@ -1034,7 +1034,7 @@ export class MemStorage implements IStorage {
   }
 
   // Professional Profile operations
-  getProfessionalProfile(id: number): ProfessionalProfile | undefined {
+  async getProfessionalProfile(id: number): Promise<ProfessionalProfile | undefined> {
     const profile = this.professionalProfiles.get(id);
     if (!profile) return undefined;
 
@@ -1128,7 +1128,7 @@ export class MemStorage implements IStorage {
     return newProfile;
   }
 
-  updateProfessionalProfile(id: number, updates: Partial<ProfessionalProfile>): ProfessionalProfile {
+  async updateProfessionalProfile(id: number, updates: Partial<ProfessionalProfile>): Promise<ProfessionalProfile | undefined> {
     const profile = this.professionalProfiles.get(id);
     if (!profile) {
       throw new Error("Professional profile not found");
@@ -1149,7 +1149,7 @@ export class MemStorage implements IStorage {
 
     const updatedProfile = { ...profile, ...updates, updatedAt: new Date().toISOString() };
     this.professionalProfiles.set(id, updatedProfile);
-    return this.getProfessionalProfile(id)!;
+    return updatedProfile;
   }
 
   async deleteProfessionalProfile(id: number): Promise<boolean> {

@@ -6,7 +6,7 @@ import csurf from "csurf";
 import cookieParser from "cookie-parser";
 import helmet from 'helmet';
 import cors from 'cors';
-// Removed heavy monitoring imports to reduce memory overhead
+
 
 const app = express();
 
@@ -236,37 +236,7 @@ app.use((req, res, next) => {
     // Initialize database connection with retry capability
     await initializeDatabase();
 
-    // Add performance monitoring middleware first
-    const { performanceMiddleware } = await import("./performance-middleware");
-    app.use(performanceMiddleware());
-
-    // Initialize monitoring systems with controlled startup
-    let monitoringInitialized = false;
-    try {
-      // Start performance monitoring with error handling
-      const { performanceMonitor } = await import("./performance-monitor");
-      performanceMonitor.startMonitoring();
-
-      // Memory leak detection disabled to prevent startup conflicts
-      console.log('Memory leak detection disabled');
-
-      monitoringInitialized = true;
-    } catch (monitoringErr) {
-      console.warn('Monitoring systems failed to initialize, continuing without them:', monitoringErr);
-    }
-
-    // Only set up garbage collection if monitoring is stable
-    if (monitoringInitialized) {
-      setInterval(() => {
-        try {
-          if (global.gc) {
-            global.gc();
-          }
-        } catch (gcErr) {
-          console.warn('Garbage collection failed:', gcErr);
-        }
-      }, 10 * 60 * 1000); // Reduced frequency to every 10 minutes
-    }
+    // Monitoring systems removed for performance optimization
 
   // Add static file serving for uploaded files - must come before routes
   app.use('/uploads', express.static('uploads', {

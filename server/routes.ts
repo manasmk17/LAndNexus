@@ -40,13 +40,10 @@ import {
   getMatchingJobsForProfessional,
   getMatchingProfessionalsForJob
 } from "./ai-matching";
-import { imageHealthMonitor } from "./image-health-monitor";
 import { registerEscrowRoutes } from "./escrow-routes";
 import { registerSubscriptionRoutes } from "./subscription-routes";
 import { subscriptionService } from "./subscription-service";
 import { requireUsageLimit, incrementUserUsage, canUserPerformAction } from "./feature-gate";
-import { responseCache } from "./response-cache";
-import { requestDeduplicator } from "./request-deduplicator";
 import { z } from "zod";
 import session from "express-session";
 import passport from "passport";

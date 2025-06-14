@@ -1290,6 +1290,63 @@ export class MemStorage implements IStorage {
       .filter(material => material.professionalId === professionalId);
   }
 
+  async createTrainingMaterial(insertTrainingMaterial: InsertTrainingMaterial): Promise<SelectTrainingMaterial> {
+    const id = this.trainingMaterialId++;
+    const trainingMaterial: SelectTrainingMaterial = { 
+      ...insertTrainingMaterial, 
+      id,
+      createdAt: new Date(),
+      description: insertTrainingMaterial.description || null,
+      url: insertTrainingMaterial.url || null,
+      fileUrl: insertTrainingMaterial.fileUrl || null,
+      tags: insertTrainingMaterial.tags || null,
+      isPublic: insertTrainingMaterial.isPublic || null
+    };
+    this.trainingMaterials.set(id, trainingMaterial);
+    return trainingMaterial;
+  }
+
+  async deleteTrainingMaterial(id: number): Promise<boolean> {
+    return this.trainingMaterials.delete(id);
+  }
+
+  // Portfolio Links operations
+  async getPortfolioLink(id: number): Promise<SelectPortfolioLink | undefined> {
+    return this.portfolioLinks.get(id);
+  }
+
+  async getProfessionalPortfolioLinks(professionalId: number): Promise<SelectPortfolioLink[]> {
+    return Array.from(this.portfolioLinks.values())
+      .filter(link => link.professionalId === professionalId);
+  }
+
+  async createPortfolioLink(insertPortfolioLink: InsertPortfolioLink): Promise<SelectPortfolioLink> {
+    const id = this.portfolioLinkId++;
+    const portfolioLink: SelectPortfolioLink = { 
+      ...insertPortfolioLink, 
+      id,
+      createdAt: new Date(),
+      description: insertPortfolioLink.description || null,
+      isPrimary: insertPortfolioLink.isPrimary || null
+    };
+    this.portfolioLinks.set(id, portfolioLink);
+    return portfolioLink;
+  }
+
+  async deletePortfolioLink(id: number): Promise<boolean> {
+    return this.portfolioLinks.delete(id);
+  }
+
+  // Training Materials operations
+  async getTrainingMaterial(id: number): Promise<SelectTrainingMaterial | undefined> {
+    return this.trainingMaterials.get(id);
+  }
+
+  async getProfessionalTrainingMaterials(professionalId: number): Promise<SelectTrainingMaterial[]> {
+    return Array.from(this.trainingMaterials.values())
+      .filter(material => material.professionalId === professionalId);
+  }
+
   async createTrainingMaterial(insertMaterial: InsertTrainingMaterial): Promise<SelectTrainingMaterial> {
     const id = this.trainingMaterialId++;
     const material: SelectTrainingMaterial = { 

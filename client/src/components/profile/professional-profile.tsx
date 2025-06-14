@@ -103,8 +103,7 @@ import ImageGallery from "@/components/profile/image-gallery";
 import type { 
   ProfessionalProfile, 
   Expertise, 
-  Certification, 
-  Resource 
+  Certification
 } from "@shared/schema";
 import { format } from 'date-fns';
 

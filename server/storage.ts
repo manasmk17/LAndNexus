@@ -127,21 +127,12 @@ export interface IStorage {
   createMessage(message: InsertMessage): Promise<Message>;
   getMessagesByConversationId(conversationId: number): Promise<Message[]>;
 
-  // Conversation operations
-  getConversation(id: number): Promise<Conversation | undefined>;
-  createConversation(conversation: InsertConversation): Promise<Conversation>;
-  getConversationsByUserId(userId: number): Promise<Conversation[]>;
-
   // Auth Token operations
   createAuthToken(token: InsertAuthToken): Promise<AuthToken>;
   getAuthToken(token: string): Promise<AuthToken | undefined>;
   revokeAuthToken(token: string): Promise<boolean>;
   revokeAllUserTokens(userId: number): Promise<boolean>;
   cleanupExpiredTokens(): Promise<number>;
-
-  // Match operations
-  createMatch(match: InsertMatch): Promise<Match>;
-  getMatchesByUserId(userId: number): Promise<Match[]>;
 
   // Resource Category operations
   getAllResourceCategories(): Promise<ResourceCategory[]>;
@@ -167,9 +158,7 @@ export class MemStorage implements IStorage {
   private notificationTypes = new Map<number, NotificationType>();
   private notificationPreferences = new Map<number, NotificationPreference>();
   private messages = new Map<number, Message>();
-  private conversations = new Map<number, Conversation>();
   private authTokens = new Map<string, AuthToken>();
-  private matches = new Map<number, Match>();
   private resourceCategories = new Map<number, ResourceCategory>();
 
   // Professional-Expertise junction
@@ -189,8 +178,6 @@ export class MemStorage implements IStorage {
   private notificationTypeId = 1;
   private notificationPreferenceId = 1;
   private messageId = 1;
-  private conversationId = 1;
-  private matchId = 1;
   private resourceCategoryId = 1;
 
   // Cache for expensive operations
@@ -916,28 +903,7 @@ export class MemStorage implements IStorage {
       .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
   }
 
-  async getConversation(id: number): Promise<Conversation | undefined> {
-    return this.conversations.get(id);
-  }
 
-  async createConversation(conversation: InsertConversation): Promise<Conversation> {
-    const id = this.conversationId++;
-    const newConversation: Conversation = {
-      ...conversation,
-      id,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    } as Conversation;
-    this.conversations.set(id, newConversation);
-    return newConversation;
-  }
-
-  async getConversationsByUserId(userId: number): Promise<Conversation[]> {
-    return Array.from(this.conversations.values())
-      .filter(conversation => 
-        conversation.participant1Id === userId || conversation.participant2Id === userId
-      );
-  }
 
   async createAuthToken(token: InsertAuthToken): Promise<AuthToken> {
     const newToken: AuthToken = {
@@ -945,7 +911,8 @@ export class MemStorage implements IStorage {
       id: Date.now(), // Simple ID generation
       createdAt: new Date(),
       lastUsedAt: null,
-      isRevoked: false
+      isRevoked: false,
+      type: token.type || "session"
     };
     this.authTokens.set(token.token, newToken);
     return newToken;
@@ -991,21 +958,7 @@ export class MemStorage implements IStorage {
     return cleanedCount;
   }
 
-  async createMatch(match: InsertMatch): Promise<Match> {
-    const id = this.matchId++;
-    const newMatch: Match = {
-      ...match,
-      id,
-      createdAt: new Date()
-    } as Match;
-    this.matches.set(id, newMatch);
-    return newMatch;
-  }
 
-  async getMatchesByUserId(userId: number): Promise<Match[]> {
-    return Array.from(this.matches.values())
-      .filter(match => match.userId === userId);
-  }
 
   async getAllResourceCategories(): Promise<ResourceCategory[]> {
     return Array.from(this.resourceCategories.values());
@@ -1628,23 +1581,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(asc(schema.messages.createdAt));
   }
 
-  async getConversation(id: number): Promise<Conversation | undefined> {
-    if (!this.db) throw new Error("Database not initialized");
-    const [conversation] = await this.db.select().from(schema.conversations).where(eq(schema.conversations.id, id));
-    return conversation;
-  }
 
-  async createConversation(conversation: InsertConversation): Promise<Conversation> {
-    if (!this.db) throw new Error("Database not initialized");
-    const [newConversation] = await this.db.insert(schema.conversations).values(conversation).returning();
-    return newConversation;
-  }
-
-  async getConversationsByUserId(userId: number): Promise<Conversation[]> {
-    if (!this.db) throw new Error("Database not initialized");
-    return await this.db.select().from(schema.conversations)
-      .where(sql`${schema.conversations.participant1Id} = ${userId} OR ${schema.conversations.participant2Id} = ${userId}`);
-  }
 
   async createAuthToken(token: InsertAuthToken): Promise<AuthToken> {
     if (!this.db) throw new Error("Database not initialized");
@@ -1681,16 +1618,7 @@ export class DatabaseStorage implements IStorage {
     return result.rowCount;
   }
 
-  async createMatch(match: InsertMatch): Promise<Match> {
-    if (!this.db) throw new Error("Database not initialized");
-    const [newMatch] = await this.db.insert(schema.matches).values(match).returning();
-    return newMatch;
-  }
 
-  async getMatchesByUserId(userId: number): Promise<Match[]> {
-    if (!this.db) throw new Error("Database not initialized");
-    return await this.db.select().from(schema.matches).where(eq(schema.matches.userId, userId));
-  }
 
   async getAllResourceCategories(): Promise<ResourceCategory[]> {
     if (!this.db) throw new Error("Database not initialized");

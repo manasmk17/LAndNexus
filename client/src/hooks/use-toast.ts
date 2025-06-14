@@ -126,7 +126,7 @@ export const reducer = (state: State, action: Action): State => {
   }
 }
 
-const listeners: Set<(state: State) => void> = new Set()
+const listeners: Array<(state: State) => void> = []
 
 let memoryState: State = { toasts: [] }
 
@@ -172,9 +172,12 @@ function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {
-    listeners.add(setState)
+    listeners.push(setState)
     return () => {
-      listeners.delete(setState)
+      const index = listeners.indexOf(setState)
+      if (index > -1) {
+        listeners.splice(index, 1)
+      }
     }
   }, [])
 

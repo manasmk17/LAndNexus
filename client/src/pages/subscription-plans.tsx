@@ -144,13 +144,6 @@ export default function SubscriptionPlans() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12">
-      <SEOMeta
-        title="L&D Nexus Subscription Plans | Connect with Top Experts UAE | AI-Powered Matching"
-        description="Join the AI-powered marketplace for corporate learning in MENA. Professional plans from $19/month, Company plans from $39/month. Instant expert connection, elite L&D professionals, MENA region focus."
-        keywords="L&D subscription plans UAE, AI-powered expert matching plans, corporate learning MENA pricing, top L&D experts subscription, instant professional connection plans"
-        canonicalUrl="https://www.ldnexus.com/subscription-plans"
-        structuredData={createPricingSchema()}
-      />
       <div className="container mx-auto px-4">
         {/* Header Section */}
         <div className="text-center mb-12">

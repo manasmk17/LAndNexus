@@ -71,11 +71,7 @@ export default function Subscribe() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12">
-      <SEOMeta
-        title={`Subscribe to ${selectedPlan.name} Plan | L&D Nexus`}
-        description={`Activate your ${selectedPlan.name} subscription for ${formatPrice(getPrice(), currency)}/${billing}. ${selectedPlan.description}`}
-        canonicalUrl={`https://www.ldnexus.com/subscribe?planId=${planId}&billing=${billing}&currency=${currency}`}
-      />
+
 
       <div className="container mx-auto px-4 max-w-2xl">
         {/* Back Button */}
@@ -90,7 +86,7 @@ export default function Subscribe() {
 
         {/* Payment Component */}
         <SubscriptionPayment
-          planId={parseInt(planId)}
+          planId={parseInt(planId || '1')}
           planName={selectedPlan.name}
           planPrice={getPrice()}
           planFeatures={selectedPlan.features}

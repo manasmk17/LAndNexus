@@ -286,6 +286,91 @@ export const insertConsultationSchema = createInsertSchema(consultations).omit({
   createdAt: true,
 });
 
+// Professional Awards & Recognition
+export const professionalAwards = pgTable("professional_awards", {
+  id: serial("id").primaryKey(),
+  professionalId: integer("professional_id").notNull().references(() => professionalProfiles.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  awardingOrganization: text("awarding_organization").notNull(),
+  dateReceived: timestamp("date_received").notNull(),
+  imageUrl: text("image_url"),
+  verificationUrl: text("verification_url"),
+  category: text("category"), // "certification", "award", "recognition", "achievement"
+  isPublic: boolean("is_public").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertProfessionalAwardSchema = createInsertSchema(professionalAwards).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Training Materials Library
+export const trainingMaterials = pgTable("training_materials", {
+  id: serial("id").primaryKey(),
+  professionalId: integer("professional_id").notNull().references(() => professionalProfiles.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  materialType: text("material_type").notNull(), // "presentation", "workbook", "assessment", "video", "template", "guide"
+  fileUrl: text("file_url"),
+  thumbnailUrl: text("thumbnail_url"),
+  fileSize: integer("file_size"), // in bytes
+  downloadCount: integer("download_count").default(0),
+  tags: text("tags").array(),
+  isPublic: boolean("is_public").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertTrainingMaterialSchema = createInsertSchema(trainingMaterials).omit({
+  id: true,
+  createdAt: true,
+  downloadCount: true,
+});
+
+// Professional Certification Portfolio (extends existing certifications)
+export const professionalCertificationPortfolio = pgTable("professional_certification_portfolio", {
+  id: serial("id").primaryKey(),
+  professionalId: integer("professional_id").notNull().references(() => professionalProfiles.id),
+  certificationName: text("certification_name").notNull(),
+  issuingOrganization: text("issuing_organization").notNull(),
+  issueDate: timestamp("issue_date").notNull(),
+  expiryDate: timestamp("expiry_date"),
+  credentialId: text("credential_id"),
+  verificationUrl: text("verification_url"),
+  certificateImageUrl: text("certificate_image_url"),
+  badgeImageUrl: text("badge_image_url"),
+  skillsGained: text("skills_gained").array(),
+  isVerified: boolean("is_verified").default(false),
+  isPublic: boolean("is_public").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertProfessionalCertificationPortfolioSchema = createInsertSchema(professionalCertificationPortfolio).omit({
+  id: true,
+  createdAt: true,
+  isVerified: true,
+});
+
+// External Portfolio Links
+export const externalPortfolioLinks = pgTable("external_portfolio_links", {
+  id: serial("id").primaryKey(),
+  professionalId: integer("professional_id").notNull().references(() => professionalProfiles.id),
+  title: text("title").notNull(),
+  url: text("url").notNull(),
+  description: text("description"),
+  platformType: text("platform_type"), // "linkedin", "website", "github", "behance", "dribbble", "other"
+  thumbnailUrl: text("thumbnail_url"),
+  isActive: boolean("is_active").default(true),
+  displayOrder: integer("display_order").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertExternalPortfolioLinkSchema = createInsertSchema(externalPortfolioLinks).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Export types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -328,6 +413,18 @@ export type InsertMessage = z.infer<typeof insertMessageSchema>;
 
 export type Consultation = typeof consultations.$inferSelect;
 export type InsertConsultation = z.infer<typeof insertConsultationSchema>;
+
+export type ProfessionalAward = typeof professionalAwards.$inferSelect;
+export type InsertProfessionalAward = z.infer<typeof insertProfessionalAwardSchema>;
+
+export type TrainingMaterial = typeof trainingMaterials.$inferSelect;
+export type InsertTrainingMaterial = z.infer<typeof insertTrainingMaterialSchema>;
+
+export type ProfessionalCertificationPortfolio = typeof professionalCertificationPortfolio.$inferSelect;
+export type InsertProfessionalCertificationPortfolio = z.infer<typeof insertProfessionalCertificationPortfolioSchema>;
+
+export type ExternalPortfolioLink = typeof externalPortfolioLinks.$inferSelect;
+export type InsertExternalPortfolioLink = z.infer<typeof insertExternalPortfolioLinkSchema>;
 
 // Skill Recommendations
 export const skillRecommendations = pgTable("skill_recommendations", {

@@ -2051,6 +2051,103 @@ export class MemStorage implements IStorage {
     return cleanedCount;
   }
 
+  // User Settings operations
+  private userSettingsMap = new Map<number, UserSettings>();
+  private passwordResetRequests = new Map<string, PasswordResetRequest>();
+  private userActivityLogs = new Map<number, UserActivityLog[]>();
+
+  async getUserSettings(userId: number): Promise<UserSettings | undefined> {
+    return this.userSettingsMap.get(userId);
+  }
+
+  async createUserSettings(settings: InsertUserSettings): Promise<UserSettings> {
+    const newSettings: UserSettings = {
+      id: Date.now(),
+      ...settings,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.userSettingsMap.set(settings.userId, newSettings);
+    return newSettings;
+  }
+
+  async updateUserSettings(userId: number, settingsData: Partial<InsertUserSettings>): Promise<UserSettings | undefined> {
+    const existing = this.userSettingsMap.get(userId);
+    if (!existing) return undefined;
+    
+    const updated: UserSettings = {
+      ...existing,
+      ...settingsData,
+      updatedAt: new Date()
+    };
+    this.userSettingsMap.set(userId, updated);
+    return updated;
+  }
+
+  async deleteUserSettings(userId: number): Promise<boolean> {
+    return this.userSettingsMap.delete(userId);
+  }
+
+  // Password Reset operations
+  async createPasswordResetRequest(userId: number, token: string, expiresAt: Date): Promise<PasswordResetRequest> {
+    const request: PasswordResetRequest = {
+      id: Date.now(),
+      userId,
+      token,
+      expiresAt,
+      used: false,
+      createdAt: new Date()
+    };
+    this.passwordResetRequests.set(token, request);
+    return request;
+  }
+
+  async getPasswordResetRequest(token: string): Promise<PasswordResetRequest | undefined> {
+    return this.passwordResetRequests.get(token);
+  }
+
+  async markPasswordResetUsed(token: string): Promise<boolean> {
+    const request = this.passwordResetRequests.get(token);
+    if (request) {
+      request.used = true;
+      this.passwordResetRequests.set(token, request);
+      return true;
+    }
+    return false;
+  }
+
+  async cleanupExpiredPasswordResets(): Promise<number> {
+    const now = new Date();
+    let count = 0;
+    for (const [token, request] of this.passwordResetRequests.entries()) {
+      if (request.expiresAt < now || request.used) {
+        this.passwordResetRequests.delete(token);
+        count++;
+      }
+    }
+    return count;
+  }
+
+  // User Activity Log operations
+  async logUserActivity(activity: InsertUserActivityLog): Promise<UserActivityLog> {
+    const newActivity: UserActivityLog = {
+      id: Date.now(),
+      ...activity,
+      createdAt: new Date()
+    };
+    
+    const userLogs = this.userActivityLogs.get(activity.userId) || [];
+    userLogs.unshift(newActivity); // Add to beginning for newest first
+    this.userActivityLogs.set(activity.userId, userLogs);
+    
+    return newActivity;
+  }
+
+  async getUserActivityLog(userId: number, limit: number = 20): Promise<UserActivityLog[]> {
+    const logs = this.userActivityLogs.get(userId) || [];
+    return logs.slice(0, limit);
+  }
+
   // Subscription plans operations
   async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
     // Return hardcoded subscription plans for in-memory storage

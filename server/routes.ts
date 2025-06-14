@@ -26,6 +26,10 @@ import {
   insertNotificationSchema,
   insertNotificationTypeSchema,
   insertNotificationPreferenceSchema,
+  insertProfessionalAwardSchema,
+  insertTrainingMaterialSchema,
+  insertProfessionalCertificationPortfolioSchema,
+  insertExternalPortfolioLinkSchema,
   users,
   type Resource,
   type User,
@@ -2148,6 +2152,188 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(404).json({ message: "Certification not found" });
       }
     } catch (err) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Portfolio Showcase Routes
+
+  // Professional Awards Routes
+  app.get("/api/professional-profiles/:id/awards", async (req, res) => {
+    try {
+      const professionalId = parseInt(req.params.id);
+      if (isNaN(professionalId)) {
+        return res.status(400).json({ message: "Invalid profile ID" });
+      }
+      
+      const awards = await storage.getProfessionalAwards(professionalId);
+      res.json(awards);
+    } catch (err) {
+      console.error("Error fetching professional awards:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/professional-profiles/:id/awards", isAuthenticated, async (req, res) => {
+    try {
+      const professionalId = parseInt(req.params.id);
+      const user = req.user as any;
+
+      const profile = await storage.getProfessionalProfile(professionalId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      if (profile.userId !== user.id) {
+        return res.status(403).json({ message: "You can only update your own profile" });
+      }
+
+      const awardData = insertProfessionalAwardSchema.parse({
+        ...req.body,
+        professionalId
+      });
+
+      const award = await storage.createProfessionalAward(awardData);
+      res.status(201).json(award);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Training Materials Routes
+  app.get("/api/professional-profiles/:id/training-materials", async (req, res) => {
+    try {
+      const professionalId = parseInt(req.params.id);
+      if (isNaN(professionalId)) {
+        return res.status(400).json({ message: "Invalid profile ID" });
+      }
+      
+      const materials = await storage.getTrainingMaterials(professionalId);
+      res.json(materials);
+    } catch (err) {
+      console.error("Error fetching training materials:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/professional-profiles/:id/training-materials", isAuthenticated, async (req, res) => {
+    try {
+      const professionalId = parseInt(req.params.id);
+      const user = req.user as any;
+
+      const profile = await storage.getProfessionalProfile(professionalId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      if (profile.userId !== user.id) {
+        return res.status(403).json({ message: "You can only update your own profile" });
+      }
+
+      const materialData = insertTrainingMaterialSchema.parse({
+        ...req.body,
+        professionalId
+      });
+
+      const material = await storage.createTrainingMaterial(materialData);
+      res.status(201).json(material);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Certification Portfolio Routes
+  app.get("/api/professional-profiles/:id/certification-portfolio", async (req, res) => {
+    try {
+      const professionalId = parseInt(req.params.id);
+      if (isNaN(professionalId)) {
+        return res.status(400).json({ message: "Invalid profile ID" });
+      }
+      
+      const certifications = await storage.getProfessionalCertificationPortfolio(professionalId);
+      res.json(certifications);
+    } catch (err) {
+      console.error("Error fetching certification portfolio:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/professional-profiles/:id/certification-portfolio", isAuthenticated, async (req, res) => {
+    try {
+      const professionalId = parseInt(req.params.id);
+      const user = req.user as any;
+
+      const profile = await storage.getProfessionalProfile(professionalId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      if (profile.userId !== user.id) {
+        return res.status(403).json({ message: "You can only update your own profile" });
+      }
+
+      const certData = insertProfessionalCertificationPortfolioSchema.parse({
+        ...req.body,
+        professionalId
+      });
+
+      const certification = await storage.createProfessionalCertificationPortfolio(certData);
+      res.status(201).json(certification);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // External Portfolio Links Routes
+  app.get("/api/professional-profiles/:id/portfolio-links", async (req, res) => {
+    try {
+      const professionalId = parseInt(req.params.id);
+      if (isNaN(professionalId)) {
+        return res.status(400).json({ message: "Invalid profile ID" });
+      }
+      
+      const links = await storage.getExternalPortfolioLinks(professionalId);
+      res.json(links);
+    } catch (err) {
+      console.error("Error fetching portfolio links:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/professional-profiles/:id/portfolio-links", isAuthenticated, async (req, res) => {
+    try {
+      const professionalId = parseInt(req.params.id);
+      const user = req.user as any;
+
+      const profile = await storage.getProfessionalProfile(professionalId);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      if (profile.userId !== user.id) {
+        return res.status(403).json({ message: "You can only update your own profile" });
+      }
+
+      const linkData = insertExternalPortfolioLinkSchema.parse({
+        ...req.body,
+        professionalId
+      });
+
+      const link = await storage.createExternalPortfolioLink(linkData);
+      res.status(201).json(link);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
       res.status(500).json({ message: "Internal server error" });
     }
   });

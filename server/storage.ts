@@ -2095,6 +2095,98 @@ export class MemStorage implements IStorage {
       }
     ];
   }
+
+  // Portfolio Showcase operations - Professional Awards
+  async getProfessionalAwards(professionalId: number): Promise<ProfessionalAward[]> {
+    return [];
+  }
+
+  async createProfessionalAward(award: InsertProfessionalAward): Promise<ProfessionalAward> {
+    const id = Math.floor(Math.random() * 1000000);
+    const newAward: ProfessionalAward = {
+      ...award,
+      id,
+      createdAt: new Date()
+    };
+    return newAward;
+  }
+
+  async updateProfessionalAward(id: number, award: Partial<InsertProfessionalAward>): Promise<ProfessionalAward | undefined> {
+    return undefined;
+  }
+
+  async deleteProfessionalAward(id: number): Promise<boolean> {
+    return false;
+  }
+
+  // Training Materials Library
+  async getTrainingMaterials(professionalId: number): Promise<TrainingMaterial[]> {
+    return [];
+  }
+
+  async createTrainingMaterial(material: InsertTrainingMaterial): Promise<TrainingMaterial> {
+    const id = Math.floor(Math.random() * 1000000);
+    const newMaterial: TrainingMaterial = {
+      ...material,
+      id,
+      createdAt: new Date()
+    };
+    return newMaterial;
+  }
+
+  async updateTrainingMaterial(id: number, material: Partial<InsertTrainingMaterial>): Promise<TrainingMaterial | undefined> {
+    return undefined;
+  }
+
+  async deleteTrainingMaterial(id: number): Promise<boolean> {
+    return false;
+  }
+
+  // Certification Portfolio
+  async getProfessionalCertificationPortfolio(professionalId: number): Promise<ProfessionalCertificationPortfolio[]> {
+    return [];
+  }
+
+  async createProfessionalCertificationPortfolio(cert: InsertProfessionalCertificationPortfolio): Promise<ProfessionalCertificationPortfolio> {
+    const id = Math.floor(Math.random() * 1000000);
+    const newCert: ProfessionalCertificationPortfolio = {
+      ...cert,
+      id,
+      createdAt: new Date()
+    };
+    return newCert;
+  }
+
+  async updateProfessionalCertificationPortfolio(id: number, cert: Partial<InsertProfessionalCertificationPortfolio>): Promise<ProfessionalCertificationPortfolio | undefined> {
+    return undefined;
+  }
+
+  async deleteProfessionalCertificationPortfolio(id: number): Promise<boolean> {
+    return false;
+  }
+
+  // External Portfolio Links
+  async getExternalPortfolioLinks(professionalId: number): Promise<ExternalPortfolioLink[]> {
+    return [];
+  }
+
+  async createExternalPortfolioLink(link: InsertExternalPortfolioLink): Promise<ExternalPortfolioLink> {
+    const id = Math.floor(Math.random() * 1000000);
+    const newLink: ExternalPortfolioLink = {
+      ...link,
+      id,
+      createdAt: new Date()
+    };
+    return newLink;
+  }
+
+  async updateExternalPortfolioLink(id: number, link: Partial<InsertExternalPortfolioLink>): Promise<ExternalPortfolioLink | undefined> {
+    return undefined;
+  }
+
+  async deleteExternalPortfolioLink(id: number): Promise<boolean> {
+    return false;
+  }
 }
 
 export class DatabaseStorage implements IStorage {

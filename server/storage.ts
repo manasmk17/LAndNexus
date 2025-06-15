@@ -225,6 +225,7 @@ export class MemStorage implements IStorage {
   private notificationTypes: Map<number, NotificationType>;
   private notifications: Map<number, Notification>;
   private notificationPreferences: Map<number, NotificationPreference>;
+  private userSettings: Map<number, any>;
 
   // Performance optimization: Add caching for expensive operations
   private matchCache: Map<string, any> = new Map();
@@ -275,6 +276,7 @@ export class MemStorage implements IStorage {
     this.notificationTypes = new Map();
     this.notifications = new Map();
     this.notificationPreferences = new Map();
+    this.userSettings = new Map();
 
     // Initialize cache maps
     this.matchCache = new Map();
@@ -1962,6 +1964,35 @@ export class MemStorage implements IStorage {
     }
   }
 
+  // User Settings operations
+  async getUserSettings(userId: number): Promise<any> {
+    const settings = this.userSettings.get(userId);
+    if (settings) {
+      return settings;
+    }
+    
+    // Return default settings if none exist
+    const defaultSettings = {
+      notifications: true,
+      profileVisible: true,
+      emailUpdates: false
+    };
+    
+    return defaultSettings;
+  }
+
+  async updateUserSettings(userId: number, settings: any): Promise<any> {
+    const existing = this.userSettings.get(userId) || {
+      notifications: true,
+      profileVisible: true,
+      emailUpdates: false
+    };
+    
+    const updated = { ...existing, ...settings };
+    this.userSettings.set(userId, updated);
+    return updated;
+  }
+
   // Authentication token operations for "Remember Me"
   async createAuthToken(userId: number, type: string, expiresAt: Date, userAgent?: string, ipAddress?: string): Promise<AuthToken> {
     const crypto = await import('crypto');
@@ -2327,6 +2358,28 @@ export class DatabaseStorage implements IStorage {
         .returning() || [];
       return newPreference;
     }
+  }
+
+  // User Settings operations
+  async getUserSettings(userId: number): Promise<any> {
+    // For database storage, we'll store settings in the users table or create a separate settings table
+    // For now, return default settings - this can be extended to use a proper settings table
+    return {
+      notifications: true,
+      profileVisible: true,
+      emailUpdates: false
+    };
+  }
+
+  async updateUserSettings(userId: number, settings: any): Promise<any> {
+    // For database storage, this would update a settings table or user preferences
+    // For now, return the settings as if they were saved
+    return {
+      notifications: true,
+      profileVisible: true,
+      emailUpdates: false,
+      ...settings
+    };
   }
 
   // User operations

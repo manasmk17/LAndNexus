@@ -3694,6 +3694,15 @@ class MemStorageWithSubscriptions extends MemStorage {
       updatedAt: new Date()
     };
   }
+
+  // Override user settings methods to ensure they're available
+  async getUserSettings(userId: number): Promise<any> {
+    return super.getUserSettings(userId);
+  }
+
+  async updateUserSettings(userId: number, settings: any): Promise<any> {
+    return super.updateUserSettings(userId, settings);
+  }
 }
 
 // Dynamically use MemStorage or DatabaseStorage based on database connection status

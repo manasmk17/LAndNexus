@@ -51,7 +51,7 @@ export default function SettingsPage() {
   // Save settings mutation
   const saveSettingsMutation = useMutation({
     mutationFn: async (settingsData: typeof settings) => {
-      return apiRequest('/api/user-settings', 'PUT', settingsData);
+      return apiRequest('PUT', '/api/user-settings', settingsData);
     },
     onSuccess: () => {
       setHasChanges(false);

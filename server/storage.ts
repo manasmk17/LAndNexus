@@ -189,6 +189,10 @@ export interface IStorage {
   getUserNotificationPreference(userId: number, typeId: number): Promise<NotificationPreference | undefined>;
   createOrUpdateNotificationPreference(preference: InsertNotificationPreference): Promise<NotificationPreference>;
 
+  // User Settings operations
+  getUserSettings(userId: number): Promise<any>;
+  updateUserSettings(userId: number, settings: any): Promise<any>;
+
   // Subscription operations
   getUserSubscription(userId: number): Promise<any>;
   updateUserSubscription(userId: number, subscriptionData: any): Promise<any>;

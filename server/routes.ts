@@ -5519,6 +5519,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User Settings Endpoints
+  app.get("/api/user-settings", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const settings = await storage.getUserSettings(user.id);
+      
+      res.json(settings);
+    } catch (err) {
+      console.error("Error fetching user settings:", err);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
+  app.put("/api/user-settings", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const { notifications, profileVisible, emailUpdates } = req.body;
+      
+      const settings = await storage.updateUserSettings(user.id, {
+        notifications,
+        profileVisible,
+        emailUpdates
+      });
+      
+      res.json(settings);
+    } catch (err) {
+      console.error("Error updating user settings:", err);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
   // WebSocket server for real-time messaging
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
   

@@ -5,35 +5,88 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Bell, Shield, Eye } from "lucide-react";
-import { useState } from "react";
+import { Bell, Shield, Eye, Save } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function SettingsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
-  // Simplified settings state
+  // Settings state
   const [settings, setSettings] = useState({
     notifications: true,
     profileVisible: true,
     emailUpdates: false
+  });
+  const [hasChanges, setHasChanges] = useState(false);
+
+  // Fetch user settings
+  const { data: userSettings } = useQuery({
+    queryKey: ['/api/user-settings'],
+    queryFn: async () => {
+      const response = await fetch('/api/user-settings');
+      if (response.ok) {
+        return response.json();
+      }
+      return null;
+    },
+    enabled: !!user,
+  });
+
+  // Load settings when user data is available
+  useEffect(() => {
+    if (userSettings) {
+      setSettings({
+        notifications: userSettings.notifications ?? true,
+        profileVisible: userSettings.profileVisible ?? true,
+        emailUpdates: userSettings.emailUpdates ?? false
+      });
+    }
+  }, [userSettings]);
+
+  // Save settings mutation
+  const saveSettingsMutation = useMutation({
+    mutationFn: async (settingsData: typeof settings) => {
+      return apiRequest('/api/user-settings', 'PUT', settingsData);
+    },
+    onSuccess: () => {
+      setHasChanges(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/user-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/me'] });
+      toast({
+        title: "Settings Saved",
+        description: "Your preferences have been updated successfully.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   if (!user) {
     return <div>Please log in to access settings.</div>;
   }
 
-  // Simple setting update function
+  // Setting update function
   const updateSetting = (key: string, value: boolean) => {
     setSettings(prev => ({
       ...prev,
       [key]: value
     }));
-    toast({
-      title: "Setting Updated",
-      description: `${key.charAt(0).toUpperCase() + key.slice(1)} ${value ? 'enabled' : 'disabled'}`,
-    });
+    setHasChanges(true);
+  };
+
+  // Save function
+  const handleSave = () => {
+    saveSettingsMutation.mutate(settings);
   };
 
   return (
@@ -111,6 +164,18 @@ export default function SettingsPage() {
               <Link href="/subscription-plans">
                 <Button variant="outline">Manage Plan</Button>
               </Link>
+            </div>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <Label className="text-base">Save Settings</Label>
+              <Button 
+                onClick={handleSave}
+                disabled={!hasChanges || saveSettingsMutation.isPending}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Save className="mr-2 h-4 w-4" />
+                {saveSettingsMutation.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
             </div>
           </CardContent>
         </Card>

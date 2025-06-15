@@ -50,6 +50,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
+        // Prevent redirect loops by clearing problematic parameters
+        const currentUrl = new URL(window.location.href);
+        if (currentUrl.searchParams.has('redirect') && currentUrl.searchParams.get('redirect')?.includes('/resource/')) {
+          currentUrl.searchParams.delete('redirect');
+          window.history.replaceState({}, '', currentUrl.toString());
+        }
+
         // First, try to restore from localStorage
         const storedToken = localStorage.getItem('session_token');
         const storedUserData = localStorage.getItem('user_data');
@@ -71,6 +78,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             console.log("Session restoration failed, clearing stored data");
             localStorage.removeItem('session_token');
             localStorage.removeItem('user_data');
+            // Clear any redirect parameters that might cause loops
+            if (window.location.search.includes('redirect=')) {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('redirect');
+              window.history.replaceState({}, '', url.toString());
+            }
           }
         }
 
@@ -93,6 +106,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         } else {
           console.log("Authentication cleared");
           setUser(null);
+          // Clear any redirect parameters that might cause loops
+          if (window.location.search.includes('redirect=')) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('redirect');
+            window.history.replaceState({}, '', url.toString());
+          }
         }
       } catch (err) {
         console.warn("Authentication check failed:", err);

@@ -22,9 +22,18 @@ function AuthenticationCheck({
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        // Get current path for redirect after login
+        // Clear any existing redirect loops first
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('redirect')) {
+          url.searchParams.delete('redirect');
+          window.history.replaceState({}, '', url.toString());
+        }
+        
+        // Only redirect to login if not already there
         const currentPath = window.location.pathname;
-        setLocation(`/login?redirect=${encodeURIComponent(currentPath)}`);
+        if (currentPath !== '/login') {
+          setLocation(`/login?redirect=${encodeURIComponent(currentPath)}`);
+        }
       } else if (adminOnly && !user.isAdmin) {
         setLocation("/");
       } else if (userTypes.length > 0 && !userTypes.includes(user.userType)) {

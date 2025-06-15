@@ -43,6 +43,13 @@ export default function ResourceDetail() {
     data: author 
   } = useQuery<User>({
     queryKey: ['/api/me', resource?.authorId],
+    queryFn: async () => {
+      const response = await fetch(`/api/me/${resource?.authorId}`);
+      if (!response.ok) {
+        throw new Error('Author not found');
+      }
+      return response.json();
+    },
     enabled: !!resource?.authorId,
   });
 

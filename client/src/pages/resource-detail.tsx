@@ -124,7 +124,7 @@ export default function ResourceDetail() {
   const typeInfo = getResourceTypeInfo(resource.resourceType);
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Breadcrumb */}
       <div className="mb-6">
         <Button variant="ghost" size="sm" asChild>
@@ -153,8 +153,8 @@ export default function ResourceDetail() {
                       </Badge>
                     )}
                   </div>
-                  <CardTitle className="text-2xl mb-2">{resource.title}</CardTitle>
-                  <p className="text-muted-foreground">{resource.description}</p>
+                  <CardTitle className="text-2xl mb-2 break-words">{resource.title}</CardTitle>
+                  <p className="text-muted-foreground break-words">{resource.description}</p>
                 </div>
               </div>
             </CardHeader>
@@ -172,7 +172,7 @@ export default function ResourceDetail() {
 
               {/* Resource Content */}
               <div className="prose max-w-none">
-                <p className="text-gray-700 leading-relaxed">
+                <p className="text-gray-700 leading-relaxed break-words whitespace-pre-wrap">
                   {resource.content || "No detailed content available for this resource."}
                 </p>
               </div>

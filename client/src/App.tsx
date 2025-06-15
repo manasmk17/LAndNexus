@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -157,6 +157,27 @@ function Router() {
 }
 
 function App() {
+  const [location, setLocation] = useLocation();
+
+  // Prevent automatic redirect loops to resource pages
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    const searchParams = new URLSearchParams(window.location.search);
+    
+    // If we're being redirected to a resource page automatically, stop it
+    if (searchParams.has('redirect') && searchParams.get('redirect')?.includes('/resource/')) {
+      console.log('Preventing automatic resource page redirect');
+      searchParams.delete('redirect');
+      const newUrl = window.location.pathname + (searchParams.toString() ? '?' + searchParams.toString() : '');
+      window.history.replaceState({}, '', newUrl);
+      
+      // Redirect to home if we're on a problematic page
+      if (currentPath.includes('/resource/') && !document.referrer.includes('/resource')) {
+        setLocation('/');
+      }
+    }
+  }, [setLocation]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

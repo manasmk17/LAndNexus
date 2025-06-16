@@ -2162,44 +2162,92 @@ export class MemStorage implements IStorage {
 export class DatabaseStorage implements IStorage {
   
   private async getDb() {
-    if (!useRealDatabase || !db) {
+    if (!db) {
       throw new Error("Database not available");
     }
     return db;
   }
+
+  // User operations - using database implementation
+  async getUser(id: number): Promise<User | undefined> {
+    const database = await this.getDb();
+    const [user] = await database.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const database = await this.getDb();
+    const [user] = await database.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const database = await this.getDb();
+    const [user] = await database.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(userData: InsertUser): Promise<User> {
+    const database = await this.getDb();
+    const [user] = await database.insert(users).values(userData).returning();
+    return user;
+  }
+
+  async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
+    const database = await this.getDb();
+    const [user] = await database.update(users).set(updates).where(eq(users.id, id)).returning();
+    return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    const database = await this.getDb();
+    return await database.select().from(users);
+  }
+
+  async deleteUser(id: number): Promise<boolean> {
+    const database = await this.getDb();
+    const result = await database.delete(users).where(eq(users.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
   // Review operations
   async getReview(id: number): Promise<Review | undefined> {
-    const [review] = await db?.select().from(reviews).where(eq(reviews.id, id)) || [];
+    const database = await this.getDb();
+    const [review] = await database.select().from(reviews).where(eq(reviews.id, id));
     return review;
   }
 
   async getProfessionalReviews(professionalId: number): Promise<Review[]> {
-    const results = await db?.select()
+    const database = await this.getDb();
+    const results = await database.select()
       .from(reviews)
       .where(eq(reviews.professionalId, professionalId))
-      .orderBy(desc(reviews.createdAt)) || [];
+      .orderBy(desc(reviews.createdAt));
     return results;
   }
 
   async getCompanyReviews(companyId: number): Promise<Review[]> {
-    const results = await db?.select()
+    const database = await this.getDb();
+    const results = await database.select()
       .from(reviews)
       .where(eq(reviews.companyId, companyId))
-      .orderBy(desc(reviews.createdAt)) || [];
+      .orderBy(desc(reviews.createdAt));
     return results;
   }
 
   async getConsultationReview(consultationId: number): Promise<Review | undefined> {
-    const [review] = await db?.select()
+    const database = await this.getDb();
+    const [review] = await database.select()
       .from(reviews)
-      .where(eq(reviews.consultationId, consultationId)) || [];
+      .where(eq(reviews.consultationId, consultationId));
     return review;
   }
 
   async createReview(review: InsertReview): Promise<Review> {
-    const [newReview] = await db?.insert(reviews)
+    const database = await this.getDb();
+    const [newReview] = await database.insert(reviews)
       .values(review)
-      .returning() || [];
+      .returning();
 
     // Update the professional's rating
     await this.updateProfessionalRating(review.professionalId);
@@ -2208,10 +2256,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateReview(id: number, reviewData: Partial<Review>): Promise<Review | undefined> {
-    const [updatedReview] = await db?.update(reviews)
+    const database = await this.getDb();
+    const [updatedReview] = await database.update(reviews)
       .set(reviewData)
       .where(eq(reviews.id, id))
-      .returning() || [];
+      .returning();
 
     if (updatedReview && reviewData.rating !== undefined) {
       await this.updateProfessionalRating(updatedReview.professionalId);
@@ -2221,9 +2270,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteReview(id: number): Promise<boolean> {
-    const [deletedReview] = await db?.delete(reviews)
+    const database = await this.getDb();
+    const [deletedReview] = await database.delete(reviews)
       .where(eq(reviews.id, id))
-      .returning() || [];
+      .returning();
 
     if (deletedReview) {
       await this.updateProfessionalRating(deletedReview.professionalId);

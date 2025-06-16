@@ -448,9 +448,6 @@ export class MemStorage implements IStorage {
         subscriptionStatus: null,
         resetToken: null,
         resetTokenExpiry: null,
-        registrationCompleted: true,
-        lastPasswordChange: new Date(),
-        accountStatus: "active",
         stripeConnectAccountId: null,
         payoutAccountSetup: false
       };
@@ -985,9 +982,6 @@ export class MemStorage implements IStorage {
       subscriptionStatus: null,
       resetToken: null,
       resetTokenExpiry: null,
-      registrationCompleted: (insertUser as any).registrationCompleted || false,
-      lastPasswordChange: (insertUser as any).lastPasswordChange || new Date(),
-      accountStatus: (insertUser as any).accountStatus || "pending",
       stripeConnectAccountId: null,
       payoutAccountSetup: false
     };

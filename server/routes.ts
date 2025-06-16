@@ -240,16 +240,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return done(null, false, { message: "Incorrect username or email" });
       }
-
-      // Security validation: Check registration completion
-      if (!user.registrationCompleted) {
-        return done(null, false, { message: "Account registration not completed" });
-      }
-
-      // Security validation: Check account status
-      if (user.accountStatus !== "active") {
-        return done(null, false, { message: "Account is not active" });
-      }
       
       // Simplified password verification for debugging
       console.log(`Login attempt for user: ${user.username}, stored password format: ${user.password.includes('.') ? 'hashed' : 'plaintext'}`);
@@ -308,17 +298,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = await storage.getUser(id);
       if (user) {
-        // Security validation: Check registration completion and account status
-        if (!user.registrationCompleted) {
-          console.log(`User ${user.username} session rejected: registration not completed`);
-          return done(null, false);
-        }
-        
-        if (user.accountStatus !== "active") {
-          console.log(`User ${user.username} session rejected: account status is ${user.accountStatus}`);
-          return done(null, false);
-        }
-        
         // Remove password from user object for security
         const { password, ...safeUser } = user;
         done(null, safeUser);
@@ -367,20 +346,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             try {
               const user = await storage.getUser(tokenData.userId);
               if (user) {
-                // Security validation: Check registration completion
-                if (!user.registrationCompleted) {
-                  console.log(`Token auth rejected for user ${user.username}: registration not completed`);
-                  sessionTokenStore.delete(sessionToken);
-                  return res.status(401).json({ message: "Account registration not completed" });
-                }
-                
-                // Security validation: Check account status
-                if (user.accountStatus !== "active") {
-                  console.log(`Token auth rejected for user ${user.username}: account status is ${user.accountStatus}`);
-                  sessionTokenStore.delete(sessionToken);
-                  return res.status(401).json({ message: "Account is not active" });
-                }
-                
                 const { password, ...safeUser } = user;
                 (req as any).user = safeUser;
                 
@@ -862,25 +827,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email already exists" });
       }
 
-      // Hash password before creating user
-      const saltRounds = 12;
-      const hashedPassword = await new Promise<string>((resolve, reject) => {
-        crypto.scrypt(userData.password, saltRounds.toString(), 64, (err: any, derivedKey: Buffer) => {
-          if (err) reject(err);
-          else resolve(derivedKey.toString('hex'));
-        });
-      });
-
-      // Create user with registration completion flag set
-      const userDataWithSecurity = {
-        ...userData,
-        password: hashedPassword,
-        registrationCompleted: true,
-        accountStatus: "active",
-        lastPasswordChange: new Date()
-      };
-
-      const user = await storage.createUser(userDataWithSecurity);
+      const user = await storage.createUser(userData);
 
       // If the user is a professional, create a basic professional profile
       if (user.userType === "professional") {
@@ -927,49 +874,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/login", async (req, res, next) => {
-    try {
-      // Pre-login security checks
-      const { username, password } = req.body;
-      
-      if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
-      }
-
-      // Check if user exists and is properly registered
-      const user = await storage.getUserByUsername(username) || await storage.getUserByEmail(username);
-      
-      if (!user) {
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
-
-      // Check if registration is completed
-      if (!user.registrationCompleted) {
-        return res.status(401).json({ message: "Account registration not completed. Please complete registration first." });
-      }
-
-      // Check account status
-      if (user.accountStatus !== "active") {
-        return res.status(401).json({ message: "Account is not active. Please contact support." });
-      }
-
-      // Verify password
-      const isValidPassword = await new Promise<boolean>((resolve) => {
-        crypto.scrypt(password, "12", 64, (err: any, derivedKey: Buffer) => {
-          if (err) resolve(false);
-          else resolve(derivedKey.toString('hex') === user.password);
-        });
-      });
-
-      if (!isValidPassword) {
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
-
-    } catch (error) {
-      console.error("Pre-login validation error:", error);
-      return res.status(500).json({ message: "Login validation failed" });
-    }
-
+  app.post("/api/login", (req, res, next) => {
     passport.authenticate("local", async (err: any, user: any, info: any) => {
       if (err) {
         return next(err);

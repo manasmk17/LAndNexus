@@ -7,7 +7,7 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 import * as crypto from "crypto";
-import * as bcrypt from "bcryptjs";
+// bcrypt will be imported dynamically when needed
 import { 
   insertUserSchema, 
   insertProfessionalProfileSchema,
@@ -268,13 +268,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check for bcrypt passwords
       if (user.password.startsWith('$2b$') || user.password.startsWith('$2a$')) {
-        const isValid = await bcrypt.compare(password, user.password);
-        if (isValid) {
-          console.log(`Bcrypt password verified for user: ${user.username}`);
-          return done(null, user);
-        } else {
-          console.log(`Bcrypt password mismatch for user: ${user.username}`);
-          return done(null, false, { message: "Incorrect password" });
+        try {
+          const bcrypt = await import('bcryptjs');
+          const isValid = await bcrypt.default.compare(password, user.password);
+          if (isValid) {
+            console.log(`Bcrypt password verified for user: ${user.username}`);
+            return done(null, user);
+          } else {
+            console.log(`Bcrypt password mismatch for user: ${user.username}`);
+            return done(null, false, { message: "Incorrect password" });
+          }
+        } catch (error) {
+          console.error("Bcrypt import error:", error);
+          return done(null, false, { message: "Authentication error" });
         }
       }
       

@@ -10,12 +10,26 @@ import { Users, Briefcase, BookOpen, DollarSign, Settings, Activity } from "luci
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface DashboardStats {
-  totalUsers: number;
-  totalJobs: number;
-  totalResources: number;
-  totalRevenue: number;
-  activeUsers: number;
-  pendingJobs: number;
+  overview: {
+    totalUsers: string;
+    totalJobs: string;
+    totalResources: string;
+    usersByType: {
+      admin: string;
+      professional: string;
+      company: string;
+    };
+    jobsByStatus: {
+      open: string;
+      deleted: string;
+    };
+    resourcesByCategory: Array<{
+      id: number;
+      name: string;
+      description: string;
+    }>;
+  };
+  recentActivity: any[];
 }
 
 interface User {
@@ -33,18 +47,21 @@ interface User {
 interface JobPosting {
   id: number;
   title: string;
-  company: string;
-  status: string;
+  companyId: number;
+  status?: string;
   createdAt: string;
+  [key: string]: any;
 }
 
 interface Resource {
   id: number;
   title: string;
-  author: string;
-  status: string;
-  featured: boolean;
+  authorId: number;
+  featured: boolean | null;
   createdAt: string;
+  resourceType: string;
+  description: string;
+  [key: string]: any;
 }
 
 export default function AdminDashboard() {
@@ -58,25 +75,28 @@ export default function AdminDashboard() {
     }
   }, [user, isLoading, setLocation]);
 
-  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
+  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery<DashboardStats>({
     queryKey: ["/api/admin/dashboard/stats"],
     enabled: !!user?.isAdmin,
   });
 
-  const { data: users, isLoading: usersLoading, error: usersError } = useQuery({
+  const { data: users, isLoading: usersLoading, error: usersError } = useQuery<User[]>({
     queryKey: ["/api/admin/users"],
     enabled: !!user?.isAdmin,
   });
 
-  const { data: jobs, isLoading: jobsLoading, error: jobsError } = useQuery({
+  const { data: jobsData, isLoading: jobsLoading, error: jobsError } = useQuery({
     queryKey: ["/api/admin/jobs"],
     enabled: !!user?.isAdmin,
   });
 
-  const { data: resources, isLoading: resourcesLoading, error: resourcesError } = useQuery({
+  const { data: resources, isLoading: resourcesLoading, error: resourcesError } = useQuery<Resource[]>({
     queryKey: ["/api/admin/resources"],
     enabled: !!user?.isAdmin,
   });
+
+  // Extract jobs array from the response
+  const jobs = Array.isArray(jobsData) ? jobsData : jobsData?.jobs || [];
 
   if (isLoading) {
     return (
@@ -109,8 +129,15 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.overview?.totalUsers || 0}
+              {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.overview?.totalUsers || "0"}
             </div>
+            <p className="text-xs text-muted-foreground">
+              {stats?.overview && (
+                <>
+                  {stats.overview.usersByType?.admin || "0"} admins, {stats.overview.usersByType?.professional || "0"} professionals, {stats.overview.usersByType?.company || "0"} companies
+                </>
+              )}
+            </p>
           </CardContent>
         </Card>
 
@@ -121,8 +148,15 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.overview?.totalJobs || 0}
+              {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.overview?.totalJobs || "0"}
             </div>
+            <p className="text-xs text-muted-foreground">
+              {stats?.overview && (
+                <>
+                  {stats.overview.jobsByStatus?.open || "0"} open, {stats.overview.jobsByStatus?.deleted || "0"} archived
+                </>
+              )}
+            </p>
           </CardContent>
         </Card>
 
@@ -133,20 +167,26 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.overview?.totalResources || 0}
+              {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.overview?.totalResources || "0"}
             </div>
+            <p className="text-xs text-muted-foreground">
+              Across {stats?.overview?.resourcesByCategory?.length || 0} categories
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Activity</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-16" /> : `$${stats?.overview?.totalRevenue || 0}`}
+              {statsLoading ? <Skeleton className="h-8 w-16" /> : "Active"}
             </div>
+            <p className="text-xs text-muted-foreground">
+              Platform operational
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -176,7 +216,7 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {Array.isArray(users?.data) ? users.data.slice(0, 10).map((user: User) => (
+                  {Array.isArray(users) && users.length > 0 ? users.slice(0, 10).map((user: User) => (
                     <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center space-x-3">
                         <div>
@@ -188,8 +228,8 @@ export default function AdminDashboard() {
                         <Badge variant={user.userType === 'admin' ? 'default' : 'secondary'}>
                           {user.userType}
                         </Badge>
-                        <Badge variant={user.status === 'active' ? 'default' : 'destructive'}>
-                          {user.status || 'active'}
+                        <Badge variant={user.isAdmin ? 'default' : 'secondary'}>
+                          {user.isAdmin ? 'Admin' : 'User'}
                         </Badge>
                       </div>
                     </div>
@@ -215,17 +255,17 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {jobs?.slice(0, 10).map((job: JobPosting) => (
+                  {Array.isArray(jobs) && jobs.length > 0 ? jobs.slice(0, 10).map((job: JobPosting) => (
                     <div key={job.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
                         <p className="font-medium">{job.title}</p>
-                        <p className="text-sm text-muted-foreground">{job.company}</p>
+                        <p className="text-sm text-muted-foreground">Company ID: {job.companyId}</p>
                       </div>
                       <Badge variant={job.status === 'active' ? 'default' : 'secondary'}>
                         {job.status || 'active'}
                       </Badge>
                     </div>
-                  )) || <p>No jobs found</p>}
+                  )) : <p>No jobs found</p>}
                 </div>
               )}
             </CardContent>

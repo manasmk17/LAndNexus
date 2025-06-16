@@ -84,9 +84,14 @@ function Router() {
         userTypes={["company"]} 
       />
       
-      {/* Admin Dashboard Route */}
+      {/* Admin Dashboard Routes */}
       <ProtectedRoute 
         path="/admin" 
+        component={AdminDashboard} 
+        adminOnly={true} 
+      />
+      <ProtectedRoute 
+        path="/admin-dashboard" 
         component={AdminDashboard} 
         adminOnly={true} 
       />

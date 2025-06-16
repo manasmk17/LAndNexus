@@ -251,49 +251,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return done(null, false, { message: "Account is not active" });
       }
       
-      // Simplified password verification for debugging
-      console.log(`Login attempt for user: ${user.username}, stored password format: ${user.password.includes('.') ? 'hashed' : 'plaintext'}`);
+      // Handle password verification based on the new hashing format
+      console.log(`Login attempt for user: ${user.username}`);
       
-      // Handle both hashed and plaintext passwords for compatibility
-      if (!user.password.includes('.')) {
-        // Direct comparison for plaintext (development/testing)
-        if (user.password === password) {
-          console.log(`Plaintext password match for user: ${user.username}`);
+      // New users have passwords hashed with scrypt using salt "12"
+      crypto.scrypt(password, "12", 64, (err: any, derivedKey: Buffer) => {
+        if (err) {
+          console.error("Password verification error:", err);
+          return done(null, false, { message: "Authentication failed" });
+        }
+        
+        const hashedPassword = derivedKey.toString('hex');
+        if (hashedPassword === user.password) {
+          console.log(`Password verified for user: ${user.username}`);
           return done(null, user);
         } else {
-          console.log(`Plaintext password mismatch for user: ${user.username}`);
+          console.log(`Password mismatch for user: ${user.username}`);
           return done(null, false, { message: "Incorrect password" });
         }
-      } else {
-        // Handle hashed passwords
-        const [storedHash, salt] = user.password.split('.');
-        const keyLen = Buffer.from(storedHash, 'hex').length;
-        
-        crypto.scrypt(password, salt, keyLen, (err: any, derivedKey: Buffer) => {
-          if (err) {
-            console.error("Scrypt error:", err);
-            return done(err);
-          }
-          
-          try {
-            const passwordMatches = crypto.timingSafeEqual(
-              Buffer.from(storedHash, 'hex'),
-              derivedKey
-            );
-            
-            if (passwordMatches) {
-              console.log(`Hashed password match for user: ${user.username}`);
-              return done(null, user);
-            } else {
-              console.log(`Hashed password mismatch for user: ${user.username}`);
-              return done(null, false, { message: "Incorrect password" });
-            }
-          } catch (error) {
-            console.error("Password comparison error:", error);
-            return done(null, false, { message: "Password verification error" });
-          }
-        });
-      }
+      });
     } catch (err) {
       console.error("Error during password verification:", err);
       return done(err);
@@ -953,17 +929,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Account is not active. Please contact support." });
       }
 
-      // Verify password
-      const isValidPassword = await new Promise<boolean>((resolve) => {
-        crypto.scrypt(password, "12", 64, (err: any, derivedKey: Buffer) => {
-          if (err) resolve(false);
-          else resolve(derivedKey.toString('hex') === user.password);
-        });
-      });
-
-      if (!isValidPassword) {
-        return res.status(401).json({ message: "Invalid credentials" });
-      }
+      // Skip manual password verification - let Passport handle it
+      console.log(`Pre-login checks passed for user: ${user.username}`);
 
     } catch (error) {
       console.error("Pre-login validation error:", error);

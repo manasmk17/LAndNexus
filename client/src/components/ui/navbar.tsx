@@ -100,12 +100,7 @@ export default function Navbar() {
           <div className="flex items-center space-x-4">
             {user ? (
               <div className="hidden md:flex items-center space-x-2">
-                {user.isAdmin ? (
-                  <Link href="/admin-dashboard" className="flex items-center px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-md transition-colors">
-                    <LayoutDashboard className="h-4 w-4 mr-1.5" />
-                    Dashboard
-                  </Link>
-                ) : user.userType === "professional" ? (
+                {user.userType === "professional" ? (
                   <Link href="/professional-dashboard" className="flex items-center px-3 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-md transition-colors">
                     <LayoutDashboard className="h-4 w-4 mr-1.5" />
                     Dashboard
@@ -247,14 +242,7 @@ export default function Navbar() {
                 <>
                   {/* Dashboard Button */}
                   <li className="pt-2 mt-2 border-t border-slate-100">
-                    {user.isAdmin ? (
-                      <Link href="/admin-dashboard" className={`flex items-center px-3 py-2.5 rounded-md ${isActive("/admin-dashboard") 
-                        ? "text-blue-700 font-medium bg-blue-50" 
-                        : "text-slate-700 hover:text-blue-600 hover:bg-slate-50"}`}>
-                        <LayoutDashboard className={`h-5 w-5 mr-3 ${isActive("/admin-dashboard") ? "text-blue-700" : "text-slate-500"}`} />
-                        Dashboard
-                      </Link>
-                    ) : user.userType === "professional" ? (
+                    {user.userType === "professional" ? (
                       <Link href="/professional-dashboard" className={`flex items-center px-3 py-2.5 rounded-md ${isActive("/professional-dashboard") 
                         ? "text-blue-700 font-medium bg-blue-50" 
                         : "text-slate-700 hover:text-blue-600 hover:bg-slate-50"}`}>

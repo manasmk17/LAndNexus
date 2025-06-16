@@ -58,22 +58,22 @@ export default function AdminDashboard() {
     }
   }, [user, isLoading, setLocation]);
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
     queryKey: ["/api/admin/dashboard/stats"],
     enabled: !!user?.isAdmin,
   });
 
-  const { data: users, isLoading: usersLoading } = useQuery({
+  const { data: users, isLoading: usersLoading, error: usersError } = useQuery({
     queryKey: ["/api/admin/users"],
     enabled: !!user?.isAdmin,
   });
 
-  const { data: jobs, isLoading: jobsLoading } = useQuery({
+  const { data: jobs, isLoading: jobsLoading, error: jobsError } = useQuery({
     queryKey: ["/api/admin/jobs"],
     enabled: !!user?.isAdmin,
   });
 
-  const { data: resources, isLoading: resourcesLoading } = useQuery({
+  const { data: resources, isLoading: resourcesLoading, error: resourcesError } = useQuery({
     queryKey: ["/api/admin/resources"],
     enabled: !!user?.isAdmin,
   });
@@ -109,7 +109,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.totalUsers || 0}
+              {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.overview?.totalUsers || 0}
             </div>
           </CardContent>
         </Card>
@@ -121,7 +121,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.totalJobs || 0}
+              {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.overview?.totalJobs || 0}
             </div>
           </CardContent>
         </Card>
@@ -133,7 +133,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.totalResources || 0}
+              {statsLoading ? <Skeleton className="h-8 w-16" /> : stats?.overview?.totalResources || 0}
             </div>
           </CardContent>
         </Card>
@@ -145,7 +145,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {statsLoading ? <Skeleton className="h-8 w-16" /> : `$${stats?.totalRevenue || 0}`}
+              {statsLoading ? <Skeleton className="h-8 w-16" /> : `$${stats?.overview?.totalRevenue || 0}`}
             </div>
           </CardContent>
         </Card>
@@ -176,7 +176,7 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {users?.slice(0, 10).map((user: User) => (
+                  {Array.isArray(users?.data) ? users.data.slice(0, 10).map((user: User) => (
                     <div key={user.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center space-x-3">
                         <div>
@@ -193,7 +193,7 @@ export default function AdminDashboard() {
                         </Badge>
                       </div>
                     </div>
-                  )) || <p>No users found</p>}
+                  )) : <p>No users found</p>}
                 </div>
               )}
             </CardContent>

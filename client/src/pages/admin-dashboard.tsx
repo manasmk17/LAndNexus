@@ -287,22 +287,22 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {resources?.slice(0, 10).map((resource: Resource) => (
+                  {Array.isArray(resources) && resources.length > 0 ? resources.slice(0, 10).map((resource: Resource) => (
                     <div key={resource.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
                         <p className="font-medium">{resource.title}</p>
-                        <p className="text-sm text-muted-foreground">{resource.author}</p>
+                        <p className="text-sm text-muted-foreground">{resource.resourceType} • Author ID: {resource.authorId}</p>
                       </div>
                       <div className="flex items-center space-x-2">
                         {resource.featured && (
                           <Badge variant="default">Featured</Badge>
                         )}
-                        <Badge variant={resource.status === 'published' ? 'default' : 'secondary'}>
-                          {resource.status || 'published'}
+                        <Badge variant="secondary">
+                          {resource.resourceType}
                         </Badge>
                       </div>
                     </div>
-                  )) || <p>No resources found</p>}
+                  )) : <p>No resources found</p>}
                 </div>
               )}
             </CardContent>

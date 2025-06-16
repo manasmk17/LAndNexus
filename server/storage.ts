@@ -197,34 +197,6 @@ export interface IStorage {
   getUserSubscription(userId: number): Promise<any>;
   updateUserSubscription(userId: number, subscriptionData: any): Promise<any>;
 
-  // Admin operations
-  getUserCount(): Promise<number>;
-  getJobPostingCount(): Promise<number>;
-  getResourceCount(): Promise<number>;
-  getRecentActivity(limit: number): Promise<any[]>;
-  getUsersByType(): Promise<any>;
-  getJobsByStatus(): Promise<any>;
-  getResourcesByCategory(): Promise<any[]>;
-  getUsersWithFilters(filters: any): Promise<any>;
-  getUserById(id: number): Promise<User | undefined>;
-  getUserProfile(userId: number): Promise<any>;
-  getUserActivity(userId: number): Promise<any[]>;
-  updateUserStatus(userId: number, status: string, reason?: string): Promise<User | undefined>;
-  updateUserVerification(userId: number, verified: boolean, notes?: string): Promise<User | undefined>;
-  getJobPostingsWithFilters(filters: any): Promise<any>;
-  moderateJobPosting(jobId: number, status: string, notes?: string): Promise<any>;
-  getResourcesWithFilters(filters: any): Promise<any>;
-  moderateResource(resourceId: number, status: string, notes?: string, featured?: boolean): Promise<any>;
-  getRevenueData(period: number): Promise<any>;
-  getSubscriptionStats(): Promise<any>;
-  getRecentTransactions(limit: number): Promise<any[]>;
-  getSubscriptionsWithFilters(filters: any): Promise<any>;
-  getSystemSettings(): Promise<any>;
-  updateSystemSettings(settings: any): Promise<any>;
-  logAdminAction(action: any): Promise<void>;
-  getAdminLogs(filters: any): Promise<any>;
-  verifyPassword(password: string, hashedPassword: string): Promise<boolean>;
-
   // Simple auth token operations (simplified)
   createSimpleAuthToken?(userId: number): Promise<string>;
   validateSimpleAuthToken?(token: string): Promise<number | null>;
@@ -2160,94 +2132,39 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  
-  private async getDb() {
-    if (!db) {
-      throw new Error("Database not available");
-    }
-    return db;
-  }
-
-  // User operations - using database implementation
-  async getUser(id: number): Promise<User | undefined> {
-    const database = await this.getDb();
-    const [user] = await database.select().from(users).where(eq(users.id, id));
-    return user;
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const database = await this.getDb();
-    const [user] = await database.select().from(users).where(eq(users.username, username));
-    return user;
-  }
-
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const database = await this.getDb();
-    const [user] = await database.select().from(users).where(eq(users.email, email));
-    return user;
-  }
-
-  async createUser(userData: InsertUser): Promise<User> {
-    const database = await this.getDb();
-    const [user] = await database.insert(users).values(userData).returning();
-    return user;
-  }
-
-  async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
-    const database = await this.getDb();
-    const [user] = await database.update(users).set(updates).where(eq(users.id, id)).returning();
-    return user;
-  }
-
-  async getAllUsers(): Promise<User[]> {
-    const database = await this.getDb();
-    return await database.select().from(users);
-  }
-
-  async deleteUser(id: number): Promise<boolean> {
-    const database = await this.getDb();
-    const result = await database.delete(users).where(eq(users.id, id));
-    return (result.rowCount || 0) > 0;
-  }
-
   // Review operations
   async getReview(id: number): Promise<Review | undefined> {
-    const database = await this.getDb();
-    const [review] = await database.select().from(reviews).where(eq(reviews.id, id));
+    const [review] = await db?.select().from(reviews).where(eq(reviews.id, id)) || [];
     return review;
   }
 
   async getProfessionalReviews(professionalId: number): Promise<Review[]> {
-    const database = await this.getDb();
-    const results = await database.select()
+    const results = await db?.select()
       .from(reviews)
       .where(eq(reviews.professionalId, professionalId))
-      .orderBy(desc(reviews.createdAt));
+      .orderBy(desc(reviews.createdAt)) || [];
     return results;
   }
 
   async getCompanyReviews(companyId: number): Promise<Review[]> {
-    const database = await this.getDb();
-    const results = await database.select()
+    const results = await db?.select()
       .from(reviews)
       .where(eq(reviews.companyId, companyId))
-      .orderBy(desc(reviews.createdAt));
+      .orderBy(desc(reviews.createdAt)) || [];
     return results;
   }
 
   async getConsultationReview(consultationId: number): Promise<Review | undefined> {
-    const database = await this.getDb();
-    const [review] = await database.select()
+    const [review] = await db?.select()
       .from(reviews)
-      .where(eq(reviews.consultationId, consultationId));
+      .where(eq(reviews.consultationId, consultationId)) || [];
     return review;
   }
 
   async createReview(review: InsertReview): Promise<Review> {
-    const database = await this.getDb();
-    const [newReview] = await database.insert(reviews)
+    const [newReview] = await db?.insert(reviews)
       .values(review)
-      .returning();
+      .returning() || [];
 
     // Update the professional's rating
     await this.updateProfessionalRating(review.professionalId);
@@ -2256,11 +2173,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateReview(id: number, reviewData: Partial<Review>): Promise<Review | undefined> {
-    const database = await this.getDb();
-    const [updatedReview] = await database.update(reviews)
+    const [updatedReview] = await db?.update(reviews)
       .set(reviewData)
       .where(eq(reviews.id, id))
-      .returning();
+      .returning() || [];
 
     if (updatedReview && reviewData.rating !== undefined) {
       await this.updateProfessionalRating(updatedReview.professionalId);
@@ -2270,10 +2186,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteReview(id: number): Promise<boolean> {
-    const database = await this.getDb();
-    const [deletedReview] = await database.delete(reviews)
+    const [deletedReview] = await db?.delete(reviews)
       .where(eq(reviews.id, id))
-      .returning();
+      .returning() || [];
 
     if (deletedReview) {
       await this.updateProfessionalRating(deletedReview.professionalId);
@@ -3756,505 +3671,10 @@ export class DatabaseStorage implements IStorage {
     authToken.lastUsedAt = new Date();
     return authToken.userId;
   }
-
-  // Admin operations implementation
-  async getUserCount(): Promise<number> {
-    if (!db) return this.users.size;
-    const result = await db.select({ count: sql<number>`COUNT(*)` }).from(users);
-    return result[0]?.count || 0;
-  }
-
-  async getJobPostingCount(): Promise<number> {
-    if (!db) return this.jobPostings.size;
-    const result = await db.select({ count: sql<number>`COUNT(*)` }).from(jobPostings);
-    return result[0]?.count || 0;
-  }
-
-  async getResourceCount(): Promise<number> {
-    if (!db) return this.resources.size;
-    const result = await db.select({ count: sql<number>`COUNT(*)` }).from(resources);
-    return result[0]?.count || 0;
-  }
-
-  async getRecentActivity(limit: number): Promise<any[]> {
-    if (!db) return [];
-    // Simplified activity tracking
-    return [];
-  }
-
-  async getUsersByType(): Promise<any> {
-    if (!db) {
-      const types = { professional: 0, company: 0, admin: 0 };
-      for (const user of this.users.values()) {
-        types[user.userType as keyof typeof types]++;
-      }
-      return types;
-    }
-    
-    const result = await db.select({
-      userType: users.userType,
-      count: sql<number>`COUNT(*)`
-    })
-    .from(users)
-    .groupBy(users.userType);
-    
-    return result.reduce((acc, row) => {
-      acc[row.userType] = row.count;
-      return acc;
-    }, {} as any);
-  }
-
-  async getJobsByStatus(): Promise<any> {
-    if (!db) return {};
-    
-    const result = await db.select({
-      status: jobPostings.status,
-      count: sql<number>`COUNT(*)`
-    })
-    .from(jobPostings)
-    .groupBy(jobPostings.status);
-    
-    return result.reduce((acc, row) => {
-      acc[row.status] = row.count;
-      return acc;
-    }, {} as any);
-  }
-
-  async getResourcesByCategory(): Promise<any[]> {
-    if (!db) return [];
-    return await db.select().from(resourceCategories);
-  }
-
-  async getUsersWithFilters(filters: any): Promise<any> {
-    if (!db) {
-      const userArray = Array.from(this.users.values());
-      return {
-        users: userArray.slice(0, filters.limit || 20),
-        total: userArray.length
-      };
-    }
-
-    const conditions = [];
-    if (filters.search) {
-      conditions.push(
-        or(
-          sql`${users.username} ILIKE ${'%' + filters.search + '%'}`,
-          sql`${users.email} ILIKE ${'%' + filters.search + '%'}`
-        )
-      );
-    }
-    if (filters.userType) {
-      conditions.push(eq(users.userType, filters.userType));
-    }
-
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-    
-    const userResults = await db.select()
-      .from(users)
-      .where(whereClause)
-      .limit(filters.limit || 20)
-      .offset(((filters.page || 1) - 1) * (filters.limit || 20));
-
-    const [{ count }] = await db.select({ count: sql<number>`COUNT(*)` })
-      .from(users)
-      .where(whereClause);
-
-    return {
-      users: userResults.map(u => ({ ...u, password: undefined })),
-      total: count
-    };
-  }
-
-  async getUserById(id: number): Promise<User | undefined> {
-    if (!db) return this.users.get(id);
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
-  }
-
-  async getUserProfile(userId: number): Promise<any> {
-    const user = await this.getUserById(userId);
-    if (!user) return null;
-
-    if (user.userType === 'professional') {
-      return await this.getProfessionalProfileByUserId(userId);
-    } else if (user.userType === 'company') {
-      return await this.getCompanyProfileByUserId(userId);
-    }
-    return null;
-  }
-
-  async getUserActivity(userId: number): Promise<any[]> {
-    // Simplified activity tracking
-    return [];
-  }
-
-  async updateUserStatus(userId: number, status: string, reason?: string): Promise<User | undefined> {
-    if (!db) {
-      const user = this.users.get(userId);
-      if (user) {
-        user.isActive = status === 'active';
-        return user;
-      }
-      return undefined;
-    }
-
-    const [updatedUser] = await db.update(users)
-      .set({ 
-        isActive: status === 'active',
-        updatedAt: new Date()
-      })
-      .where(eq(users.id, userId))
-      .returning();
-
-    return updatedUser;
-  }
-
-  async updateUserVerification(userId: number, verified: boolean, notes?: string): Promise<User | undefined> {
-    if (!db) {
-      const user = this.users.get(userId);
-      if (user) {
-        user.isVerified = verified;
-        return user;
-      }
-      return undefined;
-    }
-
-    const [updatedUser] = await db.update(users)
-      .set({ 
-        isVerified: verified,
-        updatedAt: new Date()
-      })
-      .where(eq(users.id, userId))
-      .returning();
-
-    return updatedUser;
-  }
-
-  async getJobPostingsWithFilters(filters: any): Promise<any> {
-    if (!db) {
-      const jobArray = Array.from(this.jobPostings.values());
-      return {
-        jobs: jobArray.slice(0, filters.limit || 20),
-        total: jobArray.length
-      };
-    }
-
-    const conditions = [];
-    if (filters.search) {
-      conditions.push(
-        or(
-          sql`${jobPostings.title} ILIKE ${'%' + filters.search + '%'}`,
-          sql`${jobPostings.description} ILIKE ${'%' + filters.search + '%'}`
-        )
-      );
-    }
-    if (filters.status) {
-      conditions.push(eq(jobPostings.status, filters.status));
-    }
-
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-    
-    const jobs = await db.select()
-      .from(jobPostings)
-      .where(whereClause)
-      .limit(filters.limit || 20)
-      .offset(((filters.page || 1) - 1) * (filters.limit || 20));
-
-    const [{ count }] = await db.select({ count: sql<number>`COUNT(*)` })
-      .from(jobPostings)
-      .where(whereClause);
-
-    return { jobs, total: count };
-  }
-
-  async moderateJobPosting(jobId: number, status: string, notes?: string): Promise<any> {
-    if (!db) {
-      const job = this.jobPostings.get(jobId);
-      if (job) {
-        job.status = status;
-        return job;
-      }
-      return null;
-    }
-
-    const [updatedJob] = await db.update(jobPostings)
-      .set({ 
-        status,
-        updatedAt: new Date()
-      })
-      .where(eq(jobPostings.id, jobId))
-      .returning();
-
-    return updatedJob;
-  }
-
-  async getResourcesWithFilters(filters: any): Promise<any> {
-    if (!db) {
-      const resourceArray = Array.from(this.resources.values());
-      return {
-        resources: resourceArray.slice(0, filters.limit || 20),
-        total: resourceArray.length
-      };
-    }
-
-    const conditions = [];
-    if (filters.status) {
-      conditions.push(eq(resources.status, filters.status));
-    }
-    if (filters.categoryId) {
-      conditions.push(eq(resources.categoryId, filters.categoryId));
-    }
-
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-    
-    const resourceResults = await db.select()
-      .from(resources)
-      .where(whereClause)
-      .limit(filters.limit || 20)
-      .offset(((filters.page || 1) - 1) * (filters.limit || 20));
-
-    const [{ count }] = await db.select({ count: sql<number>`COUNT(*)` })
-      .from(resources)
-      .where(whereClause);
-
-    return { resources: resourceResults, total: count };
-  }
-
-  async moderateResource(resourceId: number, status: string, notes?: string, featured?: boolean): Promise<any> {
-    if (!db) {
-      const resource = this.resources.get(resourceId);
-      if (resource) {
-        resource.status = status;
-        if (featured !== undefined) resource.featured = featured;
-        return resource;
-      }
-      return null;
-    }
-
-    const updateData: any = { 
-      status,
-      updatedAt: new Date()
-    };
-    if (featured !== undefined) updateData.featured = featured;
-
-    const [updatedResource] = await db.update(resources)
-      .set(updateData)
-      .where(eq(resources.id, resourceId))
-      .returning();
-
-    return updatedResource;
-  }
-
-  async getRevenueData(period: number): Promise<any> {
-    // Simplified revenue tracking
-    return { total: 0, data: [] };
-  }
-
-  async getSubscriptionStats(): Promise<any> {
-    // Simplified subscription stats
-    return { active: 0, cancelled: 0, total: 0 };
-  }
-
-  async getRecentTransactions(limit: number): Promise<any[]> {
-    // Simplified transaction tracking
-    return [];
-  }
-
-  async getSubscriptionsWithFilters(filters: any): Promise<any> {
-    // Simplified subscription management
-    return { subscriptions: [], total: 0 };
-  }
-
-  async getSystemSettings(): Promise<any> {
-    // Simplified system settings
-    return {
-      siteName: "L&D Nexus",
-      maintenanceMode: false,
-      registrationEnabled: true
-    };
-  }
-
-  async updateSystemSettings(settings: any): Promise<any> {
-    // Simplified system settings update
-    return settings;
-  }
-
-  async logAdminAction(action: any): Promise<void> {
-    // Simplified admin action logging
-    console.log('Admin action:', action);
-  }
-
-  async getAdminLogs(filters: any): Promise<any> {
-    // Simplified admin logs
-    return { logs: [], total: 0 };
-  }
-
-  async verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-    // Simplified password verification - in production use proper bcrypt
-    return password === hashedPassword;
-  }
 }
 
 // Add subscription methods to MemStorage before the closing brace
 class MemStorageWithSubscriptions extends MemStorage {
-  // Admin operations implementation for MemStorage
-  async getUserCount(): Promise<number> {
-    return this.users.size;
-  }
-
-  async getJobPostingCount(): Promise<number> {
-    return this.jobPostings.size;
-  }
-
-  async getResourceCount(): Promise<number> {
-    return this.resources.size;
-  }
-
-  async getRecentActivity(limit: number): Promise<any[]> {
-    return [];
-  }
-
-  async getUsersByType(): Promise<any> {
-    const types = { professional: 0, company: 0, admin: 0 };
-    for (const user of this.users.values()) {
-      types[user.userType as keyof typeof types]++;
-    }
-    return types;
-  }
-
-  async getJobsByStatus(): Promise<any> {
-    const statuses: any = {};
-    for (const job of this.jobPostings.values()) {
-      statuses[job.status] = (statuses[job.status] || 0) + 1;
-    }
-    return statuses;
-  }
-
-  async getResourcesByCategory(): Promise<any[]> {
-    return Array.from(this.resourceCategories.values());
-  }
-
-  async getUsersWithFilters(filters: any): Promise<any> {
-    const userArray = Array.from(this.users.values());
-    return {
-      users: userArray.slice(0, filters.limit || 20).map(u => ({ ...u, password: undefined })),
-      total: userArray.length
-    };
-  }
-
-  async getUserById(id: number): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserProfile(userId: number): Promise<any> {
-    const user = this.getUserById(userId);
-    if (!user) return null;
-
-    if (user.userType === 'professional') {
-      return this.professionalProfiles.get(userId);
-    } else if (user.userType === 'company') {
-      return this.companyProfiles.get(userId);
-    }
-    return null;
-  }
-
-  async getUserActivity(userId: number): Promise<any[]> {
-    return [];
-  }
-
-  async updateUserStatus(userId: number, status: string, reason?: string): Promise<User | undefined> {
-    const user = this.users.get(userId);
-    if (user) {
-      user.isActive = status === 'active';
-      return user;
-    }
-    return undefined;
-  }
-
-  async updateUserVerification(userId: number, verified: boolean, notes?: string): Promise<User | undefined> {
-    const user = this.users.get(userId);
-    if (user) {
-      user.isVerified = verified;
-      return user;
-    }
-    return undefined;
-  }
-
-  async getJobPostingsWithFilters(filters: any): Promise<any> {
-    const jobArray = Array.from(this.jobPostings.values());
-    return {
-      jobs: jobArray.slice(0, filters.limit || 20),
-      total: jobArray.length
-    };
-  }
-
-  async moderateJobPosting(jobId: number, status: string, notes?: string): Promise<any> {
-    const job = this.jobPostings.get(jobId);
-    if (job) {
-      job.status = status;
-      return job;
-    }
-    return null;
-  }
-
-  async getResourcesWithFilters(filters: any): Promise<any> {
-    const resourceArray = Array.from(this.resources.values());
-    return {
-      resources: resourceArray.slice(0, filters.limit || 20),
-      total: resourceArray.length
-    };
-  }
-
-  async moderateResource(resourceId: number, status: string, notes?: string, featured?: boolean): Promise<any> {
-    const resource = this.resources.get(resourceId);
-    if (resource) {
-      resource.status = status;
-      if (featured !== undefined) resource.featured = featured;
-      return resource;
-    }
-    return null;
-  }
-
-  async getRevenueData(period: number): Promise<any> {
-    return { total: 0, data: [] };
-  }
-
-  async getSubscriptionStats(): Promise<any> {
-    return { active: 0, cancelled: 0, total: 0 };
-  }
-
-  async getRecentTransactions(limit: number): Promise<any[]> {
-    return [];
-  }
-
-  async getSubscriptionsWithFilters(filters: any): Promise<any> {
-    return { subscriptions: [], total: 0 };
-  }
-
-  async getSystemSettings(): Promise<any> {
-    return {
-      siteName: "L&D Nexus",
-      maintenanceMode: false,
-      registrationEnabled: true
-    };
-  }
-
-  async updateSystemSettings(settings: any): Promise<any> {
-    return settings;
-  }
-
-  async logAdminAction(action: any): Promise<void> {
-    console.log('Admin action:', action);
-  }
-
-  async getAdminLogs(filters: any): Promise<any> {
-    return { logs: [], total: 0 };
-  }
-
-  async verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
-    return password === hashedPassword;
-  }
-
   async getUserSubscription(userId: number): Promise<any> {
     return {
       id: 1,
@@ -4285,5 +3705,5 @@ class MemStorageWithSubscriptions extends MemStorage {
   }
 }
 
-// Force use PostgreSQL database for secure authentication
-export const storage = new DatabaseStorage();
+// Dynamically use MemStorage or DatabaseStorage based on database connection status
+export const storage = useRealDatabase ? new DatabaseStorage() : new MemStorageWithSubscriptions();

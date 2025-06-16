@@ -44,7 +44,6 @@ import { registerEscrowRoutes } from "./escrow-routes";
 import { registerSubscriptionRoutes } from "./subscription-routes";
 import { subscriptionService } from "./subscription-service";
 import { requireUsageLimit, incrementUserUsage, canUserPerformAction } from "./feature-gate";
-import { registerAdminRoutes } from "./admin/admin-routes";
 import { z } from "zod";
 import session from "express-session";
 import passport from "passport";
@@ -159,9 +158,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Session token mapping for persistent authentication - make it persistent across restarts
   const sessionTokenStore = new Map<string, { userId: number; userType: string; timestamp: number }>();
-  
-  // Make session token store globally accessible for admin authentication
-  (global as any).sessionTokenStore = sessionTokenStore;
   
   // Clean up expired tokens periodically
   setInterval(() => {
@@ -5668,9 +5664,5 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
-  // Register admin routes
-  registerAdminRoutes(app);
-  
   return httpServer;
 }
-

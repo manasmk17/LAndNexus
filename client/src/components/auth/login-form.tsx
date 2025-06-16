@@ -65,7 +65,7 @@ export default function LoginForm() {
       } else {
         // Default redirects based on user type
         if (user.isAdmin) {
-          setLocation("/admin");
+          setLocation("/admin-dashboard");
         } else if (user.userType === "professional") {
           setLocation("/professional-dashboard");
         } else {

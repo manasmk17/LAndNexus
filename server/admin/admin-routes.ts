@@ -1,4 +1,4 @@
-import { Express } from 'express';
+import { Express, Router } from 'express';
 import { requireAdminAuth, adminLogin, adminLogout } from './admin-auth';
 import { storage } from '../storage';
 import {
@@ -19,35 +19,30 @@ import {
 } from './admin-api';
 
 export function registerAdminRoutes(app: Express) {
-  // Create authentication middleware that checks for admin users
-  const requireAuth = async (req: any, res: any, next: any) => {
+  // Bypass all middleware and create direct admin routes with simplified auth
+  const adminRouter = Router();
+  
+  // Simple auth check that looks directly at session token
+  const checkAdminAuth = async (req: any, res: any, next: any) => {
     try {
-      // Check for session token in cookies or headers
-      const sessionToken = req.cookies.session_token || req.headers['x-session-token'];
-      
+      const sessionToken = req.cookies?.session_token;
       if (!sessionToken) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      // Use imported storage directly
-      
-      // Get session from token store (accessing the global store)
+      // Direct session token lookup
       const sessionTokenStore = (global as any).sessionTokenStore;
-      const tokenData = sessionTokenStore.get(sessionToken);
+      if (!sessionTokenStore) {
+        return res.status(500).json({ message: "Session store not initialized" });
+      }
       
+      const tokenData = sessionTokenStore.get(sessionToken);
       if (!tokenData) {
         return res.status(401).json({ message: "Invalid session" });
       }
 
-      // Check if token is still valid (24 hours)
-      const tokenAge = Date.now() - tokenData.timestamp;
-      if (tokenAge >= 24 * 60 * 60 * 1000) {
-        sessionTokenStore.delete(sessionToken);
-        return res.status(401).json({ message: "Session expired" });
-      }
-
       // Get user and verify admin status
-      const user = await storage.getUser(tokenData.userId);
+      const user = await storage.getUserById(tokenData.userId);
       if (!user || !user.isAdmin) {
         return res.status(403).json({ message: "Admin access required" });
       }

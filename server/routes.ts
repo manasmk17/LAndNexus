@@ -160,6 +160,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Session token mapping for persistent authentication - make it persistent across restarts
   const sessionTokenStore = new Map<string, { userId: number; userType: string; timestamp: number }>();
   
+  // Make session token store globally accessible for admin authentication
+  (global as any).sessionTokenStore = sessionTokenStore;
+  
   // Clean up expired tokens periodically
   setInterval(() => {
     const now = Date.now();

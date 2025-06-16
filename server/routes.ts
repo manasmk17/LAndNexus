@@ -3399,32 +3399,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Admin API Routes
-  app.get("/api/admin/users", isAdmin, async (req, res) => {
-    try {
-      // This is a placeholder since our storage interface doesn't have getAllUsers method
-      // In a real implementation, you would add this method to the storage interface
-      const allUsers = Array.from(Array(10).keys()).map(id => ({
-        id: id + 1,
-        username: `user${id + 1}`,
-        email: `user${id + 1}@example.com`,
-        firstName: `First${id + 1}`,
-        lastName: `Last${id + 1}`,
-        userType: id % 3 === 0 ? "admin" : id % 2 === 0 ? "company" : "professional",
-        isAdmin: id % 3 === 0,
-        createdAt: new Date(Date.now() - (id * 86400000)), // Different dates
-        stripeCustomerId: null,
-        stripeSubscriptionId: null,
-        subscriptionTier: null,
-        subscriptionStatus: null
-      }));
-      
-      res.json(allUsers);
-    } catch (err) {
-      console.error("Error fetching users:", err);
-      res.status(500).json({ message: "Error fetching users" });
-    }
-  });
+  // Import and use admin router
+  import { adminRouter } from "./admin-api";
+  app.use("/api/admin", adminRouter);
   
   app.put("/api/admin/users/:id", isAdmin, async (req, res) => {
     try {
@@ -3523,45 +3500,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/admin/users/:id", isAdmin, async (req, res) => {
-    try {
-      const userId = parseInt(req.params.id);
-      
-      if (isNaN(userId)) {
-        return res.status(400).json({ message: "Invalid user ID" });
-      }
-      
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      try {
-        // Delete the user using our method
-        const deleted = await storage.deleteUser(userId);
-        
-        if (deleted) {
-          return res.json({ success: true, message: "User deleted successfully" });
-        } else {
-          return res.status(500).json({ message: "Failed to delete user" });
-        }
-      } catch (deleteError: any) {
-        // Handle specific error from our deleteUser method
-        console.log("Delete user operation error:", deleteError.message);
-        
-        // Return a more detailed error message based on the specific error
-        if (deleteError.message.includes("company profiles")) {
-          return res.status(409).json({ 
-            message: "Cannot delete user with associated company profiles",
-            details: deleteError.message
-          });
-        } else if (deleteError.message.includes("professional profiles")) {
-          return res.status(409).json({ 
-            message: "Cannot delete user with associated professional profiles",
-            details: deleteError.message
-          });
-        } else {
-          return res.status(409).json({ 
+   
             message: "Cannot delete user with associated records",
             details: deleteError.message
           });
@@ -3799,36 +3738,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  app.get("/api/admin/resources", isAdmin, async (req, res) => {
-    try {
-      const resources = await storage.getAllResources();
-      res.json(resources);
-    } catch (err) {
-      console.error("Error fetching resources:", err);
-      res.status(500).json({ message: "Error fetching resources" });
-    }
-  });
   
-  app.put("/api/admin/resources/:id/featured", isAdmin, async (req, res) => {
-    try {
-      const resourceId = parseInt(req.params.id);
-      const { featured } = req.body;
-      
-      const resource = await storage.getResource(resourceId);
-      if (!resource) {
-        return res.status(404).json({ message: "Resource not found" });
-      }
-      
-      try {
-        const updatedResource = await storage.setResourceFeatured(resourceId, featured);
-        res.json(updatedResource);
-      } catch (innerErr) {
-        console.error("Error setting resource featured status:", innerErr);
-        // Fallback to using the regular update method
-        const updatedResource = await storage.updateResource(resourceId, { featured });
-        res.json(updatedResource);
-      }
-    } catch (err) {
       console.error("Error updating resource featured status:", err);
       res.status(500).json({ message: "Error updating resource featured status" });
     }

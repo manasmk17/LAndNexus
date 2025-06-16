@@ -40,6 +40,8 @@ export const translations = {
   "auth.userType.professional": "I'm a Learning & Development Professional",
   "auth.userType.company": "I represent a Company",
   "auth.userType.label": "Account Type",
+  "auth.registerButton": "Create Account",
+  "auth.alreadyHaveAccount": "Already have an account?",
   "form.email": "Email",
   "form.password": "Password",
   "form.confirmPassword": "Confirm Password",

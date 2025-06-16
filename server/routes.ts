@@ -44,6 +44,7 @@ import { registerEscrowRoutes } from "./escrow-routes";
 import { registerSubscriptionRoutes } from "./subscription-routes";
 import { subscriptionService } from "./subscription-service";
 import { requireUsageLimit, incrementUserUsage, canUserPerformAction } from "./feature-gate";
+import { registerAdminRoutes } from "./admin/admin-routes";
 import { z } from "zod";
 import session from "express-session";
 import passport from "passport";
@@ -5663,6 +5664,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
   });
+  
+  // Register admin routes
+  registerAdminRoutes(app);
   
   return httpServer;
 }

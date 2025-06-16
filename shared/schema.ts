@@ -21,6 +21,9 @@ export const users = pgTable("users", {
   subscriptionStatus: text("subscription_status"), // "active", "trialing", "past_due", "canceled"
   resetToken: text("reset_token"),
   resetTokenExpiry: timestamp("reset_token_expiry"),
+  registrationCompleted: boolean("registration_completed").default(false).notNull(),
+  lastPasswordChange: timestamp("last_password_change").defaultNow(),
+  accountStatus: text("account_status").default("pending").notNull(), // "pending", "active", "suspended"
 });
 
 // Authentication tokens for "Remember Me" functionality

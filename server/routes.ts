@@ -7,7 +7,6 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 import * as crypto from "crypto";
-// bcrypt will be imported dynamically when needed
 import { 
   insertUserSchema, 
   insertProfessionalProfileSchema,
@@ -252,77 +251,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return done(null, false, { message: "Account is not active" });
       }
       
-      // Handle different password formats for backward compatibility
-      console.log(`Login attempt for user: ${user.username}, password format: ${user.password.length < 20 ? 'plaintext' : 'hashed'}`);
+      // Simplified password verification for debugging
+      console.log(`Login attempt for user: ${user.username}, stored password format: ${user.password.includes('.') ? 'hashed' : 'plaintext'}`);
       
-      // Check for plaintext passwords (development/legacy users)
-      if (user.password.length <= 20 && !user.password.startsWith('$')) {
+      // Handle both hashed and plaintext passwords for compatibility
+      if (!user.password.includes('.')) {
+        // Direct comparison for plaintext (development/testing)
         if (user.password === password) {
-          console.log(`Plaintext password verified for user: ${user.username}`);
+          console.log(`Plaintext password match for user: ${user.username}`);
           return done(null, user);
         } else {
           console.log(`Plaintext password mismatch for user: ${user.username}`);
           return done(null, false, { message: "Incorrect password" });
         }
-      }
-      
-      // Check for bcrypt passwords
-      if (user.password.startsWith('$2b$') || user.password.startsWith('$2a$')) {
-        try {
-          const bcrypt = await import('bcryptjs');
-          const isValid = await bcrypt.default.compare(password, user.password);
-          if (isValid) {
-            console.log(`Bcrypt password verified for user: ${user.username}`);
-            return done(null, user);
-          } else {
-            console.log(`Bcrypt password mismatch for user: ${user.username}`);
-            return done(null, false, { message: "Incorrect password" });
-          }
-        } catch (error) {
-          console.error("Bcrypt import error:", error);
-          return done(null, false, { message: "Authentication error" });
-        }
-      }
-      
-      // Handle dot-separated hash format (hash.salt)
-      if (user.password.includes('.')) {
+      } else {
+        // Handle hashed passwords
         const [storedHash, salt] = user.password.split('.');
         const keyLen = Buffer.from(storedHash, 'hex').length;
         
         crypto.scrypt(password, salt, keyLen, (err: any, derivedKey: Buffer) => {
           if (err) {
-            console.error("Dot-separated hash verification error:", err);
-            return done(null, false, { message: "Authentication failed" });
+            console.error("Scrypt error:", err);
+            return done(err);
           }
           
-          const hashedPassword = derivedKey.toString('hex');
-          if (hashedPassword === storedHash) {
-            console.log(`Dot-separated hash verified for user: ${user.username}`);
-            return done(null, user);
-          } else {
-            console.log(`Dot-separated hash mismatch for user: ${user.username}`);
-            return done(null, false, { message: "Incorrect password" });
+          try {
+            const passwordMatches = crypto.timingSafeEqual(
+              Buffer.from(storedHash, 'hex'),
+              derivedKey
+            );
+            
+            if (passwordMatches) {
+              console.log(`Hashed password match for user: ${user.username}`);
+              return done(null, user);
+            } else {
+              console.log(`Hashed password mismatch for user: ${user.username}`);
+              return done(null, false, { message: "Incorrect password" });
+            }
+          } catch (error) {
+            console.error("Password comparison error:", error);
+            return done(null, false, { message: "Password verification error" });
           }
         });
-        return; // Exit early for dot-separated format
       }
-      
-      // Handle scrypt-hashed passwords (new format)
-      crypto.scrypt(password, "12", 64, (err: any, derivedKey: Buffer) => {
-        if (err) {
-          console.error("Scrypt password verification error:", err);
-          return done(null, false, { message: "Authentication failed" });
-        }
-        
-        const hashedPassword = derivedKey.toString('hex');
-        if (hashedPassword === user.password) {
-          console.log(`Scrypt password verified for user: ${user.username}`);
-          return done(null, user);
-        } else {
-          console.log(`Scrypt password mismatch for user: ${user.username}`);
-          return done(null, false, { message: "Incorrect password" });
-        }
-      });
     } catch (err) {
       console.error("Error during password verification:", err);
       return done(err);
@@ -982,8 +953,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Account is not active. Please contact support." });
       }
 
-      // Skip manual password verification - let Passport handle it
-      console.log(`Pre-login checks passed for user: ${user.username}`);
+      // Verify password
+      const isValidPassword = await new Promise<boolean>((resolve) => {
+        crypto.scrypt(password, "12", 64, (err: any, derivedKey: Buffer) => {
+          if (err) resolve(false);
+          else resolve(derivedKey.toString('hex') === user.password);
+        });
+      });
+
+      if (!isValidPassword) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
 
     } catch (error) {
       console.error("Pre-login validation error:", error);

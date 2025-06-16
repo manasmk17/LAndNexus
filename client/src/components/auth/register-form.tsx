@@ -6,7 +6,22 @@ import { useLocation } from "wouter";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { useTranslation } from "@/lib/i18n";
+// Simple translation function to avoid complex i18n setup
+const t = (key: string) => {
+  const translations: { [key: string]: string } = {
+    'auth.registerButton': 'Create Account',
+    'form.username': 'Username',
+    'form.email': 'Email',
+    'form.password': 'Password',
+    'form.confirmPassword': 'Confirm Password',
+    'form.firstName': 'First Name',
+    'form.lastName': 'Last Name',
+    'form.userType': 'Account Type',
+    'form.userType.professional': 'Professional',
+    'form.userType.company': 'Company'
+  };
+  return translations[key] || key;
+};
 import {
   Form,
   FormControl,
@@ -37,7 +52,6 @@ type RegisterFormProps = {
 };
 
 export default function RegisterForm({ initialUserType }: RegisterFormProps) {
-  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const { login } = useAuth();
   const { toast } = useToast();

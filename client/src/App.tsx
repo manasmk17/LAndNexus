@@ -42,6 +42,7 @@ import PageView from "@/pages/page";
 import About from "@/pages/about";
 import NotFound from "@/pages/not-found";
 import JobApplications from "@/pages/job-applications";
+import AdminDashboard from "@/pages/admin-dashboard";
 import { AuthProvider } from "@/lib/auth";
 
 function Router() {
@@ -81,6 +82,13 @@ function Router() {
         path="/company-dashboard" 
         component={CompanyDashboard} 
         userTypes={["company"]} 
+      />
+      
+      {/* Admin Dashboard Route */}
+      <ProtectedRoute 
+        path="/admin" 
+        component={AdminDashboard} 
+        adminOnly={true} 
       />
 
       <ProtectedRoute 

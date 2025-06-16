@@ -57,31 +57,31 @@ export function registerAdminRoutes(app: Express) {
 
   // Admin authentication routes
   app.post('/api/admin/login', adminLogin);
-  app.post('/api/admin/logout', requireAdminAuth, adminLogout);
+  app.post('/api/admin/logout', checkAdminAuth, adminLogout);
 
   // Dashboard routes
-  app.get('/api/admin/dashboard/stats', requireAuth, getDashboardStats);
+  app.get('/api/admin/dashboard/stats', checkAdminAuth, getDashboardStats);
 
   // User management routes
-  app.get('/api/admin/users', requireAuth, getAllUsers);
-  app.get('/api/admin/users/:userId', requireAuth, getUserDetails);
-  app.patch('/api/admin/users/:userId/status', requireAuth, updateUserStatus);
-  app.patch('/api/admin/users/:userId/verify', requireAuth, verifyUser);
+  app.get('/api/admin/users', checkAdminAuth, getAllUsers);
+  app.get('/api/admin/users/:userId', checkAdminAuth, getUserDetails);
+  app.patch('/api/admin/users/:userId/status', checkAdminAuth, updateUserStatus);
+  app.patch('/api/admin/users/:userId/verify', checkAdminAuth, verifyUser);
 
   // Content management routes
-  app.get('/api/admin/jobs', requireAuth, getAllJobPostings);
-  app.patch('/api/admin/jobs/:jobId/moderate', requireAuth, moderateJobPosting);
-  app.get('/api/admin/resources', requireAuth, getAllResources);
-  app.patch('/api/admin/resources/:resourceId/moderate', requireAuth, moderateResource);
+  app.get('/api/admin/jobs', checkAdminAuth, getAllJobPostings);
+  app.patch('/api/admin/jobs/:jobId/moderate', checkAdminAuth, moderateJobPosting);
+  app.get('/api/admin/resources', checkAdminAuth, getAllResources);
+  app.patch('/api/admin/resources/:resourceId/moderate', checkAdminAuth, moderateResource);
 
   // Financial management routes
-  app.get('/api/admin/financial/overview', requireAuth, getFinancialOverview);
-  app.get('/api/admin/subscriptions', requireAuth, getSubscriptionManagement);
+  app.get('/api/admin/financial/overview', checkAdminAuth, getFinancialOverview);
+  app.get('/api/admin/subscriptions', checkAdminAuth, getSubscriptionManagement);
 
   // System management routes
-  app.get('/api/admin/settings', requireAuth, getSystemSettings);
-  app.patch('/api/admin/settings', requireAuth, updateSystemSettings);
+  app.get('/api/admin/settings', checkAdminAuth, getSystemSettings);
+  app.patch('/api/admin/settings', checkAdminAuth, updateSystemSettings);
 
   // Admin activity logs
-  app.get('/api/admin/logs', requireAuth, getAdminLogs);
+  app.get('/api/admin/logs', checkAdminAuth, getAdminLogs);
 }

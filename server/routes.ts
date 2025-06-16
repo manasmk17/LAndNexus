@@ -251,22 +251,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return done(null, false, { message: "Account is not active" });
       }
       
-      // Handle password verification based on the new hashing format
-      console.log(`Login attempt for user: ${user.username}`);
+      // Handle different password formats for backward compatibility
+      console.log(`Login attempt for user: ${user.username}, password format: ${user.password.length < 20 ? 'plaintext' : 'hashed'}`);
       
-      // New users have passwords hashed with scrypt using salt "12"
+      // Check for plaintext passwords (development/legacy users)
+      if (user.password.length <= 20 && !user.password.startsWith('$')) {
+        if (user.password === password) {
+          console.log(`Plaintext password verified for user: ${user.username}`);
+          return done(null, user);
+        } else {
+          console.log(`Plaintext password mismatch for user: ${user.username}`);
+          return done(null, false, { message: "Incorrect password" });
+        }
+      }
+      
+      // Check for bcrypt passwords
+      if (user.password.startsWith('$2b$') || user.password.startsWith('$2a$')) {
+        const bcrypt = require('bcryptjs');
+        const isValid = await bcrypt.compare(password, user.password);
+        if (isValid) {
+          console.log(`Bcrypt password verified for user: ${user.username}`);
+          return done(null, user);
+        } else {
+          console.log(`Bcrypt password mismatch for user: ${user.username}`);
+          return done(null, false, { message: "Incorrect password" });
+        }
+      }
+      
+      // Handle dot-separated hash format (hash.salt)
+      if (user.password.includes('.')) {
+        const [storedHash, salt] = user.password.split('.');
+        const keyLen = Buffer.from(storedHash, 'hex').length;
+        
+        crypto.scrypt(password, salt, keyLen, (err: any, derivedKey: Buffer) => {
+          if (err) {
+            console.error("Dot-separated hash verification error:", err);
+            return done(null, false, { message: "Authentication failed" });
+          }
+          
+          const hashedPassword = derivedKey.toString('hex');
+          if (hashedPassword === storedHash) {
+            console.log(`Dot-separated hash verified for user: ${user.username}`);
+            return done(null, user);
+          } else {
+            console.log(`Dot-separated hash mismatch for user: ${user.username}`);
+            return done(null, false, { message: "Incorrect password" });
+          }
+        });
+        return; // Exit early for dot-separated format
+      }
+      
+      // Handle scrypt-hashed passwords (new format)
       crypto.scrypt(password, "12", 64, (err: any, derivedKey: Buffer) => {
         if (err) {
-          console.error("Password verification error:", err);
+          console.error("Scrypt password verification error:", err);
           return done(null, false, { message: "Authentication failed" });
         }
         
         const hashedPassword = derivedKey.toString('hex');
         if (hashedPassword === user.password) {
-          console.log(`Password verified for user: ${user.username}`);
+          console.log(`Scrypt password verified for user: ${user.username}`);
           return done(null, user);
         } else {
-          console.log(`Password mismatch for user: ${user.username}`);
+          console.log(`Scrypt password mismatch for user: ${user.username}`);
           return done(null, false, { message: "Incorrect password" });
         }
       });

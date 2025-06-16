@@ -2160,6 +2160,13 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  
+  private async getDb() {
+    if (!useRealDatabase || !db) {
+      throw new Error("Database not available");
+    }
+    return db;
+  }
   // Review operations
   async getReview(id: number): Promise<Review | undefined> {
     const [review] = await db?.select().from(reviews).where(eq(reviews.id, id)) || [];
@@ -4228,5 +4235,5 @@ class MemStorageWithSubscriptions extends MemStorage {
   }
 }
 
-// Dynamically use MemStorage or DatabaseStorage based on database connection status
-export const storage = useRealDatabase ? new DatabaseStorage() : new MemStorageWithSubscriptions();
+// Force use PostgreSQL database for secure authentication
+export const storage = new DatabaseStorage();

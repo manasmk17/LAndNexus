@@ -1,5 +1,6 @@
 import { Express } from 'express';
 import { requireAdminAuth, adminLogin, adminLogout } from './admin-auth';
+import { storage } from '../storage';
 import {
   getDashboardStats,
   getAllUsers,
@@ -28,11 +29,10 @@ export function registerAdminRoutes(app: Express) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      // Import storage
-      const { storage } = require('../storage');
+      // Use imported storage directly
       
-      // Get session from token store (using the same logic as main routes)
-      const sessionTokenStore = (global as any).sessionTokenStore || new Map();
+      // Get session from token store (accessing the global store)
+      const sessionTokenStore = (global as any).sessionTokenStore;
       const tokenData = sessionTokenStore.get(sessionToken);
       
       if (!tokenData) {

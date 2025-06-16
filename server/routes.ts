@@ -3399,6 +3399,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Import and use admin router
+  import { adminRouter } from "./admin-api";
+  app.use("/api/admin", adminRouter);
+  
   app.put("/api/admin/users/:id", isAdmin, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
@@ -3496,8 +3500,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  return server;
-}
+   
+            message: "Cannot delete user with associated records",
+            details: deleteError.message
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      return res.status(500).json({ message: "Error deleting user" });
+    }
+  });
+  
+  app.get("/api/admin/professional-profiles", isAdmin, async (req, res) => {
+    try {
+      const profiles = await storage.getAllProfessionalProfiles();
+      res.json(profiles);
+    } catch (err) {
+      console.error("Error fetching professional profiles:", err);
+      res.status(500).json({ message: "Error fetching professional profiles" });
+    }
+  });
+  
+  app.post("/api/admin/professional-profiles", isAdmin, async (req, res) => {
     try {
       const { userId, ...profileData } = req.body;
       

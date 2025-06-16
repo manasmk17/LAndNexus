@@ -308,6 +308,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = await storage.getUser(id);
       if (user) {
+        // Security validation: Check registration completion and account status
+        if (!user.registrationCompleted) {
+          console.log(`User ${user.username} session rejected: registration not completed`);
+          return done(null, false);
+        }
+        
+        if (user.accountStatus !== "active") {
+          console.log(`User ${user.username} session rejected: account status is ${user.accountStatus}`);
+          return done(null, false);
+        }
+        
         // Remove password from user object for security
         const { password, ...safeUser } = user;
         done(null, safeUser);
@@ -356,6 +367,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             try {
               const user = await storage.getUser(tokenData.userId);
               if (user) {
+                // Security validation: Check registration completion
+                if (!user.registrationCompleted) {
+                  console.log(`Token auth rejected for user ${user.username}: registration not completed`);
+                  sessionTokenStore.delete(sessionToken);
+                  return res.status(401).json({ message: "Account registration not completed" });
+                }
+                
+                // Security validation: Check account status
+                if (user.accountStatus !== "active") {
+                  console.log(`Token auth rejected for user ${user.username}: account status is ${user.accountStatus}`);
+                  sessionTokenStore.delete(sessionToken);
+                  return res.status(401).json({ message: "Account is not active" });
+                }
+                
                 const { password, ...safeUser } = user;
                 (req as any).user = safeUser;
                 

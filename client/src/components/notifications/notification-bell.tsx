@@ -40,9 +40,16 @@ export default function NotificationBell() {
   // Mark notification as read mutation
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: number) => {
-      return apiRequest(`/api/notifications/${notificationId}/read`, {
+      const response = await fetch(`/api/notifications/${notificationId}/read`, {
         method: "PUT",
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
+      if (!response.ok) {
+        throw new Error('Failed to mark notification as read');
+      }
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/notifications/${user?.id}/unread`] });
@@ -52,9 +59,16 @@ export default function NotificationBell() {
   // Mark all notifications as read mutation
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/notifications/${user?.id}/mark-all-read`, {
+      const response = await fetch(`/api/notifications/${user?.id}/mark-all-read`, {
         method: "PUT",
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
+      if (!response.ok) {
+        throw new Error('Failed to mark all notifications as read');
+      }
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/notifications/${user?.id}/unread`] });

@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Menu, User, LogOut, MessageSquare, Settings, BookOpen, Award, Briefcase, Users, Home, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import NotificationBell from "@/components/notifications/notification-bell";
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -116,6 +117,7 @@ export default function Navbar() {
                     Dashboard
                   </Link>
                 )}
+                <NotificationBell />
                 <Link href="/messages" className="relative group">
                   <Button variant="ghost" size="sm" className="flex items-center gap-1.5 text-slate-700 hover:text-blue-700 hover:bg-blue-50">
                     <MessageSquare className="h-4 w-4" />

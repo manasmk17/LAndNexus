@@ -186,8 +186,12 @@ export interface IStorage {
 
   // Notification Preferences operations
   getUserNotificationPreferences(userId: number): Promise<NotificationPreference[]>;
+  getNotificationPreferences(userId: number): Promise<{ emailNotifications: boolean; jobApplicationEmails: boolean; statusUpdateEmails: boolean; } | null>;
   getUserNotificationPreference(userId: number, typeId: number): Promise<NotificationPreference | undefined>;
   createOrUpdateNotificationPreference(preference: InsertNotificationPreference): Promise<NotificationPreference>;
+  getUnreadNotifications(userId: number): Promise<Notification[]>;
+  markNotificationAsRead(notificationId: number): Promise<boolean>;
+  markAllNotificationsAsRead(userId: number): Promise<boolean>;
 
   // User Settings operations
   getUserSettings(userId: number): Promise<any>;
@@ -2357,6 +2361,70 @@ export class DatabaseStorage implements IStorage {
         .values(preference)
         .returning() || [];
       return newPreference;
+    }
+  }
+
+  async getNotificationPreferences(userId: number): Promise<{ emailNotifications: boolean; jobApplicationEmails: boolean; statusUpdateEmails: boolean; } | null> {
+    try {
+      // Get all notification preferences for the user
+      const preferences = await this.getUserNotificationPreferences(userId);
+      
+      // Default preferences
+      const defaultPrefs = {
+        emailNotifications: true,
+        jobApplicationEmails: true,
+        statusUpdateEmails: true
+      };
+
+      if (preferences.length === 0) {
+        return defaultPrefs;
+      }
+
+      // Find specific preferences
+      const jobAppPref = preferences.find(p => p.typeId === 1); // Assuming typeId 1 is job applications
+      const statusPref = preferences.find(p => p.typeId === 2); // Assuming typeId 2 is status updates
+
+      return {
+        emailNotifications: true, // Master switch - could be stored as user setting
+        jobApplicationEmails: jobAppPref?.email ?? true,
+        statusUpdateEmails: statusPref?.email ?? true
+      };
+    } catch (error) {
+      console.error('Error getting notification preferences:', error);
+      return null;
+    }
+  }
+
+  async getUnreadNotifications(userId: number): Promise<Notification[]> {
+    const results = await db?.select()
+      .from(notifications)
+      .where(and(eq(notifications.userId, userId), eq(notifications.read, false)))
+      .orderBy(desc(notifications.createdAt)) || [];
+    return results;
+  }
+
+  async markNotificationAsRead(notificationId: number): Promise<boolean> {
+    try {
+      const [updated] = await db?.update(notifications)
+        .set({ read: true })
+        .where(eq(notifications.id, notificationId))
+        .returning() || [];
+      return !!updated;
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      return false;
+    }
+  }
+
+  async markAllNotificationsAsRead(userId: number): Promise<boolean> {
+    try {
+      await db?.update(notifications)
+        .set({ read: true })
+        .where(and(eq(notifications.userId, userId), eq(notifications.read, false)));
+      return true;
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      return false;
     }
   }
 

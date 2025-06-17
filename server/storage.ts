@@ -1968,6 +1968,65 @@ export class MemStorage implements IStorage {
     }
   }
 
+  async getNotificationPreferences(userId: number): Promise<{ emailNotifications: boolean; jobApplicationEmails: boolean; statusUpdateEmails: boolean; } | null> {
+    try {
+      const preferences = await this.getUserNotificationPreferences(userId);
+      
+      const defaultPrefs = {
+        emailNotifications: true,
+        jobApplicationEmails: true,
+        statusUpdateEmails: true
+      };
+
+      if (preferences.length === 0) {
+        return defaultPrefs;
+      }
+
+      const jobAppPref = preferences.find(p => p.typeId === 1);
+      const statusPref = preferences.find(p => p.typeId === 2);
+
+      return {
+        emailNotifications: true,
+        jobApplicationEmails: jobAppPref?.email ?? true,
+        statusUpdateEmails: statusPref?.email ?? true
+      };
+    } catch (error) {
+      console.error('Error getting notification preferences:', error);
+      return null;
+    }
+  }
+
+  async getUnreadNotifications(userId: number): Promise<Notification[]> {
+    return Array.from(this.notifications.values())
+      .filter(notification => notification.userId === userId && !notification.read)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async markNotificationAsRead(notificationId: number): Promise<boolean> {
+    const notification = this.notifications.get(notificationId);
+    if (notification) {
+      notification.read = true;
+      this.notifications.set(notificationId, notification);
+      return true;
+    }
+    return false;
+  }
+
+  async markAllNotificationsAsRead(userId: number): Promise<boolean> {
+    try {
+      for (const [id, notification] of this.notifications) {
+        if (notification.userId === userId && !notification.read) {
+          notification.read = true;
+          this.notifications.set(id, notification);
+        }
+      }
+      return true;
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      return false;
+    }
+  }
+
   // User Settings operations
   async getUserSettings(userId: number): Promise<any> {
     const settings = this.userSettings.get(userId);

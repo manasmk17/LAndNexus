@@ -99,12 +99,21 @@ class NotificationService {
 
   private async createInAppNotification(data: NotificationData) {
     try {
+      // Get or create notification type
+      let notificationType = await storage.getNotificationTypeByName(data.type);
+      if (!notificationType) {
+        notificationType = await storage.createNotificationType({
+          name: data.type,
+          description: `Notification for ${data.type.replace('_', ' ')}`
+        });
+      }
+
       await storage.createNotification({
         userId: data.userId,
-        type: data.type,
+        typeId: notificationType.id,
         title: data.title,
         message: data.message,
-        data: data.data ? JSON.stringify(data.data) : null
+        link: data.data?.link || null
       });
     } catch (error) {
       console.error('Failed to create in-app notification:', error);

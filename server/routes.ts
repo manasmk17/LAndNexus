@@ -3136,6 +3136,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const application = await storage.createJobApplication(applicationData);
+
+      // Trigger notification system
+      try {
+        // Get company profile and user for notifications
+        const companyProfile = await storage.getCompanyProfile(job.companyId);
+        if (companyProfile) {
+          const companyUser = await storage.getUser(companyProfile.userId);
+          if (companyUser) {
+            // Import notification service
+            const { notificationService } = await import('./notification-service');
+            
+            // Send notification to company about new application
+            await notificationService.sendJobApplicationNotification(
+              application,
+              job,
+              professionalProfile,
+              companyProfile,
+              companyUser
+            );
+          }
+        }
+      } catch (notificationError) {
+        console.error('Failed to send application notification:', notificationError);
+        // Don't fail the application creation if notifications fail
+      }
+
       res.status(201).json(application);
     } catch (err) {
       if (err instanceof Error && err.message === "Professional has already applied to this job") {

@@ -7,6 +7,8 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 import * as crypto from "crypto";
+import { randomBytes } from "crypto";
+import { promisify } from "util";
 import { 
   insertUserSchema, 
   insertProfessionalProfileSchema,
@@ -62,6 +64,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: "2024-12-18.acacia" as any,
 });
 
+const scryptAsync = promisify(crypto.scrypt);
 
 
 
@@ -238,6 +241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (!user) {
+         console.log("User not found for identifier:", identifier);
         return done(null, false, { message: "Incorrect username or email" });
       }
       
@@ -812,143 +816,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/register", async (req, res) => {
+app.post("/api/register", async (req, res) => {
+  try {
+    const userData = insertUserSchema.parse(req.body);
+
+    const existingUsername = await storage.getUserByUsername(userData.username);
+    if (existingUsername) {
+      return res.status(400).json({ message: "Username already exists" });
+    }
+    const existingEmail = await storage.getUserByEmail(userData.email);
+    if (existingEmail) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
+
+    const salt = randomBytes(16).toString("hex");
+    const derivedKey = (await scryptAsync(userData.password, salt, 64)) as Buffer;
+    const hashedPassword = `${derivedKey.toString("hex")}.${salt}`;
+
+    const user = await storage.createUser({
+      ...userData,
+      password: hashedPassword,
+    });
+
+    if (user.userType === "professional") {
+      try {
+        const existingProfile = await storage.getProfessionalProfileByUserId(user.id);
+        if (!existingProfile) {
+          await storage.createProfessionalProfile({
+            userId: user.id,
+            title: `${user.username}'s Profile`,
+            bio: "Edit this profile to add your professional bio.",
+            yearsExperience: 0,
+            ratePerHour: 0,
+            availability: "true",
+          });
+          console.log(`Created basic professional profile for new user ${user.id}`);
+        }
+      } catch (profileErr) {
+        console.error("Error creating professional profile:", profileErr);
+      }
+    }
+
+    req.login(user, (err) => {
+      if (err) {
+        return res.status(500).json({ message: "Error logging in after registration" });
+      }
+      return res.status(201).json({
+        id: user.id,
+        username: user.username,
+        userType: user.userType,
+        isAdmin: user.isAdmin,
+      });
+    });
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ message: "Invalid input", errors: err.errors });
+    }
+    console.error("Register error:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+
+app.post("/api/login", (req, res, next) => {
+  passport.authenticate("local", (err: any, user: any, info: any) => {
+    if (err) {
+      return next(err);
+    }
+    if (!user) {
+      return res.status(401).json({ message: info.message });
+    }
+
     try {
-      const userData = insertUserSchema.parse(req.body);
+      const rememberMe = req.body.rememberMe === true;
 
-      // Check if username or email already exists
-      const existingUsername = await storage.getUserByUsername(userData.username);
-      if (existingUsername) {
-        return res.status(400).json({ message: "Username already exists" });
+      if (rememberMe && req.session) {
+        req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+        console.log(`Extended session for user ${user.username} to 30 days`);
       }
 
-      const existingEmail = await storage.getUserByEmail(userData.email);
-      if (existingEmail) {
-        return res.status(400).json({ message: "Email already exists" });
-      }
-
-      const user = await storage.createUser(userData);
-
-      // If the user is a professional, create a basic professional profile
-      if (user.userType === "professional") {
-        try {
-          // Check if a profile already exists (shouldn't, but let's be safe)
-          const existingProfile = await storage.getProfessionalProfileByUserId(user.id);
-          
-          if (!existingProfile) {
-            // Create a basic profile with just the userId
-            await storage.createProfessionalProfile({
-              userId: user.id,
-              title: `${user.username}'s Profile`, // Default title using username
-              bio: "Edit this profile to add your professional bio.",
-              yearsExperience: 0,
-              ratePerHour: 0,
-              availability: "true"
-            });
-            console.log(`Created basic professional profile for new user ${user.id}`);
-          }
-        } catch (profileErr) {
-          console.error("Error creating professional profile during registration:", profileErr);
-          // Continue with registration even if profile creation fails
-          // We'll handle this later in the profile editing flow
+      req.login(user, (loginErr) => {
+        if (loginErr) {
+          return next(loginErr);
         }
-      }
 
-      // Log the user in
-      req.login(user, (err) => {
-        if (err) {
-          return res.status(500).json({ message: "Error logging in after registration" });
-        }
-        return res.status(201).json({ 
-          id: user.id, 
-          username: user.username, 
+        (req.session as any).userId = user.id;
+        (req.session as any).userType = user.userType;
+        (req.session as any).authenticated = true;
+
+        const sessionToken = crypto.randomBytes(32).toString('hex');
+        (req.session as any).sessionToken = sessionToken;
+
+        sessionTokenStore.set(sessionToken, {
+          userId: user.id,
           userType: user.userType,
-          isAdmin: user.isAdmin
+          timestamp: Date.now()
+        });
+
+        res.cookie('session_token', sessionToken, {
+          httpOnly: false,
+          secure: false,
+          sameSite: 'lax',
+          maxAge: 24 * 60 * 60 * 1000
+        });
+
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error('Session save error:', saveErr);
+            return next(saveErr);
+          }
+
+          console.log(`User ${user.username} authenticated with session ${req.sessionID.slice(0, 8)}...`);
+          console.log(`Session stored with userId: ${user.id}, userType: ${user.userType}, token: ${sessionToken.slice(0, 8)}...`);
+
+          const { password, resetToken, resetTokenExpiry, ...userWithoutSensitiveInfo } = user;
+
+          return res.json({
+            ...userWithoutSensitiveInfo,
+            sessionPersisted: true,
+            sessionToken: sessionToken
+          });
         });
       });
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid input", errors: err.errors });
-      }
-      res.status(500).json({ message: "Internal server error" });
+    } catch (error) {
+      console.error('Login error:', error);
+      return res.status(500).json({ message: 'Internal server error during login' });
     }
-  });
+  })(req, res, next);
+});
 
-  app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", async (err: any, user: any, info: any) => {
-      if (err) {
-        return next(err);
-      }
-      if (!user) {
-        return res.status(401).json({ message: info.message });
-      }
-      
-      try {
-        // Check if rememberMe is requested
-        const rememberMe = req.body.rememberMe === true;
-        
-        // Configure session based on rememberMe
-        if (rememberMe && req.session) {
-          // Extend session to 30 days if "Remember Me" is checked
-          req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
-          console.log(`Extended session for user ${user.username} to 30 days`);
-        }
-        
-        req.login(user, async (err) => {
-          if (err) {
-            return next(err);
-          }
-          
-          // Store user ID directly in session for fallback authentication
-          (req.session as any).userId = user.id;
-          (req.session as any).userType = user.userType;
-          (req.session as any).authenticated = true;
-          
-          // Generate and store a session token for consistent authentication
-          const sessionToken = crypto.randomBytes(32).toString('hex');
-          (req.session as any).sessionToken = sessionToken;
-          
-          // Store session token mapping for cross-session authentication
-          sessionTokenStore.set(sessionToken, {
-            userId: user.id,
-            userType: user.userType,
-            timestamp: Date.now()
-          });
-          
-          // Store the session token in a cookie for consistent access
-          res.cookie('session_token', sessionToken, {
-            httpOnly: false, // Allow client access for API calls
-            secure: false, // Set to true in production with HTTPS
-            sameSite: 'lax',
-            maxAge: 24 * 60 * 60 * 1000 // 24 hours
-          });
-          
-          // Force session save to ensure persistence
-          req.session.save((saveErr) => {
-            if (saveErr) {
-              console.error('Session save error:', saveErr);
-              return next(saveErr);
-            }
-            
-            console.log(`User ${user.username} authenticated with session ${req.sessionID.slice(0, 8)}...`);
-            console.log(`Session stored with userId: ${user.id}, userType: ${user.userType}, token: ${sessionToken.slice(0, 8)}...`);
-            
-            // Remove sensitive fields
-            const { password, resetToken, resetTokenExpiry, ...userWithoutSensitiveInfo } = user;
-            
-            return res.json({
-              ...userWithoutSensitiveInfo,
-              sessionPersisted: true,
-              sessionToken: sessionToken
-            });
-          });
-        });
-      } catch (error) {
-        console.error('Login error:', error);
-        return res.status(500).json({ message: 'Internal server error during login' });
-      }
-    })(req, res, next);
-  });
 
   // Logout endpoint
   app.post("/api/logout", async (req, res) => {

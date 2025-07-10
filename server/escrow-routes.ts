@@ -3,13 +3,15 @@ import Stripe from 'stripe';
 import { db } from './db';
 import { users, escrowTransactions, transactionHistory } from '@shared/schema';
 import { eq, and, desc } from 'drizzle-orm';
+import dotenv from 'dotenv';
+dotenv.config();
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2023-10-16",
+  apiVersion: "2023-10-16" as any,
 });
 
 const isAuthenticated = (req: any, res: any, next: any) => {

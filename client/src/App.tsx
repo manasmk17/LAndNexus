@@ -44,6 +44,17 @@ import NotFound from "@/pages/not-found";
 import JobApplications from "@/pages/job-applications";
 import { AuthProvider } from "@/lib/auth";
 
+
+function ScrollToTop() {
+  const [location] = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location]);
+
+  return null;
+}
+
 function Router() {
   return (
     <Switch>
@@ -183,6 +194,7 @@ function App() {
       <AuthProvider>
         <div className="flex flex-col min-h-screen">
           <Navbar />
+          <ScrollToTop /> 
           <main className="flex-grow">
             <Router />
           </main>

@@ -108,7 +108,7 @@ export default function JobApplicationForm({ jobId, onCancel, onSuccess }: JobAp
     <div className="relative">
       <div className="absolute -inset-1 bg-gradient-to-r from-slate-700 to-blue-600 rounded-xl blur opacity-20"></div>
       <Card className="relative overflow-hidden shadow-lg ring-1 ring-slate-200/50">
-        <div className="absolute top-0 right-0 w-40 h-40 opacity-10">
+        <div className="absolute top-0 right-0 w-40 h-40 opacity-10 pointer-events-none">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600 -rotate-12 scale-[6] transform origin-center translate-x-8 -translate-y-4">
             <path d="M21 10V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l2-1.14" />
             <path d="m21 16-6 6-6-6h4v-4h4v4Z" />

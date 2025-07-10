@@ -49,72 +49,46 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Check if user is already logged in when the app loads
   useEffect(() => {
     const checkAuthStatus = async () => {
+      setIsLoading(true);
       try {
-        // Prevent redirect loops by clearing problematic parameters
-        const currentUrl = new URL(window.location.href);
-        if (currentUrl.searchParams.has('redirect') && currentUrl.searchParams.get('redirect')?.includes('/resource/')) {
-          currentUrl.searchParams.delete('redirect');
-          window.history.replaceState({}, '', currentUrl.toString());
-        }
-
-        // First, try to restore from localStorage
         const storedToken = localStorage.getItem('session_token');
         const storedUserData = localStorage.getItem('user_data');
-        
+
         if (storedToken && storedUserData) {
+          const parsedUser = JSON.parse(storedUserData);
+          setUser(parsedUser);
+
           try {
-            const userData = JSON.parse(storedUserData);
-            console.log("Attempting session restoration from localStorage");
-            
-            // Verify the session is still valid with the server
-            const response = await apiRequest("GET", "/api/me", undefined);
+            const response = await apiRequest("GET", "/api/me");
             if (response.ok) {
-              const currentUserData = await response.json();
-              setUser(currentUserData);
-              console.log("Session restored successfully");
-              return;
+              const freshUserData = await response.json();
+              setUser(freshUserData);
+            } else {
+              await logout();
             }
           } catch (e) {
-            console.log("Session restoration failed, clearing stored data");
-            localStorage.removeItem('session_token');
-            localStorage.removeItem('user_data');
-            // Clear any redirect parameters that might cause loops
-            if (window.location.search.includes('redirect=')) {
-              const url = new URL(window.location.href);
-              url.searchParams.delete('redirect');
-              window.history.replaceState({}, '', url.toString());
-            }
-          }
-        }
-
-        // Fallback to standard session check
-        const response = await fetch("/api/me", {
-          credentials: "include",
-          headers: {
-            'Cache-Control': 'no-cache',
-          }
-        });
-
-        if (response.ok) {
-          const userData = await response.json();
-          if (userData && userData.id) {
-            setUser(userData);
-          } else {
-            console.log("Authentication cleared");
-            setUser(null);
+            await logout();
           }
         } else {
-          console.log("Authentication cleared");
-          setUser(null);
-          // Clear any redirect parameters that might cause loops
-          if (window.location.search.includes('redirect=')) {
-            const url = new URL(window.location.href);
-            url.searchParams.delete('redirect');
-            window.history.replaceState({}, '', url.toString());
+          try {
+            const response = await fetch("/api/me", {
+              credentials: "include",
+              headers: {
+                "Cache-Control": "no-cache",
+              },
+            });
+            if (response.ok) {
+              const userData = await response.json();
+              setUser(userData);
+              console.log("User data", userData);
+            } else {
+              setUser(null);
+            }
+          } catch (e) {
+            setUser(null);
           }
         }
-      } catch (err) {
-        console.warn("Authentication check failed:", err);
+      } catch (e) {
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -131,7 +105,28 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     try {
       const response = await apiRequest("POST", "/api/login", credentials);
+      
+      // Check if response is successful
+      if (!response.ok) {
+        // Handle different HTTP status codes
+        if (response.status === 401) {
+          throw new Error("Invalid username or password");
+        } else if (response.status === 403) {
+          throw new Error("Account is disabled or blocked");
+        } else if (response.status === 429) {
+          throw new Error("Too many login attempts. Please try again later");
+        } else {
+          throw new Error("Login failed. Please try again");
+        }
+      }
+
       const userData = await response.json();
+      
+      // Validate user data
+      if (!userData || !userData.username || !userData.id) {
+        setUser(null);
+        throw new Error("Invalid user data received");
+      }
       
       // Store session token if provided for persistent authentication
       if (userData.sessionToken) {
@@ -145,6 +140,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setUser(userData);
       return userData;
     } catch (err) {
+      // Ensure user is null on any error
+      setUser(null);
+      
+      // Clear any existing session data on login failure
+      localStorage.removeItem('session_token');
+      localStorage.removeItem('user_data');
+      document.cookie = "session_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+      
       const errorMessage = err instanceof Error ? err.message : "Login failed";
       setError(errorMessage);
       throw new Error(errorMessage);
@@ -159,9 +162,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setError(null);
 
     try {
-      await apiRequest("POST", "/api/logout", {});
+      // Try to logout from server, but don't fail if it doesn't work
+      try {
+        await apiRequest("POST", "/api/logout", {});
+      } catch (e) {
+        // Log but don't throw - we still want to clear local session
+        console.warn("Server logout failed:", e);
+      }
       
-      // Clear session token from both cookie and localStorage
+      // Always clear session token from both cookie and localStorage
       document.cookie = "session_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
       localStorage.removeItem('session_token');
       localStorage.removeItem('user_data');

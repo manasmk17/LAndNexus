@@ -86,7 +86,7 @@ export default function HowItWorks() {
           </div>
           
           {/* Platform Features */}
-          <div className="relative group mt-8 md:mt-16">
+          <div className="relative group mt-8 md:mt-0">
             <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-slate-600 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-500"></div>
             <div className="relative bg-white rounded-xl shadow-xl p-8 ring-1 ring-slate-200/50 hover:shadow-2xl transition duration-500">
               <div className="bg-gradient-to-br from-blue-500 to-slate-700 text-white rounded-2xl w-16 h-16 flex items-center justify-center mb-6 shadow-md">

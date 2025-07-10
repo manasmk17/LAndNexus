@@ -139,9 +139,9 @@ export default function ProfessionalDashboard() {
                 <div>
                   <div className="flex items-center mb-4">
                     <div className="w-12 h-12 rounded-full bg-primary bg-opacity-10 flex items-center justify-center">
-                      {profile.profileImageUrl ? (
+                      {profile.profileImagePath ? (
                         <img
-                          src={profile.profileImageUrl}
+                          src={profile.profileImagePath}
                           alt={profile.title || 'Profile'}
                           className="w-full h-full object-cover rounded-full"
                         />

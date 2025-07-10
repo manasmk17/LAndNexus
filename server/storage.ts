@@ -26,6 +26,7 @@ import {
   subscriptionPlans, SubscriptionPlan
 } from "@shared/schema";
 
+let storageInstance: any = null;
 export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
@@ -2193,7 +2194,16 @@ export class MemStorage implements IStorage {
     ];
   }
 }
+export function setStorage(useRealDb: boolean) {
+  storageInstance = useRealDb ? new DatabaseStorage() : new MemStorageWithSubscriptions();
+}
 
+export function getStorage() {
+  if (!storageInstance) {
+    throw new Error("Storage has not been initialized. Call setStorage() first.");
+  }
+  return storageInstance;
+}
 export class DatabaseStorage implements IStorage {
   // Review operations
   async getReview(id: number): Promise<Review | undefined> {
@@ -2598,15 +2608,16 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users);
   }
 
-  async createUser(user: InsertUser): Promise<User> {
-    // Make sure isAdmin is set to false if not provided
-    const userData = { 
-      ...user,
-      isAdmin: user.isAdmin || false
-    };
-    const [createdUser] = await db.insert(users).values(userData).returning();
-    return createdUser;
-  }
+async createUser(user: InsertUser): Promise<User> {
+  const userData = { 
+    ...user,
+    isAdmin: user.isAdmin || false,
+    createdAt: new Date(),
+  };
+  const [createdUser] = await db.insert(users).values(userData).returning();
+  return createdUser;
+}
+
 
   async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
     const [updatedUser] = await db
@@ -3831,6 +3842,7 @@ class MemStorageWithSubscriptions extends MemStorage {
     return super.updateUserSettings(userId, settings);
   }
 }
-
+console.log(useRealDatabase,"Use real db");
 // Dynamically use MemStorage or DatabaseStorage based on database connection status
+// export const storage = useRealDatabase ? new DatabaseStorage() : new MemStorageWithSubscriptions();
 export const storage = useRealDatabase ? new DatabaseStorage() : new MemStorageWithSubscriptions();

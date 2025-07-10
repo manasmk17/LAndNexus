@@ -40,14 +40,16 @@ function Navbar() {
       'nav.register': 'Register',
       'nav.profile': 'Profile',
       'nav.settings': 'Settings',
-      'nav.logout': 'Logout'
+      'nav.logout': 'Logout',
+      'nav.messages': 'Messages',
+      'nav.postJob': 'Post a Job' 
     };
     return translations[key] || key;
   };
   const [location] = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout,isLoading } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
+   if (isLoading) return null;
   const handleLogout = async () => {
     try {
       await logout();

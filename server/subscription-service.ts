@@ -12,6 +12,7 @@ import {
 } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 
+console.log("this is db",process.env.DATABASE_URL);
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }

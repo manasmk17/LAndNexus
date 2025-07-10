@@ -1,18 +1,20 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { initializeDatabase } from "./db";
+import { initializeDatabase, useRealDatabase } from "./db";
 import csurf from "csurf";
 import cookieParser from "cookie-parser";
 import helmet from 'helmet';
 import cors from 'cors';
-
+import dotenv from 'dotenv';
+import { getStorage, setStorage } from "./storage";
+dotenv.config()
 
 const app = express();
 
 // Configure CORS for proper session cookie handling
 app.use(cors({
-  origin: function(origin, callback) {
+  origin: function (origin, callback) {
     // Allow same-origin requests and development
     callback(null, true);
   },
@@ -59,10 +61,10 @@ const csrfProtection = csurf({
   ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],
   value: function (req) {
     return (req.body && req.body._csrf) ||
-           (req.query && req.query._csrf) ||
-           (req.headers['x-csrf-token']) ||
-           (req.headers['x-xsrf-token']) ||
-           (req.headers['csrf-token']);
+      (req.query && req.query._csrf) ||
+      (req.headers['x-csrf-token']) ||
+      (req.headers['x-xsrf-token']) ||
+      (req.headers['csrf-token']);
   }
 });
 
@@ -235,70 +237,74 @@ app.use((req, res, next) => {
 (async () => {
   try {
     // Initialize database connection with retry capability
-    await initializeDatabase();
+    await initializeDatabase(); // useRealDatabase burada true olacaq
+    setStorage(useRealDatabase); // buradan sonra storageInstance düzgün olur
+    const storage = getStorage(); // hazır storage obyekti
 
+    app.locals.storage = storage;
+
+    console.log("initialized", useRealDatabase);
     // Monitoring systems removed for performance optimization
 
-  // Add static file serving for uploaded files - must come before routes
-  app.use('/uploads', express.static('uploads', {
-    maxAge: '1d', // Cache static files for 1 day
-    etag: true
-  }));
+    // Add static file serving for uploaded files - must come before routes
+    app.use('/uploads', express.static('uploads', {
+      maxAge: '1d', // Cache static files for 1 day
+      etag: true
+    }));
 
-  const server = await registerRoutes(app);
+    const server = await registerRoutes(app);
 
-  app.use(async (err: any, req: Request, res: Response, _next: NextFunction) => {
-    // Special handling for CSRF errors
-    if (err.code === 'EBADCSRFTOKEN') {
-      console.error('CSRF error details:', {
-        path: req.path,
-        method: req.method,
-        headers: req.headers,
-        cookies: req.cookies,
-        body: req.body
-      });
-      return res.status(403).json({
-        message: "CSRF token validation failed",
-        details: "The form submission security token is invalid or expired. Please refresh the page and try again."
-      });
-    }
+    app.use(async (err: any, req: Request, res: Response, _next: NextFunction) => {
+      // Special handling for CSRF errors
+      if (err.code === 'EBADCSRFTOKEN') {
+        console.error('CSRF error details:', {
+          path: req.path,
+          method: req.method,
+          headers: req.headers,
+          cookies: req.cookies,
+          body: req.body
+        });
+        return res.status(403).json({
+          message: "CSRF token validation failed",
+          details: "The form submission security token is invalid or expired. Please refresh the page and try again."
+        });
+      }
 
-    // Check for database connection errors and try to reconnect
-    if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || 
+      // Check for database connection errors and try to reconnect
+      if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' ||
         err.message?.includes('database') || err.message?.includes('pool') ||
         err.message?.includes('connection')) {
-      console.error('Database connection error detected, attempting to reconnect:', err);
+        console.error('Database connection error detected, attempting to reconnect:', err);
 
-      try {
-        // Try to re-initialize the database connection
-        await initializeDatabase();
-
-        // If the request was a database query, we can't retry it automatically
-        // Just let the client know to retry
-        return res.status(503).json({
-          message: "Database connection reestablished. Please retry your request.",
-          retry: true
-        });
-      } catch (reconnectErr) {
-        console.error('Failed to reconnect to database:', reconnectErr);
+        try {
+          // Try to re-initialize the database connection
+          await initializeDatabase();
+          // If the request was a database query, we can't retry it automatically
+          // Just let the client know to retry
+          return res.status(503).json({
+            message: "Database connection reestablished. Please retry your request.",
+            retry: true
+          });
+        } catch (reconnectErr) {
+          console.error('Failed to reconnect to database:', reconnectErr);
+        }
       }
+
+      const status = err.status || err.statusCode || 500;
+      const message = err.message || "Internal Server Error";
+
+      res.status(status).json({ message });
+      console.error('Server error:', err);
+    });
+
+    // importantly only setup vite in development and after
+    // setting up all the other routes so the catch-all route
+    // doesn't interfere with the other routes
+    if (app.get("env") === "development") {
+      await setupVite(app, server);
+    } else {
+      serveStatic(app);
     }
-
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    console.error('Server error:', err);
-  });
-
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
 
     // Serve the app on port 5000 as expected by workflow
     // this serves both the API and the client.

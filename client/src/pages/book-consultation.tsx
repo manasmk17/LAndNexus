@@ -191,9 +191,9 @@ export default function BookConsultation() {
           <CardContent>
             <div className="flex items-center mb-6">
               <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mr-4">
-                {profile.profileImageUrl ? (
+                {profile.profileImagePath ? (
                   <img 
-                    src={profile.profileImageUrl} 
+                    src={profile.profileImagePath} 
                     alt={profile.title} 
                     className="w-full h-full object-cover rounded-full"
                   />

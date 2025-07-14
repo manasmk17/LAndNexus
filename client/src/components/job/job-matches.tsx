@@ -113,7 +113,7 @@ export default function JobMatches({ jobId, companyId }: JobMatchesProps) {
           {matches.map(({ profile, score }) => (
             <div key={profile.id} className="flex flex-col sm:flex-row items-start space-y-3 sm:space-y-0 sm:space-x-4 p-3 border rounded-lg hover:bg-slate-50 transition-colors">
               <Avatar className="h-12 w-12">
-                <AvatarImage src={profile.profileImageUrl || ""} alt={profile.title || ""} />
+                <AvatarImage src={profile.profileImagePath || ""} alt={profile.title || ""} />
                 <AvatarFallback>
                   <User className="h-6 w-6" />
                 </AvatarFallback>

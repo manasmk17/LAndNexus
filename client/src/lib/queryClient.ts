@@ -130,7 +130,7 @@ export async function apiRequest(
 
       try {
         console.log("Attempting to refresh CSRF token for API request...");
-        const tokenResponse = await fetch("/api/csrf-token", { 
+        const tokenResponse = await fetch("/api/csrf-token", {
           method: "GET",
           credentials: "include"
         });
@@ -169,14 +169,19 @@ export async function apiRequest(
   }
 
   // Session-based auth - no authorization header needed
+ const baseUrl = import.meta.env.VITE_BACKEND_URL || "";
+ const fullUrl = url.startsWith("http") ? url : `${baseUrl}${url}`;
+console.log("Using backend URL:", import.meta.env.VITE_BACKEND_URL);
 
   try {
-    const res = await fetch(url, {
+
+    const res = await fetch(fullUrl, {
       method,
       headers,
       body: isFormData ? data as FormData : (data ? JSON.stringify(data) : undefined),
       credentials: "include",
     });
+
 
     // Enhanced error handling for CSRF-specific errors
     if (res.status === 403) {
@@ -257,7 +262,7 @@ export async function secureFileUpload(
 
   // Add CSRF token
   let csrfToken = getCsrfToken();
-  console.log("Initial CSRF token found:", csrfToken ? "Yes ("+csrfToken.substring(0,5)+"...)" : "No");
+  console.log("Initial CSRF token found:", csrfToken ? "Yes (" + csrfToken.substring(0, 5) + "...)" : "No");
 
   // If the token is missing, immediately try to refresh it
   if (!csrfToken) {
@@ -266,7 +271,7 @@ export async function secureFileUpload(
 
     try {
       console.log("Attempting to refresh CSRF token...");
-      const tokenResponse = await fetch("/api/csrf-token", { 
+      const tokenResponse = await fetch("/api/csrf-token", {
         method: "GET",
         credentials: "include"
       });
@@ -275,7 +280,7 @@ export async function secureFileUpload(
         // Wait longer for cookies to be set
         await new Promise(resolve => setTimeout(resolve, 150));
         csrfToken = getCsrfToken();
-        console.log("After refresh, CSRF token found:", csrfToken ? "Yes ("+csrfToken.substring(0,5)+"...)" : "No");
+        console.log("After refresh, CSRF token found:", csrfToken ? "Yes (" + csrfToken.substring(0, 5) + "...)" : "No");
       }
     } catch (e) {
       console.error('Error refreshing CSRF token:', e);
@@ -296,10 +301,10 @@ export async function secureFileUpload(
     // Create an additional fallback mechanism by trying to get token from another source
     try {
       console.log("Attempting direct CSRF token fetch...");
-      const tokenResponse = await fetch("/api/csrf-token", { 
-        method: "GET", 
+      const tokenResponse = await fetch("/api/csrf-token", {
+        method: "GET",
         headers: { "Accept": "application/json" },
-        credentials: "include" 
+        credentials: "include"
       });
 
       if (tokenResponse.ok) {
@@ -416,120 +421,120 @@ export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
-  async ({ queryKey }) => {
-    // Build headers with CSRF token if needed
-    const headers: Record<string, string> = {};
+    async ({ queryKey }) => {
+      // Build headers with CSRF token if needed
+      const headers: Record<string, string> = {};
 
-    // For non-GET methods we need to include CSRF tokens
-    // This applies to some query patterns that might use POST
-    const url = queryKey[0] as string;
-    const method = queryKey.length > 1 && typeof queryKey[1] === 'string' ? queryKey[1] : 'GET';
+      // For non-GET methods we need to include CSRF tokens
+      // This applies to some query patterns that might use POST
+      const url = queryKey[0] as string;
+      const method = queryKey.length > 1 && typeof queryKey[1] === 'string' ? queryKey[1] : 'GET';
 
-    if (method !== 'GET') {
-      const csrfToken = getCsrfToken();
-      if (csrfToken) {
-        headers['X-CSRF-Token'] = csrfToken;
-        console.log(`Using CSRF token for query function ${method} request to ${url}`);
-      } else {
-        console.warn(`CSRF token not found for query ${url} with method ${method}`);
+      if (method !== 'GET') {
+        const csrfToken = getCsrfToken();
+        if (csrfToken) {
+          headers['X-CSRF-Token'] = csrfToken;
+          console.log(`Using CSRF token for query function ${method} request to ${url}`);
+        } else {
+          console.warn(`CSRF token not found for query ${url} with method ${method}`);
 
-        // If the token is missing, try to refresh it by making a GET request
-        try {
-          console.log("Attempting to refresh CSRF token for query function...");
-          await fetch("/api/csrf-token", { 
-            method: "GET",
-            credentials: "include"
-          });
+          // If the token is missing, try to refresh it by making a GET request
+          try {
+            console.log("Attempting to refresh CSRF token for query function...");
+            await fetch("/api/csrf-token", {
+              method: "GET",
+              credentials: "include"
+            });
 
-          // Try again to get the token
-          const refreshedToken = getCsrfToken();
-          if (refreshedToken) {
-            console.log("Successfully refreshed CSRF token for query function");
-            headers['X-CSRF-Token'] = refreshedToken;
-          } else {
-            console.warn("Failed to refresh CSRF token for query function");
-            console.log('Current cookies:', document.cookie);
+            // Try again to get the token
+            const refreshedToken = getCsrfToken();
+            if (refreshedToken) {
+              console.log("Successfully refreshed CSRF token for query function");
+              headers['X-CSRF-Token'] = refreshedToken;
+            } else {
+              console.warn("Failed to refresh CSRF token for query function");
+              console.log('Current cookies:', document.cookie);
+            }
+          } catch (e) {
+            console.error('Error refreshing CSRF token for query function:', e);
           }
-        } catch (e) {
-          console.error('Error refreshing CSRF token for query function:', e);
         }
       }
-    }
 
-    try {
-      const res = await fetch(url, {
-        method,
-        headers,
-        credentials: "include",
-      });
+      try {
+        const res = await fetch(url, {
+          method,
+          headers,
+          credentials: "include",
+        });
 
-      if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-        return null;
-      }
-
-      // Enhanced error handling for CSRF-specific errors
-      if (res.status === 403) {
-        const responseText = await res.text();
-        if (responseText.includes('CSRF') || responseText.includes('csrf')) {
-          console.error('CSRF protection error in query function:', responseText);
-          throw new Error(`CSRF Protection Error (403): ${responseText}. Please refresh the page and try again.`);
+        if (unauthorizedBehavior === "returnNull" && res.status === 401) {
+          return null;
         }
-        throw new Error(`Forbidden (403): ${responseText}`);
-      }
 
-      // Enhanced error handling for Conflict errors (typically dependency constraints)
-      if (res.status === 409) {
-        let errorDetails = "";
-        try {
-          const contentType = res.headers.get('content-type');
-          if (contentType && contentType.includes('application/json')) {
-            const errorJson = await res.json();
-            errorDetails = errorJson.details || errorJson.message || JSON.stringify(errorJson);
-          } else {
+        // Enhanced error handling for CSRF-specific errors
+        if (res.status === 403) {
+          const responseText = await res.text();
+          if (responseText.includes('CSRF') || responseText.includes('csrf')) {
+            console.error('CSRF protection error in query function:', responseText);
+            throw new Error(`CSRF Protection Error (403): ${responseText}. Please refresh the page and try again.`);
+          }
+          throw new Error(`Forbidden (403): ${responseText}`);
+        }
+
+        // Enhanced error handling for Conflict errors (typically dependency constraints)
+        if (res.status === 409) {
+          let errorDetails = "";
+          try {
+            const contentType = res.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+              const errorJson = await res.json();
+              errorDetails = errorJson.details || errorJson.message || JSON.stringify(errorJson);
+            } else {
+              errorDetails = await res.text();
+            }
+          } catch (e) {
             errorDetails = await res.text();
           }
-        } catch (e) {
-          errorDetails = await res.text();
+
+          console.error('Conflict error (409) in query function:', errorDetails);
+          throw new Error(`409: ${errorDetails}`);
         }
 
-        console.error('Conflict error (409) in query function:', errorDetails);
-        throw new Error(`409: ${errorDetails}`);
+        await throwIfResNotOk(res);
+        return await res.json();
+      } catch (error: any) {
+        // Create more descriptive error messages for common network issues
+        if (
+          error instanceof TypeError &&
+          (error.message.includes('Failed to fetch') ||
+            error.message.includes('NetworkError') ||
+            error.message.includes('Network request failed'))
+        ) {
+          console.warn(`Network error in query function for ${url}. Will retry automatically.`);
+          // Create a more specific error for network issues to help with retry logic
+          const networkError = new Error(`Network connection issue: ${error.message}. The application will automatically retry when connectivity is restored.`);
+          networkError.name = 'NetworkError';
+          throw networkError;
+        } else if (error instanceof SyntaxError && error.message.includes('JSON')) {
+          // Handle JSON parsing errors
+          console.error(`JSON parsing error in query function for ${url}:`, error);
+          throw new Error(`Invalid response format from server. Please try again later.`);
+        } else {
+          // General error handling
+          console.error(`Error in query function for ${url}:`, error);
+          throw error;
+        }
       }
-
-      await throwIfResNotOk(res);
-      return await res.json();
-    } catch (error: any) {
-      // Create more descriptive error messages for common network issues
-      if (
-        error instanceof TypeError && 
-        (error.message.includes('Failed to fetch') || 
-         error.message.includes('NetworkError') ||
-         error.message.includes('Network request failed'))
-      ) {
-        console.warn(`Network error in query function for ${url}. Will retry automatically.`);
-        // Create a more specific error for network issues to help with retry logic
-        const networkError = new Error(`Network connection issue: ${error.message}. The application will automatically retry when connectivity is restored.`);
-        networkError.name = 'NetworkError';
-        throw networkError;
-      } else if (error instanceof SyntaxError && error.message.includes('JSON')) {
-        // Handle JSON parsing errors
-        console.error(`JSON parsing error in query function for ${url}:`, error);
-        throw new Error(`Invalid response format from server. Please try again later.`);
-      } else {
-        // General error handling
-        console.error(`Error in query function for ${url}:`, error);
-        throw error;
-      }
-    }
-  };
+    };
 
 // Setup global unhandled rejection handler for React Query
 window.addEventListener('unhandledrejection', event => {
   // Handle authentication errors specifically
-  if (event.reason && typeof event.reason.message === 'string' && 
-      (event.reason.message.includes('401') || 
-       event.reason.message.includes('Unauthorized') ||
-       event.reason.message.includes('Authentication'))) {
+  if (event.reason && typeof event.reason.message === 'string' &&
+    (event.reason.message.includes('401') ||
+      event.reason.message.includes('Unauthorized') ||
+      event.reason.message.includes('Authentication'))) {
     console.log('Authentication cleared');
     authStore.clearAuth();
     event.preventDefault();
@@ -538,8 +543,8 @@ window.addEventListener('unhandledrejection', event => {
 
   // Check if this is a React Query related error
   const isReactQueryError = event.reason && (
-    event.reason.name === 'QueryError' || 
-    event.reason.name === 'MutationError' || 
+    event.reason.name === 'QueryError' ||
+    event.reason.name === 'MutationError' ||
     event.reason.name === 'NetworkError' ||
     (typeof event.reason.message === 'string' && (
       event.reason.message.includes('Network') ||

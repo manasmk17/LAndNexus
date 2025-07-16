@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, User, Mail, Phone, MapPin, Calendar, FileText, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
 import { format } from "date-fns";
+import { useEffect } from "react";
 
 interface JobApplication {
   id: number;
@@ -15,6 +16,7 @@ interface JobApplication {
   professionalId: number;
   coverLetter?: string;
   appliedAt: string;
+  createdAt:string;
   status: string;
   professional?: {
     id: number;
@@ -54,6 +56,7 @@ export default function JobApplications() {
     queryKey: [`/api/job-postings/${jobId}/applications`],
     enabled: !!jobId,
   });
+  console.log("Applications data:", applications);
 
   if (jobLoading || applicationsLoading) {
     return (
@@ -112,7 +115,7 @@ export default function JobApplications() {
             Back to Dashboard
           </Button>
         </Link>
-        
+
         <div className="mb-4">
           <h1 className="text-2xl sm:text-3xl font-bold mb-2">Job Applications</h1>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-gray-600">
@@ -131,7 +134,7 @@ export default function JobApplications() {
           <p className="text-gray-600 text-sm sm:text-base">
             {applications?.length || 0} application{applications?.length !== 1 ? 's' : ''} received
           </p>
-          
+
           <Link href={`/job/${jobId}`}>
             <Button variant="outline" size="sm" className="w-full sm:w-auto">
               <ExternalLink className="w-4 h-4 mr-2" />
@@ -167,7 +170,7 @@ export default function JobApplications() {
                         {application.professional?.lastName?.[0]}
                       </AvatarFallback>
                     </Avatar>
-                    
+
                     <div>
                       <h3 className="text-lg font-semibold">
                         {application.professional?.firstName} {application.professional?.lastName}
@@ -178,7 +181,10 @@ export default function JobApplications() {
                       <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
-                          Applied {format(new Date(application.appliedAt), 'MMM d, yyyy')}
+                          {application.createdAt && !isNaN(new Date(application.createdAt).getTime())
+                            ? `Applied ${format(new Date(application.createdAt), 'MMM d, yyyy')}`
+                            : 'Date unavailable'}
+
                         </span>
                         {application.professional?.location && (
                           <span className="flex items-center gap-1">
@@ -189,7 +195,7 @@ export default function JobApplications() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <Badge className={getStatusColor(application.status)}>
                     {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
                   </Badge>
@@ -202,7 +208,7 @@ export default function JobApplications() {
                   {application.professional?.email && (
                     <div className="flex items-center gap-2">
                       <Mail className="w-4 h-4 text-gray-500" />
-                      <a 
+                      <a
                         href={`mailto:${application.professional.email}`}
                         className="text-blue-600 hover:underline"
                       >
@@ -210,11 +216,11 @@ export default function JobApplications() {
                       </a>
                     </div>
                   )}
-                  
+
                   {application.professional?.phone && (
                     <div className="flex items-center gap-2">
                       <Phone className="w-4 h-4 text-gray-500" />
-                      <a 
+                      <a
                         href={`tel:${application.professional.phone}`}
                         className="text-blue-600 hover:underline"
                       >
@@ -228,7 +234,10 @@ export default function JobApplications() {
                 {application.professional?.bio && (
                   <div className="mb-4">
                     <h4 className="font-medium mb-2">About</h4>
-                    <p className="text-gray-700 text-sm">{application.professional.bio}</p>
+                    <p className="text-gray-700 text-sm break-words">
+                      {application.professional.bio}
+                    </p>
+
                   </div>
                 )}
 
@@ -240,15 +249,15 @@ export default function JobApplications() {
                       Cover Letter
                     </h4>
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="text-gray-700 text-sm whitespace-pre-wrap">
+                      <p className="text-gray-700 text-sm whitespace-pre-wrap break-words">
                         {application.coverLetter}
                       </p>
+
                     </div>
                   </div>
                 )}
 
                 <Separator className="my-4" />
-
                 {/* Actions */}
                 <div className="flex items-center justify-between">
                   <Link href={`/professional/${application.professional?.userId}`}>
@@ -256,7 +265,7 @@ export default function JobApplications() {
                       View Full Profile
                     </Button>
                   </Link>
-                  
+
                   <div className="flex gap-2">
                     {application.status === 'pending' && (
                       <>

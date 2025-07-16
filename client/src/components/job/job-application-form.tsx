@@ -51,58 +51,62 @@ export default function JobApplicationForm({ jobId, onCancel, onSuccess }: JobAp
     },
   });
 
-  const onSubmit = async (data: z.infer<typeof applicationSchema>) => {
-    if (!profile) {
+ const onSubmit = async (data: z.infer<typeof applicationSchema>) => {
+  if (!profile) {
+    toast({
+      title: "Profile required",
+      description: "You need to complete your professional profile before applying",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  try {
+    setIsSubmitting(true);
+
+    // Submit application
+    await apiRequest("POST", `/api/job-postings/${jobId}/applications`, {
+      coverLetter: data.coverLetter,
+      professionalId: profile.id,
+    });
+
+    toast({
+      title: "Application submitted",
+      description: "Your job application has been sent successfully",
+    });
+
+    // Invalidate relevant queries
+    queryClient.invalidateQueries({ 
+      queryKey: [`/api/professionals/${profile.id}/applications`] 
+    });
+
+    // Also invalidate company applications
+    queryClient.invalidateQueries({
+      queryKey: ["/api/job-applications/company"]
+    });
+
+    onSuccess();
+  } catch (error) {
+    console.error("Application error:", error);
+
+    if (error instanceof Error && error.message.includes("already applied")) {
       toast({
-        title: "Profile required",
-        description: "You need to complete your professional profile before applying",
+        title: "Already applied",
+        description: "You have already applied to this job",
         variant: "destructive",
       });
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      
-      // Submit application
-      await apiRequest("POST", `/api/job-postings/${jobId}/applications`, {
-        coverLetter: data.coverLetter,
-        professionalId: profile.id,
-      });
-      
+    } else {
       toast({
-        title: "Application submitted",
-        description: "Your job application has been sent successfully",
+        title: "Failed to submit application",
+        description: error instanceof Error ? error.message : "Please try again later",
+        variant: "destructive",
       });
-      
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({ 
-        queryKey: [`/api/professionals/${profile.id}/applications`] 
-      });
-      
-      // Notify parent component of success
-      onSuccess();
-    } catch (error) {
-      console.error("Application error:", error);
-      
-      // Check if it's already applied error
-      if (error instanceof Error && error.message.includes("already applied")) {
-        toast({
-          title: "Already applied",
-          description: "You have already applied to this job",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Failed to submit application",
-          description: error instanceof Error ? error.message : "Please try again later",
-          variant: "destructive",
-        });
-      }
-    } finally {
-      setIsSubmitting(false);
     }
-  };
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   return (
     <div className="relative">

@@ -11,15 +11,7 @@ import { getStorage, setStorage } from "./storage";
 dotenv.config()
 
 const app = express();
-const corsOptions = {
-  origin: [
-    import.meta.env.VITE_FRONTEND_URL, 
-    import.meta.env.VITE_BACKEND_URL, 
-  ],
-  credentials: true,  
-};
 
-app.use(cors(corsOptions));
 // Configure CORS for proper session cookie handling
 app.use(cors({
   origin: function (origin, callback) {

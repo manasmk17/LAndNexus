@@ -260,7 +260,7 @@ export default function JobApplications() {
                 <Separator className="my-4" />
                 {/* Actions */}
                 <div className="flex items-center justify-between">
-                  <Link href={`/professional/${application.professional?.userId}`}>
+                  <Link href={`/professional-profile/${application.professionalId}`}>
                     <Button variant="outline" size="sm">
                       View Full Profile
                     </Button>

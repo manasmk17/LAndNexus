@@ -3189,18 +3189,13 @@ app.post("/api/login", (req, res, next) => {
         return res.status(403).json({ message: "You can only view applications for your own job postings" });
       }
 
-      const applications = await prisma.jobApplication.findMany({
-  where: { jobId: jobId },
-  include: {
-    professional: true,
-  },
-});
-
+      const applications = await storage.getJobApplicationsByJob(jobId);
       res.json(applications);
     } catch (err) {
       res.status(500).json({ message: "Internal server error" });
     }
   });
+
 
   app.get("/api/professionals/:id/applications", isAuthenticated, async (req, res) => {
     try {

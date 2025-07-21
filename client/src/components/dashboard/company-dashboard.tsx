@@ -55,7 +55,6 @@ export default function CompanyDashboard() {
     queryKey: ["/api/companies/me/job-postings"],
     enabled: !!user,
   });
-  
   // Fetch applications for all jobs
   const { 
     data: allApplications, 
@@ -64,6 +63,7 @@ export default function CompanyDashboard() {
     queryKey: ["/api/job-applications/company"],
     enabled: !!user,
   });
+  console.log(allApplications);
   
   // Fetch messages
   const { 

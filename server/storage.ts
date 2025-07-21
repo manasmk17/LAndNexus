@@ -1363,10 +1363,7 @@ export class MemStorage implements IStorage {
     return this.jobApplications.get(id);
   }
 
-  async getJobApplicationsByJob(jobId: number): Promise<JobApplication[]> {
-    return Array.from(this.jobApplications.values())
-      .filter(app => app.jobId === jobId);
-  }
+ 
 
   async getJobApplicationsByProfessional(professionalId: number): Promise<JobApplication[]> {
     return Array.from(this.jobApplications.values())

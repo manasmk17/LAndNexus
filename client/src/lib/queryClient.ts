@@ -161,7 +161,9 @@ export async function apiRequest(
         dataType: data ? typeof data : 'undefined',
         isFormData,
         hasCSRFToken: !!csrfToken,
-        cookies: document.cookie
+        cookies: document.cookie,
+        backendUrl:import.meta.env.VITE_BACKEND_URL,
+        frontEndUrl: import.meta.env.VITE_FRONTEND_URL
       });
     } catch (e) {
       console.error('Error logging request details:', e);

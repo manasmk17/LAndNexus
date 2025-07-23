@@ -3,8 +3,8 @@ import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 
-import { 
-  Card, 
+import {
+  Card,
   CardContent,
   CardHeader,
   CardTitle
@@ -25,54 +25,72 @@ export default function Messages() {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
-  
+
   // Get user from query parameters
   const params = new URLSearchParams(window.location.search);
   const userIdParam = params.get("user");
   const professionalIdParam = params.get("professional");
   const companyIdParam = params.get("company");
-  
+
   // Set selected user from URL params if provided
   useEffect(() => {
-    if (userIdParam) {
-      setSelectedUserId(parseInt(userIdParam));
-    } else if (professionalIdParam || companyIdParam) {
-      setLocation("/messages");
-    }
-  }, [userIdParam, professionalIdParam, companyIdParam, setLocation]);
-  
+    const fetchAndSetUserId = async () => {
+      let actualUserId: number | null = null;
+
+      if (userIdParam) {
+        actualUserId = parseInt(userIdParam);
+      } else if (professionalIdParam) {
+        const res = await fetch(`/api/professional-profiles/${professionalIdParam}`);
+        const profile = await res.json();
+        actualUserId = profile?.userId || null;
+      } else if (companyIdParam) {
+        const res = await fetch(`/api/company-profiles/${companyIdParam}`);
+        const profile = await res.json();
+        actualUserId = profile?.userId || null;
+      }
+
+      if (actualUserId) {
+        setSelectedUserId(actualUserId);
+        window.history.replaceState({}, '', `/messages?user=${actualUserId}`);
+      }
+    };
+
+    fetchAndSetUserId();
+  }, [userIdParam, professionalIdParam, companyIdParam]);
+
+
   // Redirect if not logged in
   useEffect(() => {
     if (!isLoadingAuth && !user) {
       setLocation("/login?redirect=/messages");
     }
   }, [user, isLoadingAuth, setLocation]);
-  
+
   // Fetch all messages for current user
-  const { 
-    data: messages, 
-    isLoading: isLoadingMessages 
+  const {
+    data: messages,
+    isLoading: isLoadingMessages
   } = useQuery<Message[]>({
     queryKey: ["/api/messages"],
     enabled: !!user,
   });
-  
+
   // Fetch user details for all message contacts
-  const { 
-    data: users 
+  const {
+    data: users
   } = useQuery<UserType[]>({
     queryKey: ["/api/users/batch"],
     enabled: !!messages && messages.length > 0,
     queryFn: async () => {
       // Extract unique user IDs from messages
-      const userIds = messages ? 
+      const userIds = messages ?
         Array.from(new Set([
           ...messages.map(msg => msg.senderId),
           ...messages.map(msg => msg.receiverId)
         ])).filter(id => id !== user?.id) : [];
-        
+
       if (userIds.length === 0) return [];
-      
+
       const response = await fetch(`/api/users/batch?ids=${userIds.join(',')}`);
       if (!response.ok) {
         throw new Error('Failed to fetch users');
@@ -80,45 +98,45 @@ export default function Messages() {
       return await response.json();
     }
   });
-  
+
   // Get unique contacts from messages
-  const contacts = messages ? 
+  const contacts = messages ?
     Array.from(new Set(
-      messages.map(msg => 
+      messages.map(msg =>
         msg.senderId === user?.id ? msg.receiverId : msg.senderId
       )
     )).map(contactId => {
       // Get the latest message with this contact
       const latestMessage = [...messages]
-        .filter(msg => 
+        .filter(msg =>
           (msg.senderId === contactId && msg.receiverId === user?.id) ||
           (msg.receiverId === contactId && msg.senderId === user?.id)
         )
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-      
+
       // Find user details
       const contactUser = users?.find(u => u.id === contactId);
-      
+
       return {
         userId: contactId,
         user: contactUser,
         latestMessage,
-        unreadCount: messages.filter(msg => 
-          msg.senderId === contactId && 
-          msg.receiverId === user?.id && 
+        unreadCount: messages.filter(msg =>
+          msg.senderId === contactId &&
+          msg.receiverId === user?.id &&
           !msg.read
         ).length
       };
     }).filter(contact => contact.user) : [];
-  
+
   // Filter contacts based on search term
-  const filteredContacts = contacts.filter(contact => 
-    !searchTerm || 
+  const filteredContacts = contacts.filter(contact =>
+    !searchTerm ||
     contact.user?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     contact.user?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     contact.user?.username?.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
+
   if (isLoadingAuth) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -138,7 +156,7 @@ export default function Messages() {
         <p className="text-muted-foreground">
           Stay connected with your professional network
         </p>
-        
+
 
       </div>
 
@@ -188,9 +206,8 @@ export default function Messages() {
                     <button
                       key={contact.userId}
                       onClick={() => setSelectedUserId(contact.userId)}
-                      className={`w-full text-left p-4 hover:bg-muted/50 transition-colors ${
-                        selectedUserId === contact.userId ? 'bg-muted' : ''
-                      }`}
+                      className={`w-full text-left p-4 hover:bg-muted/50 transition-colors ${selectedUserId === contact.userId ? 'bg-muted' : ''
+                        }`}
                     >
                       <div className="flex items-center space-x-3">
                         <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">

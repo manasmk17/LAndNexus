@@ -2000,6 +2000,23 @@ app.post("/api/login", (req, res, next) => {
       res.status(500).json({ message: "Internal server error" });
     }
   });
+  app.get("/api/professional_profiles/:id", async (req, res) => {
+  const { id } = req.params;
+  const profile = await db.query.professionalProfiles.findFirst({
+    where: (p, { eq }) => eq(p.id, Number(id)),
+  });
+  if (!profile) return res.status(404).json({ message: "Not found" });
+  res.json(profile);
+});
+app.get("/api/company-profiles/:id", async (req, res) => {
+  const { id } = req.params;
+  const profile = await db.query.companyProfiles.findFirst({
+    where: (p, { eq }) => eq(p.id, Number(id)),
+  });
+  if (!profile) return res.status(404).json({ message: "Not found" });
+  res.json(profile);
+});
+
 
   app.get("/api/professional-profiles/:id/expertise", async (req, res) => {
     const id = parseInt(req.params.id);

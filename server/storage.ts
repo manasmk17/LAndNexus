@@ -60,8 +60,8 @@ export interface IStorage {
   getSubscriptionPlans(): Promise<SubscriptionPlan[]>;
 
   // AI Matching operations
-  getMatchingJobsForProfessional(professionalId: number, limit?: number): Promise<Array<{job: JobPosting, score: number}>>;
-  getMatchingProfessionalsForJob(jobId: number, limit?: number): Promise<Array<{professional: ProfessionalProfile, score: number}>>;
+  getMatchingJobsForProfessional(professionalId: number, limit?: number): Promise<Array<{ job: JobPosting, score: number }>>;
+  getMatchingProfessionalsForJob(jobId: number, limit?: number): Promise<Array<{ professional: ProfessionalProfile, score: number }>>;
   saveJobMatch(jobId: number, professionalId: number, score: number): Promise<boolean>;
 
   // Professional Profile operations
@@ -320,11 +320,11 @@ export class MemStorage implements IStorage {
 
   private initExpertise() {
     const expertiseAreas = [
-      "Leadership Development", 
-      "Executive Coaching", 
-      "Team Building", 
-      "Instructional Design", 
-      "eLearning", 
+      "Leadership Development",
+      "Executive Coaching",
+      "Team Building",
+      "Instructional Design",
+      "eLearning",
       "LMS Implementation",
       "Change Management",
       "Culture Development",
@@ -390,7 +390,7 @@ export class MemStorage implements IStorage {
       },
       {
         username: "michael.chen",
-        email: "michael.chen@example.com", 
+        email: "michael.chen@example.com",
         password: "demo123",
         firstName: "Michael",
         lastName: "Chen",
@@ -400,7 +400,7 @@ export class MemStorage implements IStorage {
       {
         username: "alexandra.martinez",
         email: "alexandra.martinez@example.com",
-        password: "demo123", 
+        password: "demo123",
         firstName: "Alexandra",
         lastName: "Martinez",
         userType: "professional" as const,
@@ -410,7 +410,7 @@ export class MemStorage implements IStorage {
         username: "david.wilson",
         email: "david.wilson@example.com",
         password: "demo123",
-        firstName: "David", 
+        firstName: "David",
         lastName: "Wilson",
         userType: "professional" as const,
         isAdmin: false
@@ -426,10 +426,10 @@ export class MemStorage implements IStorage {
       },
       {
         username: "innovate.solutions",
-        email: "hr@innovatesolutions.com", 
+        email: "hr@innovatesolutions.com",
         password: "demo123",
         firstName: "Innovate",
-        lastName: "Solutions", 
+        lastName: "Solutions",
         userType: "company" as const,
         isAdmin: false
       }
@@ -437,8 +437,8 @@ export class MemStorage implements IStorage {
 
     demoUsers.forEach(userData => {
       const id = this.userId++;
-      const user: User = { 
-        id, 
+      const user: User = {
+        id,
         username: userData.username,
         password: userData.password,
         email: userData.email,
@@ -465,7 +465,7 @@ export class MemStorage implements IStorage {
       {
         userId: 1,
         firstName: "Sarah",
-        lastName: "Johnson", 
+        lastName: "Johnson",
         email: "sarah.johnson@example.com",
         phone: "+1 (555) 123-4567",
         title: "Senior Learning & Development Strategist",
@@ -489,7 +489,7 @@ export class MemStorage implements IStorage {
         userId: 2,
         firstName: "Michael",
         lastName: "Chen",
-        email: "michael.chen@example.com", 
+        email: "michael.chen@example.com",
         phone: "+1 (555) 234-5678",
         title: "Executive Leadership Coach",
         bio: "Certified executive coach and former C-suite executive with deep expertise in leadership development, organizational psychology, and high-performance team building.",
@@ -502,7 +502,7 @@ export class MemStorage implements IStorage {
         reviewCount: 34,
         yearsExperience: 15,
         interests: "Executive Coaching, Leadership Assessment, Strategic Thinking",
-        industryFocus: "Technology, Consulting, Manufacturing", 
+        industryFocus: "Technology, Consulting, Manufacturing",
         services: "Executive Coaching, Leadership Assessments, Board Advisory",
         availability: "Limited availability - premium clients only",
         workExperience: "Former VP at McKinsey & Company, Harvard MBA",
@@ -510,7 +510,7 @@ export class MemStorage implements IStorage {
       },
       {
         userId: 3,
-        firstName: "Alexandra", 
+        firstName: "Alexandra",
         lastName: "Martinez",
         email: "alexandra.martinez@example.com",
         phone: "+1 (555) 345-6789",
@@ -534,12 +534,12 @@ export class MemStorage implements IStorage {
       {
         userId: 4,
         firstName: "David",
-        lastName: "Wilson", 
+        lastName: "Wilson",
         email: "david.wilson@example.com",
         phone: "+1 (555) 456-7890",
         title: "Change Management & Organizational Development Expert",
         bio: "Strategic change management consultant with proven track record in guiding organizations through complex transformations. Specialized in culture change, process improvement, and stakeholder engagement.",
-        location: "Chicago, IL", 
+        location: "Chicago, IL",
         profileImageUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face",
         ratePerHour: 175,
         featured: false,
@@ -558,7 +558,7 @@ export class MemStorage implements IStorage {
 
     professionalProfiles.forEach(profile => {
       const id = this.profProfileId++;
-      const newProfile: ProfessionalProfile = { 
+      const newProfile: ProfessionalProfile = {
         id,
         userId: profile.userId,
         firstName: profile.firstName,
@@ -606,7 +606,7 @@ export class MemStorage implements IStorage {
       {
         userId: 6,
         companyName: "Innovate Solutions",
-        industry: "Consulting", 
+        industry: "Consulting",
         description: "Strategic consulting firm specializing in digital transformation and organizational development. We help Fortune 500 companies build learning organizations that thrive in the digital age.",
         size: "Medium Business (100-999 employees)",
         location: "New York, NY",
@@ -619,7 +619,7 @@ export class MemStorage implements IStorage {
 
     companyProfiles.forEach(profile => {
       const id = this.companyProfileId++;
-      const newProfile: CompanyProfile = { 
+      const newProfile: CompanyProfile = {
         id,
         userId: profile.userId,
         companyName: profile.companyName,
@@ -709,9 +709,9 @@ export class MemStorage implements IStorage {
 
     demoResources.forEach(resource => {
       const id = this.resourceId++;
-      const newResource: Resource = { 
-        ...resource, 
-        id, 
+      const newResource: Resource = {
+        ...resource,
+        id,
         createdAt: new Date(),
         categoryId: resource.categoryId,
         contentUrl: resource.contentUrl,
@@ -735,21 +735,21 @@ export class MemStorage implements IStorage {
         status: "open"
       },
       {
-        companyId: 2, 
+        companyId: 2,
         title: "Organizational Development Consultant",
         description: "Help our clients build high-performing organizations through strategic OD initiatives. Work with Fortune 500 companies on culture transformation projects.",
         requirements: "PhD or Master's in Organizational Psychology. 5+ years consulting experience. Strong facilitation and change management skills.",
         location: "New York, NY (On-site)",
         jobType: "contract",
         salaryRange: "$180 - $250 per hour",
-        experienceLevel: "senior-level", 
+        experienceLevel: "senior-level",
         status: "open"
       }
     ];
 
     jobPostings.forEach(job => {
       const id = this.jobPostingId++;
-      const newJob: JobPosting = { 
+      const newJob: JobPosting = {
         ...job,
         id,
         createdAt: new Date(),
@@ -778,8 +778,8 @@ export class MemStorage implements IStorage {
 
   async createResourceCategory(category: InsertResourceCategory): Promise<ResourceCategory> {
     const id = this.resourceCategoryId++;
-    const newCategory: ResourceCategory = { 
-      id, 
+    const newCategory: ResourceCategory = {
+      id,
       name: category.name,
       description: category.description || null
     };
@@ -788,7 +788,7 @@ export class MemStorage implements IStorage {
   }
 
   // AI Matching operations
-  async getMatchingJobsForProfessional(professionalId: number, limit: number = 5): Promise<Array<{job: JobPosting, score: number}>> {
+  async getMatchingJobsForProfessional(professionalId: number, limit: number = 5): Promise<Array<{ job: JobPosting, score: number }>> {
     const professional = await this.getProfessionalProfile(professionalId);
     if (!professional) {
       return [];
@@ -819,7 +819,7 @@ export class MemStorage implements IStorage {
           const industryMatch = profIndustry && jobDescription.includes(profIndustry) ? 0.2 : 0;
 
           // Assign a moderate score for location match
-          const locationMatch = professional.location && 
+          const locationMatch = professional.location &&
             professional.location === job.location ? 0.3 : 0;
 
           score = titleMatch + bioMatch + industryMatch + locationMatch;
@@ -837,7 +837,7 @@ export class MemStorage implements IStorage {
       .slice(0, limit);
   }
 
-  async getMatchingProfessionalsForJob(jobId: number, limit: number = 5): Promise<Array<{professional: ProfessionalProfile, score: number}>> {
+  async getMatchingProfessionalsForJob(jobId: number, limit: number = 5): Promise<Array<{ professional: ProfessionalProfile, score: number }>> {
     const job = await this.getJobPosting(jobId);
     if (!job) {
       return [];
@@ -866,7 +866,7 @@ export class MemStorage implements IStorage {
         const industryMatch = profIndustry && jobDescription.includes(profIndustry) ? 0.2 : 0;
 
         // Assign a moderate score for location match
-        const locationMatch = professional.location && 
+        const locationMatch = professional.location &&
           professional.location === job.location ? 0.3 : 0;
 
         score = titleMatch + bioMatch + industryMatch + locationMatch;
@@ -905,10 +905,10 @@ export class MemStorage implements IStorage {
 
   async searchResources(query?: string, type?: string, categoryId?: number): Promise<Resource[]> {
     console.log('MemStorage searchResources called with:', { query, type, categoryId });
-    
+
     return Array.from(this.resources.values())
       .filter(resource => {
-        const matchesQuery = !query || !query.trim() || 
+        const matchesQuery = !query || !query.trim() ||
           resource.title.toLowerCase().includes(query.toLowerCase()) ||
           resource.description.toLowerCase().includes(query.toLowerCase());
 
@@ -917,7 +917,7 @@ export class MemStorage implements IStorage {
         const matchesCategory = !categoryId || isNaN(categoryId) || resource.categoryId === categoryId;
 
         const matches = matchesQuery && matchesType && matchesCategory;
-        
+
         if (!matches) {
           console.log(`Resource "${resource.title}" filtered out:`, {
             matchesQuery,
@@ -971,8 +971,8 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userId++;
-    const user: User = { 
-      id, 
+    const user: User = {
+      id,
       username: insertUser.username,
       password: insertUser.password,
       email: insertUser.email,
@@ -1000,18 +1000,18 @@ export class MemStorage implements IStorage {
     if (!user) return null;
 
     // Generate a random token
-    const token = Math.random().toString(36).substring(2, 15) + 
-                  Math.random().toString(36).substring(2, 15);
+    const token = Math.random().toString(36).substring(2, 15) +
+      Math.random().toString(36).substring(2, 15);
 
     // Set expiry to 1 hour from now
     const expiryDate = new Date();
     expiryDate.setHours(expiryDate.getHours() + 1);
 
     // Update user with token
-    const updated = { 
-      ...user, 
+    const updated = {
+      ...user,
       resetToken: token,
-      resetTokenExpiry: expiryDate 
+      resetTokenExpiry: expiryDate
     };
 
     this.users.set(user.id, updated);
@@ -1022,9 +1022,9 @@ export class MemStorage implements IStorage {
     const now = new Date();
 
     return Array.from(this.users.values()).find(
-      (user) => user.resetToken === token && 
-                user.resetTokenExpiry && 
-                user.resetTokenExpiry > now
+      (user) => user.resetToken === token &&
+        user.resetTokenExpiry &&
+        user.resetTokenExpiry > now
     );
   }
 
@@ -1033,8 +1033,8 @@ export class MemStorage implements IStorage {
     if (!user) return false;
 
     // Update user with new password and clear token
-    const updated = { 
-      ...user, 
+    const updated = {
+      ...user,
       password: newPassword,
       resetToken: null,
       resetTokenExpiry: null
@@ -1103,7 +1103,7 @@ export class MemStorage implements IStorage {
     const id = this.profProfileId++;
 
     // Explicitly construct the profile to match the schema exactly
-    const newProfile: ProfessionalProfile = { 
+    const newProfile: ProfessionalProfile = {
       id,
       userId: profile.userId,
       firstName: profile.firstName || null,
@@ -1194,8 +1194,8 @@ export class MemStorage implements IStorage {
   async addProfessionalExpertise(insertProfExpertise: InsertProfessionalExpertise): Promise<ProfessionalExpertise> {
     // Check if it already exists
     const exists = Array.from(this.professionalExpertises.values()).some(
-      pe => pe.professionalId === insertProfExpertise.professionalId && 
-            pe.expertiseId === insertProfExpertise.expertiseId
+      pe => pe.professionalId === insertProfExpertise.professionalId &&
+        pe.expertiseId === insertProfExpertise.expertiseId
     );
 
     if (exists) {
@@ -1256,7 +1256,7 @@ export class MemStorage implements IStorage {
 
   async createCompanyProfile(profile: InsertCompanyProfile): Promise<CompanyProfile> {
     const id = this.companyProfileId++;
-    const newProfile: CompanyProfile = { 
+    const newProfile: CompanyProfile = {
       id,
       userId: profile.userId,
       companyName: profile.companyName,
@@ -1321,8 +1321,8 @@ export class MemStorage implements IStorage {
 
   async createJobPosting(job: InsertJobPosting): Promise<JobPosting> {
     const id = this.jobPostingId++;
-    const newJob: JobPosting = { 
-      id, 
+    const newJob: JobPosting = {
+      id,
       companyId: job.companyId,
       title: job.title,
       description: job.description,
@@ -1363,11 +1363,25 @@ export class MemStorage implements IStorage {
     return this.jobApplications.get(id);
   }
 
- 
+
 
   async getJobApplicationsByProfessional(professionalId: number): Promise<JobApplication[]> {
     return Array.from(this.jobApplications.values())
       .filter(app => app.professionalId === professionalId);
+  }
+  async getJobApplicationsByCompany(companyId: number): Promise<{ jobId: number, applications: JobApplication[] }[]> {
+    const jobPostings = Array.from(this.jobPostings.values())
+      .filter(job => job.companyId === companyId);
+
+    return jobPostings.map(job => {
+      const applications = Array.from(this.jobApplications.values())
+        .filter(app => app.jobId === job.id);
+
+      return {
+        jobId: job.id,
+        applications
+      };
+    });
   }
 
   async createJobApplication(application: InsertJobApplication): Promise<JobApplication> {
@@ -1381,9 +1395,9 @@ export class MemStorage implements IStorage {
     }
 
     const id = this.jobApplicationId++;
-    const newApplication: JobApplication = { 
-      ...application, 
-      id, 
+    const newApplication: JobApplication = {
+      ...application,
+      id,
       createdAt: new Date(),
       status: application.status || "pending"
     };
@@ -1435,7 +1449,7 @@ export class MemStorage implements IStorage {
       this.queryCache.delete(key);
       return null;
     }
-    
+
     // Periodic cache cleanup to prevent memory leaks
     if (this.queryCache.size > 1000) {
       this.cleanupExpiredCache();
@@ -1485,9 +1499,9 @@ export class MemStorage implements IStorage {
 
   async createResource(resource: InsertResource): Promise<Resource> {
     const id = this.resourceId++;
-    const newResource: Resource = { 
-      ...resource, 
-      id, 
+    const newResource: Resource = {
+      ...resource,
+      id,
       createdAt: new Date(),
       featured: resource.featured || false,
       imageUrl: resource.imageUrl || null,
@@ -1524,10 +1538,10 @@ export class MemStorage implements IStorage {
 
   async createForumPost(post: InsertForumPost): Promise<ForumPost> {
     const id = this.forumPostId++;
-    const newPost: ForumPost = { 
-      ...post, 
-      id, 
-      createdAt: new Date() 
+    const newPost: ForumPost = {
+      ...post,
+      id,
+      createdAt: new Date()
     };
     this.forumPosts.set(id, newPost);
     return newPost;
@@ -1541,10 +1555,10 @@ export class MemStorage implements IStorage {
 
   async createForumComment(comment: InsertForumComment): Promise<ForumComment> {
     const id = this.forumCommentId++;
-    const newComment: ForumComment = { 
-      ...comment, 
-      id, 
-      createdAt: new Date() 
+    const newComment: ForumComment = {
+      ...comment,
+      id,
+      createdAt: new Date()
     };
     this.forumComments.set(id, newComment);
     return newComment;
@@ -1559,7 +1573,7 @@ export class MemStorage implements IStorage {
 
   async getConversation(user1Id: number, user2Id: number): Promise<Message[]> {
     return Array.from(this.messages.values())
-      .filter(msg => 
+      .filter(msg =>
         (msg.senderId === user1Id && msg.receiverId === user2Id) ||
         (msg.senderId === user2Id && msg.receiverId === user1Id)
       )
@@ -1568,11 +1582,11 @@ export class MemStorage implements IStorage {
 
   async createMessage(message: InsertMessage): Promise<Message> {
     const id = this.messageId++;
-    const newMessage: Message = { 
-      ...message, 
-      id, 
+    const newMessage: Message = {
+      ...message,
+      id,
       read: false,
-      createdAt: new Date() 
+      createdAt: new Date()
     };
     this.messages.set(id, newMessage);
     return newMessage;
@@ -1606,9 +1620,9 @@ export class MemStorage implements IStorage {
 
   async createConsultation(consultation: InsertConsultation): Promise<Consultation> {
     const id = this.consultationId++;
-    const newConsultation: Consultation = { 
-      ...consultation, 
-      id, 
+    const newConsultation: Consultation = {
+      ...consultation,
+      id,
       createdAt: new Date(),
       status: consultation.status || "scheduled",
       notes: consultation.notes || null
@@ -1663,10 +1677,10 @@ export class MemStorage implements IStorage {
     const user = await this.getUser(userId);
     if (!user) return undefined;
 
-    const updated = { 
-      ...user, 
-      subscriptionTier: tier, 
-      subscriptionStatus: status 
+    const updated = {
+      ...user,
+      subscriptionTier: tier,
+      subscriptionStatus: status
     };
     this.users.set(userId, updated);
     return updated;
@@ -1691,8 +1705,8 @@ export class MemStorage implements IStorage {
 
   async createSkillRecommendation(recommendation: InsertSkillRecommendation): Promise<SkillRecommendation> {
     const id = this.skillRecommendationId++;
-    const newRecommendation: SkillRecommendation = { 
-      ...recommendation, 
+    const newRecommendation: SkillRecommendation = {
+      ...recommendation,
       id,
       createdAt: new Date(),
       updatedAt: new Date()
@@ -1705,8 +1719,8 @@ export class MemStorage implements IStorage {
     const existing = this.skillRecommendations.get(id);
     if (!existing) return undefined;
 
-    const updated = { 
-      ...existing, 
+    const updated = {
+      ...existing,
       ...recommendation,
       updatedAt: new Date()
     };
@@ -1746,11 +1760,11 @@ export class MemStorage implements IStorage {
     const existing = this.pageContents.get(id);
     if (!existing) return undefined;
 
-    const updated = { 
-      ...existing, 
+    const updated = {
+      ...existing,
       ...content,
       updatedAt: new Date(),
-      lastEditedBy: content.lastEditedBy !== undefined ? content.lastEditedBy : existing.lastEditedBy 
+      lastEditedBy: content.lastEditedBy !== undefined ? content.lastEditedBy : existing.lastEditedBy
     };
     this.pageContents.set(id, updated);
     return updated;
@@ -1969,7 +1983,7 @@ export class MemStorage implements IStorage {
   async getNotificationPreferences(userId: number): Promise<{ emailNotifications: boolean; jobApplicationEmails: boolean; statusUpdateEmails: boolean; } | null> {
     try {
       const preferences = await this.getUserNotificationPreferences(userId);
-      
+
       const defaultPrefs = {
         emailNotifications: true,
         jobApplicationEmails: true,
@@ -2031,14 +2045,14 @@ export class MemStorage implements IStorage {
     if (settings) {
       return settings;
     }
-    
+
     // Return default settings if none exist
     const defaultSettings = {
       notifications: true,
       profileVisible: true,
       emailUpdates: false
     };
-    
+
     return defaultSettings;
   }
 
@@ -2048,7 +2062,7 @@ export class MemStorage implements IStorage {
       profileVisible: true,
       emailUpdates: false
     };
-    
+
     const updated = { ...existing, ...settings };
     this.userSettings.set(userId, updated);
     return updated;
@@ -2407,7 +2421,7 @@ export class DatabaseStorage implements IStorage {
   async createOrUpdateNotificationPreference(preference: InsertNotificationPreference): Promise<NotificationPreference> {
     // Check if preference already exists
     const existingPreference = await this.getUserNotificationPreference(
-      preference.userId, 
+      preference.userId,
       preference.typeId
     );
 
@@ -2434,7 +2448,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Get all notification preferences for the user
       const preferences = await this.getUserNotificationPreferences(userId);
-      
+
       // Default preferences
       const defaultPrefs = {
         emailNotifications: true,
@@ -2529,8 +2543,8 @@ export class DatabaseStorage implements IStorage {
       if (!user) return null;
 
       // Generate a random token
-      const token = Math.random().toString(36).substring(2, 15) + 
-                    Math.random().toString(36).substring(2, 15);
+      const token = Math.random().toString(36).substring(2, 15) +
+        Math.random().toString(36).substring(2, 15);
 
       // Set expiry to 1 hour from now
       const expiryDate = new Date();
@@ -2605,15 +2619,15 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users);
   }
 
-async createUser(user: InsertUser): Promise<User> {
-  const userData = { 
-    ...user,
-    isAdmin: user.isAdmin || false,
-    createdAt: new Date(),
-  };
-  const [createdUser] = await db.insert(users).values(userData).returning();
-  return createdUser;
-}
+  async createUser(user: InsertUser): Promise<User> {
+    const userData = {
+      ...user,
+      isAdmin: user.isAdmin || false,
+      createdAt: new Date(),
+    };
+    const [createdUser] = await db.insert(users).values(userData).returning();
+    return createdUser;
+  }
 
 
   async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
@@ -2702,27 +2716,27 @@ async createUser(user: InsertUser): Promise<User> {
 
     // Parse JSON fields if they're strings
     if (profile) {
-        if (typeof profile.galleryImages === 'string') {
-            try {
-                profile.galleryImages = JSON.parse(profile.galleryImages);
-            } catch (e) {
-                profile.galleryImages = [];
-            }
+      if (typeof profile.galleryImages === 'string') {
+        try {
+          profile.galleryImages = JSON.parse(profile.galleryImages);
+        } catch (e) {
+          profile.galleryImages = [];
         }
-        if (typeof profile.workExperience === 'string') {
-            try {
-                profile.workExperience = JSON.parse(profile.workExperience);
-            } catch (e) {
-                profile.workExperience = [];
-            }
+      }
+      if (typeof profile.workExperience === 'string') {
+        try {
+          profile.workExperience = JSON.parse(profile.workExperience);
+        } catch (e) {
+          profile.workExperience = [];
         }
-        if (typeof profile.testimonials === 'string') {
-            try {
-                profile.testimonials = JSON.parse(profile.testimonials);
-            } catch (e) {
-                profile.testimonials = [];
-            }
+      }
+      if (typeof profile.testimonials === 'string') {
+        try {
+          profile.testimonials = JSON.parse(profile.testimonials);
+        } catch (e) {
+          profile.testimonials = [];
         }
+      }
     }
 
     return profile;
@@ -3489,7 +3503,7 @@ async createUser(user: InsertUser): Promise<User> {
   }
 
   // AI Matching operations
-  async getMatchingJobsForProfessional(professionalId: number, limit: number = 5): Promise<Array<{job: JobPosting, score: number}>> {
+  async getMatchingJobsForProfessional(professionalId: number, limit: number = 5): Promise<Array<{ job: JobPosting, score: number }>> {
     try {
       // Get the professional profile
       const [professional] = await db.select().from(professionalProfiles)
@@ -3532,7 +3546,7 @@ async createUser(user: InsertUser): Promise<User> {
     }
   }
 
-  async getMatchingProfessionalsForJob(jobId: number, limit: number = 5): Promise<Array<{professional: ProfessionalProfile, score: number}>> {
+  async getMatchingProfessionalsForJob(jobId: number, limit: number = 5): Promise<Array<{ professional: ProfessionalProfile, score: number }>> {
     try {
       // Get the job posting
       const [job] = await db.select().from(jobPostings)
@@ -3551,7 +3565,7 @@ async createUser(user: InsertUser): Promise<User> {
       }
 
       // Calculate match scores for each professional
-      const matches: Array<{professional: ProfessionalProfile, score: number}> = [];
+      const matches: Array<{ professional: ProfessionalProfile, score: number }> = [];
 
       for (const profile of profiles) {
         try {
@@ -3839,7 +3853,7 @@ class MemStorageWithSubscriptions extends MemStorage {
     return super.updateUserSettings(userId, settings);
   }
 }
-console.log(useRealDatabase,"Use real db");
+console.log(useRealDatabase, "Use real db");
 // Dynamically use MemStorage or DatabaseStorage based on database connection status
 // export const storage = useRealDatabase ? new DatabaseStorage() : new MemStorageWithSubscriptions();
 export const storage = useRealDatabase ? new DatabaseStorage() : new MemStorageWithSubscriptions();

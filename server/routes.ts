@@ -2008,14 +2008,35 @@ app.post("/api/login", (req, res, next) => {
   if (!profile) return res.status(404).json({ message: "Not found" });
   res.json(profile);
 });
-app.get("/api/company-profiles/:id", async (req, res) => {
-  const { id } = req.params;
-  const profile = await db.query.companyProfiles.findFirst({
-    where: (p, { eq }) => eq(p.id, Number(id)),
-  });
-  if (!profile) return res.status(404).json({ message: "Not found" });
-  res.json(profile);
-});
+// app.get("/api/company-profiles/:id", isAuthenticated, async (req, res) => {
+//   const { id } = req.params;
+
+//   if (id === "by-user") {
+//     const user = req.user as any;
+//     const profile = await db.query.companyProfiles.findFirst({
+//       where: (p, { eq }) => eq(p.userId, user.id),
+//     });
+//     if (!profile) {
+//       return res.status(404).json({ message: "Company profile not found" });
+//     }
+//     return res.json(profile);
+//   }
+
+//   const numericId = Number(id);
+//   if (isNaN(numericId)) {
+//     return res.status(400).json({ message: "Invalid company profile ID" });
+//   }
+
+//   const profile = await db.query.companyProfiles.findFirst({
+//     where: (p, { eq }) => eq(p.id, numericId),
+//   });
+//   if (!profile) {
+//     return res.status(404).json({ message: "Not found" });
+//   }
+//   res.json(profile);
+// });
+
+
 
 
   app.get("/api/professional-profiles/:id/expertise", async (req, res) => {
@@ -2480,7 +2501,7 @@ app.get("/api/company-profiles/:id", async (req, res) => {
   app.get("/api/company-profiles/by-user", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      
+      console.log("Fetching company profile for user:", user.username, "ID:", user.id);
       if (user.userType !== "company") {
         return res.status(400).json({ message: "User is not a company" });
       }
@@ -2489,7 +2510,7 @@ app.get("/api/company-profiles/:id", async (req, res) => {
       if (!profile) {
         return res.json(null);
       }
-      
+      console.log("Company profile found:", profile.id);
       res.json(profile);
     } catch (err) {
       console.error("Error fetching company profile by user ID:", err);
@@ -3253,40 +3274,71 @@ app.get("/api/company-profiles/:id", async (req, res) => {
     }
   });
 
-  app.put("/api/applications/:id/status", isAuthenticated, async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const user = req.user as any;
-
-      // Get application
-      const application = await storage.getJobApplication(id);
-      if (!application) {
-        return res.status(404).json({ message: "Application not found" });
-      }
-
-      // Get job posting
-      const job = await storage.getJobPosting(application.jobId);
-      if (!job) {
-        return res.status(404).json({ message: "Job posting not found" });
-      }
-
-      // Check if user is the company that posted the job
-      const companyProfile = await storage.getCompanyProfile(job.companyId);
-      if (companyProfile?.userId !== user.id) {
-        return res.status(403).json({ message: "You can only update status for applications to your own job postings" });
-      }
-
-      const { status } = req.body;
-      if (!status || !["pending", "reviewed", "accepted", "rejected"].includes(status)) {
-        return res.status(400).json({ message: "Invalid status" });
-      }
-
-      const updatedApplication = await storage.updateJobApplicationStatus(id, status);
-      res.json(updatedApplication);
-    } catch (err) {
-      res.status(500).json({ message: "Internal server error" });
+ app.put("/api/applications/:id/status", isAuthenticated, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid application ID" });
     }
-  });
+
+    const user = req.user as any;
+
+    // Get application
+    const application = await storage.getJobApplication(id);
+    if (!application) {
+      return res.status(404).json({ message: "Application not found" });
+    }
+
+    // Get job posting
+    const job = await storage.getJobPosting(application.jobId);
+    if (!job) {
+      return res.status(404).json({ message: "Job posting not found" });
+    }
+
+    // Check if user is the company that posted the job
+    const companyProfile = await storage.getCompanyProfile(job.companyId);
+    if (companyProfile?.userId !== user.id) {
+      return res.status(403).json({ message: "You can only update status for applications to your own job postings" });
+    }
+
+    const { status } = req.body;
+    if (!status || !["pending", "reviewed", "accepted", "rejected"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    const updatedApplication = await storage.updateJobApplicationStatus(id, status);
+    res.json(updatedApplication);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
+  try {
+    const user = req.user as any;
+
+    if (user.userType !== "company") {
+      return res.status(403).json({ message: "Only companies can access this endpoint" });
+    }
+
+    const companyProfile = await storage.getCompanyProfileByUserId(user.id);
+    if (!companyProfile) {
+      return res.status(404).json({ message: "Company profile not found" });
+    }
+
+    // Bu metod artıq applications-ları da qaytarır
+    const applicationsData = await storage.getJobApplicationsByCompany(companyProfile.id);
+
+    console.log(`Found ${applicationsData.length} job postings for company ${companyProfile.companyName}`);
+    res.json(applicationsData);
+  } catch (err) {
+    console.error("Error fetching company applications:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+
 
   // Resource Routes
   // Configure multer storage for resource files and documents

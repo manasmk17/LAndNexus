@@ -1,5 +1,7 @@
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient"; 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +46,28 @@ interface JobPosting {
 export default function JobApplications() {
   const { id } = useParams<{ id: string }>();
   const jobId = parseInt(id || "0");
+  const queryClient = useQueryClient();
+
+const updateStatusMutation = useMutation({
+  mutationFn: async ({
+    applicationId,
+    status,
+  }: {
+    applicationId: number;
+    status: string;
+  }) => {
+    const response = await apiRequest(
+      "PUT",
+      `/api/applications/${applicationId}/status`,
+      { status }
+    );
+    return response;
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries(); // Cache-i yenilə ki, UI-də status dəyişsin
+  },
+});
+
 
   // Fetch job details
   const { data: job, isLoading: jobLoading } = useQuery<JobPosting>({
@@ -266,18 +290,37 @@ export default function JobApplications() {
                     </Button>
                   </Link>
 
-                  <div className="flex gap-2">
-                    {application.status === 'pending' && (
-                      <>
-                        <Button variant="outline" size="sm">
-                          Reject
-                        </Button>
-                        <Button size="sm">
-                          Accept
-                        </Button>
-                      </>
-                    )}
-                  </div>
+                 {application.status === 'pending' && (
+  <div className="flex gap-2">
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() =>
+        updateStatusMutation.mutate({
+          applicationId: application.id,
+          status: "rejected",
+        })
+      }
+      disabled={updateStatusMutation.isLoading}
+    >
+      Reject
+    </Button>
+
+    <Button
+      size="sm"
+      onClick={() =>
+        updateStatusMutation.mutate({
+          applicationId: application.id,
+          status: "accepted",
+        })
+      }
+      disabled={updateStatusMutation.isLoading}
+    >
+      Accept
+    </Button>
+  </div>
+)}
+
                 </div>
               </CardContent>
             </Card>

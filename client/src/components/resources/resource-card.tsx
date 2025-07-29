@@ -122,9 +122,9 @@ export default function ResourceCard({ resource }: ResourceCardProps) {
             <p className="text-gray-600">{resource.description}</p>
           </div>
           
-          {resource.content && resource.content.startsWith('http') && (
+          {resource.contentUrl && resource.contentUrl.startsWith('http') && (
             <div className="mt-6">
-              <Button className="w-full" onClick={() => window.open(resource.content, '_blank')}>
+              <Button className="w-full" onClick={() => window.open(resource.contentUrl, '_blank')}>
                 <ExternalLink className="mr-2 h-4 w-4" />
                 Access Resource
               </Button>

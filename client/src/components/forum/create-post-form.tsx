@@ -27,7 +27,7 @@ const postSchema = z.object({
   title: z.string()
     .min(5, { message: "Title must be at least 5 characters" })
     .max(100, { message: "Title must not exceed 100 characters" }),
-  content: z.string()
+  contentUrl: z.string()
     .min(10, { message: "Content must be at least 10 characters" })
     .max(5000, { message: "Content must not exceed 5000 characters" }),
 });
@@ -47,7 +47,7 @@ export default function CreatePostForm({ onSuccess, onCancel }: CreatePostFormPr
     resolver: zodResolver(postSchema),
     defaultValues: {
       title: "",
-      content: "",
+      contentUrl: "",
     },
   });
 
@@ -144,7 +144,7 @@ export default function CreatePostForm({ onSuccess, onCancel }: CreatePostFormPr
             
             <FormField
               control={form.control}
-              name="content"
+              name="contentUrl"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Content</FormLabel>

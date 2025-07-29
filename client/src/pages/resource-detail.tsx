@@ -173,7 +173,7 @@ export default function ResourceDetail() {
               {/* Resource Content */}
               <div className="prose max-w-none">
                 <p className="text-gray-700 leading-relaxed break-words whitespace-pre-wrap">
-                  {resource.content || "No detailed content available for this resource."}
+                  {resource.contentUrl || "No detailed content available for this resource."}
                 </p>
               </div>
 

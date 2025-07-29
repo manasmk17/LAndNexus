@@ -34,7 +34,7 @@ import { Loader2 } from 'lucide-react';
 const createResourceSchema = insertResourceSchema.extend({
   title: z.string().min(5, 'Title must be at least 5 characters'),
   description: z.string().min(20, 'Description must be at least 20 characters'),
-  content: z.string().url('Please enter a valid URL'),
+  contentUrl: z.string().url('Please enter a valid URL'),
 });
 
 type FormValues = z.infer<typeof createResourceSchema>;
@@ -55,7 +55,7 @@ export default function CreateResourceForm() {
       title: '',
       description: '',
       resourceType: 'Article',
-      content: '', // Content field is used for URL
+      contentUrl: '', // Content field is used for URL
       featured: false,
       authorId: user?.id || 0,
       categoryId: undefined,
@@ -173,7 +173,7 @@ export default function CreateResourceForm() {
             
             <FormField
               control={form.control}
-              name="content"
+              name="contentUrl"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Resource Link</FormLabel>

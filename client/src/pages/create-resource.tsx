@@ -4,7 +4,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, getCsrfToken } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 
@@ -20,19 +20,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
 } from "@/components/ui/card";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { insertResourceSchema, type ResourceCategory } from "@shared/schema";
@@ -43,8 +43,8 @@ const resourceFormSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters"),
   resourceType: z.enum(["article", "template", "video", "webinar"]),
   categoryId: z.coerce.number().positive("Please select a category"),
-  contentUrl: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
-  imageUrl: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
+contentUrl: z.string().url("Please enter a valid URL").or(z.literal("")).optional(),
+  imageUrl: z.string().url("Please enter a valid URL").nullable().or(z.literal("")),
   fileUpload: z.instanceof(File).optional(),
 });
 
@@ -77,6 +77,7 @@ export default function CreateResource() {
   });
 
   const onSubmit = async (data: z.infer<typeof resourceFormSchema>) => {
+    console.log("Submitting resource data:", data);
     if (!user) {
       toast({
         title: "Authentication required",
@@ -99,23 +100,36 @@ export default function CreateResource() {
 
         // Add resource data
         Object.entries(resourceData).forEach(([key, value]) => {
-          if (value !== undefined && value !== null && value !== '') {
+          if (
+            value !== undefined &&
+            value !== null &&
+            !(typeof value === "string" && value.trim() === "")
+          ) {
             formData.append(key, String(value));
           }
         });
 
+
         // Add file
         formData.append('file', fileUpload);
+
+        const csrfToken = getCsrfToken();
 
         // Submit using fetch with FormData
         const response = await fetch("/api/resources", {
           method: "POST",
           body: formData,
-          credentials: 'include'
+          credentials: 'include',
+          headers: {
+            "X-CSRF-TOKEN": csrfToken ?? "",
+          }
         });
 
         if (!response.ok) {
-          throw new Error(`Error: ${response.status} ${response.statusText}`);
+          const errorData = await response.json().catch(() => null);
+  console.error("Server error response:", errorData);
+  
+  throw new Error(errorData?.message || `Error: ${response.status} ${response.statusText}`);
         }
 
         // Handle success
@@ -144,6 +158,7 @@ export default function CreateResource() {
         // Redirect to appropriate dashboard after resource creation
         setLocation(user.userType === "company" ? "/company-dashboard" : "/professional-dashboard");
       }
+      console.log("Göndərilən JSON (resourceData):", resourceData);
     } catch (error) {
       console.error("Error creating resource:", error);
       toast({
@@ -204,9 +219,9 @@ export default function CreateResource() {
                     <FormItem>
                       <FormLabel>Resource Title</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="e.g. Effective Leadership Development Strategies" 
-                          {...field} 
+                        <Input
+                          placeholder="e.g. Effective Leadership Development Strategies"
+                          {...field}
                         />
                       </FormControl>
                       <FormDescription>

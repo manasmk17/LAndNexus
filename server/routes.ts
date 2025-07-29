@@ -3413,7 +3413,6 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
         const resource = await storage.createResource({
           title: file.originalname,
           description: `Uploaded file: ${file.originalname}`,
-          content: '',
           authorId: user.id,
           resourceType,
           filePath: file.path,
@@ -3444,6 +3443,9 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       // Prepare resource data from body
       let resourceData = { ...req.body, authorId: user.id };
       
+      if (resourceData.categoryId) {
+  resourceData.categoryId = parseInt(resourceData.categoryId);
+}
       // Add file path if uploaded
       if (req.file) {
         // Store the file path relative to the uploads directory

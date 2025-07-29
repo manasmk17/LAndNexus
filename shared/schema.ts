@@ -209,7 +209,7 @@ export const resources = pgTable("resources", {
   authorId: integer("author_id").notNull().references(() => users.id),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  content: text("content").notNull(),  // This field will store the URL for now
+  // content: text("content").notNull(),  // This field will store the URL for now
   contentUrl: text("content_url"),     // URL for external content
   filePath: text("file_path"),         // Path to the uploaded file
   resourceType: text("resource_type").notNull(), // "article", "template", "video", "webinar"
@@ -218,10 +218,20 @@ export const resources = pgTable("resources", {
   featured: boolean("featured").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
-
 export const insertResourceSchema = createInsertSchema(resources).omit({
   id: true,
   createdAt: true,
+}).extend({
+  title: z.string().min(3, "Title must be at least 3 characters").max(100),
+  description: z.string().min(10, "Description must be at least 10 characters"),
+   content: z.string().optional().or(z.literal("")), 
+  contentUrl: z
+    .string()
+    .refine((val) => val === "" || /^https?:\/\/\S+$/.test(val), {
+      message: "Please enter a valid URL or leave it empty",
+    })
+    .optional(),
+  imageUrl: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
 });
 
 // Forum Posts
@@ -229,7 +239,7 @@ export const forumPosts = pgTable("forum_posts", {
   id: serial("id").primaryKey(),
   authorId: integer("author_id").notNull().references(() => users.id),
   title: text("title").notNull(),
-  content: text("content").notNull(),
+  contentUrl: text("contentUrl").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -462,8 +472,8 @@ export const escrowTransactions = pgTable("escrow_transactions", {
   stripeApplicationFeeId: text("stripe_application_fee_id"),
 
   // Transaction status
-  status: text("status", { 
-    enum: ["pending", "payment_failed", "funds_captured", "in_escrow", "released", "refunded", "disputed", "cancelled"] 
+  status: text("status", {
+    enum: ["pending", "payment_failed", "funds_captured", "in_escrow", "released", "refunded", "disputed", "cancelled"]
   }).notNull().default("pending"),
 
   // Escrow details
@@ -595,8 +605,8 @@ export const userSubscriptions = pgTable("user_subscriptions", {
   planId: integer("plan_id").notNull().references(() => subscriptionPlans.id),
   stripeSubscriptionId: text("stripe_subscription_id").notNull().unique(),
   stripeCustomerId: text("stripe_customer_id").notNull(),
-  status: text("status", { 
-    enum: ["trialing", "active", "incomplete", "incomplete_expired", "past_due", "canceled", "unpaid", "paused"] 
+  status: text("status", {
+    enum: ["trialing", "active", "incomplete", "incomplete_expired", "past_due", "canceled", "unpaid", "paused"]
   }).notNull(),
   billingCycle: text("billing_cycle", { enum: ["monthly", "yearly"] }).notNull(),
   currency: text("currency", { enum: ["USD", "AED"] }).notNull().default("USD"),
@@ -627,8 +637,8 @@ export const subscriptionInvoices = pgTable("subscription_invoices", {
   userId: integer("user_id").notNull().references(() => users.id),
   subscriptionId: integer("subscription_id").notNull().references(() => userSubscriptions.id),
   stripeInvoiceId: text("stripe_invoice_id").notNull().unique(),
-  status: text("status", { 
-    enum: ["draft", "open", "paid", "uncollectible", "void"] 
+  status: text("status", {
+    enum: ["draft", "open", "paid", "uncollectible", "void"]
   }).notNull(),
   amount: integer("amount").notNull(), // Amount in cents/fils
   currency: text("currency", { enum: ["USD", "AED"] }).notNull(),

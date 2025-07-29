@@ -117,7 +117,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Configure file limits (25MB max)
   const fileFilterImages = (req: any, file: any, cb: any) => {
     // Accept images only
-    if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp)$/)) {
+    if (!file.originalname.match(/\.(jpg|jpeg|png|gif|webp|pdf)$/)) {
       return cb(new Error('Only image files are allowed!'), false);
     }
     cb(null, true);

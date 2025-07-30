@@ -92,32 +92,30 @@ export default function Resources() {
     queryKey: ["/api/resource-categories"],
   });
   
-  // Fetch resources with search and filter using debounced search term
+  // Fetch ALL resources first, then filter client-side
   const { 
-    data: resources, 
+    data: allResources, 
     isLoading: isLoadingResources,
     error: resourcesError
   } = useQuery<Resource[]>({
     queryKey: ["/api/resources/search", { 
       query: debouncedSearchTerm, 
-      type: resourceType === "all" ? undefined : resourceType,
       categoryId: selectedCategory 
     }],
     queryFn: async ({ queryKey }) => {
       const [path, params] = queryKey;
-      const { query, type, categoryId } = params as { 
+      const { query, categoryId } = params as { 
         query: string, 
-        type: string | undefined,
         categoryId: number | null 
       };
       
       const searchParams = new URLSearchParams();
       if (query && query.trim()) searchParams.append('query', query.trim());
-      if (type && type !== 'all') searchParams.append('type', type);
       if (categoryId) searchParams.append('categoryId', categoryId.toString());
+      // Don't send type to API, we'll filter client-side
       
       const url = `/api/resources/search${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
-      console.log('Fetching resources with URL:', url);
+      console.log('Fetching all resources with URL:', url);
       
       const response = await fetch(url);
       
@@ -132,6 +130,20 @@ export default function Resources() {
       return failureCount < 2;
     },
   });
+
+  // Client-side filtering by resource type
+  const resources = useMemo(() => {
+    if (!allResources) return [];
+    
+    if (resourceType === "all") {
+      return allResources;
+    }
+    
+    // Case-insensitive filtering
+    return allResources.filter(resource => 
+      resource.resourceType.toLowerCase() === resourceType.toLowerCase()
+    );
+  }, [allResources, resourceType]);
   
   // Fetch user details for resources
   const { data: users } = useQuery<UserType[]>({
@@ -178,7 +190,8 @@ export default function Resources() {
   
   // Helper to get resource type icon
   const getResourceTypeIcon = (type: string) => {
-    switch (type) {
+    const lowerType = type.toLowerCase();
+    switch (lowerType) {
       case "article":
         return <BookOpen className="h-5 w-5" />;
       case "template":
@@ -187,6 +200,10 @@ export default function Resources() {
         return <Video className="h-5 w-5" />;
       case "webinar":
         return <HeadphonesIcon className="h-5 w-5" />;
+      case "ebook":
+        return <BookOpen className="h-5 w-5" />;
+      case "course":
+        return <BookOpen className="h-5 w-5" />;
       default:
         return <FileText className="h-5 w-5" />;
     }
@@ -200,7 +217,8 @@ export default function Resources() {
   
   // Helper to get resource type badge color
   const getResourceTypeBadgeClass = (type: string) => {
-    switch (type) {
+    const lowerType = type.toLowerCase();
+    switch (lowerType) {
       case "article":
         return "bg-teal-100 text-teal-800";
       case "template":
@@ -209,9 +227,21 @@ export default function Resources() {
         return "bg-amber-100 text-amber-800";
       case "webinar":
         return "bg-purple-100 text-purple-800";
+      case "ebook":
+        return "bg-green-100 text-green-800";
+      case "course":
+        return "bg-indigo-100 text-indigo-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
+  };
+  
+  // Handle tab change
+  const handleTabChange = (value: string) => {
+    console.log('Tab changed to:', value);
+    console.log('Available resource types in data:', allResources ? [...new Set(allResources.map(r => r.resourceType))] : []);
+    setResourceType(value);
+    setCurrentPage(1); // Reset to first page when changing tabs
   };
   
   return (
@@ -232,7 +262,7 @@ export default function Resources() {
       </div>
       
       {/* Resource type tabs */}
-      <Tabs defaultValue={resourceType || "all"} onValueChange={setResourceType} className="mb-6">
+      <Tabs value={resourceType} onValueChange={handleTabChange} className="mb-6">
         <TabsList className="w-full grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 h-auto gap-1 p-1">
           <TabsTrigger value="all" className="text-xs sm:text-sm px-2 py-2">All</TabsTrigger>
           <TabsTrigger value="article" className="text-xs sm:text-sm px-2 py-2">
@@ -364,6 +394,7 @@ export default function Resources() {
       <div className="flex justify-between items-center mb-6">
         <p className="text-gray-500">
           {sortedResources.length} resources found
+          {resourceType !== "all" && ` (filtered by ${resourceType})`}
         </p>
       </div>
       
@@ -416,7 +447,7 @@ export default function Resources() {
                   <div className="flex flex-wrap items-center gap-2 mb-3">
                     <Badge className={`flex items-center ${getResourceTypeBadgeClass(resource.resourceType)}`}>
                       {getResourceTypeIcon(resource.resourceType)}
-                      <span className="ml-1">{resource.resourceType.charAt(0).toUpperCase() + resource.resourceType.slice(1)}</span>
+                      <span className="ml-1">{resource.resourceType.charAt(0).toUpperCase() + resource.resourceType.slice(1).toLowerCase()}</span>
                     </Badge>
                     
                     {resource.categoryId && categories?.some(cat => cat.id === resource.categoryId) && (

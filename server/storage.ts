@@ -912,12 +912,18 @@ export class MemStorage implements IStorage {
           resource.title.toLowerCase().includes(query.toLowerCase()) ||
           resource.description.toLowerCase().includes(query.toLowerCase());
 
-        const matchesType = !type || type === 'all' || resource.resourceType === type;
+        const matchesType =
+          !type ||
+          type.toLowerCase() === 'all' ||
+          resource.resourceType.trim().toLowerCase() === type.trim().toLowerCase();
+
+        console.log("Resource type",resource.resourceType);
+        console.log("Type",type);
 
         const matchesCategory = !categoryId || isNaN(categoryId) || resource.categoryId === categoryId;
 
         const matches = matchesQuery && matchesType && matchesCategory;
-
+        console.log("Matches Query", matchesQuery, "Matches Type", matchesType, "Matches Category", matchesCategory);
         if (!matches) {
           console.log(`Resource "${resource.title}" filtered out:`, {
             matchesQuery,

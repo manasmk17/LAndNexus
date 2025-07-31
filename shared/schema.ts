@@ -2,6 +2,7 @@ import { pgTable, text, serial, integer, timestamp, boolean, unique, jsonb } fro
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+
 // User table (for both L&D pros and companies)
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -12,6 +13,10 @@ export const users = pgTable("users", {
   lastName: text("last_name").notNull(),
   userType: text("user_type").notNull(), // "professional", "company", or "admin"
   isAdmin: boolean("is_admin").default(false).notNull(),
+  profileVisible: boolean("profile_visible").default(true),
+  contactVisible: boolean("contact_visible").default(true),
+  notifications: boolean("notifications").default(true),
+  emailUpdates: boolean("email_updates").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   stripeCustomerId: text("stripe_customer_id"),
   stripeSubscriptionId: text("stripe_subscription_id"),

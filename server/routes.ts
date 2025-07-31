@@ -9,8 +9,8 @@ import path from "path";
 import * as crypto from "crypto";
 import { randomBytes } from "crypto";
 import { promisify } from "util";
-import { 
-  insertUserSchema, 
+import {
+  insertUserSchema,
   insertProfessionalProfileSchema,
   insertExpertiseSchema,
   insertProfessionalExpertiseSchema,
@@ -38,7 +38,7 @@ import {
 } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { generateCareerRecommendations } from "./career-recommendations";
-import { 
+import {
   getMatchingJobsForProfessional,
   getMatchingProfessionalsForJob
 } from "./ai-matching";
@@ -76,7 +76,7 @@ async function initializeResourceCategories() {
     // Since we're using MemStorage, the categories are already initialized in the constructor
     // This method now just logs the status and doesn't try to interact with the database
     // which was causing the "endpoint is disabled" error
-    
+
     console.log("Resource categories initialization complete.");
     return true;
   } catch (error) {
@@ -87,15 +87,15 @@ async function initializeResourceCategories() {
 
 export async function registerRoutes(app: Express): Promise<Server> {
 
-  
+
   // SEO Routes - Must be first to avoid frontend routing conflicts
 
 
   // Initialize resource categories
   await initializeResourceCategories();
-  
 
-  
+
+
   // Configure multer storage for file uploads
   const storage25MB = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -124,14 +124,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Create upload middleware
-  const uploadProfileImage = multer({ 
+  const uploadProfileImage = multer({
     storage: storage25MB,
-    limits: { 
+    limits: {
       fileSize: 25 * 1024 * 1024 // 25MB in bytes
     },
     fileFilter: fileFilterImages
   });
-  
+
   // Configure gallery storage
   const galleryStorage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -149,19 +149,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       cb(null, 'gallery-' + uniqueSuffix + ext);
     }
   });
-  
+
   // Create gallery upload middleware
-  const uploadGalleryImage = multer({ 
+  const uploadGalleryImage = multer({
     storage: galleryStorage,
-    limits: { 
+    limits: {
       fileSize: 5 * 1024 * 1024 // 5MB in bytes
     },
     fileFilter: fileFilterImages
   });
-  
+
   // Session token mapping for persistent authentication - make it persistent across restarts
   const sessionTokenStore = new Map<string, { userId: number; userType: string; timestamp: number }>();
-  
+
   // Clean up expired tokens periodically
   setInterval(() => {
     const now = Date.now();
@@ -180,10 +180,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ttl: 24 * 60 * 60 * 1000, // 24 hours
     stale: false,
     serializer: {
-      stringify: function(sess: any) {
+      stringify: function (sess: any) {
         return JSON.stringify(sess);
       },
-      parse: function(str: string) {
+      parse: function (str: string) {
         return JSON.parse(str);
       }
     }
@@ -194,7 +194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     resave: false,
     saveUninitialized: false,
     name: 'ldnexus_session',
-    cookie: { 
+    cookie: {
       secure: false,
       httpOnly: false, // Allow client access for debugging
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
@@ -221,11 +221,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (req.session && req.sessionID) {
       // Touch session to update last access time
       req.session.touch();
-      
+
       // Set session activity flag for tracking
       (req.session as any).lastActivity = new Date();
     }
-    
+
     next();
   });
 
@@ -241,13 +241,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (!user) {
-         console.log("User not found for identifier:", identifier);
+        console.log("User not found for identifier:", identifier);
         return done(null, false, { message: "Incorrect username or email" });
       }
-      
+
       // Simplified password verification for debugging
       console.log(`Login attempt for user: ${user.username}, stored password format: ${user.password.includes('.') ? 'hashed' : 'plaintext'}`);
-      
+
       // Handle both hashed and plaintext passwords for compatibility
       if (!user.password.includes('.')) {
         // Direct comparison for plaintext (development/testing)
@@ -262,19 +262,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Handle hashed passwords
         const [storedHash, salt] = user.password.split('.');
         const keyLen = Buffer.from(storedHash, 'hex').length;
-        
+
         crypto.scrypt(password, salt, keyLen, (err: any, derivedKey: Buffer) => {
           if (err) {
             console.error("Scrypt error:", err);
             return done(err);
           }
-          
+
           try {
             const passwordMatches = crypto.timingSafeEqual(
               Buffer.from(storedHash, 'hex'),
               derivedKey
             );
-            
+
             if (passwordMatches) {
               console.log(`Hashed password match for user: ${user.username}`);
               return done(null, user);
@@ -319,11 +319,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log(`Auth check for ${req.method} ${req.path}`);
       console.log(`Session ID: ${req.sessionID?.slice(0, 8)}...`);
-      
+
       // Check for session token in cookies or headers
       const sessionToken = req.cookies.session_token || req.headers['x-session-token'];
       console.log(`Session token: ${sessionToken ? sessionToken.slice(0, 8) + '...' : 'none'}`);
-      
+
       console.log(`Session data:`, {
         authenticated: req.isAuthenticated ? req.isAuthenticated() : false,
         hasUser: !!req.user,
@@ -332,13 +332,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sessionToken: (req.session as any)?.sessionToken,
         cookieToken: sessionToken
       });
-      
+
       // Check passport authentication first
       if (req.isAuthenticated && req.isAuthenticated() && req.user) {
         console.log(`User authenticated via passport: ${(req.user as any).username}`);
         return next();
       }
-      
+
       // Check session token store for persistent authentication (PRIMARY METHOD)
       if (sessionToken) {
         const tokenData = sessionTokenStore.get(sessionToken);
@@ -352,20 +352,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
               if (user) {
                 const { password, ...safeUser } = user;
                 (req as any).user = safeUser;
-                
+
                 // Update ALL session data for consistency
                 if (req.session) {
                   (req.session as any).userId = user.id;
                   (req.session as any).userType = user.userType;
                   (req.session as any).authenticated = true;
                   (req.session as any).sessionToken = sessionToken;
-                  
+
                   // Force session save
                   req.session.save((err) => {
                     if (err) console.log("Session save error during auth:", err);
                   });
                 }
-                
+
                 console.log(`Authentication SUCCESS via token store for user: ${user.username} (${user.userType})`);
                 return next();
               }
@@ -381,7 +381,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log("Session token not found in store");
         }
       }
-      
+
       // Check for session token match (fallback)
       if (sessionToken && req.session && (req.session as any).sessionToken === sessionToken) {
         const userId = (req.session as any).userId;
@@ -400,12 +400,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       }
-      
+
       // Check for user ID in session (comprehensive fallback)
       if (req.session && (req.session as any).userId) {
         const userId = (req.session as any).userId;
         console.log(`Attempting session restoration for user ID: ${userId}`);
-        
+
         try {
           const user = await storage.getUser(userId);
           if (user) {
@@ -420,7 +420,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log("Session user lookup failed:", error);
         }
       }
-      
+
       console.log("Authentication failed - sending 401");
       res.status(401).json({ message: "Unauthorized" });
     } catch (error) {
@@ -442,7 +442,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Admin routes have been removed as part of cleanup
-  
+
   // Middleware to automatically authenticate users with persistent auth tokens
   app.use(async (req, res, next) => {
     // Skip token authentication if user is already authenticated via session
@@ -480,7 +480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     next();
   });
-  
+
   // CSRF token endpoint
   app.get('/api/csrf-token', (req: any, res) => {
     try {
@@ -492,7 +492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Fallback token generation for development
         token = crypto.randomBytes(32).toString('hex');
       }
-      
+
       res.cookie('XSRF-TOKEN', token, {
         httpOnly: false,
         secure: process.env.NODE_ENV === 'production',
@@ -513,25 +513,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const user = req.user as any;
       const { amount, description = 'One-time payment', currency = 'usd' } = req.body;
-      
+
       if (!amount) {
         return res.status(400).json({ message: "Amount is required" });
       }
-      
+
       const result = await paymentService.createOneTimePaymentIntent(
         user.id,
         amount,
         description,
         currency
       );
-      
+
       console.log(`Created payment intent ${result.paymentIntentId} for user ${user.id}`);
-      
+
       res.json(result);
     } catch (error: any) {
       console.error("Error creating payment intent:", error);
-      res.status(500).json({ 
-        message: "Error creating payment intent: " + error.message 
+      res.status(500).json({
+        message: "Error creating payment intent: " + error.message
       });
     }
   });
@@ -543,8 +543,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { planId, billingCycle, currency = 'usd' } = req.body;
 
       if (!planId || !billingCycle) {
-        return res.status(400).json({ 
-          message: "Plan ID and billing cycle are required" 
+        return res.status(400).json({
+          message: "Plan ID and billing cycle are required"
         });
       }
 
@@ -557,8 +557,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const amount = pricingMap[planId]?.[billingCycle];
       if (!amount) {
-        return res.status(400).json({ 
-          message: "Invalid plan or billing cycle" 
+        return res.status(400).json({
+          message: "Invalid plan or billing cycle"
         });
       }
 
@@ -574,7 +574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             userType: user.userType
           }
         });
-        
+
         customerId = customer.id;
         await storage.updateStripeCustomerId(user.id, customerId);
       }
@@ -593,7 +593,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       console.log(`Created setup intent ${setupIntent.id} for user ${user.id}, plan: ${planId}`);
-      
+
       res.json({
         clientSecret: setupIntent.client_secret,
         setupIntentId: setupIntent.id,
@@ -607,8 +607,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("Error creating subscription setup:", error);
-      res.status(500).json({ 
-        message: "Error creating subscription setup: " + error.message 
+      res.status(500).json({
+        message: "Error creating subscription setup: " + error.message
       });
     }
   });
@@ -620,17 +620,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { setupIntentId, planId, billingCycle } = req.body;
 
       if (!setupIntentId || !planId || !billingCycle) {
-        return res.status(400).json({ 
-          message: "Setup intent ID, plan ID, and billing cycle are required" 
+        return res.status(400).json({
+          message: "Setup intent ID, plan ID, and billing cycle are required"
         });
       }
 
       // Retrieve the setup intent to get the payment method
       const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
-      
+
       if (setupIntent.status !== 'succeeded') {
-        return res.status(400).json({ 
-          message: "Payment method setup not completed" 
+        return res.status(400).json({
+          message: "Payment method setup not completed"
         });
       }
 
@@ -646,8 +646,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const amount = pricingMap[planId]?.[billingCycle];
       if (!amount) {
-        return res.status(400).json({ 
-          message: "Invalid plan or billing cycle" 
+        return res.status(400).json({
+          message: "Invalid plan or billing cycle"
         });
       }
 
@@ -679,8 +679,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("Error completing subscription:", error);
-      res.status(500).json({ 
-        message: "Error completing subscription: " + error.message 
+      res.status(500).json({
+        message: "Error completing subscription: " + error.message
       });
     }
   });
@@ -728,8 +728,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Update the subscription status
           const subscriptionTier = user.subscriptionTier || "basic";
           await storage.updateUserSubscription(
-            user.id, 
-            subscriptionTier, 
+            user.id,
+            subscriptionTier,
             subscription.status
           );
         }
@@ -777,15 +777,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/create-admin", async (req, res) => {
     try {
       const { secretKey, ...userData } = req.body;
-      
+
       // Validate admin creation with a secret key
       if (secretKey !== "ldn_admin_setup_2025") {
         return res.status(403).json({ message: "Invalid secret key for admin creation" });
       }
-      
+
       // Parse and validate user data
       const validUserData = insertUserSchema.parse(userData);
-      
+
       // Check if username or email already exists
       const existingUsername = await storage.getUserByUsername(validUserData.username);
       if (existingUsername) {
@@ -796,161 +796,161 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (existingEmail) {
         return res.status(400).json({ message: "Email already exists" });
       }
-      
+
       // Force admin user type and admin status
       const adminUser = await storage.createUser({
         ...validUserData,
         userType: "admin",
         isAdmin: true
       });
-      
-      res.status(201).json({ 
-        message: "Admin user created successfully", 
-        admin: { ...adminUser, password: undefined } 
+
+      res.status(201).json({
+        message: "Admin user created successfully",
+        admin: { ...adminUser, password: undefined }
       });
     } catch (error) {
       console.error("Admin creation error:", error);
-      res.status(400).json({ 
-        message: error instanceof Error ? error.message : "Failed to create admin user" 
+      res.status(400).json({
+        message: error instanceof Error ? error.message : "Failed to create admin user"
       });
     }
   });
 
-app.post("/api/register", async (req, res) => {
-  try {
-    const userData = insertUserSchema.parse(req.body);
-
-    const existingUsername = await storage.getUserByUsername(userData.username);
-    if (existingUsername) {
-      return res.status(400).json({ message: "Username already exists" });
-    }
-    const existingEmail = await storage.getUserByEmail(userData.email);
-    if (existingEmail) {
-      return res.status(400).json({ message: "Email already exists" });
-    }
-
-    const salt = randomBytes(16).toString("hex");
-    const derivedKey = (await scryptAsync(userData.password, salt, 64)) as Buffer;
-    const hashedPassword = `${derivedKey.toString("hex")}.${salt}`;
-
-    const user = await storage.createUser({
-      ...userData,
-      password: hashedPassword,
-    });
-
-    if (user.userType === "professional") {
-      try {
-        const existingProfile = await storage.getProfessionalProfileByUserId(user.id);
-        if (!existingProfile) {
-          await storage.createProfessionalProfile({
-            userId: user.id,
-            title: `${user.username}'s Profile`,
-            bio: "Edit this profile to add your professional bio.",
-            yearsExperience: 0,
-            ratePerHour: 0,
-            availability: "true",
-          });
-          console.log(`Created basic professional profile for new user ${user.id}`);
-        }
-      } catch (profileErr) {
-        console.error("Error creating professional profile:", profileErr);
-      }
-    }
-
-    req.login(user, (err) => {
-      if (err) {
-        return res.status(500).json({ message: "Error logging in after registration" });
-      }
-      return res.status(201).json({
-        id: user.id,
-        username: user.username,
-        userType: user.userType,
-        isAdmin: user.isAdmin,
-      });
-    });
-  } catch (err) {
-    if (err instanceof z.ZodError) {
-      return res.status(400).json({ message: "Invalid input", errors: err.errors });
-    }
-    console.error("Register error:", err);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-
-app.post("/api/login", (req, res, next) => {
-  passport.authenticate("local", (err: any, user: any, info: any) => {
-    if (err) {
-      return next(err);
-    }
-    if (!user) {
-      return res.status(401).json({ message: info.message });
-    }
-
+  app.post("/api/register", async (req, res) => {
     try {
-      const rememberMe = req.body.rememberMe === true;
+      const userData = insertUserSchema.parse(req.body);
 
-      if (rememberMe && req.session) {
-        req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
-        console.log(`Extended session for user ${user.username} to 30 days`);
+      const existingUsername = await storage.getUserByUsername(userData.username);
+      if (existingUsername) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      const existingEmail = await storage.getUserByEmail(userData.email);
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email already exists" });
       }
 
-      req.login(user, (loginErr) => {
-        if (loginErr) {
-          return next(loginErr);
+      const salt = randomBytes(16).toString("hex");
+      const derivedKey = (await scryptAsync(userData.password, salt, 64)) as Buffer;
+      const hashedPassword = `${derivedKey.toString("hex")}.${salt}`;
+
+      const user = await storage.createUser({
+        ...userData,
+        password: hashedPassword,
+      });
+
+      if (user.userType === "professional") {
+        try {
+          const existingProfile = await storage.getProfessionalProfileByUserId(user.id);
+          if (!existingProfile) {
+            await storage.createProfessionalProfile({
+              userId: user.id,
+              title: `${user.username}'s Profile`,
+              bio: "Edit this profile to add your professional bio.",
+              yearsExperience: 0,
+              ratePerHour: 0,
+              availability: "true",
+            });
+            console.log(`Created basic professional profile for new user ${user.id}`);
+          }
+        } catch (profileErr) {
+          console.error("Error creating professional profile:", profileErr);
+        }
+      }
+
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Error logging in after registration" });
+        }
+        return res.status(201).json({
+          id: user.id,
+          username: user.username,
+          userType: user.userType,
+          isAdmin: user.isAdmin,
+        });
+      });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      console.error("Register error:", err);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) {
+        return next(err);
+      }
+      if (!user) {
+        return res.status(401).json({ message: info.message });
+      }
+
+      try {
+        const rememberMe = req.body.rememberMe === true;
+
+        if (rememberMe && req.session) {
+          req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+          console.log(`Extended session for user ${user.username} to 30 days`);
         }
 
-        (req.session as any).userId = user.id;
-        (req.session as any).userType = user.userType;
-        (req.session as any).authenticated = true;
-
-        const sessionToken = crypto.randomBytes(32).toString('hex');
-        (req.session as any).sessionToken = sessionToken;
-
-        sessionTokenStore.set(sessionToken, {
-          userId: user.id,
-          userType: user.userType,
-          timestamp: Date.now()
-        });
-
-        res.cookie('session_token', sessionToken, {
-          httpOnly: false,
-          secure: false,
-          sameSite: 'lax',
-          maxAge: 24 * 60 * 60 * 1000
-        });
-
-        req.session.save((saveErr) => {
-          if (saveErr) {
-            console.error('Session save error:', saveErr);
-            return next(saveErr);
+        req.login(user, (loginErr) => {
+          if (loginErr) {
+            return next(loginErr);
           }
 
-          console.log(`User ${user.username} authenticated with session ${req.sessionID.slice(0, 8)}...`);
-          console.log(`Session stored with userId: ${user.id}, userType: ${user.userType}, token: ${sessionToken.slice(0, 8)}...`);
+          (req.session as any).userId = user.id;
+          (req.session as any).userType = user.userType;
+          (req.session as any).authenticated = true;
 
-          const { password, resetToken, resetTokenExpiry, ...userWithoutSensitiveInfo } = user;
+          const sessionToken = crypto.randomBytes(32).toString('hex');
+          (req.session as any).sessionToken = sessionToken;
 
-          return res.json({
-            ...userWithoutSensitiveInfo,
-            sessionPersisted: true,
-            sessionToken: sessionToken
+          sessionTokenStore.set(sessionToken, {
+            userId: user.id,
+            userType: user.userType,
+            timestamp: Date.now()
+          });
+
+          res.cookie('session_token', sessionToken, {
+            httpOnly: false,
+            secure: false,
+            sameSite: 'lax',
+            maxAge: 24 * 60 * 60 * 1000
+          });
+
+          req.session.save((saveErr) => {
+            if (saveErr) {
+              console.error('Session save error:', saveErr);
+              return next(saveErr);
+            }
+
+            console.log(`User ${user.username} authenticated with session ${req.sessionID.slice(0, 8)}...`);
+            console.log(`Session stored with userId: ${user.id}, userType: ${user.userType}, token: ${sessionToken.slice(0, 8)}...`);
+
+            const { password, resetToken, resetTokenExpiry, ...userWithoutSensitiveInfo } = user;
+
+            return res.json({
+              ...userWithoutSensitiveInfo,
+              sessionPersisted: true,
+              sessionToken: sessionToken
+            });
           });
         });
-      });
-    } catch (error) {
-      console.error('Login error:', error);
-      return res.status(500).json({ message: 'Internal server error during login' });
-    }
-  })(req, res, next);
-});
+      } catch (error) {
+        console.error('Login error:', error);
+        return res.status(500).json({ message: 'Internal server error during login' });
+      }
+    })(req, res, next);
+  });
 
 
   // Logout endpoint
   app.post("/api/logout", async (req, res) => {
     try {
       const sessionId = req.sessionID;
-      
+
       // Clean up session token from store
       const sessionToken = req.cookies.session_token;
       if (sessionToken) {
@@ -958,14 +958,14 @@ app.post("/api/login", (req, res, next) => {
         res.clearCookie('session_token');
         console.log(`Session token ${sessionToken.slice(0, 8)}... removed from store`);
       }
-      
+
       // Revoke legacy auth token if present
       const authToken = req.cookies.auth_token;
       if (authToken) {
         await storage.revokeAuthToken(authToken);
         res.clearCookie('auth_token');
       }
-      
+
       req.logout(() => {
         req.session.destroy((err) => {
           if (err) {
@@ -987,29 +987,29 @@ app.post("/api/login", (req, res, next) => {
   });
 
   // Removed refresh token endpoint - using session-only auth
-  
+
   // Password recovery endpoints
   app.post("/api/auth/forgot-password", async (req, res) => {
     try {
       const { email } = req.body;
-      
+
       if (!email) {
         return res.status(400).json({ message: "Email is required" });
       }
-      
+
       // Create reset token
       const token = await storage.createResetToken(email);
-      
+
       if (!token) {
         // Don't reveal whether the email exists or not for security
         return res.json({ success: true, message: "If your email exists in our system, you will receive a password reset link." });
       }
-      
+
       // In a real implementation, you would send an email with a reset link
       // For this implementation, we'll just return the token directly 
       // (in production, this should be sent via email)
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         message: "Password reset link generated. In a production environment, this would be emailed.",
         token: token, // Note: In production, don't return the token directly
         resetLink: `/reset-password?token=${token}`
@@ -1019,96 +1019,96 @@ app.post("/api/login", (req, res, next) => {
       res.status(500).json({ message: "Internal server error" });
     }
   });
-  
+
   // Verify reset token before allowing password reset
   app.post("/api/auth/verify-reset-token", async (req, res) => {
     try {
       const { token } = req.body;
-      
+
       if (!token) {
         return res.status(400).json({ message: "Token is required" });
       }
-      
+
       // Verify token
       const user = await storage.getUserByResetToken(token);
-      
+
       if (!user) {
         return res.status(400).json({ message: "Invalid or expired token" });
       }
-      
+
       res.json({ valid: true });
     } catch (err) {
       console.error("Token verification error:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });
-  
+
   // Also support GET requests for token verification
   app.get("/api/auth/verify-reset-token", async (req, res) => {
     try {
       const token = req.query.token as string;
-      
+
       if (!token) {
         return res.status(400).json({ message: "Token is required" });
       }
-      
+
       // Verify token
       const user = await storage.getUserByResetToken(token);
-      
+
       if (!user) {
         return res.status(400).json({ valid: false, message: "Invalid or expired token" });
       }
-      
+
       res.json({ valid: true });
     } catch (err) {
       console.error("Token verification error:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });
-  
+
   app.post("/api/auth/reset-password", async (req, res) => {
     try {
       const { token, newPassword } = req.body;
-      
+
       if (!token || !newPassword) {
         return res.status(400).json({ message: "Token and new password are required" });
       }
-      
+
       // Reset the password
       const success = await storage.resetPassword(token, newPassword);
-      
+
       if (!success) {
         return res.status(400).json({ message: "Invalid or expired token" });
       }
-      
+
       res.json({ success: true, message: "Password has been reset successfully" });
     } catch (err) {
       console.error("Reset password error:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });
-  
+
   // Username recovery endpoint
   app.post("/api/auth/recover-username", async (req, res) => {
     try {
       const { email } = req.body;
-      
+
       if (!email) {
         return res.status(400).json({ message: "Email is required" });
       }
-      
+
       // Find user by email
       const user = await storage.getUserByEmail(email);
-      
+
       if (!user) {
         // Don't reveal whether the email exists or not for security
         return res.json({ success: true, message: "If your email exists in our system, you will receive your username." });
       }
-      
+
       // In a real implementation, you would send an email with the username
       // For this implementation, we'll just return the username directly
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         message: "Username recovery successful. In a production environment, this would be emailed.",
         username: user.username // Note: In production, don't return the username directly
       });
@@ -1121,7 +1121,7 @@ app.post("/api/login", (req, res, next) => {
   app.get("/api/me", isAuthenticated, async (req, res) => {
     try {
       let user = req.user as any;
-      
+
       // If using JWT tokens, get user from token payload
       if ((req as any).tokenUser) {
         const tokenUser = (req as any).tokenUser;
@@ -1130,11 +1130,11 @@ app.post("/api/login", (req, res, next) => {
           return res.status(401).json({ message: "User not found" });
         }
       }
-      
+
       if (!user) {
         return res.status(401).json({ message: "User not found in session" });
       }
-      
+
       // Remove sensitive information from user object
       const { password, resetToken, resetTokenExpiry, ...safeUserInfo } = user;
       res.json(safeUserInfo);
@@ -1143,7 +1143,7 @@ app.post("/api/login", (req, res, next) => {
       res.status(500).json({ message: "Internal server error" });
     }
   });
-  
+
   // Get user by ID (for resource cards and other components) - Cached
   app.get("/api/me/:id", async (req, res) => {
     try {
@@ -1151,13 +1151,13 @@ app.post("/api/login", (req, res, next) => {
       if (isNaN(userId)) {
         return res.status(400).json({ message: "Invalid user ID format" });
       }
-      
+
       const user = await storage.getUser(userId);
-      
+
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      
+
       // Return only safe public user info
       const userInfo = {
         id: user.id,
@@ -1166,20 +1166,20 @@ app.post("/api/login", (req, res, next) => {
         lastName: user.lastName,
         userType: user.userType
       };
-      
+
       res.json(userInfo);
     } catch (err) {
       console.error("Error fetching user by ID:", err);
       res.status(500).json({ message: "Server error" });
     }
   });
-  
+
   // Get multiple users in batch
   app.get("/api/users/batch", async (req, res) => {
     try {
       // Get userIds from query parameter
       const userIdsParam = req.query.userIds;
-      
+
       // If no userIds provided, return all users
       if (!userIdsParam) {
         const users = await storage.getAllUsers();
@@ -1190,7 +1190,7 @@ app.post("/api/login", (req, res, next) => {
         });
         return res.json(safeUsers);
       }
-      
+
       // Parse userIds from query parameter
       let userIds: number[] = [];
       try {
@@ -1202,12 +1202,12 @@ app.post("/api/login", (req, res, next) => {
       } catch (error) {
         return res.status(400).json({ message: "Invalid user IDs format" });
       }
-      
+
       // Validate all IDs are numbers
       if (userIds.some(id => isNaN(id))) {
         return res.status(400).json({ message: "Invalid user ID format" });
       }
-      
+
       // Fetch each user
       const users = [];
       for (const id of userIds) {
@@ -1217,30 +1217,30 @@ app.post("/api/login", (req, res, next) => {
           users.push(userInfo);
         }
       }
-      
+
       res.json(users);
     } catch (err) {
       console.error("Error fetching users in batch:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });
-  
+
   // Get a specific user by ID
   app.get("/api/users/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      
+
       // Add NaN check
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid user ID format" });
       }
-      
+
       const user = await storage.getUser(id);
-      
+
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      
+
       // Return user without sensitive information
       const { password, ...userInfo } = user;
       res.json(userInfo);
@@ -1249,7 +1249,7 @@ app.post("/api/login", (req, res, next) => {
       res.status(500).json({ message: "Internal server error" });
     }
   });
-  
+
   // Debug endpoint to check user info
   app.get("/api/debug/me", (req, res) => {
     if (req.isAuthenticated()) {
@@ -1264,7 +1264,7 @@ app.post("/api/login", (req, res, next) => {
       });
     }
   });
-  
+
   // Debug endpoint to create a quick test admin user with default credentials
   app.post("/api/create-test-admin", async (req, res) => {
     try {
@@ -1273,14 +1273,14 @@ app.post("/api/login", (req, res, next) => {
       const adminUser = await storage.createUser({
         username: "admin" + timestamp, // Ensure unique username
         password: "admin123", // plain text password
-        userType: "admin", 
+        userType: "admin",
         isAdmin: true,
         email: `admin_${timestamp}@example.com`, // Ensure unique email
         firstName: "Admin",
         lastName: "User"
       });
-      
-      res.json({ 
+
+      res.json({
         message: "Test admin user created successfully",
         user: {
           id: adminUser.id,
@@ -1293,34 +1293,34 @@ app.post("/api/login", (req, res, next) => {
       res.status(500).json({ message: "Error creating test admin user: " + error.message });
     }
   });
-  
+
   // Endpoint to create admin user with a secret key for security
   app.post("/api/create-admin", async (req, res) => {
     try {
       const { username, password, email, firstName, lastName, secretKey } = req.body;
-      
+
       // Validate required fields
       if (!username || !password || !email || !firstName || !lastName || !secretKey) {
         return res.status(400).json({ message: "All fields are required" });
       }
-      
+
       // Verify secret key to prevent unauthorized admin creation
       const ADMIN_SECRET_KEY = "ldn_admin_setup_2025"; // This should be an environment variable in production
       if (secretKey !== ADMIN_SECRET_KEY) {
         return res.status(403).json({ message: "Invalid secret key" });
       }
-      
+
       // Check if username or email already exists
       const existingUserByUsername = await storage.getUserByUsername(username);
       if (existingUserByUsername) {
         return res.status(400).json({ message: "Username already exists" });
       }
-      
+
       const existingUserByEmail = await storage.getUserByEmail(email);
       if (existingUserByEmail) {
         return res.status(400).json({ message: "Email already exists" });
       }
-      
+
       // Create admin user
       const adminUser = await storage.createUser({
         username,
@@ -1331,11 +1331,11 @@ app.post("/api/login", (req, res, next) => {
         firstName,
         lastName
       });
-      
+
       // Remove sensitive info before sending response
       const { password: _, ...adminInfo } = adminUser;
-      
-      res.status(201).json({ 
+
+      res.status(201).json({
         message: "Admin user created successfully",
         admin: adminInfo
       });
@@ -1366,13 +1366,13 @@ app.post("/api/login", (req, res, next) => {
     try {
       const user = req.user as any;
       const { tierId, status, paymentIntentId } = req.body;
-      
+
       if (!tierId || !status) {
-        return res.status(400).json({ 
-          message: "Missing required parameters: tierId or status" 
+        return res.status(400).json({
+          message: "Missing required parameters: tierId or status"
         });
       }
-      
+
       // Verify payment intent if provided
       if (paymentIntentId) {
         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
@@ -1380,10 +1380,10 @@ app.post("/api/login", (req, res, next) => {
           return res.status(400).json({ message: "Payment has not been completed successfully" });
         }
       }
-      
+
       // Update user's subscription status in our database
       await storage.updateUserSubscription(user.id, tierId, status);
-      
+
       // Create or update a customer in Stripe if needed
       if (!user.stripeCustomerId) {
         const customer = await stripe.customers.create({
@@ -1393,17 +1393,17 @@ app.post("/api/login", (req, res, next) => {
             userId: user.id.toString()
           }
         });
-        
+
         await storage.updateStripeCustomerId(user.id, customer.id);
       }
 
-      res.json({ 
-        success: true, 
-        message: "Subscription updated successfully" 
+      res.json({
+        success: true,
+        message: "Subscription updated successfully"
       });
     } catch (error: any) {
-      res.status(500).json({ 
-        message: "Error updating subscription: " + error.message 
+      res.status(500).json({
+        message: "Error updating subscription: " + error.message
       });
     }
   });
@@ -1419,7 +1419,7 @@ app.post("/api/login", (req, res, next) => {
 
       // Check if user already has a profile
       const existingProfile = await storage.getProfessionalProfileByUserId(user.id);
-      
+
       // Process uploaded file if present
       let profileImagePath = undefined;
       if (req.file) {
@@ -1428,10 +1428,10 @@ app.post("/api/login", (req, res, next) => {
       }
 
       let profile;
-      
+
       if (existingProfile) {
         console.log(`Updating existing profile for user ${user.id}, profile ID: ${existingProfile.id}`);
-        
+
         // Update existing profile
         profile = await storage.updateProfessionalProfile(existingProfile.id, {
           ...req.body,
@@ -1439,7 +1439,7 @@ app.post("/api/login", (req, res, next) => {
         });
       } else {
         console.log(`Creating new profile for user ${user.id}`);
-        
+
         // Create new profile
         try {
           const profileData = {
@@ -1447,7 +1447,7 @@ app.post("/api/login", (req, res, next) => {
             userId: user.id,
             profileImagePath
           };
-          
+
           // Only validate required fields
           const parsedData = insertProfessionalProfileSchema.parse(profileData);
           profile = await storage.createProfessionalProfile(parsedData);
@@ -1460,7 +1460,7 @@ app.post("/api/login", (req, res, next) => {
           });
         }
       }
-      
+
       res.status(existingProfile ? 200 : 201).json(profile);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -1479,7 +1479,7 @@ app.post("/api/login", (req, res, next) => {
   app.get("/api/professional-profiles/featured", async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 3;
-      
+
       // Create sample data if database is unavailable
       const sampleProfiles = [
         {
@@ -1522,7 +1522,7 @@ app.post("/api/login", (req, res, next) => {
           yearsExperience: 7
         }
       ];
-      
+
       const profiles = await storage.getFeaturedProfessionalProfiles(limit);
       res.json(profiles);
     } catch (error) {
@@ -1532,21 +1532,38 @@ app.post("/api/login", (req, res, next) => {
     }
   });
 
-  app.get("/api/professional-profiles/:id", async (req, res) => {
-    const id = parseInt(req.params.id);
-    
-    if (isNaN(id)) {
-      return res.status(400).json({ message: "Invalid profile ID" });
-    }
-    
-    const profile = await storage.getProfessionalProfile(id);
+app.get("/api/professional-profiles/:id", async (req, res) => {
+  const profileId = parseInt(req.params.id);
 
-    if (!profile) {
-      return res.status(404).json({ message: "Profile not found" });
-    }
+  if (isNaN(profileId)) {
+    return res.status(400).json({ message: "Invalid profile ID" });
+  }
 
-    res.json(profile);
-  });
+  const profile = await storage.getProfessionalProfile(profileId);
+
+  if (!profile) {
+    return res.status(404).json({ message: "Profile not found" });
+  }
+
+  const userId = profile.userId || profile.userId;
+
+  if (!userId) {
+    return res.status(500).json({ message: "User ID not found for this profile" });
+  }
+
+  const user = await storage.getUserById(userId);
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  if (!user.contactVisible) {
+    profile.email = "private";
+    profile.phone = "private";
+  }
+
+  res.json(profile);
+});
 
   // Delete profile image
   app.delete("/api/professional-profiles/:id/profile-image", isAuthenticated, async (req, res) => {
@@ -1606,7 +1623,7 @@ app.post("/api/login", (req, res, next) => {
       }
 
       // Process uploaded file if present
-      const updateData = {...req.body};
+      const updateData = { ...req.body };
       if (req.file) {
         // Delete existing image if present
         if (profile.profileImagePath) {
@@ -1617,11 +1634,11 @@ app.post("/api/login", (req, res, next) => {
             console.warn(`Failed to delete previous profile image: ${profile.profileImagePath}`);
           }
         }
-        
+
         updateData.profileImagePath = req.file.path;
         console.log(`Updated profile image: ${updateData.profileImagePath}`);
       }
-
+    
       const updatedProfile = await storage.updateProfessionalProfile(id, updateData);
 
       res.json(updatedProfile);
@@ -1633,14 +1650,14 @@ app.post("/api/login", (req, res, next) => {
       res.status(500).json({ message: "Internal server error" });
     }
   });
-  
+
   // Get professional profile for the current user
   app.get("/api/professionals/me", async (req, res) => {
     try {
       // For development testing, allow unauthenticated access with a default profile
       if (!req.isAuthenticated()) {
         console.log("DEV MODE: Allowing unauthenticated /api/professionals/me access for testing");
-        
+
         // Return a sample professional profile for testing
         const testProfile = await storage.getProfessionalProfile(5); // Using sample profile ID 5
         if (testProfile) {
@@ -1651,16 +1668,16 @@ app.post("/api/login", (req, res, next) => {
       }
 
       const user = req.user as any;
-      
+
       if (user.userType !== "professional") {
         return res.status(403).json({ message: "Only professionals can access this endpoint" });
       }
-      
+
       const profile = await storage.getProfessionalProfileByUserId(user.id);
       if (!profile) {
         return res.status(404).json({ message: "Professional profile not found for current user" });
       }
-      
+
       res.json(profile);
     } catch (err) {
       console.error("Error fetching professional profile:", err);
@@ -1674,23 +1691,23 @@ app.post("/api/login", (req, res, next) => {
       // For development testing, allow unauthenticated access
       if (!req.isAuthenticated()) {
         console.log("DEV MODE: Allowing unauthenticated /api/professionals/me/applications access for testing");
-        
+
         // Return sample applications for testing
         const testApplications = await storage.getJobApplicationsByProfessional(5); // Using sample profile ID 5
         return res.json(testApplications || []);
       }
 
       const user = req.user as any;
-      
+
       if (user.userType !== "professional") {
         return res.status(403).json({ message: "Only professionals can access this endpoint" });
       }
-      
+
       const profile = await storage.getProfessionalProfileByUserId(user.id);
       if (!profile) {
         return res.status(404).json({ message: "Professional profile not found for current user" });
       }
-      
+
       const applications = await storage.getJobApplicationsByProfessional(profile.id);
       res.json(applications || []);
     } catch (err) {
@@ -1705,23 +1722,23 @@ app.post("/api/login", (req, res, next) => {
       // For development testing, allow unauthenticated access
       if (!req.isAuthenticated()) {
         console.log("DEV MODE: Allowing unauthenticated /api/professionals/me/consultations access for testing");
-        
+
         // Return sample consultations for testing
         const testConsultations = await storage.getProfessionalConsultations(5); // Using sample profile ID 5
         return res.json(testConsultations || []);
       }
 
       const user = req.user as any;
-      
+
       if (user.userType !== "professional") {
         return res.status(403).json({ message: "Only professionals can access this endpoint" });
       }
-      
+
       const profile = await storage.getProfessionalProfileByUserId(user.id);
       if (!profile) {
         return res.status(404).json({ message: "Professional profile not found for current user" });
       }
-      
+
       const consultations = await storage.getProfessionalConsultations(profile.id);
       res.json(consultations || []);
     } catch (err) {
@@ -1736,18 +1753,18 @@ app.post("/api/login", (req, res, next) => {
       // For development testing, allow unauthenticated access
       if (!req.isAuthenticated()) {
         console.log("DEV MODE: Allowing unauthenticated /api/professionals/me/messages access for testing");
-        
+
         // Return sample messages for testing
         const testMessages = await storage.getUserMessages(5); // Using sample user ID 5
         return res.json(testMessages || []);
       }
 
       const user = req.user as any;
-      
+
       if (user.userType !== "professional") {
         return res.status(403).json({ message: "Only professionals can access this endpoint" });
       }
-      
+
       const messages = await storage.getUserMessages(user.id);
       res.json(messages || []);
     } catch (err) {
@@ -1760,27 +1777,27 @@ app.post("/api/login", (req, res, next) => {
   app.put("/api/professionals/me", isAuthenticated, uploadProfileImage.single('profileImage'), async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       if (!user) {
         console.error("Authentication issue: user object not available in request");
         return res.status(401).json({ message: "User not authenticated" });
       }
-      
+
       if (user.userType !== "professional") {
         console.warn(`User type mismatch: ${user.username} (ID: ${user.id}) with type ${user.userType} tried to access professional endpoint`);
         return res.status(403).json({ message: "Only professionals can access this endpoint" });
       }
-      
+
       // Log the request details for debugging
       console.log(`Profile update request from user ${user.username} (ID: ${user.id})`);
       console.log(`Request body fields: ${Object.keys(req.body).join(', ')}`);
       console.log(`Request body values:`, req.body);
       console.log(`File upload: ${req.file ? `Yes (${req.file.filename})` : 'No'}`);
-      
+
       // Check if profile exists
       const existingProfile = await storage.getProfessionalProfileByUserId(user.id);
       console.log(`Existing profile found: ${existingProfile ? 'Yes (ID: ' + existingProfile.id + ')' : 'No'}`);
-      
+
       // Prepare profile data with type handling
       const profileData: any = {
         ...req.body,
@@ -1796,7 +1813,7 @@ app.post("/api/login", (req, res, next) => {
           profileData.ratePerHour = isNaN(parsedRate) ? null : parsedRate;
         }
       }
-      
+
       // Handle years experience (can be empty string, undefined, or a valid number)
       if (profileData.yearsExperience !== undefined) {
         if (profileData.yearsExperience === '' || profileData.yearsExperience === null) {
@@ -1806,20 +1823,20 @@ app.post("/api/login", (req, res, next) => {
           profileData.yearsExperience = isNaN(parsedYears) ? null : parsedYears;
         }
       }
-      
+
       // Keep availability as string but default to "Not specified" if empty
       if (profileData.availability === '' || profileData.availability === undefined) {
         profileData.availability = "Not specified";
       }
-      
+
       // Handle file upload if provided
       if (req.file) {
         profileData.profileImagePath = req.file.path.replace(/^public\//, '');
         console.log(`New profile image path: ${profileData.profileImagePath}`);
       }
-      
+
       console.log("Processed profile data for save:", profileData);
-      
+
       let profile;
       if (existingProfile) {
         // Update existing profile
@@ -1830,7 +1847,7 @@ app.post("/api/login", (req, res, next) => {
         console.log(`Creating new profile for user ID: ${user.id}`);
         profile = await storage.createProfessionalProfile(profileData);
       }
-      
+
       // Ensure profile exists before trying to access its properties
       if (profile) {
         console.log(`Profile ${existingProfile ? 'updated' : 'created'} successfully: ${profile.id}`);
@@ -1841,17 +1858,17 @@ app.post("/api/login", (req, res, next) => {
       }
     } catch (err) {
       console.error("Error updating professional profile:", err);
-      
+
       // Provide more details in error response
       if (err instanceof z.ZodError) {
-        return res.status(400).json({ 
-          message: "Invalid profile data provided", 
-          errors: err.errors 
+        return res.status(400).json({
+          message: "Invalid profile data provided",
+          errors: err.errors
         });
       }
-      
+
       // More detailed error message for debugging client-side issues
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to update profile",
         error: err instanceof Error ? err.message : "Unknown error"
       });
@@ -1862,16 +1879,16 @@ app.post("/api/login", (req, res, next) => {
   app.get("/api/professionals/me/certifications", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       if (user.userType !== "professional") {
         return res.status(403).json({ message: "Only professionals can access this endpoint" });
       }
-      
+
       const profile = await storage.getProfessionalProfileByUserId(user.id);
       if (!profile) {
         return res.status(404).json({ message: "Professional profile not found for current user" });
       }
-      
+
       const certifications = await storage.getProfessionalCertifications(profile.id);
       res.json(certifications);
     } catch (err) {
@@ -1884,21 +1901,21 @@ app.post("/api/login", (req, res, next) => {
   app.post("/api/professionals/me/certifications", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       if (user.userType !== "professional") {
         return res.status(403).json({ message: "Only professionals can access this endpoint" });
       }
-      
+
       const profile = await storage.getProfessionalProfileByUserId(user.id);
       if (!profile) {
         return res.status(404).json({ message: "Professional profile not found for current user" });
       }
-      
+
       const certData = {
         ...req.body,
         professionalId: profile.id
       };
-      
+
       const certification = await storage.createCertification(certData);
       res.status(201).json(certification);
     } catch (err) {
@@ -1911,16 +1928,16 @@ app.post("/api/login", (req, res, next) => {
   app.get("/api/professionals/me/expertise", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       if (user.userType !== "professional") {
         return res.status(403).json({ message: "Only professionals can access this endpoint" });
       }
-      
+
       const profile = await storage.getProfessionalProfileByUserId(user.id);
       if (!profile) {
         return res.status(404).json({ message: "Professional profile not found for current user" });
       }
-      
+
       const expertise = await storage.getProfessionalExpertise(profile.id);
       res.json(expertise);
     } catch (err) {
@@ -1933,26 +1950,26 @@ app.post("/api/login", (req, res, next) => {
   app.post("/api/professionals/me/expertise", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       if (user.userType !== "professional") {
         return res.status(403).json({ message: "Only professionals can access this endpoint" });
       }
-      
+
       const profile = await storage.getProfessionalProfileByUserId(user.id);
       if (!profile) {
         return res.status(404).json({ message: "Professional profile not found for current user" });
       }
-      
+
       const { expertiseId } = req.body;
       if (!expertiseId) {
         return res.status(400).json({ message: "Expertise ID is required" });
       }
-      
+
       const profExpertise = await storage.addProfessionalExpertise({
         professionalId: profile.id,
         expertiseId: expertiseId
       });
-      
+
       res.status(201).json(profExpertise);
     } catch (err) {
       console.error("Error adding expertise:", err);
@@ -1964,17 +1981,17 @@ app.post("/api/login", (req, res, next) => {
   app.get("/api/professional-profiles/by-user", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       if (user.userType !== "professional") {
         return res.status(400).json({ message: "User is not a professional" });
       }
-      
+
       const profile = await storage.getProfessionalProfileByUserId(user.id);
       if (!profile) {
         // Instead of 404, return null to handle case of newly registered users without profiles yet
         return res.json(null);
       }
-      
+
       res.json(profile);
     } catch (err) {
       console.error("Error fetching professional profile by user ID:", err);
@@ -2001,51 +2018,51 @@ app.post("/api/login", (req, res, next) => {
     }
   });
   app.get("/api/professional_profiles/:id", async (req, res) => {
-  const { id } = req.params;
-  const profile = await db.query.professionalProfiles.findFirst({
-    where: (p, { eq }) => eq(p.id, Number(id)),
+    const { id } = req.params;
+    const profile = await db.query.professionalProfiles.findFirst({
+      where: (p, { eq }) => eq(p.id, Number(id)),
+    });
+    if (!profile) return res.status(404).json({ message: "Not found" });
+    res.json(profile);
   });
-  if (!profile) return res.status(404).json({ message: "Not found" });
-  res.json(profile);
-});
-// app.get("/api/company-profiles/:id", isAuthenticated, async (req, res) => {
-//   const { id } = req.params;
+  // app.get("/api/company-profiles/:id", isAuthenticated, async (req, res) => {
+  //   const { id } = req.params;
 
-//   if (id === "by-user") {
-//     const user = req.user as any;
-//     const profile = await db.query.companyProfiles.findFirst({
-//       where: (p, { eq }) => eq(p.userId, user.id),
-//     });
-//     if (!profile) {
-//       return res.status(404).json({ message: "Company profile not found" });
-//     }
-//     return res.json(profile);
-//   }
+  //   if (id === "by-user") {
+  //     const user = req.user as any;
+  //     const profile = await db.query.companyProfiles.findFirst({
+  //       where: (p, { eq }) => eq(p.userId, user.id),
+  //     });
+  //     if (!profile) {
+  //       return res.status(404).json({ message: "Company profile not found" });
+  //     }
+  //     return res.json(profile);
+  //   }
 
-//   const numericId = Number(id);
-//   if (isNaN(numericId)) {
-//     return res.status(400).json({ message: "Invalid company profile ID" });
-//   }
+  //   const numericId = Number(id);
+  //   if (isNaN(numericId)) {
+  //     return res.status(400).json({ message: "Invalid company profile ID" });
+  //   }
 
-//   const profile = await db.query.companyProfiles.findFirst({
-//     where: (p, { eq }) => eq(p.id, numericId),
-//   });
-//   if (!profile) {
-//     return res.status(404).json({ message: "Not found" });
-//   }
-//   res.json(profile);
-// });
+  //   const profile = await db.query.companyProfiles.findFirst({
+  //     where: (p, { eq }) => eq(p.id, numericId),
+  //   });
+  //   if (!profile) {
+  //     return res.status(404).json({ message: "Not found" });
+  //   }
+  //   res.json(profile);
+  // });
 
 
 
 
   app.get("/api/professional-profiles/:id/expertise", async (req, res) => {
     const id = parseInt(req.params.id);
-    
+
     if (isNaN(id)) {
       return res.status(400).json({ message: "Invalid profile ID" });
     }
-    
+
     const expertise = await storage.getProfessionalExpertise(id);
     res.json(expertise);
   });
@@ -2083,11 +2100,11 @@ app.post("/api/login", (req, res, next) => {
   // Certification Routes
   app.get("/api/professional-profiles/:id/certifications", async (req, res) => {
     const id = parseInt(req.params.id);
-    
+
     if (isNaN(id)) {
       return res.status(400).json({ message: "Invalid profile ID" });
     }
-    
+
     const certifications = await storage.getProfessionalCertifications(id);
     res.json(certifications);
   });
@@ -2155,16 +2172,16 @@ app.post("/api/login", (req, res, next) => {
   app.get("/api/professional-profiles/:id/work-experiences", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      
+
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid profile ID" });
       }
-      
+
       const profile = await storage.getProfessionalProfile(id);
       if (!profile) {
         return res.status(404).json({ message: "Profile not found" });
       }
-      
+
       // Return work experience from profile's workExperience field
       const workExperiences = profile.workExperience || [];
       res.json(Array.isArray(workExperiences) ? workExperiences : []);
@@ -2178,16 +2195,16 @@ app.post("/api/login", (req, res, next) => {
   app.get("/api/professional-profiles/:id/testimonials", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      
+
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid profile ID" });
       }
-      
+
       const profile = await storage.getProfessionalProfile(id);
       if (!profile) {
         return res.status(404).json({ message: "Profile not found" });
       }
-      
+
       // Return testimonials from profile's testimonials field
       const testimonials = profile.testimonials || [];
       res.json(Array.isArray(testimonials) ? testimonials : []);
@@ -2196,32 +2213,32 @@ app.post("/api/login", (req, res, next) => {
       res.status(500).json({ message: "Internal server error" });
     }
   });
-  
+
   // Gallery Image Routes
-  
+
   // Upload a gallery image
   app.post("/api/professionals/me/gallery", isAuthenticated, uploadGalleryImage.single('galleryImage'), async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       if (user.userType !== "professional") {
         return res.status(403).json({ message: "Only professionals can upload gallery images" });
       }
-      
+
       if (!req.file) {
         return res.status(400).json({ message: "No image uploaded" });
       }
-      
+
       // Get the professional profile
       const profile = await storage.getProfessionalProfileByUserId(user.id);
       if (!profile) {
         return res.status(404).json({ message: "Professional profile not found" });
       }
-      
+
       // Process uploaded file
       const galleryImagePath = req.file.path;
       console.log(`Gallery image uploaded: ${galleryImagePath}`);
-      
+
       // Get current gallery images
       let galleryImages = [];
       if (profile.galleryImages) {
@@ -2240,7 +2257,7 @@ app.post("/api/login", (req, res, next) => {
           }
         }
       }
-      
+
       // Add new image to gallery
       galleryImages.push({
         id: new Date().getTime(), // Use timestamp as unique ID
@@ -2248,13 +2265,13 @@ app.post("/api/login", (req, res, next) => {
         caption: req.body.caption || '',
         uploadedAt: new Date().toISOString()
       });
-      
+
       // Update the profile
       const updatedProfile = await storage.updateProfessionalProfile(profile.id, {
         galleryImages: galleryImages
       });
-      
-      res.status(201).json({ 
+
+      res.status(201).json({
         message: "Gallery image uploaded successfully",
         gallery: galleryImages
       });
@@ -2263,18 +2280,18 @@ app.post("/api/login", (req, res, next) => {
       res.status(500).json({ message: "Internal server error" });
     }
   });
-  
+
   // Get all gallery images for a professional
   app.get("/api/professionals/:id/gallery", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      
+
       // Get the professional profile
       const profile = await storage.getProfessionalProfile(id);
       if (!profile) {
         return res.status(404).json({ message: "Professional profile not found" });
       }
-      
+
       // Return gallery images
       let galleryImages = [];
       if (profile.galleryImages) {
@@ -2291,30 +2308,30 @@ app.post("/api/login", (req, res, next) => {
           }
         }
       }
-      
+
       res.json(galleryImages);
     } catch (error) {
       console.error("Error fetching gallery images:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
-  
+
   // Delete a gallery image
   app.delete("/api/professionals/me/gallery/:imageId", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
       const imageId = parseInt(req.params.imageId);
-      
+
       if (user.userType !== "professional") {
         return res.status(403).json({ message: "Only professionals can delete gallery images" });
       }
-      
+
       // Get the professional profile
       const profile = await storage.getProfessionalProfileByUserId(user.id);
       if (!profile) {
         return res.status(404).json({ message: "Professional profile not found" });
       }
-      
+
       // Get current gallery images
       let galleryImages = [];
       if (profile.galleryImages) {
@@ -2331,16 +2348,16 @@ app.post("/api/login", (req, res, next) => {
           }
         }
       }
-      
+
       // Find the image to delete
       const imageIndex = galleryImages.findIndex(img => img.id === imageId);
       if (imageIndex === -1) {
         return res.status(404).json({ message: "Gallery image not found" });
       }
-      
+
       // Get the path of the image to delete
       const imagePath = galleryImages[imageIndex].path;
-      
+
       // Delete the file
       try {
         fs.unlinkSync(imagePath);
@@ -2349,16 +2366,16 @@ app.post("/api/login", (req, res, next) => {
         console.warn(`Failed to delete gallery image file: ${imagePath}`, error);
         // Continue anyway to update the database
       }
-      
+
       // Remove the image from the array
       galleryImages.splice(imageIndex, 1);
-      
+
       // Update the profile
       await storage.updateProfessionalProfile(profile.id, {
         galleryImages: galleryImages
       });
-      
-      res.json({ 
+
+      res.json({
         message: "Gallery image deleted successfully",
         gallery: galleryImages
       });
@@ -2367,23 +2384,23 @@ app.post("/api/login", (req, res, next) => {
       res.status(500).json({ message: "Internal server error" });
     }
   });
-  
+
   // Set gallery image as profile picture
   app.post("/api/professionals/me/set-profile-image-from-gallery/:imageId", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
       const imageId = parseInt(req.params.imageId);
-      
+
       if (user.userType !== "professional") {
         return res.status(403).json({ message: "Only professionals can update profile pictures" });
       }
-      
+
       // Get the professional profile
       const profile = await storage.getProfessionalProfileByUserId(user.id);
       if (!profile) {
         return res.status(404).json({ message: "Professional profile not found" });
       }
-      
+
       // Get current gallery images
       let galleryImages = [];
       if (profile.galleryImages) {
@@ -2400,19 +2417,19 @@ app.post("/api/login", (req, res, next) => {
           }
         }
       }
-      
+
       // Find the image to use as profile picture
       const image = galleryImages.find(img => img.id === imageId);
       if (!image) {
         return res.status(404).json({ message: "Gallery image not found" });
       }
-      
+
       // Update profile with new profile image
       const updatedProfile = await storage.updateProfessionalProfile(profile.id, {
         profileImagePath: image.path
       });
-      
-      res.json({ 
+
+      res.json({
         message: "Profile picture updated successfully",
         profileImage: image.path
       });
@@ -2462,30 +2479,30 @@ app.post("/api/login", (req, res, next) => {
       console.log("Processed company profile data for save:", profileData);
 
       let profile;
-      
+
       if (existingProfile) {
         console.log(`Updating existing company profile for user ${user.id}, profile ID: ${existingProfile.id}`);
-        
+
         // Update existing profile
         profile = await storage.updateCompanyProfile(existingProfile.id, profileData);
       } else {
         console.log(`Creating new company profile for user ${user.id}`);
-        
+
         // Create new profile with validation
         profile = await storage.createCompanyProfile(profileData);
       }
-      
+
       console.log(`Company profile ${existingProfile ? 'updated' : 'created'} successfully: ${profile?.id}`);
       res.status(existingProfile ? 200 : 201).json(profile);
     } catch (err) {
       console.error("Error creating/updating company profile:", err);
-      
+
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid input", errors: err.errors });
       }
 
       // More detailed error message for debugging client-side issues
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to create or update company profile",
         error: err instanceof Error ? err.message : "Unknown error"
       });
@@ -2505,7 +2522,7 @@ app.post("/api/login", (req, res, next) => {
       if (user.userType !== "company") {
         return res.status(400).json({ message: "User is not a company" });
       }
-      
+
       const profile = await storage.getCompanyProfileByUserId(user.id);
       if (!profile) {
         return res.json(null);
@@ -2520,11 +2537,11 @@ app.post("/api/login", (req, res, next) => {
 
   app.get("/api/company-profiles/:id", async (req, res) => {
     const id = parseInt(req.params.id);
-    
+
     if (isNaN(id)) {
       return res.status(400).json({ message: "Invalid profile ID" });
     }
-    
+
     const profile = await storage.getCompanyProfile(id);
 
     if (!profile) {
@@ -2533,42 +2550,42 @@ app.post("/api/login", (req, res, next) => {
 
     res.json(profile);
   });
-  
+
   // Get company profile for the current user
   app.get("/api/companies/me", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       if (user.userType !== "company") {
         return res.status(403).json({ message: "Only companies can access this endpoint" });
       }
-      
+
       const profile = await storage.getCompanyProfileByUserId(user.id);
       if (!profile) {
         return res.status(404).json({ message: "Company profile not found for current user" });
       }
-      
+
       res.json(profile);
     } catch (err) {
       console.error("Error fetching company profile:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });
-  
+
   // Get company profile by specific user ID (for messaging system)
   app.get("/api/company-profiles/by-user/:userId", async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
-      
+
       if (isNaN(userId)) {
         return res.status(400).json({ message: "Invalid user ID" });
       }
-      
+
       const profile = await storage.getCompanyProfileByUserId(userId);
       if (!profile) {
         return res.status(404).json({ message: "Company profile not found for this user" });
       }
-      
+
       res.json(profile);
     } catch (err) {
       console.error("Error fetching company profile by user ID:", err);
@@ -2580,16 +2597,16 @@ app.post("/api/login", (req, res, next) => {
   app.get("/api/professional-profiles/by-user/:userId", async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
-      
+
       if (isNaN(userId)) {
         return res.status(400).json({ message: "Invalid user ID" });
       }
-      
+
       const profile = await storage.getProfessionalProfileByUserId(userId);
       if (!profile) {
         return res.status(404).json({ message: "Professional profile not found for this user" });
       }
-      
+
       res.json(profile);
     } catch (err) {
       console.error("Error fetching professional profile by user ID:", err);
@@ -2612,7 +2629,7 @@ app.post("/api/login", (req, res, next) => {
   app.get("/api/career-recommendations", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       // Get professional profile
       const profile = await storage.getProfessionalProfileByUserId(user.id);
       if (!profile) {
@@ -2652,11 +2669,11 @@ app.post("/api/login", (req, res, next) => {
       console.log(`File upload: ${req.file ? `Yes (${req.file.filename})` : 'No'}`);
 
       // Create and prepare update data with proper type handling
-      const updateData: any = {...req.body};
-      
+      const updateData: any = { ...req.body };
+
       // Ensure userId is set correctly
       updateData.userId = user.id;
-      
+
       // BUG KILLER: Enhanced type conversion for numeric fields with NaN protection
       // Handle employee count (if needed in the future)
       if (updateData.employeeCount !== undefined) {
@@ -2668,7 +2685,7 @@ app.post("/api/login", (req, res, next) => {
         }
         console.log(`Employee count processed: ${updateData.employeeCount} (original: ${req.body.employeeCount})`);
       }
-      
+
       // Process uploaded file if present
       if (req.file) {
         updateData.logoImagePath = req.file.path.replace(/^public\//, '');
@@ -2676,20 +2693,20 @@ app.post("/api/login", (req, res, next) => {
       }
 
       console.log("Processed company profile data for save:", updateData);
-      
+
       const updatedProfile = await storage.updateCompanyProfile(id, updateData);
       console.log(`Company profile updated successfully: ${id}`);
 
       res.json(updatedProfile);
     } catch (err) {
       console.error("Error updating company profile:", err);
-      
+
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid input", errors: err.errors });
       }
-      
+
       // More detailed error message for debugging client-side issues
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to update profile",
         error: err instanceof Error ? err.message : "Unknown error"
       });
@@ -2700,13 +2717,13 @@ app.post("/api/login", (req, res, next) => {
   app.get("/api/jobs/:jobId/matches", async (req, res) => {
     try {
       let jobId: number;
-      
+
       // Special case for "me" endpoint
       if (req.params.jobId === "me") {
         // For development testing allow unauthenticated access with friendly message
         if (!req.isAuthenticated()) {
           console.log("DEV MODE: Allowing unauthenticated /api/jobs/me/matches access for testing");
-          
+
           // Use a default job ID for testing
           console.log("DEV MODE: Using default job ID 10 for testing");
           jobId = 10; // Using a sample job ID that exists in the database
@@ -2715,7 +2732,7 @@ app.post("/api/login", (req, res, next) => {
           if (user.userType !== "company") {
             return res.status(403).json({ message: "Not a company user" });
           }
-          
+
           // For companies, we'd need a specific job ID, not just the company
           return res.status(400).json({ message: "Please specify a job ID, not 'me'" });
         }
@@ -2725,14 +2742,14 @@ app.post("/api/login", (req, res, next) => {
         if (isNaN(jobId)) {
           return res.status(400).json({ message: "Invalid job ID format" });
         }
-        
+
         // Verify the job exists
         const job = await storage.getJobPosting(jobId);
         if (!job) {
           return res.status(404).json({ message: "Job posting not found" });
         }
       }
-      
+
       // Call the controller function with the proper ID
       return getMatchingProfessionalsForJob({
         ...req,
@@ -2743,29 +2760,29 @@ app.post("/api/login", (req, res, next) => {
       res.status(500).json({ message: "Error finding matching professionals" });
     }
   });
-  
+
   // AI Professional Matching with Jobs
   app.get("/api/professionals/:professionalId/matches", async (req, res) => {
     try {
       let professionalId: number;
-      
+
       // Special case for "me" endpoint
       if (req.params.professionalId === "me") {
         // For development testing allow unauthenticated access with friendly message
         if (!req.isAuthenticated()) {
           console.log("DEV MODE: Allowing unauthenticated /api/professionals/me/matches access for testing");
-          
+
           // Use a default professional ID for testing - ID 45 is a sample profile
           console.log("DEV MODE: Using default professional ID 45 for testing");
           professionalId = 45;
         } else {
           const user = req.user as User;
           const professionalProfile = await storage.getProfessionalProfileByUserId(user.id);
-          
+
           if (!professionalProfile) {
             return res.status(404).json({ message: "Professional profile not found for current user" });
           }
-          
+
           professionalId = professionalProfile.id;
         }
       } else {
@@ -2774,14 +2791,14 @@ app.post("/api/login", (req, res, next) => {
         if (isNaN(professionalId)) {
           return res.status(400).json({ message: "Invalid professional ID format" });
         }
-        
+
         // Verify the professional exists
         const professionalProfile = await storage.getProfessionalProfile(professionalId);
         if (!professionalProfile) {
           return res.status(404).json({ message: "Professional profile not found" });
         }
       }
-      
+
       // Call the controller function with the proper ID
       return getMatchingJobsForProfessional({
         ...req,
@@ -2792,7 +2809,7 @@ app.post("/api/login", (req, res, next) => {
       res.status(500).json({ message: "Error finding matching jobs" });
     }
   });
-  
+
   // AI Job Matching with Professionals
   // This route is now handled by the endpoint above
 
@@ -2845,7 +2862,7 @@ app.post("/api/login", (req, res, next) => {
       // Validate all fields except expiresAt using schema
       const { expiresAt, ...dataForValidation } = cleanData;
       const validatedData = insertJobPostingSchema.omit({ expiresAt: true }).parse(dataForValidation);
-      
+
       // Add back the properly converted expiresAt
       const jobData = { ...validatedData, expiresAt: cleanData.expiresAt };
 
@@ -2879,29 +2896,29 @@ app.post("/api/login", (req, res, next) => {
         if (!req.isAuthenticated()) {
           return res.status(401).json({ message: "Unauthorized" });
         }
-        
+
         const user = req.user as any;
-        
+
         if (user.userType !== "company") {
           return res.status(403).json({ message: "Not a company user" });
         }
-        
+
         const companyProfile = await storage.getCompanyProfileByUserId(user.id);
-        
+
         if (!companyProfile) {
           return res.json([]);
         }
-        
+
         const jobs = await storage.getCompanyJobPostings(companyProfile.id);
         return res.json(jobs);
       }
-      
+
       // Regular case with numeric ID
       const companyId = parseInt(req.params.id);
       if (isNaN(companyId)) {
         return res.status(400).json({ message: "Invalid company ID" });
       }
-      
+
       const jobs = await storage.getCompanyJobPostings(companyId);
       res.json(jobs);
     } catch (err) {
@@ -2953,7 +2970,7 @@ app.post("/api/login", (req, res, next) => {
       delete updateData.createdAt;
 
       console.log(`Company ${user.username} updating job posting ${jobId}`);
-      
+
       const updatedJob = await storage.updateJobPosting(jobId, updateData);
       res.json(updatedJob);
     } catch (err) {
@@ -3006,8 +3023,8 @@ app.post("/api/login", (req, res, next) => {
       };
 
       const deletedJob = await storage.updateJobPosting(jobId, deleteData);
-      
-      res.json({ 
+
+      res.json({
         message: "Job posting deleted successfully",
         hadApplications: hasApplications,
         applicationsCount: applications.length,
@@ -3069,11 +3086,11 @@ app.post("/api/login", (req, res, next) => {
 
   app.get("/api/job-postings/:id", async (req, res) => {
     const id = parseInt(req.params.id);
-    
+
     if (isNaN(id)) {
       return res.status(400).json({ message: "Invalid job posting ID" });
     }
-    
+
     const job = await storage.getJobPosting(id);
 
     if (!job) {
@@ -3180,7 +3197,7 @@ app.post("/api/login", (req, res, next) => {
           if (companyUser) {
             // Import notification service
             const { notificationService } = await import('./notification-service');
-            
+
             // Send notification to company about new application
             await notificationService.sendJobApplicationNotification(
               application,
@@ -3239,7 +3256,7 @@ app.post("/api/login", (req, res, next) => {
     try {
       const user = req.user as any;
       let professionalProfile;
-      
+
       // Special case for "me" endpoint
       if (req.params.id === "me") {
         professionalProfile = await storage.getProfessionalProfileByUserId(user.id);
@@ -3253,9 +3270,9 @@ app.post("/api/login", (req, res, next) => {
           if (isNaN(professionalId)) {
             return res.status(400).json({ message: "Invalid professional ID format" });
           }
-          
+
           professionalProfile = await storage.getProfessionalProfile(professionalId);
-          
+
           // Check if user is the professional
           if (!professionalProfile || professionalProfile.userId !== user.id) {
             return res.status(403).json({ message: "You can only view your own applications" });
@@ -3274,69 +3291,69 @@ app.post("/api/login", (req, res, next) => {
     }
   });
 
- app.put("/api/applications/:id/status", isAuthenticated, async (req, res) => {
-  try {
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) {
-      return res.status(400).json({ message: "Invalid application ID" });
+  app.put("/api/applications/:id/status", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid application ID" });
+      }
+
+      const user = req.user as any;
+
+      // Get application
+      const application = await storage.getJobApplication(id);
+      if (!application) {
+        return res.status(404).json({ message: "Application not found" });
+      }
+
+      // Get job posting
+      const job = await storage.getJobPosting(application.jobId);
+      if (!job) {
+        return res.status(404).json({ message: "Job posting not found" });
+      }
+
+      // Check if user is the company that posted the job
+      const companyProfile = await storage.getCompanyProfile(job.companyId);
+      if (companyProfile?.userId !== user.id) {
+        return res.status(403).json({ message: "You can only update status for applications to your own job postings" });
+      }
+
+      const { status } = req.body;
+      if (!status || !["pending", "reviewed", "accepted", "rejected"].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+
+      const updatedApplication = await storage.updateJobApplicationStatus(id, status);
+      res.json(updatedApplication);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Internal server error" });
     }
+  });
 
-    const user = req.user as any;
+  app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
 
-    // Get application
-    const application = await storage.getJobApplication(id);
-    if (!application) {
-      return res.status(404).json({ message: "Application not found" });
+      if (user.userType !== "company") {
+        return res.status(403).json({ message: "Only companies can access this endpoint" });
+      }
+
+      const companyProfile = await storage.getCompanyProfileByUserId(user.id);
+      if (!companyProfile) {
+        return res.status(404).json({ message: "Company profile not found" });
+      }
+
+      // Bu metod artıq applications-ları da qaytarır
+      const applicationsData = await storage.getJobApplicationsByCompany(companyProfile.id);
+
+      console.log(`Found ${applicationsData.length} job postings for company ${companyProfile.companyName}`);
+      res.json(applicationsData);
+    } catch (err) {
+      console.error("Error fetching company applications:", err);
+      res.status(500).json({ message: "Internal server error" });
     }
-
-    // Get job posting
-    const job = await storage.getJobPosting(application.jobId);
-    if (!job) {
-      return res.status(404).json({ message: "Job posting not found" });
-    }
-
-    // Check if user is the company that posted the job
-    const companyProfile = await storage.getCompanyProfile(job.companyId);
-    if (companyProfile?.userId !== user.id) {
-      return res.status(403).json({ message: "You can only update status for applications to your own job postings" });
-    }
-
-    const { status } = req.body;
-    if (!status || !["pending", "reviewed", "accepted", "rejected"].includes(status)) {
-      return res.status(400).json({ message: "Invalid status" });
-    }
-
-    const updatedApplication = await storage.updateJobApplicationStatus(id, status);
-    res.json(updatedApplication);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
-  try {
-    const user = req.user as any;
-
-    if (user.userType !== "company") {
-      return res.status(403).json({ message: "Only companies can access this endpoint" });
-    }
-
-    const companyProfile = await storage.getCompanyProfileByUserId(user.id);
-    if (!companyProfile) {
-      return res.status(404).json({ message: "Company profile not found" });
-    }
-
-    // Bu metod artıq applications-ları da qaytarır
-    const applicationsData = await storage.getJobApplicationsByCompany(companyProfile.id);
-
-    console.log(`Found ${applicationsData.length} job postings for company ${companyProfile.companyName}`);
-    res.json(applicationsData);
-  } catch (err) {
-    console.error("Error fetching company applications:", err);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
+  });
 
 
 
@@ -3369,29 +3386,29 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
   };
 
   // Create upload middleware for resources
-  const uploadResourceFile = multer({ 
+  const uploadResourceFile = multer({
     storage: resourceFileStorage,
-    limits: { 
+    limits: {
       fileSize: 25 * 1024 * 1024 // 25MB in bytes
     },
     fileFilter: fileFilterResources
   });
-  
+
   // Add file upload endpoint to handle multiple files
   app.post('/api/resources/upload', isAuthenticated, uploadResourceFile.array('files', 5), async (req, res) => {
     try {
       const user = req.user as any;
       const files = req.files as Express.Multer.File[];
-      
+
       if (!files || files.length === 0) {
         return res.status(400).json({ message: 'No files uploaded' });
       }
-      
+
       const resourcePromises = files.map(async (file) => {
         // Extract file extension and determine resource type
         const ext = path.extname(file.originalname).toLowerCase();
         let resourceType = 'document';
-        
+
         // Set resource type based on extension
         if (ext.match(/\.(pdf)$/)) {
           resourceType = 'PDF Document';
@@ -3408,7 +3425,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
         } else if (ext.match(/\.(zip)$/)) {
           resourceType = 'Archive';
         }
-        
+
         // Create a new resource for each file
         const resource = await storage.createResource({
           title: file.originalname,
@@ -3421,15 +3438,15 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
           imageUrl: null,
           featured: false
         });
-        
+
         return resource;
       });
-      
+
       const createdResources = await Promise.all(resourcePromises);
       res.status(201).json(createdResources);
     } catch (error) {
       console.error('Error uploading files:', error);
-      res.status(500).json({ 
+      res.status(500).json({
         message: 'Error uploading files',
         error: error instanceof Error ? error.message : 'Unknown error'
       });
@@ -3442,21 +3459,21 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
 
       // Prepare resource data from body
       let resourceData = { ...req.body, authorId: user.id };
-      
+
       if (resourceData.categoryId) {
-  resourceData.categoryId = parseInt(resourceData.categoryId);
-}
+        resourceData.categoryId = parseInt(resourceData.categoryId);
+      }
       // Add file path if uploaded
       if (req.file) {
         // Store the file path relative to the uploads directory
         resourceData.filePath = req.file.path;
-        
+
         // If no content URL was provided but we have a file, set the content URL to access the file
         if (!resourceData.contentUrl || resourceData.contentUrl === '') {
           resourceData.contentUrl = `/api/resources/download/${path.basename(req.file.path)}`;
         }
       }
-      
+
       // Validate with schema
       resourceData = insertResourceSchema.parse(resourceData);
 
@@ -3481,7 +3498,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
   });
 
   // Removed duplicate endpoint - another GET /api/resources endpoint exists below
-  
+
   // Resource Categories endpoints
   app.get("/api/resource-categories", async (req, res) => {
     try {
@@ -3492,7 +3509,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Internal server error" });
     }
   });
-  
+
   // Admin API Routes
   app.get("/api/admin/users", isAdmin, async (req, res) => {
     try {
@@ -3512,45 +3529,45 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
         subscriptionTier: null,
         subscriptionStatus: null
       }));
-      
+
       res.json(allUsers);
     } catch (err) {
       console.error("Error fetching users:", err);
       res.status(500).json({ message: "Error fetching users" });
     }
   });
-  
+
   app.put("/api/admin/users/:id", isAdmin, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
       const userData = req.body;
-      
+
       const updatedUser = await storage.updateUser(userId, userData);
       if (!updatedUser) {
         return res.status(404).json({ message: "User not found" });
       }
-      
+
       res.json(updatedUser);
     } catch (err) {
       console.error("Error updating user:", err);
       res.status(500).json({ message: "Error updating user" });
     }
   });
-  
+
   // Delete user with cascade option - will delete all associated profiles first
   app.delete("/api/admin/users/:id/cascade", isAdmin, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
-      
+
       if (isNaN(userId)) {
         return res.status(400).json({ message: "Invalid user ID" });
       }
-      
+
       const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      
+
       // Check for professional profile
       if (user.userType === "professional") {
         const profProfile = await storage.getProfessionalProfileByUserId(userId);
@@ -3560,18 +3577,18 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
           for (const exp of expertise) {
             await storage.deleteProfessionalExpertise(exp.id);
           }
-          
+
           // Delete certifications
           const certifications = await storage.getProfessionalCertifications(profProfile.id);
           for (const cert of certifications) {
             await storage.deleteCertification(cert.id);
           }
-          
+
           // Now delete the profile
           await storage.deleteProfessionalProfile(profProfile.id);
         }
       }
-      
+
       // Check for company profile
       if (user.userType === "company") {
         const companyProfile = await storage.getCompanyProfileByUserId(userId);
@@ -3586,32 +3603,32 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
             }
             await storage.deleteJobPosting(job.id);
           }
-          
+
           // Now delete the company profile
           await storage.deleteCompanyProfile(companyProfile.id);
         }
       }
-      
+
       // Delete resources created by this user
       const resources = await storage.getResourcesByAuthor(userId);
       for (const resource of resources) {
         await storage.deleteResource(resource.id);
       }
-      
+
       // Delete the user itself
       const deleted = await storage.deleteUser(userId);
-      
+
       if (deleted) {
-        return res.json({ 
-          success: true, 
-          message: "User and all associated records deleted successfully" 
+        return res.json({
+          success: true,
+          message: "User and all associated records deleted successfully"
         });
       } else {
         return res.status(500).json({ message: "Failed to delete user" });
       }
     } catch (error) {
       console.error("Cascade delete user error:", error);
-      return res.status(500).json({ 
+      return res.status(500).json({
         message: error instanceof Error ? error.message : "Failed to cascade delete user"
       });
     }
@@ -3620,20 +3637,20 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
   app.delete("/api/admin/users/:id", isAdmin, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
-      
+
       if (isNaN(userId)) {
         return res.status(400).json({ message: "Invalid user ID" });
       }
-      
+
       const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      
+
       try {
         // Delete the user using our method
         const deleted = await storage.deleteUser(userId);
-        
+
         if (deleted) {
           return res.json({ success: true, message: "User deleted successfully" });
         } else {
@@ -3642,20 +3659,20 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       } catch (deleteError: any) {
         // Handle specific error from our deleteUser method
         console.log("Delete user operation error:", deleteError.message);
-        
+
         // Return a more detailed error message based on the specific error
         if (deleteError.message.includes("company profiles")) {
-          return res.status(409).json({ 
+          return res.status(409).json({
             message: "Cannot delete user with associated company profiles",
             details: deleteError.message
           });
         } else if (deleteError.message.includes("professional profiles")) {
-          return res.status(409).json({ 
+          return res.status(409).json({
             message: "Cannot delete user with associated professional profiles",
             details: deleteError.message
           });
         } else {
-          return res.status(409).json({ 
+          return res.status(409).json({
             message: "Cannot delete user with associated records",
             details: deleteError.message
           });
@@ -3666,7 +3683,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       return res.status(500).json({ message: "Error deleting user" });
     }
   });
-  
+
   app.get("/api/admin/professional-profiles", isAdmin, async (req, res) => {
     try {
       const profiles = await storage.getAllProfessionalProfiles();
@@ -3676,33 +3693,33 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Error fetching professional profiles" });
     }
   });
-  
+
   app.post("/api/admin/professional-profiles", isAdmin, async (req, res) => {
     try {
       const { userId, ...profileData } = req.body;
-      
+
       if (!userId) {
         return res.status(400).json({ message: "User ID is required" });
       }
-      
+
       // Check if user exists and is a professional
       const user = await storage.getUser(userId);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
-      
+
       // Check if professional profile already exists for this user
       const existingProfile = await storage.getProfessionalProfileByUserId(userId);
       if (existingProfile) {
         return res.status(400).json({ message: "User already has a professional profile" });
       }
-      
+
       // Create new profile
       const newProfile = await storage.createProfessionalProfile({
         userId,
         ...profileData
       });
-      
+
       res.status(201).json(newProfile);
     } catch (err) {
       console.error("Error creating professional profile:", err);
@@ -3713,19 +3730,19 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
   app.delete("/api/admin/professional-profiles/:id", isAdmin, async (req, res) => {
     try {
       const profileId = parseInt(req.params.id);
-      
+
       if (isNaN(profileId)) {
         return res.status(400).json({ message: "Invalid profile ID" });
       }
-      
+
       const profile = await storage.getProfessionalProfile(profileId);
       if (!profile) {
         return res.status(404).json({ message: "Professional profile not found" });
       }
-      
+
       // Delete the profile using our new method
       const deleted = await storage.deleteProfessionalProfile(profileId);
-      
+
       if (deleted) {
         res.json({ success: true, message: "Professional profile deleted successfully" });
       } else {
@@ -3736,17 +3753,17 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Error deleting professional profile" });
     }
   });
-  
+
   app.put("/api/admin/professional-profiles/:id/featured", isAdmin, async (req, res) => {
     try {
       const profileId = parseInt(req.params.id);
       const { featured } = req.body;
-      
+
       const profile = await storage.getProfessionalProfile(profileId);
       if (!profile) {
         return res.status(404).json({ message: "Profile not found" });
       }
-      
+
       const updatedProfile = await storage.updateProfessionalProfile(profileId, { featured });
       res.json(updatedProfile);
     } catch (err) {
@@ -3754,21 +3771,21 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Error updating profile featured status" });
     }
   });
-  
+
   app.patch("/api/admin/professional-profiles/:id/verify", isAdmin, async (req, res) => {
     try {
       const profileId = parseInt(req.params.id);
       const { verified } = req.body;
-      
+
       if (isNaN(profileId)) {
         return res.status(400).json({ message: "Invalid profile ID" });
       }
-      
+
       const profile = await storage.getProfessionalProfile(profileId);
       if (!profile) {
         return res.status(404).json({ message: "Professional profile not found" });
       }
-      
+
       const updatedProfile = await storage.updateProfessionalProfile(profileId, { verified });
       res.json(updatedProfile);
     } catch (err) {
@@ -3776,7 +3793,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Error updating profile verification status" });
     }
   });
-  
+
   app.get("/api/admin/company-profiles", isAdmin, async (req, res) => {
     try {
       const profiles = await storage.getAllCompanyProfiles();
@@ -3786,21 +3803,21 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Error fetching company profiles" });
     }
   });
-  
+
   app.patch("/api/admin/company-profiles/:id/verify", isAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { verified } = req.body;
-      
+
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid company profile ID" });
       }
-      
+
       const profile = await storage.getCompanyProfile(id);
       if (!profile) {
         return res.status(404).json({ message: "Company profile not found" });
       }
-      
+
       const updatedProfile = await storage.updateCompanyProfile(id, { verified });
       res.json(updatedProfile);
     } catch (err) {
@@ -3808,21 +3825,21 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Error updating company verification status" });
     }
   });
-  
+
   app.patch("/api/admin/company-profiles/:id/featured", isAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { featured } = req.body;
-      
+
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid company profile ID" });
       }
-      
+
       const profile = await storage.getCompanyProfile(id);
       if (!profile) {
         return res.status(404).json({ message: "Company profile not found" });
       }
-      
+
       const updatedProfile = await storage.updateCompanyProfile(id, { featured });
       res.json(updatedProfile);
     } catch (err) {
@@ -3830,7 +3847,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Error updating company featured status" });
     }
   });
-  
+
   app.get("/api/admin/job-postings", isAdmin, async (req, res) => {
     try {
       const jobs = await storage.getAllJobPostings();
@@ -3840,17 +3857,17 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Error fetching job postings" });
     }
   });
-  
+
   app.put("/api/admin/job-postings/:id/featured", isAdmin, async (req, res) => {
     try {
       const jobId = parseInt(req.params.id);
       const { featured } = req.body;
-      
+
       const job = await storage.getJobPosting(jobId);
       if (!job) {
         return res.status(404).json({ message: "Job not found" });
       }
-      
+
       const updatedJob = await storage.updateJobPosting(jobId, { featured });
       res.json(updatedJob);
     } catch (err) {
@@ -3858,17 +3875,17 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Error updating job featured status" });
     }
   });
-  
+
   app.put("/api/admin/job-postings/:id/status", isAdmin, async (req, res) => {
     try {
       const jobId = parseInt(req.params.id);
       const { status } = req.body;
-      
+
       const job = await storage.getJobPosting(jobId);
       if (!job) {
         return res.status(404).json({ message: "Job not found" });
       }
-      
+
       const updatedJob = await storage.updateJobPosting(jobId, { status });
       res.json(updatedJob);
     } catch (err) {
@@ -3876,23 +3893,23 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Error updating job status" });
     }
   });
-  
+
   app.delete("/api/admin/job-postings/:id", isAdmin, async (req, res) => {
     try {
       const jobId = parseInt(req.params.id);
       const success = await storage.deleteJobPosting(jobId);
-      
+
       if (!success) {
         return res.status(404).json({ message: "Job not found" });
       }
-      
+
       res.json({ success: true, message: "Job deleted successfully" });
     } catch (err) {
       console.error("Error deleting job:", err);
       res.status(500).json({ message: "Error deleting job" });
     }
   });
-  
+
   app.get("/api/admin/resources", isAdmin, async (req, res) => {
     try {
       const resources = await storage.getAllResources();
@@ -3902,17 +3919,17 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Error fetching resources" });
     }
   });
-  
+
   app.put("/api/admin/resources/:id/featured", isAdmin, async (req, res) => {
     try {
       const resourceId = parseInt(req.params.id);
       const { featured } = req.body;
-      
+
       const resource = await storage.getResource(resourceId);
       if (!resource) {
         return res.status(404).json({ message: "Resource not found" });
       }
-      
+
       try {
         const updatedResource = await storage.setResourceFeatured(resourceId, featured);
         res.json(updatedResource);
@@ -3927,18 +3944,18 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Error updating resource featured status" });
     }
   });
-  
+
   // Add general resource update endpoint for admin dashboard
   app.put("/api/admin/resources/:id", isAdmin, async (req, res) => {
     try {
       const resourceId = parseInt(req.params.id);
       const resourceData = req.body;
-      
+
       const resource = await storage.getResource(resourceId);
       if (!resource) {
         return res.status(404).json({ message: "Resource not found" });
       }
-      
+
       const updatedResource = await storage.updateResource(resourceId, resourceData);
       res.json(updatedResource);
     } catch (err) {
@@ -3946,12 +3963,12 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Error updating resource" });
     }
   });
-  
+
   app.delete("/api/admin/resources/:id", isAdmin, async (req, res) => {
     try {
       const resourceId = parseInt(req.params.id);
       const success = await storage.deleteResource(resourceId);
-      
+
       if (success) {
         res.json({ success: true, message: "Resource deleted successfully" });
       } else {
@@ -3962,12 +3979,12 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Error deleting resource" });
     }
   });
-  
+
   app.post("/api/admin/resource-categories", isAdmin, async (req, res) => {
     try {
       const categoryData = insertResourceCategorySchema.parse(req.body);
       const category = await storage.createResourceCategory(categoryData);
-      
+
       res.status(201).json(category);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -3977,7 +3994,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Error creating resource category" });
     }
   });
-  
+
   app.get("/api/admin/expertise", isAdmin, async (req, res) => {
     try {
       const expertiseList = await storage.getAllExpertise();
@@ -3987,12 +4004,12 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Error fetching expertise" });
     }
   });
-  
+
   app.post("/api/admin/expertise", isAdmin, async (req, res) => {
     try {
       const expertiseData = insertExpertiseSchema.parse(req.body);
       const expertise = await storage.createExpertise(expertiseData);
-      
+
       res.status(201).json(expertise);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -4002,35 +4019,35 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Error creating expertise" });
     }
   });
-  
+
   app.put("/api/admin/expertise/:id", isAdmin, async (req, res) => {
     try {
       const expertiseId = parseInt(req.params.id);
       const { name } = req.body;
-      
+
       // This is a placeholder since our storage interface doesn't have updateExpertise method
       // In a real implementation, you would add this method to the storage interface
-      
+
       res.json({ id: expertiseId, name });
     } catch (err) {
       console.error("Error updating expertise:", err);
       res.status(500).json({ message: "Error updating expertise" });
     }
   });
-  
+
   app.delete("/api/admin/expertise/:id", isAdmin, async (req, res) => {
     try {
       const expertiseId = parseInt(req.params.id);
       // This is a placeholder since our storage interface doesn't have deleteExpertise method
       // In a real implementation, you would add this method to the storage interface
-      
+
       res.json({ success: true, message: "Expertise deleted successfully" });
     } catch (err) {
       console.error("Error deleting expertise:", err);
       res.status(500).json({ message: "Error deleting expertise" });
     }
   });
-  
+
   app.get("/api/admin/forum-posts", isAdmin, async (req, res) => {
     try {
       const posts = await storage.getAllForumPosts();
@@ -4040,20 +4057,20 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Error fetching forum posts" });
     }
   });
-  
+
   app.delete("/api/admin/forum-posts/:id", isAdmin, async (req, res) => {
     try {
       const postId = parseInt(req.params.id);
       // This is a placeholder since our storage interface doesn't have deleteForumPost method
       // In a real implementation, you would add this method to the storage interface
-      
+
       res.json({ success: true, message: "Forum post deleted successfully" });
     } catch (err) {
       console.error("Error deleting forum post:", err);
       res.status(500).json({ message: "Error deleting forum post" });
     }
   });
-  
+
   app.get("/api/resource-categories", async (req, res) => {
     try {
       const categories = await storage.getAllResourceCategories();
@@ -4068,27 +4085,27 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const category = await storage.getResourceCategory(id);
-      
+
       if (!category) {
         return res.status(404).json({ message: "Resource category not found" });
       }
-      
+
       res.json(category);
     } catch (err) {
       console.error("Error fetching resource category:", err);
       res.status(500).json({ message: "Internal server error" });
     }
   });
-  
+
   app.get("/api/resource-categories/:id/resources", async (req, res) => {
     try {
       const categoryId = parseInt(req.params.id);
       const category = await storage.getResourceCategory(categoryId);
-      
+
       if (!category) {
         return res.status(404).json({ message: "Resource category not found" });
       }
-      
+
       const resources = await storage.getResourcesByCategory(categoryId);
       res.json(resources);
     } catch (err) {
@@ -4096,19 +4113,19 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Internal server error" });
     }
   });
-  
+
   app.post("/api/resource-categories", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       // Only allow admins to create categories
       if (user.userType !== "admin") {
         return res.status(403).json({ message: "Only administrators can create resource categories" });
       }
-      
+
       const categoryData = insertResourceCategorySchema.parse(req.body);
       const category = await storage.createResourceCategory(categoryData);
-      
+
       res.status(201).json(category);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -4125,7 +4142,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       const query = req.query.query as string | undefined;
       const type = req.query.type as string | undefined;
       const categoryId = req.query.categoryId ? parseInt(req.query.categoryId as string) : undefined;
-      
+
       // Use the searchResources method which can handle all filtering criteria
       const resources = await storage.searchResources(query, type, categoryId);
       res.json(resources);
@@ -4142,18 +4159,18 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       const type = req.query.type as string | undefined;
       const categoryIdParam = req.query.categoryId as string | undefined;
       const categoryId = categoryIdParam ? parseInt(categoryIdParam) : undefined;
-      
-      
+
+
       // Use the searchResources method which can handle all filtering criteria
       const resources = await storage.searchResources(query, type, categoryId);
-      
+
       res.json(resources);
     } catch (err) {
       console.error("Error searching resources:", err);
       res.status(500).json({ message: "Error searching resources" });
     }
   });
-  
+
   app.get("/api/resources/featured", async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 3;
@@ -4178,12 +4195,12 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
 
   app.get("/api/resources/:id", async (req, res) => {
     const id = parseInt(req.params.id);
-    
+
     // Add NaN check
     if (isNaN(id)) {
       return res.status(400).json({ message: "Invalid resource ID format" });
     }
-    
+
     const resource = await storage.getResource(id);
 
     if (!resource) {
@@ -4221,43 +4238,43 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Error updating resource" });
     }
   });
-  
+
   // Get current user's resources
   app.get("/api/me/resources", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       // Find all resources authored by the current user
       const resources = await storage.getAllResources();
       const userResources = resources.filter(resource => resource.authorId === user.id);
-      
+
       res.json(userResources);
     } catch (error) {
       console.error("Error fetching user resources:", error);
       res.status(500).json({ message: "Error fetching resources" });
     }
   });
-  
+
   // Remove a resource (if owned by the user)
   app.delete("/api/resources/:id", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
       const resourceId = parseInt(req.params.id);
-      
+
       // Get the resource to check ownership
       const resource = await storage.getResource(resourceId);
-      
+
       if (!resource) {
         return res.status(404).json({ message: "Resource not found" });
       }
-      
+
       // Make sure user owns the resource or is an admin
       if (resource.authorId !== user.id && user.userType !== "admin") {
         return res.status(403).json({ message: "You can only delete your own resources" });
       }
-      
+
       const success = await storage.deleteResource(resourceId);
-      
+
       if (success) {
         res.json({ success: true, message: "Resource deleted successfully" });
       } else {
@@ -4268,29 +4285,29 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Error deleting resource" });
     }
   });
-  
+
   // Resource file download endpoint
   app.get("/api/resources/download/:filename", async (req, res) => {
     try {
       const { filename } = req.params;
-      
+
       // Security check to prevent directory traversal
       if (filename.includes('..') || filename.includes('/')) {
         return res.status(400).json({ message: "Invalid filename" });
       }
-      
+
       // Construct file path (ensure it's relative to uploads/resources directory)
       const filePath = path.join('uploads/resources', filename);
-      
+
       // Check if file exists
       if (!fs.existsSync(filePath)) {
         return res.status(404).json({ message: "File not found" });
       }
-      
+
       // Get content type based on file extension
       const ext = path.extname(filename).toLowerCase();
       let contentType = 'application/octet-stream'; // Default binary
-      
+
       // Set content type based on extension
       switch (ext) {
         case '.pdf':
@@ -4325,11 +4342,11 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
           contentType = 'text/plain';
           break;
       }
-      
+
       // Set headers for file download
       res.setHeader('Content-Type', contentType);
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      
+
       // Stream file to response
       const fileStream = fs.createReadStream(filePath);
       fileStream.pipe(res);
@@ -4338,32 +4355,32 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       res.status(500).json({ message: "Error downloading file" });
     }
   });
-  
+
   // Related resources by type endpoint
   app.get("/api/resources/related/:type/:excludeId?", async (req, res) => {
     try {
       const { type, excludeId } = req.params;
-      
+
       // Check if type is valid
       if (!type || type === 'undefined' || type === 'null') {
         return res.status(400).json({ message: "Invalid resource type" });
       }
-      
+
       // Parse exclude ID if provided
       let exclude: number | undefined = undefined;
       if (excludeId && excludeId !== 'undefined') {
         const parsedId = parseInt(excludeId);
         exclude = !isNaN(parsedId) ? parsedId : undefined;
       }
-      
+
       // Get all resources of this type
       const resources = await storage.searchResources(undefined, type);
-      
+
       // Filter out the excluded resource
-      const relatedResources = exclude 
+      const relatedResources = exclude
         ? resources.filter(resource => resource.id !== exclude)
         : resources;
-      
+
       // Return a maximum of 3 related resources
       res.json(relatedResources.slice(0, 3));
     } catch (err) {
@@ -4378,18 +4395,18 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       const id = parseInt(req.params.id);
       const user = req.user as any;
       const { featured } = req.body;
-      
+
       // Get resource to verify it exists
       const resource = await storage.getResource(id);
       if (!resource) {
         return res.status(404).json({ message: "Resource not found" });
       }
-      
+
       // Check if the user is the author of the resource
       if (resource.authorId !== user.id) {
         return res.status(403).json({ message: "You can only feature your own resources" });
       }
-      
+
       // Update the featured flag
       const updatedResource = await storage.updateResource(id, { featured });
       res.json(updatedResource);
@@ -4405,28 +4422,28 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const user = req.user as any;
-      
+
       // Get resource to verify it exists
       const resource = await storage.getResource(id);
       if (!resource) {
         return res.status(404).json({ message: "Resource not found" });
       }
-      
+
       // Check if the user is the author of the resource
       if (resource.authorId !== user.id) {
         return res.status(403).json({ message: "You can only update your own resources" });
       }
-      
+
       // Only allow updating certain fields
       const allowedFields = ["title", "description", "content", "resourceType", "imageUrl", "categoryId"];
       const updateData: Partial<Resource> = {};
-      
+
       for (const field of allowedFields) {
         if (req.body[field] !== undefined) {
           updateData[field as keyof Partial<Resource>] = req.body[field];
         }
       }
-      
+
       // Update the resource
       const updatedResource = await storage.updateResource(id, updateData);
       res.json(updatedResource);
@@ -4465,12 +4482,12 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
 
   app.get("/api/forum-posts/:id", async (req, res) => {
     const id = parseInt(req.params.id);
-    
+
     // Add NaN check
     if (isNaN(id)) {
       return res.status(400).json({ message: "Invalid post ID format" });
     }
-    
+
     const post = await storage.getForumPost(id);
 
     if (!post) {
@@ -4517,19 +4534,19 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
   app.post("/api/newsletter/subscribe", bypassCSRF, async (req, res) => {
     try {
       const { email } = req.body;
-      
+
       if (!email || !email.includes('@')) {
         return res.status(400).json({ message: "Valid email address required" });
       }
 
       // Log the subscription (in a real implementation, this would save to database or send to email service)
       console.log(`Newsletter subscription: ${email}`);
-      
+
       // For now, we'll just return success. In production, this would integrate with an email service like SendGrid
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         message: "Successfully subscribed to newsletter",
-        email: email 
+        email: email
       });
     } catch (error) {
       console.error("Newsletter subscription error:", error);
@@ -4543,7 +4560,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       // For development testing, allow unauthenticated access
       if (!req.isAuthenticated()) {
         console.log("DEV MODE: Allowing unauthenticated /api/messages access for testing");
-        
+
         // Return sample messages for testing
         const testMessages = await storage.getUserMessages(5); // Using sample user ID 5
         return res.json(testMessages || []);
@@ -4631,7 +4648,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       // Since MemStorage doesn't have getMessage, retrieve all messages for this user
       const userMessages = await storage.getUserMessages(user.id);
       const message = userMessages.find(msg => msg.id === id);
-      
+
       if (!message) {
         return res.status(404).json({ message: "Message not found" });
       }
@@ -4700,7 +4717,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
       let professionalProfile;
-      
+
       // Special case for "me" endpoint
       if (req.params.id === "me") {
         professionalProfile = await storage.getProfessionalProfileByUserId(user.id);
@@ -4711,7 +4728,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
         // Regular case with profile ID
         const professionalId = parseInt(req.params.id);
         professionalProfile = await storage.getProfessionalProfile(professionalId);
-        
+
         // Check if user is the professional
         if (!professionalProfile || professionalProfile.userId !== user.id) {
           return res.status(403).json({ message: "You can only view your own consultations" });
@@ -4730,7 +4747,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
       let companyProfile;
-      
+
       // Special case for "me" endpoint
       if (req.params.id === "me") {
         companyProfile = await storage.getCompanyProfileByUserId(user.id);
@@ -4741,7 +4758,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
         // Regular case with profile ID
         const companyId = parseInt(req.params.id);
         companyProfile = await storage.getCompanyProfile(companyId);
-        
+
         // Check if user is the company
         if (!companyProfile || companyProfile.userId !== user.id) {
           return res.status(403).json({ message: "You can only view your own consultations" });
@@ -4806,37 +4823,37 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
         try {
           // Check if we have the OpenAI API key
           if (!process.env.OPENAI_API_KEY) {
-            return res.status(503).json({ 
-              message: "Skill recommendations service is currently unavailable" 
+            return res.status(503).json({
+              message: "Skill recommendations service is currently unavailable"
             });
           }
 
           // Import the skill recommendations generator
           const { generateSkillRecommendations } = await import('./skill-recommendations');
-          
+
           // Get professional's expertise
           const expertise = await storage.getProfessionalExpertise(professionalId);
-          
+
           // Generate recommendations using OpenAI
           const generatedRecommendations = await generateSkillRecommendations(profile, expertise);
-          
+
           // Save recommendations to database
           if (generatedRecommendations) {
             // Import the schema first
             const { insertSkillRecommendationSchema } = await import("@shared/schema");
-            
+
             const recommendationData = insertSkillRecommendationSchema.parse({
               professionalId,
               recommendations: JSON.stringify(generatedRecommendations)
             });
-            
+
             recommendations = await storage.createSkillRecommendation(recommendationData);
           }
         } catch (error: any) {
           console.error("Error generating skill recommendations:", error);
-          return res.status(500).json({ 
-            message: "Failed to generate skill recommendations", 
-            error: error.message 
+          return res.status(500).json({
+            message: "Failed to generate skill recommendations",
+            error: error.message
           });
         }
       }
@@ -4866,20 +4883,20 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
 
       // Check if we have the OpenAI API key
       if (!process.env.OPENAI_API_KEY) {
-        return res.status(503).json({ 
-          message: "Skill recommendations service is currently unavailable" 
+        return res.status(503).json({
+          message: "Skill recommendations service is currently unavailable"
         });
       }
 
       // Import the skill recommendations generator
       const { generateSkillRecommendations } = await import('./skill-recommendations');
-      
+
       // Get professional's expertise
       const expertise = await storage.getProfessionalExpertise(professionalId);
-      
+
       // Generate new recommendations using OpenAI
       const generatedRecommendations = await generateSkillRecommendations(profile, expertise);
-      
+
       if (!generatedRecommendations) {
         return res.status(500).json({ message: "Failed to generate recommendations" });
       }
@@ -4891,19 +4908,19 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       if (existingRecs) {
         // Update existing recommendations
         recommendations = await storage.updateSkillRecommendation(
-          existingRecs.id, 
+          existingRecs.id,
           { recommendations: JSON.stringify(generatedRecommendations) }
         );
       } else {
         // Create new recommendations
         // Import the schema first
         const { insertSkillRecommendationSchema } = await import("@shared/schema");
-        
+
         const recommendationData = insertSkillRecommendationSchema.parse({
           professionalId,
           recommendations: JSON.stringify(generatedRecommendations)
         });
-        
+
         recommendations = await storage.createSkillRecommendation(recommendationData);
       }
 
@@ -4918,31 +4935,31 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
   app.get("/api/career-recommendations", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       // Only professionals can get career recommendations
       if (user.userType !== "professional") {
         return res.status(403).json({ message: "Only professionals can access career recommendations" });
       }
-      
+
       // Get the professional profile
       const profile = await storage.getProfessionalProfileByUserId(user.id);
       if (!profile) {
         return res.status(404).json({ message: "Professional profile not found" });
       }
-      
+
       // Get professional's expertise
       const expertise = await storage.getProfessionalExpertise(profile.id);
-      
+
       // Check if we have the OpenAI API key
       if (!process.env.OPENAI_API_KEY) {
-        return res.status(503).json({ 
-          message: "Career recommendations service is currently unavailable" 
+        return res.status(503).json({
+          message: "Career recommendations service is currently unavailable"
         });
       }
-      
+
       // Generate career recommendations
       const recommendations = await generateCareerRecommendations(profile, expertise);
-      
+
       res.json(recommendations);
     } catch (err) {
       console.error("Error generating career recommendations:", err);
@@ -4953,10 +4970,10 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
   // Create HTTP server here
   // Register escrow payment routes
   registerEscrowRoutes(app);
-  
+
   // Register subscription payment routes
   registerSubscriptionRoutes(app);
-  
+
   // Initialize subscription plans
   await subscriptionService.initializeSubscriptionPlans();
 
@@ -4969,16 +4986,16 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       if (isNaN(professionalId)) {
         return res.status(400).json({ message: "Invalid professional ID" });
       }
-      
+
       // Get the professional profile
       const profile = await storage.getProfessionalProfile(professionalId);
       if (!profile) {
         return res.status(404).json({ message: "Professional profile not found" });
       }
-      
+
       // Get resources by the user ID associated with the professional profile
       const resources = await storage.getResourcesByAuthor(profile.userId);
-      
+
       // Return empty array instead of null to prevent JSON parsing errors
       return res.json(resources || []);
     } catch (err) {
@@ -5025,7 +5042,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
     try {
       const slug = req.params.slug;
       const pageContent = await storage.getPageContentBySlug(slug);
-      
+
       if (!pageContent) {
         return res.status(404).json({ message: "Page content not found" });
       }
@@ -5041,7 +5058,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
   app.post("/api/page-contents", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const { slug, title, content } = req.body;
-      
+
       if (!slug || !title || !content) {
         return res.status(400).json({ message: "Slug, title, and content are required" });
       }
@@ -5075,7 +5092,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       }
 
       const { title, content, slug } = req.body;
-      
+
       // Check if the page content exists
       const pageContent = await storage.getPageContent(id);
       if (!pageContent) {
@@ -5110,9 +5127,9 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       // req.user is guaranteed to exist because of isAuthenticated middleware
       const userId = req.user?.id || 0; // Add fallback for TypeScript
       const id = parseInt(req.params.id);
-      
+
       console.log(`User ${userId} attempting to delete page content with ID: ${id}`);
-      
+
       if (isNaN(id)) {
         console.log(`Invalid page content ID: ${req.params.id}`);
         return res.status(400).json({ message: "Invalid page content ID" });
@@ -5121,26 +5138,26 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       // First check if the content exists
       console.log(`Checking if page content with ID ${id} exists`);
       const content = await storage.getPageContent(id);
-      
+
       if (!content) {
         console.log(`Page content with ID ${id} not found during pre-delete check`);
         return res.status(404).json({ message: "Page content not found" });
       }
-      
+
       console.log(`Found page content: "${content.title}" (ID: ${id}). Proceeding with deletion.`);
-      
+
       // Perform the actual deletion
       console.log(`Calling storage.deletePageContent(${id})`);
       const success = await storage.deletePageContent(id);
-      
+
       console.log(`Delete operation result for ID ${id}: ${success ? 'Success' : 'Failed'}`);
-      
+
       if (success) {
         // Return 200 with success message instead of 204 empty response for better client handling
         res.status(200).json({ message: "Page content deleted successfully" });
       } else {
         console.log(`Failed to delete page content with ID ${id} (storage returned false)`);
-        res.status(404).json({ 
+        res.status(404).json({
           message: "Page content not found or could not be deleted",
           id: id
         });
@@ -5149,10 +5166,10 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       // Enhanced error logging
       console.error("Error deleting page content:", err);
       console.error(err instanceof Error ? err.stack : String(err));
-      
+
       // More detailed error response for client
-      res.status(500).json({ 
-        message: "Internal server error when deleting page content", 
+      res.status(500).json({
+        message: "Internal server error when deleting page content",
         error: err instanceof Error ? err.message : String(err),
         id: req.params.id // Include the ID for debugging
       });
@@ -5164,40 +5181,40 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const review = await storage.getReview(id);
-      
+
       if (!review) {
         return res.status(404).json({ message: "Review not found" });
       }
-      
+
       // If not authenticated, only return public reviews
       if (!req.isAuthenticated() && !review.isPublic) {
         return res.status(403).json({ message: "Forbidden" });
       }
-      
+
       // If authenticated, check if user has permission to view this private review
       if (!review.isPublic && req.isAuthenticated()) {
         const user = req.user as any;
-        
+
         if (!user.isAdmin) {
-          const userProfile = user.userType === "professional" 
+          const userProfile = user.userType === "professional"
             ? await storage.getProfessionalProfileByUserId(user.id)
             : await storage.getCompanyProfileByUserId(user.id);
-          
+
           if (!userProfile) {
             return res.status(403).json({ message: "Forbidden" });
           }
-          
+
           // Check if review belongs to the user
-          const isAuthorized = 
+          const isAuthorized =
             (user.userType === "professional" && userProfile.id === review.professionalId) ||
             (user.userType === "company" && userProfile.id === review.companyId);
-          
+
           if (!isAuthorized) {
             return res.status(403).json({ message: "Forbidden" });
           }
         }
       }
-      
+
       res.json(review);
     } catch (err) {
       console.error("Error fetching review:", err);
@@ -5208,24 +5225,24 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
   app.get("/api/professionals/:id/reviews", async (req, res) => {
     try {
       const professionalId = parseInt(req.params.id);
-      
+
       // If user is not authenticated, only return public reviews
       let reviews = await storage.getProfessionalReviews(professionalId);
-      
+
       if (!req.isAuthenticated()) {
         reviews = reviews.filter(review => review.isPublic);
       } else {
         // If authenticated, include private reviews that belong to the user
         const user = req.user as any;
-        
+
         if (!user.isAdmin) {
-          const userProfile = user.userType === "company" 
+          const userProfile = user.userType === "company"
             ? await storage.getCompanyProfileByUserId(user.id)
             : null;
-          
+
           if (user.userType === "professional") {
             const professionalProfile = await storage.getProfessionalProfileByUserId(user.id);
-            
+
             if (professionalProfile && professionalProfile.id === professionalId) {
               // Show all reviews for this professional
             } else {
@@ -5234,7 +5251,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
             }
           } else if (userProfile) {
             // Show public reviews plus own private reviews
-            reviews = reviews.filter(review => 
+            reviews = reviews.filter(review =>
               review.isPublic || review.companyId === userProfile.id
             );
           } else {
@@ -5243,7 +5260,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
           }
         }
       }
-      
+
       res.json(reviews);
     } catch (err) {
       console.error("Error fetching professional reviews:", err);
@@ -5254,24 +5271,24 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
   app.get("/api/companies/:id/reviews", async (req, res) => {
     try {
       const companyId = parseInt(req.params.id);
-      
+
       // If user is not authenticated, only return public reviews
       let reviews = await storage.getCompanyReviews(companyId);
-      
+
       if (!req.isAuthenticated()) {
         reviews = reviews.filter(review => review.isPublic);
       } else {
         // If authenticated, include private reviews that belong to the user
         const user = req.user as any;
-        
+
         if (!user.isAdmin) {
-          const userProfile = user.userType === "professional" 
+          const userProfile = user.userType === "professional"
             ? await storage.getProfessionalProfileByUserId(user.id)
             : null;
-          
+
           if (user.userType === "company") {
             const companyProfile = await storage.getCompanyProfileByUserId(user.id);
-            
+
             if (companyProfile && companyProfile.id === companyId) {
               // Show all reviews for this company
             } else {
@@ -5280,7 +5297,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
             }
           } else if (userProfile) {
             // Show public reviews plus own private reviews
-            reviews = reviews.filter(review => 
+            reviews = reviews.filter(review =>
               review.isPublic || review.professionalId === userProfile.id
             );
           } else {
@@ -5289,7 +5306,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
           }
         }
       }
-      
+
       res.json(reviews);
     } catch (err) {
       console.error("Error fetching company reviews:", err);
@@ -5301,35 +5318,35 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
     try {
       const consultationId = parseInt(req.params.id);
       const consultation = await storage.getConsultation(consultationId);
-      
+
       if (!consultation) {
         return res.status(404).json({ message: "Consultation not found" });
       }
-      
+
       // Check if user is either the professional or the company
       const user = req.user as any;
-      const userProfile = user.userType === "professional" 
+      const userProfile = user.userType === "professional"
         ? await storage.getProfessionalProfileByUserId(user.id)
         : await storage.getCompanyProfileByUserId(user.id);
-      
+
       if (!userProfile) {
         return res.status(403).json({ message: "Forbidden" });
       }
-      
-      const isAuthorized = 
+
+      const isAuthorized =
         (user.userType === "professional" && userProfile.id === consultation.professionalId) ||
         (user.userType === "company" && userProfile.id === consultation.companyId) ||
         user.isAdmin;
-      
+
       if (!isAuthorized) {
         return res.status(403).json({ message: "Forbidden" });
       }
-      
+
       const review = await storage.getConsultationReview(consultationId);
       if (!review) {
         return res.status(404).json({ message: "Review not found" });
       }
-      
+
       res.json(review);
     } catch (err) {
       console.error("Error fetching consultation review:", err);
@@ -5348,7 +5365,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
         comment: req.body.comment,
         isPublic: req.body.isPublic
       });
-      
+
       // Skip consultation validation for testing purposes
       /*
       // If consultationId is provided, check if it exists and user is authorized
@@ -5371,15 +5388,15 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
         }
       }
       */
-      
+
       const review = await storage.createReview(reviewData);
-      
+
       // Create notification for reviewed user - simplified for testing
       // Get company user ID
       const companyUserID = (await storage.getCompanyProfile(reviewData.companyId))?.userId;
       // Get professional user ID
       const professionalUserID = (await storage.getProfessionalProfile(reviewData.professionalId))?.userId;
-      
+
       // Create notifications for both users involved for testing purposes
       if (companyUserID || professionalUserID) {
         // Get or create notification type
@@ -5390,7 +5407,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
             description: "Notification when you receive a new review"
           });
         }
-        
+
         // Create notifications for both parties for testing
         if (professionalUserID) {
           await storage.createNotification({
@@ -5401,7 +5418,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
             link: `/reviews/${review.id}`
           });
         }
-        
+
         if (companyUserID) {
           await storage.createNotification({
             userId: companyUserID,
@@ -5412,15 +5429,15 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
           });
         }
       }
-      
+
       res.status(201).json(review);
     } catch (err) {
       console.error("Error creating review:", err);
-      
+
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: err.errors });
       }
-      
+
       res.status(500).json({ message: "Server error" });
     }
   });
@@ -5429,34 +5446,34 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const review = await storage.getReview(id);
-      
+
       if (!review) {
         return res.status(404).json({ message: "Review not found" });
       }
-      
+
       // Check if user is the owner of the review
       const user = req.user as any;
-      const userProfile = user.userType === "professional" 
+      const userProfile = user.userType === "professional"
         ? await storage.getProfessionalProfileByUserId(user.id)
         : await storage.getCompanyProfileByUserId(user.id);
-      
-      const isAuthorized = 
+
+      const isAuthorized =
         user.isAdmin ||
-        (userProfile && 
+        (userProfile &&
           ((user.userType === "professional" && userProfile.id === review.professionalId) ||
-           (user.userType === "company" && userProfile.id === review.companyId)));
-      
+            (user.userType === "company" && userProfile.id === review.companyId)));
+
       if (!isAuthorized) {
         return res.status(403).json({ message: "Not authorized to update this review" });
       }
-      
+
       // Only allow updating rating, comment, and isPublic
       const updatedReview = await storage.updateReview(id, {
         rating: req.body.rating,
         comment: req.body.comment,
         isPublic: req.body.isPublic
       });
-      
+
       res.json(updatedReview);
     } catch (err) {
       console.error("Error updating review:", err);
@@ -5468,29 +5485,29 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const review = await storage.getReview(id);
-      
+
       if (!review) {
         return res.status(404).json({ message: "Review not found" });
       }
-      
+
       // Check if user is the owner of the review or admin
       const user = req.user as any;
-      const userProfile = user.userType === "professional" 
+      const userProfile = user.userType === "professional"
         ? await storage.getProfessionalProfileByUserId(user.id)
         : await storage.getCompanyProfileByUserId(user.id);
-      
-      const isAuthorized = 
+
+      const isAuthorized =
         user.isAdmin ||
-        (userProfile && 
+        (userProfile &&
           ((user.userType === "professional" && userProfile.id === review.professionalId) ||
-           (user.userType === "company" && userProfile.id === review.companyId)));
-      
+            (user.userType === "company" && userProfile.id === review.companyId)));
+
       if (!isAuthorized) {
         return res.status(403).json({ message: "Not authorized to delete this review" });
       }
-      
+
       await storage.deleteReview(id);
-      
+
       res.json({ success: true });
     } catch (err) {
       console.error("Error deleting review:", err);
@@ -5504,7 +5521,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       // Modified for testing without authentication
       const userId = parseInt(req.params.userId);
       const notifications = await storage.getUserNotifications(userId);
-      
+
       res.json(notifications);
     } catch (err) {
       console.error("Error fetching notifications:", err);
@@ -5517,7 +5534,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       // Modified for testing without authentication
       const userId = parseInt(req.params.userId);
       const notifications = await storage.getUserUnreadNotifications(userId);
-      
+
       res.json(notifications);
     } catch (err) {
       console.error("Error fetching unread notifications:", err);
@@ -5530,13 +5547,13 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       // Modified for testing without authentication
       const id = parseInt(req.params.id);
       const notification = await storage.getNotification(id);
-      
+
       if (!notification) {
         return res.status(404).json({ message: "Notification not found" });
       }
-      
+
       await storage.markNotificationAsRead(id);
-      
+
       res.json({ success: true });
     } catch (err) {
       console.error("Error marking notification as read:", err);
@@ -5549,7 +5566,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const success = await storage.markAllNotificationsAsRead(userId);
-      
+
       if (success) {
         res.json({ success: true });
       } else {
@@ -5565,7 +5582,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
       await storage.markAllUserNotificationsAsRead(user.id);
-      
+
       res.json({ success: true });
     } catch (err) {
       console.error("Error marking all notifications as read:", err);
@@ -5577,19 +5594,19 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const notification = await storage.getNotification(id);
-      
+
       if (!notification) {
         return res.status(404).json({ message: "Notification not found" });
       }
-      
+
       // Check if notification belongs to user
       const user = req.user as any;
       if (notification.userId !== user.id && !user.isAdmin) {
         return res.status(403).json({ message: "Not authorized to delete this notification" });
       }
-      
+
       await storage.deleteNotification(id);
-      
+
       res.json({ success: true });
     } catch (err) {
       console.error("Error deleting notification:", err);
@@ -5602,7 +5619,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
       const preferences = await storage.getUserNotificationPreferences(user.id);
-      
+
       res.json(preferences);
     } catch (err) {
       console.error("Error fetching notification preferences:", err);
@@ -5613,14 +5630,14 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
   app.post("/api/notification-preferences", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      
+
       const preference = await storage.createOrUpdateNotificationPreference({
         userId: user.id,
         typeId: req.body.typeId,
         email: req.body.email,
         inApp: req.body.inApp
       });
-      
+
       res.json(preference);
     } catch (err) {
       console.error("Error updating notification preference:", err);
@@ -5631,9 +5648,11 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
   // User Settings Endpoints
   app.get("/api/user-settings", isAuthenticated, async (req, res) => {
     try {
+      console.log("Getting user settings");
       const user = req.user as any;
+      console.log(user,"User");
       const settings = await storage.getUserSettings(user.id);
-      
+      console.log(settings,"settings");
       res.json(settings);
     } catch (err) {
       console.error("Error fetching user settings:", err);
@@ -5644,14 +5663,16 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
   app.put("/api/user-settings", isAuthenticated, async (req, res) => {
     try {
       const user = req.user as any;
-      const { notifications, profileVisible, emailUpdates } = req.body;
-      
+      console.log("Updating user settings for user ID:", user);
+      const { notifications, profileVisible,contactVisible, emailUpdates } = req.body;
+
       const settings = await storage.updateUserSettings(user.id, {
         notifications,
         profileVisible,
+        contactVisible,
         emailUpdates
       });
-      
+      console.log(settings);
       res.json(settings);
     } catch (err) {
       console.error("Error updating user settings:", err);
@@ -5661,41 +5682,41 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
 
   // WebSocket server for real-time messaging
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-  
+
   // Store active connections by userId
   const connections = new Map<number, WebSocket[]>();
   const maxConnectionsPerUser = 5; // Limit connections per user
-  
+
   wss.on('connection', (ws: WebSocket) => {
     console.log("New WebSocket connection established");
     let userId: number | null = null;
-    
+
     ws.on('message', async (message: string) => {
       try {
         const data = JSON.parse(message);
-        
+
         if (data.type === 'auth') {
           // Authenticate user (you might want to add token verification here)
           userId = parseInt(data.userId);
-          
+
           // Add to connections map
           if (!connections.has(userId)) {
             connections.set(userId, []);
           }
           connections.get(userId)?.push(ws);
-          
+
           // Send confirmation
           ws.send(JSON.stringify({ type: 'auth_success' }));
-          
+
           // Send any unread messages or notifications
           if (userId) {
             const notifications = await storage.getUserUnreadNotifications(userId);
-            ws.send(JSON.stringify({ 
-              type: 'unread_notifications', 
-              data: notifications 
+            ws.send(JSON.stringify({
+              type: 'unread_notifications',
+              data: notifications
             }));
           }
-        } 
+        }
         else if (data.type === 'message' && userId) {
           // Save message to database
           const messageData = {
@@ -5703,9 +5724,9 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
             receiverId: data.receiverId,
             content: data.content
           };
-          
+
           const newMessage = await storage.createMessage(messageData);
-          
+
           // Send to receiver if online
           const receiverConnections = connections.get(data.receiverId);
           if (receiverConnections && receiverConnections.length > 0) {
@@ -5718,7 +5739,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
               }
             });
           }
-          
+
           // Create notification for the receiver
           // Get or create notification type
           let notificationType = await storage.getNotificationTypeByName("new_message");
@@ -5728,7 +5749,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
               description: "Notification when you receive a new message"
             });
           }
-          
+
           // Create notification
           const sender = await storage.getUser(userId);
           await storage.createNotification({
@@ -5738,7 +5759,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
             message: `You have a new message from ${sender?.firstName || ''} ${sender?.lastName || ''}`,
             link: `/messages/${userId}`
           });
-          
+
           // Confirm to sender
           ws.send(JSON.stringify({
             type: 'message_sent',
@@ -5747,13 +5768,13 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
         }
       } catch (error) {
         console.error("WebSocket message error:", error);
-        ws.send(JSON.stringify({ 
-          type: 'error', 
-          message: 'Invalid message format or server error' 
+        ws.send(JSON.stringify({
+          type: 'error',
+          message: 'Invalid message format or server error'
         }));
       }
     });
-    
+
     ws.on('close', () => {
       console.log("WebSocket connection closed");
       if (userId) {
@@ -5764,7 +5785,7 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
           if (index !== -1) {
             userConnections.splice(index, 1);
           }
-          
+
           if (userConnections.length === 0) {
             connections.delete(userId);
           }
@@ -5772,6 +5793,6 @@ app.get("/api/job-applications/company", isAuthenticated, async (req, res) => {
       }
     });
   });
-  
+
   return httpServer;
 }

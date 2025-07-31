@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/use-auth";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -11,46 +11,53 @@ import { Link } from "wouter";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
+// Typing for settings
+interface Settings {
+  notifications: boolean;
+  profileVisible: boolean;
+  contactVisible: boolean;
+  emailUpdates: boolean;
+}
+
 export default function SettingsPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  // Settings state
-  const [settings, setSettings] = useState({
-    notifications: true,
-    profileVisible: true,
-    emailUpdates: false
-  });
+
+  // State
+  const [settings, setSettings] = useState<Settings | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Fetch user settings
+  // Fetch settings
   const { data: userSettings } = useQuery({
     queryKey: ['/api/user-settings'],
     queryFn: async () => {
       const response = await fetch('/api/user-settings');
       if (response.ok) {
-        return response.json();
+        const data = await response.json();
+        console.log("User settings response", data);
+        return data;
       }
       return null;
     },
     enabled: !!user,
   });
 
-  // Load settings when user data is available
+  // Apply settings
   useEffect(() => {
     if (userSettings) {
       setSettings({
         notifications: userSettings.notifications ?? true,
         profileVisible: userSettings.profileVisible ?? true,
+        contactVisible: userSettings.contactVisible ?? true,
         emailUpdates: userSettings.emailUpdates ?? false
       });
     }
   }, [userSettings]);
 
-  // Save settings mutation
+  // Save mutation
   const saveSettingsMutation = useMutation({
-    mutationFn: async (settingsData: typeof settings) => {
+    mutationFn: async (settingsData: Settings) => {
       return apiRequest('PUT', '/api/user-settings', settingsData);
     },
     onSuccess: () => {
@@ -71,21 +78,28 @@ export default function SettingsPage() {
     },
   });
 
+  // If no user
   if (!user) {
     return <div>Please log in to access settings.</div>;
   }
 
-  // Setting update function
-  const updateSetting = (key: string, value: boolean) => {
+  // If settings not yet loaded
+  if (!settings) {
+    return <div>Loading settings...</div>;
+  }
+
+  // Update setting
+  const updateSetting = (key: keyof Settings, value: boolean) => {
     setSettings(prev => ({
-      ...prev,
+      ...prev!,
       [key]: value
     }));
     setHasChanges(true);
   };
 
-  // Save function
+  // Save
   const handleSave = () => {
+    console.log("SAVE BUTTON CLICKED", settings);
     saveSettingsMutation.mutate(settings);
   };
 
@@ -108,7 +122,7 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <Label className="text-base">All Notifications</Label>
-              <Switch 
+              <Switch
                 checked={settings.notifications}
                 onCheckedChange={(checked) => updateSetting('notifications', checked)}
               />
@@ -116,7 +130,7 @@ export default function SettingsPage() {
             <Separator />
             <div className="flex items-center justify-between">
               <Label className="text-base">Email Updates</Label>
-              <Switch 
+              <Switch
                 checked={settings.emailUpdates}
                 onCheckedChange={(checked) => updateSetting('emailUpdates', checked)}
               />
@@ -135,15 +149,22 @@ export default function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <Label className="text-base">Profile Visible</Label>
-              <Switch 
+              <Switch
                 checked={settings.profileVisible}
                 onCheckedChange={(checked) => updateSetting('profileVisible', checked)}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label className="text-base">Contact Visible</Label>
+              <Switch
+                checked={settings.contactVisible}
+                onCheckedChange={(checked) => updateSetting('contactVisible', checked)}
               />
             </div>
           </CardContent>
         </Card>
 
-        {/* Account Actions */}
+        {/* Account */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -168,7 +189,7 @@ export default function SettingsPage() {
             <Separator />
             <div className="flex items-center justify-between">
               <Label className="text-base">Save Settings</Label>
-              <Button 
+              <Button
                 onClick={handleSave}
                 disabled={!hasChanges || saveSettingsMutation.isPending}
                 className="bg-green-600 hover:bg-green-700"

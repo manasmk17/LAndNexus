@@ -174,6 +174,7 @@ export async function apiRequest(
  const baseUrl = import.meta.env.VITE_BACKEND_URL || "";
  const fullUrl = url.startsWith("http") ? url : `${baseUrl}${url}`;
 console.log("Using backend URL:", import.meta.env.VITE_BACKEND_URL);
+console.log("Using backend URL full:", fullUrl);
 
   try {
 

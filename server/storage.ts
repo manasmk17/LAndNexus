@@ -964,6 +964,11 @@ export class MemStorage implements IStorage {
       (user) => user.email === email
     );
   }
+   async getUserById(id: number): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.id === id
+    );
+  }
 
   async getAllUsers(): Promise<User[]> {
     const cacheKey = 'all-users';
@@ -2047,32 +2052,68 @@ export class MemStorage implements IStorage {
 
   // User Settings operations
   async getUserSettings(userId: number): Promise<any> {
-    const settings = this.userSettings.get(userId);
-    if (settings) {
-      return settings;
-    }
-
-    // Return default settings if none exist
-    const defaultSettings = {
+    console.log('Fetching user settings for userId:', userId);
+  const result = await db.select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+    console.log('User settings result:', result);
+  if (result.length === 0) {
+    return {
       notifications: true,
       profileVisible: true,
+      contactVisible: true,
       emailUpdates: false
     };
-
-    return defaultSettings;
   }
 
-  async updateUserSettings(userId: number, settings: any): Promise<any> {
-    const existing = this.userSettings.get(userId) || {
-      notifications: true,
-      profileVisible: true,
-      emailUpdates: false
-    };
+  // DB-də olan dəyərləri qaytar (məsələn, user cədvəlində fields varsa)
+  const user = result[0];
 
-    const updated = { ...existing, ...settings };
-    this.userSettings.set(userId, updated);
-    return updated;
+  return {
+    notifications: user.notifications ?? true,
+    profileVisible: user.profileVisible ?? true,
+    contactVisible: user.contactVisible ?? true,
+    emailUpdates: user.emailUpdates ?? false
+  };
+}
+
+async updateUserSettings(userId: number, settings: {
+  notifications?: boolean;
+  profileVisible?: boolean;
+  contactVisible?: boolean;
+  emailUpdates?: boolean;
+}) {
+  console.log('Updating user settings:', userId, settings);
+  // updateData plain obyekt kimi saxla
+  const updateData: Partial<{
+    notifications: boolean;
+    profileVisible: boolean;
+    contactVisible: boolean;
+    emailUpdates: boolean;
+  }> = {};
+
+  if (settings.notifications !== undefined) {
+    updateData.notifications = settings.notifications;
   }
+  if (settings.profileVisible !== undefined) {
+    updateData.profileVisible = settings.profileVisible;
+  }
+  if (settings.contactVisible !== undefined) {
+    updateData.contactVisible = settings.contactVisible;
+  }
+  if (settings.emailUpdates !== undefined) {
+    updateData.emailUpdates = settings.emailUpdates;
+  }
+
+  const [updatedUser] = await db.update(users)
+    .set(updateData)
+    .where(eq(users.id, userId))
+    .returning();
+
+  return updatedUser;
+}
+
 
   // Authentication token operations for "Remember Me"
   async createAuthToken(userId: number, type: string, expiresAt: Date, userAgent?: string, ipAddress?: string): Promise<AuthToken> {
@@ -2516,25 +2557,67 @@ export class DatabaseStorage implements IStorage {
 
   // User Settings operations
   async getUserSettings(userId: number): Promise<any> {
-    // For database storage, we'll store settings in the users table or create a separate settings table
-    // For now, return default settings - this can be extended to use a proper settings table
+    console.log('Fetching user settings for userId:', userId);
+  const result = await db.select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+    console.log('User settings result:', result);
+  if (result.length === 0) {
     return {
       notifications: true,
       profileVisible: true,
+      contactVisible: true,
       emailUpdates: false
     };
   }
 
-  async updateUserSettings(userId: number, settings: any): Promise<any> {
-    // For database storage, this would update a settings table or user preferences
-    // For now, return the settings as if they were saved
-    return {
-      notifications: true,
-      profileVisible: true,
-      emailUpdates: false,
-      ...settings
-    };
+  // DB-də olan dəyərləri qaytar (məsələn, user cədvəlində fields varsa)
+  const user = result[0];
+
+  return {
+    notifications: user.notifications ?? true,
+    profileVisible: user.profileVisible ?? true,
+    contactVisible: user.contactVisible ?? true,
+    emailUpdates: user.emailUpdates ?? false
+  };
+}
+
+async updateUserSettings(userId: number, settings: {
+  notifications?: boolean;
+  profileVisible?: boolean;
+  contactVisible?: boolean;
+  emailUpdates?: boolean;
+}) {
+  console.log('Updating user settings:', userId, settings);
+  // updateData plain obyekt kimi saxla
+  const updateData: Partial<{
+    notifications: boolean;
+    profileVisible: boolean;
+    contactVisible: boolean;
+    emailUpdates: boolean;
+  }> = {};
+
+  if (settings.notifications !== undefined) {
+    updateData.notifications = settings.notifications;
   }
+  if (settings.profileVisible !== undefined) {
+    updateData.profileVisible = settings.profileVisible;
+  }
+  if (settings.contactVisible !== undefined) {
+    updateData.contactVisible = settings.contactVisible;
+  }
+  if (settings.emailUpdates !== undefined) {
+    updateData.emailUpdates = settings.emailUpdates;
+  }
+
+  const [updatedUser] = await db.update(users)
+    .set(updateData)
+    .where(eq(users.id, userId))
+    .returning();
+
+  return updatedUser;
+}
 
   // User operations
   async getUser(id: number): Promise<User | undefined> {
@@ -3826,6 +3909,14 @@ export class DatabaseStorage implements IStorage {
     authToken.lastUsedAt = new Date();
     return authToken.userId;
   }
+ async getUserById(id: number) {
+  const user = await db.select()
+    .from(users)
+    .where(eq(users.id, id))  
+    .limit(1);
+
+  return user[0] || null;
+}
 }
 
 // Add subscription methods to MemStorage before the closing brace

@@ -1,13 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
 } from "@/components/ui/card";
 
+const fetchIndustries = async (): Promise<{ id: number; name: string }[]> => {
+  const res = await fetch("/api/industries");
+  if (!res.ok) {
+    throw new Error("Failed to fetch industries");
+  }
+  return res.json();
+};
 // Helper functions to convert various video URLs to embed format
 function getYoutubeEmbedUrl(url: string): string {
   // Handle youtu.be format
@@ -54,9 +61,9 @@ function getLinkedInEmbedUrl(url: string): string {
 // Check if URL is a supported video platform
 function isVideoEmbeddable(url: string): boolean {
   const supportedPlatforms = [
-    'youtube.com', 
-    'youtu.be', 
-    'vimeo.com', 
+    'youtube.com',
+    'youtu.be',
+    'vimeo.com',
     'player.vimeo.com'
   ];
 
@@ -83,15 +90,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  User, 
-  MapPin, 
-  Star, 
-  Calendar, 
-  DollarSign, 
-  Video, 
-  MessageSquare, 
-  Briefcase, 
+import {
+  User,
+  MapPin,
+  Star,
+  Calendar,
+  DollarSign,
+  Video,
+  MessageSquare,
+  Briefcase,
   CheckCircle,
   Lightbulb,
   ImageIcon
@@ -99,11 +106,11 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import SkillRecommendations from "@/components/profile/skill-recommendations";
 import ImageGallery from "@/components/profile/image-gallery";
-import type { 
-  ProfessionalProfile, 
-  Expertise, 
-  Certification, 
-  Resource 
+import type {
+  ProfessionalProfile,
+  Expertise,
+  Certification,
+  Resource
 } from "@shared/schema";
 
 interface ProfessionalProfileProps {
@@ -114,33 +121,44 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
   const { user } = useAuth();
   const [, setLocation] = useLocation();
 
-  const { 
-    data: profile, 
-    isLoading: isLoadingProfile 
+  const {
+    data: profile,
+    isLoading: isLoadingProfile
   } = useQuery<ProfessionalProfile>({
     queryKey: [`/api/professional-profiles/${professionalId}`],
   });
-
-  const { 
-    data: expertise, 
-    isLoading: isLoadingExpertise 
+   const { 
+    data: industries = [], 
+    isLoading: isLoadingIndustries, 
+    error: industriesError 
+  } = useQuery({
+    queryKey: ['industries'],
+    queryFn: fetchIndustries,
+  });
+   const getIndustryName = (industryId: number): string | null => {
+    const industry = industries.find(ind => ind.id === industryId);
+    return industry ? industry.name : null;
+  };
+  const {
+    data: expertise,
+    isLoading: isLoadingExpertise
   } = useQuery<Expertise[]>({
     queryKey: [`/api/professional-profiles/${professionalId}/expertise`],
     enabled: !!profile,
   });
 
-  const { 
-    data: certifications, 
-    isLoading: isLoadingCertifications 
+  const {
+    data: certifications,
+    isLoading: isLoadingCertifications
   } = useQuery<Certification[]>({
     queryKey: [`/api/professional-profiles/${professionalId}/certifications`],
     enabled: !!profile,
   });
 
   // Fetch work experiences
-  const { 
-    data: workExperiences, 
-    isLoading: isLoadingWorkExperiences 
+  const {
+    data: workExperiences,
+    isLoading: isLoadingWorkExperiences
   } = useQuery<any[]>({
     queryKey: [`/api/professional-profiles/${professionalId}/work-experiences`],
     enabled: !!profile,
@@ -149,9 +167,9 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
   });
 
   // Fetch testimonials
-  const { 
-    data: testimonials, 
-    isLoading: isLoadingTestimonials 
+  const {
+    data: testimonials,
+    isLoading: isLoadingTestimonials
   } = useQuery<any[]>({
     queryKey: [`/api/professional-profiles/${professionalId}/testimonials`],
     enabled: !!profile,
@@ -160,9 +178,9 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
   });
 
   // Type-safe resource query
-  const { 
+  const {
     data: resources = [] as Resource[],
-    isError: isResourcesError 
+    isError: isResourcesError
   } = useQuery<Resource[], Error, Resource[]>({
     queryKey: [`/api/professional-profiles/${professionalId}/resources`],
     enabled: !!profile,
@@ -255,9 +273,9 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
             <div className="flex flex-col md:flex-row md:items-center gap-6">
               <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
                 {profile.profileImagePath ? (
-                  <img 
-                    src={profile.profileImagePath.startsWith('uploads/') ? `/${profile.profileImagePath}` : profile.profileImagePath} 
-                    alt={`${profile.firstName} ${profile.lastName}`} 
+                  <img
+                    src={profile.profileImagePath.startsWith('uploads/') ? `/${profile.profileImagePath}` : profile.profileImagePath}
+                    alt={`${profile.firstName} ${profile.lastName}`}
                     className="w-full h-full object-cover rounded-full"
                     onError={(e) => {
                       console.log("Image load error, using placeholder");
@@ -390,6 +408,17 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                       <p className="text-base sm:text-lg font-semibold truncate" title={profile.availability}>{profile.availability}</p>
                     </div>
                   )}
+                  {profile.industryId && (() => {
+                    const industryName = getIndustryName(profile.industryId);
+                    return industryName ? (
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-medium text-gray-500">Industry</h3>
+                        <p className="text-base sm:text-lg font-semibold truncate" title={industryName}>
+                          {industryName}
+                        </p>
+                      </div>
+                    ) : null;
+                  })()}
                   {profile.email && (
                     <div className="min-w-0">
                       <h3 className="text-sm font-medium text-gray-500">Email</h3>
@@ -495,27 +524,27 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                   {/* Handle different video platforms */}
                   {profile.videoIntroUrl.includes('youtube.com') || profile.videoIntroUrl.includes('youtu.be') ? (
                     /* YouTube embedding */
-                    <iframe 
-                      src={getYoutubeEmbedUrl(profile.videoIntroUrl)} 
-                      className="w-full h-full" 
-                      allowFullScreen 
+                    <iframe
+                      src={getYoutubeEmbedUrl(profile.videoIntroUrl)}
+                      className="w-full h-full"
+                      allowFullScreen
                       title={`${profile.firstName} ${profile.lastName} introduction video`}
                     />
                   ) : profile.videoIntroUrl.includes('vimeo.com') ? (
                     /* Vimeo embedding */
-                    <iframe 
-                      src={getVimeoEmbedUrl(profile.videoIntroUrl)} 
-                      className="w-full h-full" 
-                      allowFullScreen 
+                    <iframe
+                      src={getVimeoEmbedUrl(profile.videoIntroUrl)}
+                      className="w-full h-full"
+                      allowFullScreen
                       title={`${profile.firstName} ${profile.lastName} introduction video`}
                     />
                   ) : profile.videoIntroUrl.includes('instagram.com') ? (
                     /* Instagram link (no embedding available) */
                     <div className="flex flex-col items-center justify-center h-full">
                       <p className="text-white mb-3">Instagram video available at:</p>
-                      <a 
-                        href={profile.videoIntroUrl} 
-                        target="_blank" 
+                      <a
+                        href={profile.videoIntroUrl}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:opacity-90"
                       >
@@ -526,9 +555,9 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                     /* LinkedIn link (no embedding available) */
                     <div className="flex flex-col items-center justify-center h-full">
                       <p className="text-white mb-3">LinkedIn video available at:</p>
-                      <a 
-                        href={profile.videoIntroUrl} 
-                        target="_blank" 
+                      <a
+                        href={profile.videoIntroUrl}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="px-4 py-2 bg-gradient-to-r from-blue-700 to-blue-500 text-white rounded-lg hover:opacity-90"
                       >
@@ -539,9 +568,9 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                     /* Facebook link */
                     <div className="flex flex-col items-center justify-center h-full">
                       <p className="text-white mb-3">Facebook video available at:</p>
-                      <a 
-                        href={profile.videoIntroUrl} 
-                        target="_blank" 
+                      <a
+                        href={profile.videoIntroUrl}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg hover:opacity-90"
                       >
@@ -550,9 +579,9 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
                     </div>
                   ) : (
                     /* Direct video file */
-                    <video 
-                      src={profile.videoIntroUrl} 
-                      controls 
+                    <video
+                      src={profile.videoIntroUrl}
+                      controls
                       className="w-full h-full"
                       poster="/images/video-poster.jpg"
                     >
@@ -669,8 +698,8 @@ export default function ProfessionalProfileComponent({ professionalId }: Profess
             </TabsContent>
 
             <TabsContent value="skill-recommendations" className="mt-6">
-              <SkillRecommendations 
-                professionalId={professionalId} 
+              <SkillRecommendations
+                professionalId={professionalId}
                 isCurrentUser={user?.id === profile.userId}
               />
             </TabsContent>

@@ -23,7 +23,8 @@ import {
   notifications, Notification, InsertNotification,
   notificationTypes, NotificationType, InsertNotificationType,
   notificationPreferences, NotificationPreference, InsertNotificationPreference,
-  subscriptionPlans, SubscriptionPlan
+  subscriptionPlans, SubscriptionPlan,
+  industries
 } from "@shared/schema";
 
 let storageInstance: any = null;
@@ -2521,7 +2522,19 @@ export class DatabaseStorage implements IStorage {
       return null;
     }
   }
+ async getAllIndustries() {
+  if (!db) {
+    throw new Error('Database not initialized');
+  }
 
+  try {
+    const result = await db.select().from(industries).orderBy(industries.name);
+    return result;
+  } catch (error) {
+    console.error('Error fetching industries:', error);
+    throw error;
+  }
+}
   async getUnreadNotifications(userId: number): Promise<Notification[]> {
     const results = await db?.select()
       .from(notifications)
@@ -3949,6 +3962,10 @@ class MemStorageWithSubscriptions extends MemStorage {
   async updateUserSettings(userId: number, settings: any): Promise<any> {
     return super.updateUserSettings(userId, settings);
   }
+  async getAllIndustries(): Promise<any> {
+  return super.getAllIndustries(); 
+}
+
 }
 console.log(useRealDatabase, "Use real db");
 // Dynamically use MemStorage or DatabaseStorage based on database connection status

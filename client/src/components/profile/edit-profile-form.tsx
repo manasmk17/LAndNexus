@@ -31,8 +31,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Plus, Trash, Upload, X } from "lucide-react";
-import { 
-  insertProfessionalProfileSchema, 
+import {
+  insertProfessionalProfileSchema,
   insertCompanyProfileSchema,
   type ProfessionalProfile,
   type CompanyProfile,
@@ -43,7 +43,7 @@ import {
 // Type for work experience entries with all fields optional
 const workExperienceSchema = z.object({
   company: z.string().optional(),
-  position: z.string().optional(), 
+  position: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   description: z.string().optional(),
@@ -94,7 +94,7 @@ const companyProfileFormSchema = insertCompanyProfileSchema.extend({
   profileImage: z.instanceof(File).optional(),
   // Make sure ALL fields are optional
   companyName: z.string().optional(),
-  industry: z.string().optional(), 
+  industry: z.string().optional(),
   description: z.string().optional(),
   website: z.string().optional(),
   logoUrl: z.string().optional(),
@@ -111,6 +111,7 @@ export default function EditProfileForm() {
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedExpertise, setSelectedExpertise] = useState<Expertise[]>([]);
+  const [industries, setIndustries] = useState<{ id: number, name: string }[]>([]);
   const [showCertForm, setShowCertForm] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const csrfToken = getCsrfToken();
@@ -156,7 +157,7 @@ export default function EditProfileForm() {
     resolver: zodResolver(professionalProfileFormSchema),
     defaultValues: {
       firstName: "",
-      lastName: "",  
+      lastName: "",
       title: "",
       bio: "",
       location: "",
@@ -206,6 +207,23 @@ export default function EditProfileForm() {
       userId: user?.id,
     },
   });
+  useEffect(() => {
+    const fetchIndustries = async () => {
+      try {
+        const res = await fetch('/api/industries');
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
+        const data = await res.json();
+        setIndustries(data);
+      } catch (err) {
+        console.error("Failed to fetch industries:", err);
+      }
+    };
+
+    fetchIndustries();
+  }, []);
 
   // Update form values when profiles are loaded
   useEffect(() => {
@@ -213,7 +231,7 @@ export default function EditProfileForm() {
       // Load work experience and testimonials if present
       if (professionalProfile.workExperience) {
         try {
-          const workExpData = typeof professionalProfile.workExperience === 'string' 
+          const workExpData = typeof professionalProfile.workExperience === 'string'
             ? JSON.parse(professionalProfile.workExperience)
             : professionalProfile.workExperience;
           setWorkExperiences(Array.isArray(workExpData) ? workExpData : []);
@@ -241,6 +259,7 @@ export default function EditProfileForm() {
         title: professionalProfile.title || "",
         bio: professionalProfile.bio || "",
         location: professionalProfile.location || "",
+         industryId: professionalProfile.industryId || null,
         videoIntroUrl: professionalProfile.videoIntroUrl || "",
         ratePerHour: professionalProfile.ratePerHour || undefined,
         profileImageUrl: professionalProfile.profileImageUrl || "",
@@ -386,8 +405,8 @@ export default function EditProfileForm() {
       setShowCertForm(false);
 
       // Refresh certifications list
-      queryClient.invalidateQueries({ 
-        queryKey: [`/api/professionals/me/certifications`] 
+      queryClient.invalidateQueries({
+        queryKey: [`/api/professionals/me/certifications`]
       });
 
       toast({
@@ -409,8 +428,8 @@ export default function EditProfileForm() {
       await apiRequest("DELETE", `/api/certifications/${certId}`, {});
 
       // Refresh certifications list
-      queryClient.invalidateQueries({ 
-        queryKey: [`/api/professionals/me/certifications`] 
+      queryClient.invalidateQueries({
+        queryKey: [`/api/professionals/me/certifications`]
       });
 
       toast({
@@ -511,6 +530,16 @@ export default function EditProfileForm() {
 
   const onSubmitProfessional = async (data: z.infer<typeof professionalProfileFormSchema>) => {
     console.log("Form submission started - professional profile", data);
+
+    // DEBUG: Check industryId specifically
+    console.log("DEBUG: industryId value and type:", {
+      value: data.industryId,
+      type: typeof data.industryId,
+      isNull: data.industryId === null,
+      isUndefined: data.industryId === undefined,
+      isEmpty: data.industryId === ''
+    });
+
     try {
       setIsSubmitting(true);
 
@@ -546,8 +575,17 @@ export default function EditProfileForm() {
         title: profileData.title || "",
         bio: profileData.bio || "",
         location: profileData.location || "",
-        availability: profileData.availability || "" // Treat as string
+        availability: profileData.availability || "", // Treat as string
+        // IMPORTANT: Ensure industryId is properly handled
+        industryId: profileData.industryId ? parseInt(profileData.industryId.toString()) : null
       };
+
+      // DEBUG: Check final industryId value
+      console.log("DEBUG: Final industryId before FormData:", {
+        original: profileData.industryId,
+        processed: enrichedProfileData.industryId,
+        type: typeof enrichedProfileData.industryId
+      });
 
       console.log("Prepared professional profile data with explicit conversions:", enrichedProfileData);
 
@@ -564,9 +602,17 @@ export default function EditProfileForm() {
           } else {
             formData.append(key, String(value));
           }
-          console.log(`Added form field: ${key} = ${typeof value === 'object' ? JSON.stringify(value) : value}`);
+          console.log(`Added form field: ${key} = ${typeof value === 'object' ? JSON.stringify(value) : value} (type: ${typeof value})`);
+        } else {
+          console.log(`Skipped field: ${key} (value is null/undefined)`);
         }
       });
+
+      // DEBUG: Check what's actually in FormData
+      console.log("DEBUG: FormData entries:");
+      for (let [key, value] of formData.entries()) {
+        console.log(`  ${key}: ${value} (${typeof value})`);
+      }
 
       // Add file if provided
       if (profileImage instanceof File) {
@@ -574,28 +620,10 @@ export default function EditProfileForm() {
         console.log(`Added file: profileImage (${profileImage.name}, ${profileImage.size} bytes)`);
       }
 
-      // Verify the FormData before submission
-      console.log("About to save professional profile with form data:", {
-        entries: Array.from(formData.entries()).map(([key, value]) => 
-          [key, typeof value === 'string' ? value : `(${typeof value})`]
-        ),
-        userInfo: {
-          id: user.id,
-          userType: user.userType,
-          loggedIn: !!user
-        }
-      });
-
       // Use secureFileUpload which handles CSRF tokens and file uploads
       const response = await secureFileUpload('PUT', "/api/professionals/me", formData);
 
-      console.log("DEBUG: Response from profile save:", response.status, response.statusText, {
-        url: "/api/professionals/me",
-        userId: user.id,
-        method: 'PUT',
-        cookies: document.cookie,
-        headers: Array.from(response.headers.entries())
-      });
+      console.log("DEBUG: Response from profile save:", response.status, response.statusText);
 
       // Read the response body for debugging
       const responseText = await response.text();
@@ -622,8 +650,8 @@ export default function EditProfileForm() {
             if (!userExpertise || !userExpertise.some(e => e.id === expertise.id)) {
               console.log(`Adding expertise ${expertise.name} (ID: ${expertise.id}) to profile`);
               const expertiseResponse = await apiRequest(
-                "POST", 
-                `/api/professionals/me/expertise`, 
+                "POST",
+                `/api/professionals/me/expertise`,
                 { expertiseId: expertise.id }
               );
 
@@ -670,7 +698,6 @@ export default function EditProfileForm() {
       setIsSubmitting(false);
     }
   };
-
   const onSubmitCompany = async (data: z.infer<typeof companyProfileFormSchema>) => {
     console.log("Form submission started - company profile", data);
     try {
@@ -732,7 +759,7 @@ export default function EditProfileForm() {
 
       // Verify the FormData before submission
       console.log("About to save company profile with form data:", {
-        entries: Array.from(formData.entries()).map(([key, value]) => 
+        entries: Array.from(formData.entries()).map(([key, value]) =>
           [key, typeof value === 'string' ? value : `(${typeof value})`]
         ),
         userInfo: {
@@ -749,7 +776,7 @@ export default function EditProfileForm() {
         console.log(`Updating existing company profile ID: ${companyProfile.id}`);
         response = await secureFileUpload(
           'PUT',
-          `/api/company-profiles/${companyProfile.id}`, 
+          `/api/company-profiles/${companyProfile.id}`,
           formData
         );
       } else {
@@ -757,7 +784,7 @@ export default function EditProfileForm() {
         console.log("Creating new company profile");
         response = await secureFileUpload(
           'POST',
-          "/api/company-profiles", 
+          "/api/company-profiles",
           formData
         );
       }
@@ -905,6 +932,56 @@ export default function EditProfileForm() {
                   </FormItem>
                 )}
               />
+             <FormField
+  control={professionalForm.control}
+  name="industryId"
+  render={({ field }) => {
+    console.log("Industry field render:", {
+      fieldValue: field.value,
+      fieldType: typeof field.value,
+      profileIndustryId: professionalProfile?.industryId
+    });
+
+    return (
+      <FormItem className="mt-4">
+        <FormLabel>Industry</FormLabel>
+        <FormControl>
+          <select
+            className="border rounded-md p-2 w-full"
+            value={field.value ? field.value.toString() : ''}
+            onChange={(e) => {
+              const selectedValue = e.target.value;
+              console.log("Industry selection changed:", {
+                selectedValue,
+                type: typeof selectedValue,
+                parsed: selectedValue ? parseInt(selectedValue) : null
+              });
+              
+              if (selectedValue === '' || selectedValue === undefined) {
+                field.onChange(null);
+              } else {
+                const numericValue = parseInt(selectedValue);
+                console.log("Setting industryId to:", numericValue, typeof numericValue);
+                field.onChange(numericValue);
+              }
+            }}
+          >
+            <option value="">Select an industry</option>
+            {industries.map((industry) => (
+              <option key={industry.id} value={industry.id.toString()}>
+                {industry.name}
+              </option>
+            ))}
+          </select>
+        </FormControl>
+        <FormDescription>
+          Select your professional industry
+        </FormDescription>
+        <FormMessage />
+      </FormItem>
+    );
+  }}
+/>
 
               <FormField
                 control={professionalForm.control}
@@ -913,9 +990,9 @@ export default function EditProfileForm() {
                   <FormItem className="mt-4">
                     <FormLabel>Hourly Rate ($)</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="e.g. 150" 
+                      <Input
+                        type="number"
+                        placeholder="e.g. 150"
                         {...field}
                         value={field.value || ''}
                         onChange={(e) => {
@@ -948,8 +1025,8 @@ export default function EditProfileForm() {
                       <div className="flex flex-col space-y-2">
                         <div className="space-y-2">
                           <div className="flex items-center gap-3">
-                            <Button 
-                              type="button" 
+                            <Button
+                              type="button"
                               variant="outline"
                               onClick={() => {
                                 // Use hidden file input
@@ -963,22 +1040,22 @@ export default function EditProfileForm() {
 
                             {(value && typeof value === 'object') && (
                               <Badge variant="outline" className="bg-blue-50">
-                                                               Selected: {(value as File).name}
+                                Selected: {(value as File).name}
                               </Badge>
                             )}
                           </div>
 
-                          <Input 
+                          <Input
                             id="profile-image-upload"
-                            type="file" 
-                            accept="image/*" 
+                            type="file"
+                            accept="image/*"
                             className="hidden"
                             {...fieldProps}
                             onChange={(e) => {
                               // Handle file selection for the form
                               const file = e.target.files?.[0];
                               onChange(file || null);
-                            }} 
+                            }}
                           />
                         </div>
 
@@ -986,9 +1063,9 @@ export default function EditProfileForm() {
                           <div className="mt-2">
                             <p className="text-sm text-muted-foreground mb-2">Current image:</p>
                             <div className="relative group">
-                              <img 
-                                src={professionalProfile.profileImagePath.startsWith('uploads/') ? `/${professionalProfile.profileImagePath}` : professionalProfile.profileImagePath} 
-                                alt="Current profile" 
+                              <img
+                                src={professionalProfile.profileImagePath.startsWith('uploads/') ? `/${professionalProfile.profileImagePath}` : professionalProfile.profileImagePath}
+                                alt="Current profile"
                                 className="w-32 h-32 object-cover rounded-md border"
                                 onError={(e) => {
                                   console.log("Image load error, using placeholder");
@@ -1006,7 +1083,7 @@ export default function EditProfileForm() {
                                   if (confirm("Are you sure you want to delete your profile image?")) {
                                     try {
                                       const res = await apiRequest(
-                                        "DELETE", 
+                                        "DELETE",
                                         `/api/professional-profiles/${professionalProfile.id}/profile-image`
                                       );
 
@@ -1058,9 +1135,9 @@ export default function EditProfileForm() {
                     <FormItem>
                       <FormLabel>Years of Experience</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="e.g. 5" 
+                        <Input
+                          type="number"
+                          placeholder="e.g. 5"
                           {...field}
                           value={field.value || ''}
                           onChange={(e) => {
@@ -1091,11 +1168,11 @@ export default function EditProfileForm() {
                   <FormItem>
                     <FormLabel>Professional Bio</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Describe your experience, skills, and what you offer to clients..." 
+                      <Textarea
+                        placeholder="Describe your experience, skills, and what you offer to clients..."
                         className="min-h-32"
                         {...field}
-                        value={field.value || ''} 
+                        value={field.value || ''}
                       />
                     </FormControl>
                     <FormDescription>
@@ -1113,11 +1190,11 @@ export default function EditProfileForm() {
                   <FormItem className="mt-6">
                     <FormLabel>Services Offered</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="List the services you provide, e.g.: 'Leadership Training, Team Building Workshops, Executive Coaching...'" 
+                      <Textarea
+                        placeholder="List the services you provide, e.g.: 'Leadership Training, Team Building Workshops, Executive Coaching...'"
                         className="min-h-24"
                         {...field}
-                        value={field.value || ''} 
+                        value={field.value || ''}
                       />
                     </FormControl>
                     <FormDescription>
@@ -1256,9 +1333,9 @@ export default function EditProfileForm() {
                         <FormItem className="mb-3">
                           <FormLabel>Year</FormLabel>
                           <FormControl>
-                            <Input 
-                              type="number" 
-                              placeholder="e.g. 2022" 
+                            <Input
+                              type="number"
+                              placeholder="e.g. 2022"
                               {...field}
                               onChange={(e) => {
                                 // BUG KILLER: Safe parseInt with NaN protection
@@ -1277,9 +1354,9 @@ export default function EditProfileForm() {
                       )}
                     />
 
-                    <Button 
-                      type="button" 
-                      onClick={handleAddCertification} 
+                    <Button
+                      type="button"
+                      onClick={handleAddCertification}
                       className="mt-3 w-full"
                     >
                       <Plus className="mr-2 h-4 w-4" /> Add Certification
@@ -1295,10 +1372,10 @@ export default function EditProfileForm() {
                   <FormItem className="mt-6">
                     <FormLabel>Video Introduction URL</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="https://example.com/your-video.mp4" 
-                        {...field} 
-                        value={field.value || ''} 
+                      <Input
+                        placeholder="https://example.com/your-video.mp4"
+                        {...field}
+                        value={field.value || ''}
                       />
                     </FormControl>
                     <FormDescription>
@@ -1410,10 +1487,10 @@ export default function EditProfileForm() {
                         <FormItem>
                           <FormLabel>End Date</FormLabel>
                           <FormControl>
-                            <Input 
-                              placeholder="e.g. June 2023 (leave empty if current)" 
+                            <Input
+                              placeholder="e.g. June 2023 (leave empty if current)"
                               {...field}
-                              value={field.value || ''} 
+                              value={field.value || ''}
                               disabled={professionalForm.watch("newWorkExperience.current")}
                             />
                           </FormControl>
@@ -1450,9 +1527,9 @@ export default function EditProfileForm() {
                       <FormItem className="mt-4">
                         <FormLabel>Description</FormLabel>
                         <FormControl>
-                          <Textarea 
-                            placeholder="Describe your responsibilities and achievements..." 
-                            {...field} 
+                          <Textarea
+                            placeholder="Describe your responsibilities and achievements..."
+                            {...field}
                             value={field.value || ''}
                           />
                         </FormControl>
@@ -1461,9 +1538,9 @@ export default function EditProfileForm() {
                     )}
                   />
 
-                  <Button 
-                    type="button" 
-                    onClick={handleAddWorkExperience} 
+                  <Button
+                    type="button"
+                    onClick={handleAddWorkExperience}
                     className="mt-4 w-full"
                   >
                     <Plus className="mr-2 h-4 w-4" /> Add Work Experience
@@ -1527,9 +1604,9 @@ export default function EditProfileForm() {
                       <FormItem>
                         <FormLabel>Testimonial</FormLabel>
                         <FormControl>
-                          <Textarea 
-                            placeholder="Enter the client's feedback..." 
-                            {...field} 
+                          <Textarea
+                            placeholder="Enter the client's feedback..."
+                            {...field}
                             className="min-h-24"
                           />
                         </FormControl>
@@ -1560,10 +1637,10 @@ export default function EditProfileForm() {
                         <FormItem>
                           <FormLabel>Company (Optional)</FormLabel>
                           <FormControl>
-                            <Input 
-                              placeholder="e.g. Acme Corporation" 
+                            <Input
+                              placeholder="e.g. Acme Corporation"
                               {...field}
-                              value={field.value || ''} 
+                              value={field.value || ''}
                             />
                           </FormControl>
                           <FormMessage />
@@ -1579,10 +1656,10 @@ export default function EditProfileForm() {
                       <FormItem className="mt-4">
                         <FormLabel>Date (Optional)</FormLabel>
                         <FormControl>
-                          <Input 
-                            placeholder="e.g. January 2023" 
+                          <Input
+                            placeholder="e.g. January 2023"
                             {...field}
-                            value={field.value || ''}  
+                            value={field.value || ''}
                           />
                         </FormControl>
                         <FormMessage />
@@ -1590,9 +1667,9 @@ export default function EditProfileForm() {
                     )}
                   />
 
-                  <Button 
-                    type="button" 
-                    onClick={handleAddTestimonial} 
+                  <Button
+                    type="button"
+                    onClick={handleAddTestimonial}
                     className="mt-4 w-full"
                   >
                     <Plus className="mr-2 h-4 w-4" /> Add Testimonial
@@ -1613,11 +1690,11 @@ export default function EditProfileForm() {
                     <FormItem>
                       <FormLabel>Contact Email</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="e.g. contact@example.com" 
+                        <Input
+                          placeholder="e.g. contact@example.com"
                           type="email"
-                          {...field} 
-                          value={field.value || ''} 
+                          {...field}
+                          value={field.value || ''}
                         />
                       </FormControl>
                       <FormDescription>
@@ -1635,10 +1712,10 @@ export default function EditProfileForm() {
                     <FormItem>
                       <FormLabel>Contact Phone</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="e.g. +1 (555) 123-4567" 
-                          {...field} 
-                          value={field.value || ''} 
+                        <Input
+                          placeholder="e.g. +1 (555) 123-4567"
+                          {...field}
+                          value={field.value || ''}
                         />
                       </FormControl>
                       <FormDescription>
@@ -1657,10 +1734,10 @@ export default function EditProfileForm() {
                   <FormItem className="mt-6">
                     <FormLabel>Availability</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Describe your availability, e.g. 'Available for consultations Monday-Friday, 9am-5pm EST'" 
-                        {...field} 
-                        value={field.value || ''} 
+                      <Textarea
+                        placeholder="Describe your availability, e.g. 'Available for consultations Monday-Friday, 9am-5pm EST'"
+                        {...field}
+                        value={field.value || ''}
                       />
                     </FormControl>
                     <FormDescription>
@@ -1684,8 +1761,8 @@ export default function EditProfileForm() {
               )}
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-md cursor-pointer z-10 relative !important"
               disabled={isSubmitting}
               onClick={(e) => {
@@ -1826,9 +1903,9 @@ export default function EditProfileForm() {
                   <FormItem className="mt-4">
                     <FormLabel>Website</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="https://example.com" 
-                        {...field} 
+                      <Input
+                        placeholder="https://example.com"
+                        {...field}
                         value={field.value || ''}
                       />
                     </FormControl>
@@ -1847,10 +1924,10 @@ export default function EditProfileForm() {
                   <FormItem className="mt-4">
                     <FormLabel>Logo URL</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="https://example.com/logo.png" 
+                      <Input
+                        placeholder="https://example.com/logo.png"
                         {...field}
-                        value={field.value || ''} 
+                        value={field.value || ''}
                       />
                     </FormControl>
                     <FormDescription>
@@ -1869,15 +1946,15 @@ export default function EditProfileForm() {
                     <FormLabel>Upload Company Logo</FormLabel>
                     <FormControl>
                       <div className="flex flex-col space-y-2">
-                        <Input 
-                          type="file" 
-                          accept="image/*" 
+                        <Input
+                          type="file"
+                          accept="image/*"
                           {...fieldProps}
                           onChange={(e) => {
                             // Handle file selection for the form
                             const file = e.target.files?.[0];
                             onChange(file || null);
-                          }} 
+                          }}
                         />
                         {/* Show selected file name or existing company logo */}
                         {(value && typeof value === 'object') && (
@@ -1889,9 +1966,9 @@ export default function EditProfileForm() {
                         {companyProfile?.logoImagePath && (
                           <div className="mt-2">
                             <p className="text-sm text-muted-foreground mb-2">Current logo:</p>
-                            <img 
-                              src={companyProfile.logoImagePath.startsWith('uploads/') ? `/${companyProfile.logoImagePath}` : companyProfile.logoImagePath} 
-                              alt="Company logo" 
+                            <img
+                              src={companyProfile.logoImagePath.startsWith('uploads/') ? `/${companyProfile.logoImagePath}` : companyProfile.logoImagePath}
+                              alt="Company logo"
                               className="w-32 h-32 object-contain rounded-md border"
                             />
                           </div>
@@ -1917,10 +1994,10 @@ export default function EditProfileForm() {
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        placeholder="Describe your company, its mission, and what types of L&D professionals you're looking for..." 
+                      <Textarea
+                        placeholder="Describe your company, its mission, and what types of L&D professionals you're looking for..."
                         className="min-h-32"
-                        {...field} 
+                        {...field}
                       />
                     </FormControl>
                     <FormDescription>
@@ -1944,8 +2021,8 @@ export default function EditProfileForm() {
               )}
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2 rounded-md cursor-pointer z-10 relative !important"
               disabled={isSubmitting}
               onClick={(e) => {

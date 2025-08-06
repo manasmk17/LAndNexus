@@ -1173,8 +1173,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Server error" });
     }
   });
+// app.get("/api/industries", isAuthenticated, async (req, res) => {
+//   try {
+//     let user = req.user as any;
+
+//     // JWT istifadə edilirsə
+//     if ((req as any).tokenUser) {
+//       const tokenUser = (req as any).tokenUser;
+//       user = await storage.getUser(tokenUser.userId);
+//       if (!user) {
+//         return res.status(401).json({ message: "User not found" });
+//       }
+//     }
+
+//     if (!user) {
+//       return res.status(401).json({ message: "User not found in session" });
+//     }
+
+//     const industries = await storage.getAllIndustries();
+//     res.json(industries);
+//   } catch (error) {
+//     console.error('Error in /api/industries:', error);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// });
 
   // Get multiple users in batch
+ 
+ app.get("/api/industries", async (req, res) => {
+  try {
+    console.log("Fetching all industries from database");
+    
+    const industries = await storage.getAllIndustries();
+    
+    console.log(`Retrieved ${industries.length} industries`);
+    
+    res.json(industries);
+  } catch (err) {
+    console.error("Error fetching industries:", err);
+    res.status(500).json({ 
+      message: "Internal server error",
+      error: err instanceof Error ? err.message : "Unknown error"
+    });
+  }
+});
   app.get("/api/users/batch", async (req, res) => {
     try {
       // Get userIds from query parameter
@@ -1607,49 +1649,65 @@ app.get("/api/professional-profiles/:id", async (req, res) => {
     }
   });
 
-  app.put("/api/professional-profiles/:id", isAuthenticated, uploadProfileImage.single('profileImage'), async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const user = req.user as any;
+app.put("/api/professional-profiles/:id", isAuthenticated, uploadProfileImage.single('profileImage'), async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const user = req.user as any;
 
-      // Check if profile exists and belongs to user
-      const profile = await storage.getProfessionalProfile(id);
-      if (!profile) {
-        return res.status(404).json({ message: "Profile not found" });
-      }
-
-      if (profile.userId !== user.id && !user.isAdmin) {
-        return res.status(403).json({ message: "You can only update your own profile" });
-      }
-
-      // Process uploaded file if present
-      const updateData = { ...req.body };
-      if (req.file) {
-        // Delete existing image if present
-        if (profile.profileImagePath) {
-          try {
-            fs.unlinkSync(profile.profileImagePath);
-            console.log(`Deleted previous profile image: ${profile.profileImagePath}`);
-          } catch (err) {
-            console.warn(`Failed to delete previous profile image: ${profile.profileImagePath}`);
-          }
-        }
-
-        updateData.profileImagePath = req.file.path;
-        console.log(`Updated profile image: ${updateData.profileImagePath}`);
-      }
-    
-      const updatedProfile = await storage.updateProfessionalProfile(id, updateData);
-
-      res.json(updatedProfile);
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid input", errors: err.errors });
-      }
-      console.error("Error updating professional profile:", err);
-      res.status(500).json({ message: "Internal server error" });
+    // Check if profile exists and belongs to user
+    const profile = await storage.getProfessionalProfile(id);
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found" });
     }
-  });
+
+    if (profile.userId !== user.id && !user.isAdmin) {
+      return res.status(403).json({ message: "You can only update your own profile" });
+    }
+
+    // Process the request body data
+    const updateData = { ...req.body };
+    
+    // FIXED: Convert industryId to integer outside of file upload block
+    if (updateData.industryId) {
+      updateData.industryId = parseInt(updateData.industryId);
+    }
+    
+    // Convert other numeric fields if needed
+    if (updateData.ratePerHour) {
+      updateData.ratePerHour = parseFloat(updateData.ratePerHour);
+    }
+    
+    if (updateData.yearsExperience) {
+      updateData.yearsExperience = parseInt(updateData.yearsExperience);
+    }
+
+    // Process uploaded file if present
+    if (req.file) {
+      // Delete existing image if present
+      if (profile.profileImagePath) {
+        try {
+          fs.unlinkSync(profile.profileImagePath);
+          console.log(`Deleted previous profile image: ${profile.profileImagePath}`);
+        } catch (err) {
+          console.warn(`Failed to delete previous profile image: ${profile.profileImagePath}`);
+        }
+      }
+
+      updateData.profileImagePath = req.file.path;
+      console.log(`Updated profile image: ${updateData.profileImagePath}`);
+    }
+
+    const updatedProfile = await storage.updateProfessionalProfile(id, updateData);
+
+    res.json(updatedProfile);
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ message: "Invalid input", errors: err.errors });
+    }
+    console.error("Error updating professional profile:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 
   // Get professional profile for the current user
   app.get("/api/professionals/me", async (req, res) => {
@@ -1774,107 +1832,129 @@ app.get("/api/professional-profiles/:id", async (req, res) => {
   });
 
   // Update or create a professional profile for the current user
-  app.put("/api/professionals/me", isAuthenticated, uploadProfileImage.single('profileImage'), async (req, res) => {
-    try {
-      const user = req.user as any;
+app.put("/api/professionals/me", isAuthenticated, uploadProfileImage.single('profileImage'), async (req, res) => {
+  try {
+    const user = req.user as any;
 
-      if (!user) {
-        console.error("Authentication issue: user object not available in request");
-        return res.status(401).json({ message: "User not authenticated" });
-      }
+    if (!user) {
+      console.error("Authentication issue: user object not available in request");
+      return res.status(401).json({ message: "User not authenticated" });
+    }
 
-      if (user.userType !== "professional") {
-        console.warn(`User type mismatch: ${user.username} (ID: ${user.id}) with type ${user.userType} tried to access professional endpoint`);
-        return res.status(403).json({ message: "Only professionals can access this endpoint" });
-      }
+    if (user.userType !== "professional") {
+      console.warn(`User type mismatch: ${user.username} (ID: ${user.id}) with type ${user.userType} tried to access professional endpoint`);
+      return res.status(403).json({ message: "Only professionals can access this endpoint" });
+    }
 
-      // Log the request details for debugging
-      console.log(`Profile update request from user ${user.username} (ID: ${user.id})`);
-      console.log(`Request body fields: ${Object.keys(req.body).join(', ')}`);
-      console.log(`Request body values:`, req.body);
-      console.log(`File upload: ${req.file ? `Yes (${req.file.filename})` : 'No'}`);
+    // Log the request details for debugging
+    console.log(`Profile update request from user ${user.username} (ID: ${user.id})`);
+    console.log(`Request body fields: ${Object.keys(req.body).join(', ')}`);
+    console.log(`Request body values:`, req.body);
+    console.log(`File upload: ${req.file ? `Yes (${req.file.filename})` : 'No'}`);
 
-      // Check if profile exists
-      const existingProfile = await storage.getProfessionalProfileByUserId(user.id);
-      console.log(`Existing profile found: ${existingProfile ? 'Yes (ID: ' + existingProfile.id + ')' : 'No'}`);
+    // Check if profile exists
+    const existingProfile = await storage.getProfessionalProfileByUserId(user.id);
+    console.log(`Existing profile found: ${existingProfile ? 'Yes (ID: ' + existingProfile.id + ')' : 'No'}`);
 
-      // Prepare profile data with type handling
-      const profileData: any = {
-        ...req.body,
-        userId: user.id
-      };
+    // Prepare profile data with type handling
+    const profileData: any = {
+      ...req.body,
+      userId: user.id
+    };
 
-      // Handle rate per hour (can be empty string, undefined, or a valid number)
-      if (profileData.ratePerHour !== undefined) {
-        if (profileData.ratePerHour === '' || profileData.ratePerHour === null) {
-          profileData.ratePerHour = null;
+    // FIXED: Handle industryId (can be empty string, undefined, or a valid number)
+    if (profileData.industryId !== undefined) {
+      if (profileData.industryId === '' || profileData.industryId === null) {
+        profileData.industryId = null;
+        console.log("Industry ID set to null (empty or null value)");
+      } else {
+        const parsedIndustryId = parseInt(profileData.industryId);
+        if (isNaN(parsedIndustryId)) {
+          profileData.industryId = null;
+          console.log("Industry ID set to null (invalid number)");
         } else {
-          const parsedRate = Number(profileData.ratePerHour);
-          profileData.ratePerHour = isNaN(parsedRate) ? null : parsedRate;
+          profileData.industryId = parsedIndustryId;
+          console.log(`Industry ID set to: ${parsedIndustryId}`);
         }
       }
+    }
 
-      // Handle years experience (can be empty string, undefined, or a valid number)
-      if (profileData.yearsExperience !== undefined) {
-        if (profileData.yearsExperience === '' || profileData.yearsExperience === null) {
-          profileData.yearsExperience = null;
-        } else {
-          const parsedYears = Number(profileData.yearsExperience);
-          profileData.yearsExperience = isNaN(parsedYears) ? null : parsedYears;
-        }
-      }
-
-      // Keep availability as string but default to "Not specified" if empty
-      if (profileData.availability === '' || profileData.availability === undefined) {
-        profileData.availability = "Not specified";
-      }
-
-      // Handle file upload if provided
-      if (req.file) {
-        profileData.profileImagePath = req.file.path.replace(/^public\//, '');
-        console.log(`New profile image path: ${profileData.profileImagePath}`);
-      }
-
-      console.log("Processed profile data for save:", profileData);
-
-      let profile;
-      if (existingProfile) {
-        // Update existing profile
-        console.log(`Updating profile ID: ${existingProfile.id}`);
-        profile = await storage.updateProfessionalProfile(existingProfile.id, profileData);
+    // Handle rate per hour (can be empty string, undefined, or a valid number)
+    if (profileData.ratePerHour !== undefined) {
+      if (profileData.ratePerHour === '' || profileData.ratePerHour === null) {
+        profileData.ratePerHour = null;
       } else {
-        // Create new profile
-        console.log(`Creating new profile for user ID: ${user.id}`);
-        profile = await storage.createProfessionalProfile(profileData);
+        const parsedRate = Number(profileData.ratePerHour);
+        profileData.ratePerHour = isNaN(parsedRate) ? null : parsedRate;
       }
+    }
 
-      // Ensure profile exists before trying to access its properties
-      if (profile) {
-        console.log(`Profile ${existingProfile ? 'updated' : 'created'} successfully: ${profile.id}`);
-        res.json(profile);
+    // Handle years experience (can be empty string, undefined, or a valid number)
+    if (profileData.yearsExperience !== undefined) {
+      if (profileData.yearsExperience === '' || profileData.yearsExperience === null) {
+        profileData.yearsExperience = null;
       } else {
-        console.log(`Warning: Profile operation completed but profile object is undefined`);
-        throw new Error("Failed to create or update profile");
+        const parsedYears = Number(profileData.yearsExperience);
+        profileData.yearsExperience = isNaN(parsedYears) ? null : parsedYears;
       }
-    } catch (err) {
-      console.error("Error updating professional profile:", err);
+    }
 
-      // Provide more details in error response
-      if (err instanceof z.ZodError) {
-        return res.status(400).json({
-          message: "Invalid profile data provided",
-          errors: err.errors
-        });
-      }
+    // Keep availability as string but default to "Not specified" if empty
+    if (profileData.availability === '' || profileData.availability === undefined) {
+      profileData.availability = "Not specified";
+    }
 
-      // More detailed error message for debugging client-side issues
-      res.status(500).json({
-        message: "Failed to update profile",
-        error: err instanceof Error ? err.message : "Unknown error"
+    // Handle file upload if provided
+    if (req.file) {
+      profileData.profileImagePath = req.file.path.replace(/^public\//, '');
+      console.log(`New profile image path: ${profileData.profileImagePath}`);
+    }
+
+    console.log("Processed profile data for save:", {
+      ...profileData,
+      industryId: `${profileData.industryId} (type: ${typeof profileData.industryId})`,
+      ratePerHour: `${profileData.ratePerHour} (type: ${typeof profileData.ratePerHour})`,
+      yearsExperience: `${profileData.yearsExperience} (type: ${typeof profileData.yearsExperience})`
+    });
+
+    let profile;
+    if (existingProfile) {
+      // Update existing profile
+      console.log(`Updating profile ID: ${existingProfile.id}`);
+      profile = await storage.updateProfessionalProfile(existingProfile.id, profileData);
+    } else {
+      // Create new profile
+      console.log(`Creating new profile for user ID: ${user.id}`);
+      profile = await storage.createProfessionalProfile(profileData);
+    }
+
+    // Ensure profile exists before trying to access its properties
+    if (profile) {
+      console.log(`Profile ${existingProfile ? 'updated' : 'created'} successfully: ${profile.id}`);
+      console.log(`Final saved industryId: ${profile.industryId} (type: ${typeof profile.industryId})`);
+      res.json(profile);
+    } else {
+      console.log(`Warning: Profile operation completed but profile object is undefined`);
+      throw new Error("Failed to create or update profile");
+    }
+  } catch (err) {
+    console.error("Error updating professional profile:", err);
+
+    // Provide more details in error response
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({
+        message: "Invalid profile data provided",
+        errors: err.errors
       });
     }
-  });
 
+    // More detailed error message for debugging client-side issues
+    res.status(500).json({
+      message: "Failed to update profile",
+      error: err instanceof Error ? err.message : "Unknown error"
+    });
+  }
+});
   // Get certifications for the current professional user
   app.get("/api/professionals/me/certifications", isAuthenticated, async (req, res) => {
     try {

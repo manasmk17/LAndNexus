@@ -52,6 +52,10 @@ export const insertAuthTokenSchema = createInsertSchema(authTokens).omit({
   createdAt: true,
 });
 
+export const industries = pgTable('industries', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+});
 // Professional Profiles
 export const professionalProfiles = pgTable("professional_profiles", {
   id: serial("id").primaryKey(),
@@ -61,6 +65,7 @@ export const professionalProfiles = pgTable("professional_profiles", {
   title: text("title"),
   bio: text("bio"),
   location: text("location"),
+  industryId: integer("industry_id").references(() => industries.id), 
   videoIntroUrl: text("video_intro_url"),
   ratePerHour: integer("rate_per_hour"),
   profileImageUrl: text("profile_image_url"),
@@ -666,3 +671,7 @@ export type InsertSubscriptionInvoice = z.infer<typeof insertSubscriptionInvoice
 // Auth token types
 export type AuthToken = typeof authTokens.$inferSelect;
 export type InsertAuthToken = z.infer<typeof insertAuthTokenSchema>;
+
+function varchar(arg0: string, arg1: { length: number; }) {
+  throw new Error("Function not implemented.");
+}

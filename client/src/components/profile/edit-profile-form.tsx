@@ -445,71 +445,99 @@ export default function EditProfileForm() {
     }
   };
 
-  const handleAddWorkExperience = () => {
-    const workExp = professionalForm.getValues("newWorkExperience");
-    // Make work experience more flexible - require at least company name
-    if (!workExp || !workExp.company) {
-      toast({
-        title: "Company name required",
-        description: "Please enter at least the company name",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Add to work experiences array
-    setWorkExperiences([...workExperiences, workExp]);
-
-    // Reset form
-    professionalForm.setValue("newWorkExperience.company", "");
-    professionalForm.setValue("newWorkExperience.position", "");
-    professionalForm.setValue("newWorkExperience.startDate", "");
-    professionalForm.setValue("newWorkExperience.endDate", "");
-    professionalForm.setValue("newWorkExperience.description", "");
-    professionalForm.setValue("newWorkExperience.current", false);
-
-    // Hide form
-    setShowWorkExpForm(false);
-
-    toast({
-      title: "Work experience added",
-      description: "Your work experience has been added to your profile"
-    });
+const handleAddWorkExperience = () => {
+  // Get the current form values directly
+  const workExpData = {
+    company: professionalForm.getValues("newWorkExperience.company") || "",
+    position: professionalForm.getValues("newWorkExperience.position") || "",
+    startDate: professionalForm.getValues("newWorkExperience.startDate") || "",
+    endDate: professionalForm.getValues("newWorkExperience.endDate") || "",
+    description: professionalForm.getValues("newWorkExperience.description") || "",
+    current: professionalForm.getValues("newWorkExperience.current") || false
   };
+
+  console.log("Work experience data to add:", workExpData);
+
+  // Validate at least company name is provided
+  if (!workExpData.company || workExpData.company.trim() === "") {
+    toast({
+      title: "Company name required",
+      description: "Please enter at least the company name",
+      variant: "destructive"
+    });
+    return;
+  }
+
+  // Add to work experiences array
+  setWorkExperiences(prev => {
+    const updated = [...prev, workExpData];
+    console.log("Updated workExperiences after add:", updated);
+    return updated;
+  });
+
+  // Reset form fields individually
+  professionalForm.setValue("newWorkExperience.company", "");
+  professionalForm.setValue("newWorkExperience.position", "");
+  professionalForm.setValue("newWorkExperience.startDate", "");
+  professionalForm.setValue("newWorkExperience.endDate", "");
+  professionalForm.setValue("newWorkExperience.description", "");
+  professionalForm.setValue("newWorkExperience.current", false);
+
+  // Hide form
+  setShowWorkExpForm(false);
+
+  toast({
+    title: "Work experience added",
+    description: "Your work experience has been added to your profile"
+  });
+};
 
   const handleRemoveWorkExperience = (index: number) => {
     setWorkExperiences(workExperiences.filter((_, i) => i !== index));
   };
 
-  const handleAddTestimonial = () => {
-    const testimonial = professionalForm.getValues("newTestimonial");
-    // Make testimonials more flexible - only require client name at minimum
-    if (!testimonial || !testimonial.clientName) {
-      toast({
-        title: "Client name required",
-        description: "Please enter at least the client name",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Add to testimonials array
-    setTestimonials([...testimonials, testimonial]);
-
-    // Reset form
-    professionalForm.setValue("newTestimonial.clientName", "");
-    professionalForm.setValue("newTestimonial.company", "");
-    professionalForm.setValue("newTestimonial.text", "");
-    professionalForm.setValue("newTestimonial.date", "");
-
-    // Hide form
-    setShowTestimonialForm(false);
-
-    toast({
-      title: "Testimonial added",
-      description: "The client testimonial has been added to your profile"
-    });
+ const handleAddTestimonial = () => {
+  // Get the current form values directly
+  const testimonialData = {
+    clientName: professionalForm.getValues("newTestimonial.clientName") || "",
+    company: professionalForm.getValues("newTestimonial.company") || "",
+    text: professionalForm.getValues("newTestimonial.text") || "",
+    date: professionalForm.getValues("newTestimonial.date") || ""
   };
+
+  console.log("Testimonial data to add:", testimonialData);
+
+  // Validate at least client name is provided
+  if (!testimonialData.clientName || testimonialData.clientName.trim() === "") {
+    toast({
+      title: "Client name required",
+      description: "Please enter at least the client name",
+      variant: "destructive"
+    });
+    return;
+  }
+
+  // Add to testimonials array
+  setTestimonials(prev => {
+    const updated = [...prev, testimonialData];
+    console.log("Updated testimonials after add:", updated);
+    return updated;
+  });
+
+  // Reset form fields individually
+  professionalForm.setValue("newTestimonial.clientName", "");
+  professionalForm.setValue("newTestimonial.company", "");
+  professionalForm.setValue("newTestimonial.text", "");
+  professionalForm.setValue("newTestimonial.date", "");
+
+  // Hide form
+  setShowTestimonialForm(false);
+
+  toast({
+    title: "Testimonial added",
+    description: "The client testimonial has been added to your profile"
+  });
+};
 
   const handleRemoveTestimonial = (index: number) => {
     setTestimonials(testimonials.filter((_, i) => i !== index));
@@ -558,7 +586,8 @@ export default function EditProfileForm() {
       // Prepare work experience and testimonials as JSON
       const workExperienceJSON = JSON.stringify(workExperiences);
       const testimonialsJSON = JSON.stringify(testimonials);
-
+console.log("workExperienceJSON", workExperienceJSON);
+console.log("testimonialsJSON", testimonialsJSON);
       // Sanitize numeric values before submission - BUG KILLER
       console.log("BUG KILLER: Sanitizing numeric values for profile submission");
       console.log("Before sanitization - ratePerHour:", profileData.ratePerHour, "yearsExperience:", profileData.yearsExperience);

@@ -1680,6 +1680,22 @@ app.put("/api/professional-profiles/:id", isAuthenticated, uploadProfileImage.si
     if (updateData.yearsExperience) {
       updateData.yearsExperience = parseInt(updateData.yearsExperience);
     }
+if (updateData.workExperience) {
+  try {
+    updateData.workExperience = JSON.parse(updateData.workExperience);
+  } catch (err) {
+    console.error("Failed to parse workExperience:", updateData.workExperience);
+    updateData.workExperience = [];
+  }
+}
+if (updateData.testimonials) {
+  try {
+    updateData.testimonials = JSON.parse(updateData.testimonials);
+  } catch (err) {
+    console.error("Failed to parse testimonials:", updateData.testimonials);
+    updateData.testimonials = [];
+  }
+}
 
     // Process uploaded file if present
     if (req.file) {

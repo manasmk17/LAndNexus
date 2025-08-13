@@ -5,9 +5,9 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { Bell, Shield, Eye, Save } from "lucide-react";
+import { Bell, Shield, Eye, Save, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -20,13 +20,15 @@ interface Settings {
 }
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
 
   // State
   const [settings, setSettings] = useState<Settings | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Fetch settings
   const { data: userSettings } = useQuery({
@@ -78,6 +80,29 @@ export default function SettingsPage() {
     },
   });
 
+  // Delete account mutation
+  const deleteAccountMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('DELETE', '/api/delete-account');
+    },
+    onSuccess: () => {
+      toast({
+        title: "Account Deleted",
+        description: "Your account has been successfully deleted.",
+      });
+      // Logout and redirect to home
+      logout();
+      setLocation('/');
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete Failed",
+        description: error?.message || "Failed to delete account. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // If no user
   if (!user) {
     return <div>Please log in to access settings.</div>;
@@ -101,6 +126,15 @@ export default function SettingsPage() {
   const handleSave = () => {
     console.log("SAVE BUTTON CLICKED", settings);
     saveSettingsMutation.mutate(settings);
+  };
+
+  // Delete account
+  const handleDeleteAccount = () => {
+    if (showDeleteConfirm) {
+      deleteAccountMutation.mutate();
+    } else {
+      setShowDeleteConfirm(true);
+    }
   };
 
   return (
@@ -198,8 +232,45 @@ export default function SettingsPage() {
                 {saveSettingsMutation.isPending ? 'Saving...' : 'Save Changes'}
               </Button>
             </div>
+             <Separator />
+                 <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-base">Delete Account</Label>
+              </div>
+              <div className="flex flex-col gap-2">
+                {showDeleteConfirm && (
+                  <p className="text-sm text-red-600 font-medium">
+                    Are you sure? Click again to confirm.
+                  </p>
+                )}
+                <Button
+                  onClick={handleDeleteAccount}
+                  disabled={deleteAccountMutation.isPending}
+                  variant="destructive"
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {deleteAccountMutation.isPending 
+                    ? 'Deleting...' 
+                    : showDeleteConfirm 
+                      ? 'Confirm Delete' 
+                      : 'Delete Account'
+                  }
+                </Button>
+                {showDeleteConfirm && (
+                  <Button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Cancel
+                  </Button>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
+
       </div>
     </div>
   );

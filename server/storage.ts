@@ -73,7 +73,7 @@ export interface IStorage {
   createProfessionalProfile(profile: InsertProfessionalProfile): Promise<ProfessionalProfile>;
   updateProfessionalProfile(id: number, profile: Partial<InsertProfessionalProfile>): Promise<ProfessionalProfile | undefined>;
   deleteProfessionalProfile(id: number): Promise<boolean>;
-
+  deleteProfessionalProfileByUserId(userId: number): Promise<boolean>;
   // Expertise operations
   getAllExpertise(): Promise<Expertise[]>;
   getExpertiseById(id: number): Promise<Expertise | undefined>;
@@ -1057,37 +1057,27 @@ export class MemStorage implements IStorage {
   }
 
   // Professional Profile operations
-  getProfessionalProfile(id: number): ProfessionalProfile | undefined {
-    const profile = this.professionalProfiles.get(id);
-    if (!profile) return undefined;
-
-    // Parse JSON fields if they're strings
-    if (typeof profile.galleryImages === 'string') {
-      try {
-        profile.galleryImages = JSON.parse(profile.galleryImages);
-      } catch (e) {
-        profile.galleryImages = [];
+getProfessionalProfile(id: number): ProfessionalProfile | undefined {
+  console.log("Fetching professional profile with ID:", id);
+  for (const profile of Array.from(this.professionalProfiles.values())) {
+    if (profile.id === id) { // burada professional_profiles.id ilə yoxlayırıq
+      if (typeof profile.galleryImages === 'string') {
+        try { profile.galleryImages = JSON.parse(profile.galleryImages); } catch { profile.galleryImages = []; }
       }
-    }
-
-    if (typeof profile.workExperience === 'string') {
-      try {
-        profile.workExperience = JSON.parse(profile.workExperience);
-      } catch (e) {
-        profile.workExperience = [];
+      if (typeof profile.workExperience === 'string') {
+        try { profile.workExperience = JSON.parse(profile.workExperience); } catch { profile.workExperience = []; }
       }
-    }
-
-    if (typeof profile.testimonials === 'string') {
-      try {
-        profile.testimonials = JSON.parse(profile.testimonials);
-      } catch (e) {
-        profile.testimonials = [];
+      if (typeof profile.testimonials === 'string') {
+        try { profile.testimonials = JSON.parse(profile.testimonials); } catch { profile.testimonials = []; }
       }
+      return profile;
     }
-
-    return profile;
   }
+  return undefined;
+}
+
+
+
 
   async getProfessionalProfileByUserId(userId: number): Promise<ProfessionalProfile | undefined> {
     return Array.from(this.professionalProfiles.values()).find(
@@ -1176,6 +1166,8 @@ export class MemStorage implements IStorage {
   }
 
   async deleteProfessionalProfile(id: number): Promise<boolean> {
+    console.log("Deleting professional profile with ID:", id);
+    console.log("this.professionalProfiles:", this.professionalProfiles);
     return this.professionalProfiles.delete(id);
   }
 
@@ -1296,14 +1288,15 @@ export class MemStorage implements IStorage {
   }
 
   // Delete company profile
-  async deleteCompanyProfile(id: number): Promise<boolean> {
-    if (!this.companyProfiles.has(id)) {
-      return false;
-    }
-
-    this.companyProfiles.delete(id);
-    return true;
-  }
+  // async deleteCompanyProfile(id: number): Promise<boolean> {
+  //   if (!this.companyProfiles.has(id)) {
+  //     return false;
+  //   }
+  //   console.log("Deleting company profile with ID:", id);
+  //   console.log("Company Profiles: ",  this.companyProfiles);
+  //   this.companyProfiles.delete(id);
+  //   return true;
+  // }
 
   // Job Posting operations
   async getJobPosting(id: number): Promise<JobPosting | undefined> {
@@ -1662,9 +1655,33 @@ export class MemStorage implements IStorage {
     return updated;
   }
 
-  async deleteUser(id: number): Promise<boolean> {
-    return this.users.delete(id);
+ async deleteUser(id: number): Promise<boolean> {
+  // Professional profile varsa, sil
+  const profile = await this.getProfessionalProfileByUserId(id);
+  if (profile) {
+    this.professionalProfiles.delete(profile.id);
   }
+
+  // İstəyə uyğun digər əlaqəli məlumatları da silmək olar (məsələn jobApplications, reviews və s.)
+
+  return this.users.delete(id);
+}
+async deleteProfessionalProfileByUserId(userId: number): Promise<boolean> {
+  const profile = await this.getProfessionalProfileByUserId(userId);
+  if (!profile) return false;
+  return this.professionalProfiles.delete(profile.id);
+}
+async deleteCompanyProfileByUserId(userId: number): Promise<boolean> {
+  const profile = await this.getCompanyProfileByUserId(userId);
+  if (!profile) return false;
+  return this.companyProfiles.delete(profile.id);
+}
+async deleteCompanyProfile(userId: number): Promise<boolean> {
+  const profile = await this.getCompanyProfileByUserId(userId);
+  if (!profile) return false;
+  return this.companyProfiles.delete(profile.id);
+}
+
 
   // Stripe methods
   async updateStripeCustomerId(userId: number, customerId: string): Promise<User | undefined> {
@@ -2892,13 +2909,28 @@ async updateUserSettings(userId: number, settings: {
     return updatedProfile;
   }
 
-  async deleteProfessionalProfile(id: number): Promise<boolean> {
-    const result = await db
-      .delete(professionalProfiles)
-      .where(eq(professionalProfiles.id, id))
-      .returning({ id: professionalProfiles.id });
-    return result.length > 0;
+async deleteProfessionalProfile(id: number): Promise<boolean> {
+  console.log(`Deleting professional profile with ID: ${id}`);
+
+  const existing = await db
+    .select()
+    .from(professionalProfiles)
+    .where(eq(professionalProfiles.id, id));
+
+  if (existing.length === 0) {
+    console.log(`No professional profile found with ID: ${id}`);
+    return false;
   }
+
+  await db
+    .delete(professionalProfiles)
+    .where(eq(professionalProfiles.id, id)); // id ilə silirik
+
+  console.log(`Deleted professional profile with ID: ${id}`);
+  return true;
+}
+
+
 
   // Expertise operations
   async getAllExpertise(): Promise<Expertise[]> {
@@ -3523,7 +3555,15 @@ async updateUserSettings(userId: number, settings: {
       throw error;
     }
   }
+async deleteProfessionalProfileByUserId(userId: number): Promise<boolean> {
+  await db.delete(professionalProfiles).where(eq(professionalProfiles.userId, userId));
+  return true;
+}
 
+async deleteCompanyProfileByUserId(userId: number): Promise<boolean> {
+  await db.delete(companyProfiles).where(eq(companyProfiles.userId, userId));
+  return true;
+}
   // Page Content operations
   async getPageContent(id: number): Promise<PageContent | undefined> {
     const [content] = await db
@@ -3927,6 +3967,14 @@ async updateUserSettings(userId: number, settings: {
     .from(users)
     .where(eq(users.id, id))  
     .limit(1);
+async function deleteProfessionalProfile(userId: number) {
+  console.log(`Deleting professional profile for user ID: ${userId}`);
+  return db('professional_profiles').where('id', userId).del();
+}
+
+// async function deleteCompanyProfile(userId: number) {
+//   return db('company_profiles').where('id', userId).del();
+// }
 
   return user[0] || null;
 }

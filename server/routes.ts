@@ -1725,6 +1725,59 @@ if (updateData.testimonials) {
   }
 });
 
+app.delete("/api/delete-account", isAuthenticated, async (req, res) => {
+  try {
+    const user = req.user as any;
+    const userId = user.id;         
+    const userType = user.userType;  
+
+    if (userType === 'professional') {
+      // Get professional profile by userId (professional_profiles.user_id)
+      const profile = await storage.getProfessionalProfileByUserId(userId);
+      if (profile && profile.profileImagePath) {
+        try {
+          fs.unlinkSync(profile.profileImagePath);
+          console.log(`Deleted profile image: ${profile.profileImagePath}`);
+        } catch (err) {
+          console.warn(`Failed to delete profile image: ${profile.profileImagePath}`);
+        }
+      }
+      
+      // Delete professional profile by userId
+      await storage.deleteProfessionalProfileByUserId(userId);
+
+    } else if (userType === 'company') {
+      const profile = await storage.getCompanyProfile(userId);
+      if (profile && profile.logoImagePath) {
+        try {
+          fs.unlinkSync(profile.logoImagePath);
+          console.log(`Deleted company logo: ${profile.logoImagePath}`);
+        } catch (err) {
+          console.warn(`Failed to delete company logo: ${profile.logoImagePath}`);
+        }
+      }
+
+      await storage.deleteCompanyProfileByUserId(userId);
+    }
+
+    // Delete user from users table
+    await storage.deleteUser(userId);
+
+    res.json({ 
+      success: true, 
+      message: 'Account deleted successfully' 
+    });
+
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    res.status(500).json({ 
+      error: 'Failed to delete account',
+      message: error.message 
+    });
+  }
+});
+
+
   // Get professional profile for the current user
   app.get("/api/professionals/me", async (req, res) => {
     try {

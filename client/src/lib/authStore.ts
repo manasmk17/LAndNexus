@@ -10,6 +10,9 @@ interface User {
   firstName?: string;
   lastName?: string;
   email?: string;
+  emailVerificationToken?: string | null;
+  isEmailVerified?: boolean;
+  status?: "active" | "pending" | "suspended";
 }
 
 interface AuthState {

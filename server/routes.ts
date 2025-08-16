@@ -1,6 +1,6 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { DatabaseStorage, storage } from "./storage";
 import { db } from "./db";
 import { WebSocketServer, WebSocket } from "ws";
 import multer from "multer";
@@ -52,6 +52,8 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import Stripe from "stripe";
 import memorystore from "memorystore";
+import csrf from "csurf";
+import EmailService  from "./email-service";
 
 // Initialize Stripe with the API key
 if (!process.env.STRIPE_SECRET_KEY) {
@@ -65,9 +67,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 });
 
 const scryptAsync = promisify(crypto.scrypt);
-
-
-
+const csrfProtection = csrf({ cookie: true });
+const emailService = new EmailService();
 const MemoryStore = memorystore(session);
 
 // Initialize default resource categories if they don't exist
@@ -482,27 +483,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // CSRF token endpoint
-  app.get('/api/csrf-token', (req: any, res) => {
-    try {
-      // Generate proper CSRF token using req.csrfToken() if available
-      let token;
-      if (req.csrfToken && typeof req.csrfToken === 'function') {
-        token = req.csrfToken();
-      } else {
-        // Fallback token generation for development
-        token = crypto.randomBytes(32).toString('hex');
-      }
-
-      res.cookie('XSRF-TOKEN', token, {
-        httpOnly: false,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax'
-      });
-      res.json({ csrfToken: token });
-    } catch (error) {
-      console.error('Error generating CSRF token:', error);
-      res.status(500).json({ message: 'Failed to generate CSRF token' });
-    }
+  app.get('/api/csrf-token', csrfProtection, (req, res) => {
+    const token = req.csrfToken();
+    res.cookie('XSRF-TOKEN', token, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax'
+    });
+    res.json({ csrfToken: token });
   });
 
   // Import payment service
@@ -816,134 +804,226 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/register", async (req, res) => {
-    try {
-      const userData = insertUserSchema.parse(req.body);
+ app.post("/api/register", async (req, res) => {
+  try {
+    const userData = insertUserSchema.parse(req.body);
 
-      const existingUsername = await storage.getUserByUsername(userData.username);
-      if (existingUsername) {
-        return res.status(400).json({ message: "Username already exists" });
-      }
-      const existingEmail = await storage.getUserByEmail(userData.email);
-      if (existingEmail) {
-        return res.status(400).json({ message: "Email already exists" });
-      }
-
-      const salt = randomBytes(16).toString("hex");
-      const derivedKey = (await scryptAsync(userData.password, salt, 64)) as Buffer;
-      const hashedPassword = `${derivedKey.toString("hex")}.${salt}`;
-
-      const user = await storage.createUser({
-        ...userData,
-        password: hashedPassword,
-      });
-
-      if (user.userType === "professional") {
-        try {
-          const existingProfile = await storage.getProfessionalProfileByUserId(user.id);
-          if (!existingProfile) {
-            await storage.createProfessionalProfile({
-              userId: user.id,
-              title: `${user.username}'s Profile`,
-              bio: "Edit this profile to add your professional bio.",
-              yearsExperience: 0,
-              ratePerHour: 0,
-              availability: "true",
-            });
-            console.log(`Created basic professional profile for new user ${user.id}`);
-          }
-        } catch (profileErr) {
-          console.error("Error creating professional profile:", profileErr);
-        }
-      }
-
-      req.login(user, (err) => {
-        if (err) {
-          return res.status(500).json({ message: "Error logging in after registration" });
-        }
-        return res.status(201).json({
-          id: user.id,
-          username: user.username,
-          userType: user.userType,
-          isAdmin: user.isAdmin,
-        });
-      });
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid input", errors: err.errors });
-      }
-      console.error("Register error:", err);
-      res.status(500).json({ message: "Internal server error" });
+    const existingUsername = await storage.getUserByUsername(userData.username);
+    if (existingUsername) {
+      return res.status(400).json({ message: "Username already exists" });
     }
-  });
 
+    const existingEmail = await storage.getUserByEmail(userData.email);
+    if (existingEmail) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
 
-  app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err: any, user: any, info: any) => {
-      if (err) {
-        return next(err);
-      }
-      if (!user) {
-        return res.status(401).json({ message: info.message });
-      }
+    const salt = randomBytes(16).toString("hex");
+    const derivedKey = (await scryptAsync(userData.password, salt, 64)) as Buffer;
+    const hashedPassword = `${derivedKey.toString("hex")}.${salt}`;
 
+    const emailVerificationToken = emailService.generateEmailVerificationToken();
+
+    const user = await storage.createUser({
+      ...userData,
+      password: hashedPassword,
+      isEmailVerified: false,
+      emailVerificationToken,
+      status: 'pending'  
+    });
+
+    if (user.userType === "professional") {
       try {
-        const rememberMe = req.body.rememberMe === true;
+        const existingProfile = await storage.getProfessionalProfileByUserId(user.id);
+        if (!existingProfile) {
+          await storage.createProfessionalProfile({
+            userId: user.id,
+            title: `${user.username}'s Profile`,
+            bio: "Edit this profile to add your professional bio.",
+            yearsExperience: 0,
+            ratePerHour: 0,
+            availability: "true",
+          });
+          console.log(`Created basic professional profile for new user ${user.id}`);
+        }
+      } catch (profileErr) {
+        console.error("Error creating professional profile:", profileErr);
+      }
+    }
 
-        if (rememberMe && req.session) {
-          req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
-          console.log(`Extended session for user ${user.username} to 30 days`);
+    try {
+      await emailService.sendVerificationEmail(
+        userData.email, 
+        userData.firstName, 
+        emailVerificationToken
+      );
+      console.log(`Verification email sent to ${userData.email}`);
+    } catch (emailError) {
+      console.error("Failed to send verification email:", emailError);
+      return res.status(500).json({ 
+        message: "Registration completed but failed to send verification email. Please contact support." 
+      });
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: "Registration successful. Please check your email to verify your account.",
+      userId: user.id
+    });
+
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({ message: "Invalid input", errors: err.errors });
+    }
+    console.error("Register error:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.get("/api/verify-email/:token", async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    if (!token) {
+      return res.status(400).json({ message: "Verification token is required" });
+    }
+
+    // Find user with this verification token
+    const user = await emailService.getUserByVerificationToken(token);
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired verification token" });
+    }
+
+    // Check if already verified
+    if (user.isEmailVerified) {
+      return res.redirect("/login?message=already_verified");
+    }
+
+    // Update user as verified
+    await storage.updateUser(user.id, {
+      isEmailVerified: true,
+      emailVerificationToken: null,
+      status: 'active' // Change status from 'pending' to 'active'
+    });
+
+    console.log(`User ${user.email} email verified successfully`);
+
+    // Redirect to login with success message
+    return res.redirect("/login?message=email_verified");
+
+  } catch (err) {
+    console.error("Email verification error:", err);
+    return res.redirect("/login?message=verification_failed");
+  }
+});
+  app.post("/api/resend-verification", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+
+  try {
+    const user = await storage.getUserByEmail(email);
+    
+    if (!user) {
+      return res.status(400).json({ error: "User not found" });
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(400).json({ error: "Email is already verified" });
+    }
+
+    const newToken = emailService.generateEmailVerificationToken();
+    await emailService.updateUserVerificationToken(user.id, newToken);
+
+    await emailService.sendVerificationEmail(email, user.firstName, newToken);
+
+    res.json({ 
+      success: true, 
+      message: "Verification email sent successfully" 
+    });
+
+  } catch (error) {
+    console.error("Resend verification error:", error);
+    res.status(500).json({ error: "Failed to resend verification email" });
+  }
+});
+ app.post("/api/login", (req, res, next) => {
+  passport.authenticate("local", (err: any, user: any, info: any) => {
+    if (err) {
+      return next(err);
+    }
+    
+    // Check if authentication failed due to email verification
+    if (!user) {
+      if (info && info.requiresVerification) {
+        return res.status(403).json({ 
+          message: info.message,
+          requiresVerification: true,
+          email: info.email 
+        });
+      }
+      return res.status(401).json({ message: info.message });
+    }
+
+    try {
+      const rememberMe = req.body.rememberMe === true;
+
+      if (rememberMe && req.session) {
+        req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+        console.log(`Extended session for user ${user.username} to 30 days`);
+      }
+
+      req.login(user, (loginErr) => {
+        if (loginErr) {
+          return next(loginErr);
         }
 
-        req.login(user, (loginErr) => {
-          if (loginErr) {
-            return next(loginErr);
+        (req.session as any).userId = user.id;
+        (req.session as any).userType = user.userType;
+        (req.session as any).authenticated = true;
+
+        const sessionToken = crypto.randomBytes(32).toString('hex');
+        (req.session as any).sessionToken = sessionToken;
+
+        sessionTokenStore.set(sessionToken, {
+          userId: user.id,
+          userType: user.userType,
+          timestamp: Date.now()
+        });
+
+        res.cookie('session_token', sessionToken, {
+          httpOnly: false,
+          secure: false,
+          sameSite: 'lax',
+          maxAge: rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000
+        });
+
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error('Session save error:', saveErr);
+            return next(saveErr);
           }
 
-          (req.session as any).userId = user.id;
-          (req.session as any).userType = user.userType;
-          (req.session as any).authenticated = true;
+          console.log(`User ${user.username} authenticated with session ${req.sessionID.slice(0, 8)}...`);
+          console.log(`Session stored with userId: ${user.id}, userType: ${user.userType}, token: ${sessionToken.slice(0, 8)}...`);
 
-          const sessionToken = crypto.randomBytes(32).toString('hex');
-          (req.session as any).sessionToken = sessionToken;
+          const { password, resetToken, resetTokenExpiry, emailVerificationToken, ...userWithoutSensitiveInfo } = user;
 
-          sessionTokenStore.set(sessionToken, {
-            userId: user.id,
-            userType: user.userType,
-            timestamp: Date.now()
-          });
-
-          res.cookie('session_token', sessionToken, {
-            httpOnly: false,
-            secure: false,
-            sameSite: 'lax',
-            maxAge: 24 * 60 * 60 * 1000
-          });
-
-          req.session.save((saveErr) => {
-            if (saveErr) {
-              console.error('Session save error:', saveErr);
-              return next(saveErr);
-            }
-
-            console.log(`User ${user.username} authenticated with session ${req.sessionID.slice(0, 8)}...`);
-            console.log(`Session stored with userId: ${user.id}, userType: ${user.userType}, token: ${sessionToken.slice(0, 8)}...`);
-
-            const { password, resetToken, resetTokenExpiry, ...userWithoutSensitiveInfo } = user;
-
-            return res.json({
-              ...userWithoutSensitiveInfo,
-              sessionPersisted: true,
-              sessionToken: sessionToken
-            });
+          return res.json({
+            ...userWithoutSensitiveInfo,
+            sessionPersisted: true,
+            sessionToken: sessionToken
           });
         });
-      } catch (error) {
-        console.error('Login error:', error);
-        return res.status(500).json({ message: 'Internal server error during login' });
-      }
-    })(req, res, next);
-  });
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      return res.status(500).json({ message: 'Internal server error during login' });
+    }
+  })(req, res, next);
+});
 
 
   // Logout endpoint
@@ -1173,50 +1253,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Server error" });
     }
   });
-// app.get("/api/industries", isAuthenticated, async (req, res) => {
-//   try {
-//     let user = req.user as any;
+  // app.get("/api/industries", isAuthenticated, async (req, res) => {
+  //   try {
+  //     let user = req.user as any;
 
-//     // JWT istifadə edilirsə
-//     if ((req as any).tokenUser) {
-//       const tokenUser = (req as any).tokenUser;
-//       user = await storage.getUser(tokenUser.userId);
-//       if (!user) {
-//         return res.status(401).json({ message: "User not found" });
-//       }
-//     }
+  //     // JWT istifadə edilirsə
+  //     if ((req as any).tokenUser) {
+  //       const tokenUser = (req as any).tokenUser;
+  //       user = await storage.getUser(tokenUser.userId);
+  //       if (!user) {
+  //         return res.status(401).json({ message: "User not found" });
+  //       }
+  //     }
 
-//     if (!user) {
-//       return res.status(401).json({ message: "User not found in session" });
-//     }
+  //     if (!user) {
+  //       return res.status(401).json({ message: "User not found in session" });
+  //     }
 
-//     const industries = await storage.getAllIndustries();
-//     res.json(industries);
-//   } catch (error) {
-//     console.error('Error in /api/industries:', error);
-//     res.status(500).json({ message: "Internal server error" });
-//   }
-// });
+  //     const industries = await storage.getAllIndustries();
+  //     res.json(industries);
+  //   } catch (error) {
+  //     console.error('Error in /api/industries:', error);
+  //     res.status(500).json({ message: "Internal server error" });
+  //   }
+  // });
 
   // Get multiple users in batch
- 
- app.get("/api/industries", async (req, res) => {
-  try {
-    console.log("Fetching all industries from database");
-    
-    const industries = await storage.getAllIndustries();
-    
-    console.log(`Retrieved ${industries.length} industries`);
-    
-    res.json(industries);
-  } catch (err) {
-    console.error("Error fetching industries:", err);
-    res.status(500).json({ 
-      message: "Internal server error",
-      error: err instanceof Error ? err.message : "Unknown error"
-    });
-  }
-});
+
+  app.get("/api/industries", async (req, res) => {
+    try {
+      console.log("Fetching all industries from database");
+
+      const industries = await storage.getAllIndustries();
+
+      console.log(`Retrieved ${industries.length} industries`);
+
+      res.json(industries);
+    } catch (err) {
+      console.error("Error fetching industries:", err);
+      res.status(500).json({
+        message: "Internal server error",
+        error: err instanceof Error ? err.message : "Unknown error"
+      });
+    }
+  });
   app.get("/api/users/batch", async (req, res) => {
     try {
       // Get userIds from query parameter
@@ -1574,38 +1654,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-app.get("/api/professional-profiles/:id", async (req, res) => {
-  const profileId = parseInt(req.params.id);
+  app.get("/api/professional-profiles/:id", async (req, res) => {
+    const profileId = parseInt(req.params.id);
 
-  if (isNaN(profileId)) {
-    return res.status(400).json({ message: "Invalid profile ID" });
-  }
+    if (isNaN(profileId)) {
+      return res.status(400).json({ message: "Invalid profile ID" });
+    }
 
-  const profile = await storage.getProfessionalProfile(profileId);
+    const profile = await storage.getProfessionalProfile(profileId);
 
-  if (!profile) {
-    return res.status(404).json({ message: "Profile not found" });
-  }
+    if (!profile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
 
-  const userId = profile.userId || profile.userId;
+    const userId = profile.userId || profile.userId;
 
-  if (!userId) {
-    return res.status(500).json({ message: "User ID not found for this profile" });
-  }
+    if (!userId) {
+      return res.status(500).json({ message: "User ID not found for this profile" });
+    }
 
-  const user = await storage.getUserById(userId);
+    const user = await storage.getUserById(userId);
 
-  if (!user) {
-    return res.status(404).json({ message: "User not found" });
-  }
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-  if (!user.contactVisible) {
-    profile.email = "private";
-    profile.phone = "private";
-  }
+    if (!user.contactVisible) {
+      profile.email = "private";
+      profile.phone = "private";
+    }
 
-  res.json(profile);
-});
+    res.json(profile);
+  });
 
   // Delete profile image
   app.delete("/api/professional-profiles/:id/profile-image", isAuthenticated, async (req, res) => {
@@ -1649,133 +1729,133 @@ app.get("/api/professional-profiles/:id", async (req, res) => {
     }
   });
 
-app.put("/api/professional-profiles/:id", isAuthenticated, uploadProfileImage.single('profileImage'), async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    const user = req.user as any;
+  app.put("/api/professional-profiles/:id", isAuthenticated, uploadProfileImage.single('profileImage'), async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = req.user as any;
 
-    // Check if profile exists and belongs to user
-    const profile = await storage.getProfessionalProfile(id);
-    if (!profile) {
-      return res.status(404).json({ message: "Profile not found" });
-    }
+      // Check if profile exists and belongs to user
+      const profile = await storage.getProfessionalProfile(id);
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
 
-    if (profile.userId !== user.id && !user.isAdmin) {
-      return res.status(403).json({ message: "You can only update your own profile" });
-    }
+      if (profile.userId !== user.id && !user.isAdmin) {
+        return res.status(403).json({ message: "You can only update your own profile" });
+      }
 
-    // Process the request body data
-    const updateData = { ...req.body };
-    
-    // FIXED: Convert industryId to integer outside of file upload block
-    if (updateData.industryId) {
-      updateData.industryId = parseInt(updateData.industryId);
-    }
-    
-    // Convert other numeric fields if needed
-    if (updateData.ratePerHour) {
-      updateData.ratePerHour = parseFloat(updateData.ratePerHour);
-    }
-    
-    if (updateData.yearsExperience) {
-      updateData.yearsExperience = parseInt(updateData.yearsExperience);
-    }
-if (updateData.workExperience) {
-  try {
-    updateData.workExperience = JSON.parse(updateData.workExperience);
-  } catch (err) {
-    console.error("Failed to parse workExperience:", updateData.workExperience);
-    updateData.workExperience = [];
-  }
-}
-if (updateData.testimonials) {
-  try {
-    updateData.testimonials = JSON.parse(updateData.testimonials);
-  } catch (err) {
-    console.error("Failed to parse testimonials:", updateData.testimonials);
-    updateData.testimonials = [];
-  }
-}
+      // Process the request body data
+      const updateData = { ...req.body };
 
-    // Process uploaded file if present
-    if (req.file) {
-      // Delete existing image if present
-      if (profile.profileImagePath) {
+      // FIXED: Convert industryId to integer outside of file upload block
+      if (updateData.industryId) {
+        updateData.industryId = parseInt(updateData.industryId);
+      }
+
+      // Convert other numeric fields if needed
+      if (updateData.ratePerHour) {
+        updateData.ratePerHour = parseFloat(updateData.ratePerHour);
+      }
+
+      if (updateData.yearsExperience) {
+        updateData.yearsExperience = parseInt(updateData.yearsExperience);
+      }
+      if (updateData.workExperience) {
         try {
-          fs.unlinkSync(profile.profileImagePath);
-          console.log(`Deleted previous profile image: ${profile.profileImagePath}`);
+          updateData.workExperience = JSON.parse(updateData.workExperience);
         } catch (err) {
-          console.warn(`Failed to delete previous profile image: ${profile.profileImagePath}`);
+          console.error("Failed to parse workExperience:", updateData.workExperience);
+          updateData.workExperience = [];
+        }
+      }
+      if (updateData.testimonials) {
+        try {
+          updateData.testimonials = JSON.parse(updateData.testimonials);
+        } catch (err) {
+          console.error("Failed to parse testimonials:", updateData.testimonials);
+          updateData.testimonials = [];
         }
       }
 
-      updateData.profileImagePath = req.file.path;
-      console.log(`Updated profile image: ${updateData.profileImagePath}`);
-    }
-
-    const updatedProfile = await storage.updateProfessionalProfile(id, updateData);
-
-    res.json(updatedProfile);
-  } catch (err) {
-    if (err instanceof z.ZodError) {
-      return res.status(400).json({ message: "Invalid input", errors: err.errors });
-    }
-    console.error("Error updating professional profile:", err);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
-app.delete("/api/delete-account", isAuthenticated, async (req, res) => {
-  try {
-    const user = req.user as any;
-    const userId = user.id;         
-    const userType = user.userType;  
-
-    if (userType === 'professional') {
-      // Get professional profile by userId (professional_profiles.user_id)
-      const profile = await storage.getProfessionalProfileByUserId(userId);
-      if (profile && profile.profileImagePath) {
-        try {
-          fs.unlinkSync(profile.profileImagePath);
-          console.log(`Deleted profile image: ${profile.profileImagePath}`);
-        } catch (err) {
-          console.warn(`Failed to delete profile image: ${profile.profileImagePath}`);
+      // Process uploaded file if present
+      if (req.file) {
+        // Delete existing image if present
+        if (profile.profileImagePath) {
+          try {
+            fs.unlinkSync(profile.profileImagePath);
+            console.log(`Deleted previous profile image: ${profile.profileImagePath}`);
+          } catch (err) {
+            console.warn(`Failed to delete previous profile image: ${profile.profileImagePath}`);
+          }
         }
-      }
-      
-      // Delete professional profile by userId
-      await storage.deleteProfessionalProfileByUserId(userId);
 
-    } else if (userType === 'company') {
-      const profile = await storage.getCompanyProfile(userId);
-      if (profile && profile.logoImagePath) {
-        try {
-          fs.unlinkSync(profile.logoImagePath);
-          console.log(`Deleted company logo: ${profile.logoImagePath}`);
-        } catch (err) {
-          console.warn(`Failed to delete company logo: ${profile.logoImagePath}`);
-        }
+        updateData.profileImagePath = req.file.path;
+        console.log(`Updated profile image: ${updateData.profileImagePath}`);
       }
 
-      await storage.deleteCompanyProfileByUserId(userId);
+      const updatedProfile = await storage.updateProfessionalProfile(id, updateData);
+
+      res.json(updatedProfile);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: err.errors });
+      }
+      console.error("Error updating professional profile:", err);
+      res.status(500).json({ message: "Internal server error" });
     }
+  });
 
-    // Delete user from users table
-    await storage.deleteUser(userId);
+  app.delete("/api/delete-account", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const userId = user.id;
+      const userType = user.userType;
 
-    res.json({ 
-      success: true, 
-      message: 'Account deleted successfully' 
-    });
+      if (userType === 'professional') {
+        // Get professional profile by userId (professional_profiles.user_id)
+        const profile = await storage.getProfessionalProfileByUserId(userId);
+        if (profile && profile.profileImagePath) {
+          try {
+            fs.unlinkSync(profile.profileImagePath);
+            console.log(`Deleted profile image: ${profile.profileImagePath}`);
+          } catch (err) {
+            console.warn(`Failed to delete profile image: ${profile.profileImagePath}`);
+          }
+        }
 
-  } catch (error) {
-    console.error('Error deleting account:', error);
-    res.status(500).json({ 
-      error: 'Failed to delete account',
-      message: error.message 
-    });
-  }
-});
+        // Delete professional profile by userId
+        await storage.deleteProfessionalProfileByUserId(userId);
+
+      } else if (userType === 'company') {
+        const profile = await storage.getCompanyProfile(userId);
+        if (profile && profile.logoImagePath) {
+          try {
+            fs.unlinkSync(profile.logoImagePath);
+            console.log(`Deleted company logo: ${profile.logoImagePath}`);
+          } catch (err) {
+            console.warn(`Failed to delete company logo: ${profile.logoImagePath}`);
+          }
+        }
+
+        await storage.deleteCompanyProfileByUserId(userId);
+      }
+
+      // Delete user from users table
+      await storage.deleteUser(userId);
+
+      res.json({
+        success: true,
+        message: 'Account deleted successfully'
+      });
+
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      res.status(500).json({
+        error: 'Failed to delete account',
+        message: error.message
+      });
+    }
+  });
 
 
   // Get professional profile for the current user
@@ -1901,129 +1981,129 @@ app.delete("/api/delete-account", isAuthenticated, async (req, res) => {
   });
 
   // Update or create a professional profile for the current user
-app.put("/api/professionals/me", isAuthenticated, uploadProfileImage.single('profileImage'), async (req, res) => {
-  try {
-    const user = req.user as any;
+  app.put("/api/professionals/me", isAuthenticated, uploadProfileImage.single('profileImage'), async (req, res) => {
+    try {
+      const user = req.user as any;
 
-    if (!user) {
-      console.error("Authentication issue: user object not available in request");
-      return res.status(401).json({ message: "User not authenticated" });
-    }
+      if (!user) {
+        console.error("Authentication issue: user object not available in request");
+        return res.status(401).json({ message: "User not authenticated" });
+      }
 
-    if (user.userType !== "professional") {
-      console.warn(`User type mismatch: ${user.username} (ID: ${user.id}) with type ${user.userType} tried to access professional endpoint`);
-      return res.status(403).json({ message: "Only professionals can access this endpoint" });
-    }
+      if (user.userType !== "professional") {
+        console.warn(`User type mismatch: ${user.username} (ID: ${user.id}) with type ${user.userType} tried to access professional endpoint`);
+        return res.status(403).json({ message: "Only professionals can access this endpoint" });
+      }
 
-    // Log the request details for debugging
-    console.log(`Profile update request from user ${user.username} (ID: ${user.id})`);
-    console.log(`Request body fields: ${Object.keys(req.body).join(', ')}`);
-    console.log(`Request body values:`, req.body);
-    console.log(`File upload: ${req.file ? `Yes (${req.file.filename})` : 'No'}`);
+      // Log the request details for debugging
+      console.log(`Profile update request from user ${user.username} (ID: ${user.id})`);
+      console.log(`Request body fields: ${Object.keys(req.body).join(', ')}`);
+      console.log(`Request body values:`, req.body);
+      console.log(`File upload: ${req.file ? `Yes (${req.file.filename})` : 'No'}`);
 
-    // Check if profile exists
-    const existingProfile = await storage.getProfessionalProfileByUserId(user.id);
-    console.log(`Existing profile found: ${existingProfile ? 'Yes (ID: ' + existingProfile.id + ')' : 'No'}`);
+      // Check if profile exists
+      const existingProfile = await storage.getProfessionalProfileByUserId(user.id);
+      console.log(`Existing profile found: ${existingProfile ? 'Yes (ID: ' + existingProfile.id + ')' : 'No'}`);
 
-    // Prepare profile data with type handling
-    const profileData: any = {
-      ...req.body,
-      userId: user.id
-    };
+      // Prepare profile data with type handling
+      const profileData: any = {
+        ...req.body,
+        userId: user.id
+      };
 
-    // FIXED: Handle industryId (can be empty string, undefined, or a valid number)
-    if (profileData.industryId !== undefined) {
-      if (profileData.industryId === '' || profileData.industryId === null) {
-        profileData.industryId = null;
-        console.log("Industry ID set to null (empty or null value)");
-      } else {
-        const parsedIndustryId = parseInt(profileData.industryId);
-        if (isNaN(parsedIndustryId)) {
+      // FIXED: Handle industryId (can be empty string, undefined, or a valid number)
+      if (profileData.industryId !== undefined) {
+        if (profileData.industryId === '' || profileData.industryId === null) {
           profileData.industryId = null;
-          console.log("Industry ID set to null (invalid number)");
+          console.log("Industry ID set to null (empty or null value)");
         } else {
-          profileData.industryId = parsedIndustryId;
-          console.log(`Industry ID set to: ${parsedIndustryId}`);
+          const parsedIndustryId = parseInt(profileData.industryId);
+          if (isNaN(parsedIndustryId)) {
+            profileData.industryId = null;
+            console.log("Industry ID set to null (invalid number)");
+          } else {
+            profileData.industryId = parsedIndustryId;
+            console.log(`Industry ID set to: ${parsedIndustryId}`);
+          }
         }
       }
-    }
 
-    // Handle rate per hour (can be empty string, undefined, or a valid number)
-    if (profileData.ratePerHour !== undefined) {
-      if (profileData.ratePerHour === '' || profileData.ratePerHour === null) {
-        profileData.ratePerHour = null;
-      } else {
-        const parsedRate = Number(profileData.ratePerHour);
-        profileData.ratePerHour = isNaN(parsedRate) ? null : parsedRate;
+      // Handle rate per hour (can be empty string, undefined, or a valid number)
+      if (profileData.ratePerHour !== undefined) {
+        if (profileData.ratePerHour === '' || profileData.ratePerHour === null) {
+          profileData.ratePerHour = null;
+        } else {
+          const parsedRate = Number(profileData.ratePerHour);
+          profileData.ratePerHour = isNaN(parsedRate) ? null : parsedRate;
+        }
       }
-    }
 
-    // Handle years experience (can be empty string, undefined, or a valid number)
-    if (profileData.yearsExperience !== undefined) {
-      if (profileData.yearsExperience === '' || profileData.yearsExperience === null) {
-        profileData.yearsExperience = null;
-      } else {
-        const parsedYears = Number(profileData.yearsExperience);
-        profileData.yearsExperience = isNaN(parsedYears) ? null : parsedYears;
+      // Handle years experience (can be empty string, undefined, or a valid number)
+      if (profileData.yearsExperience !== undefined) {
+        if (profileData.yearsExperience === '' || profileData.yearsExperience === null) {
+          profileData.yearsExperience = null;
+        } else {
+          const parsedYears = Number(profileData.yearsExperience);
+          profileData.yearsExperience = isNaN(parsedYears) ? null : parsedYears;
+        }
       }
-    }
 
-    // Keep availability as string but default to "Not specified" if empty
-    if (profileData.availability === '' || profileData.availability === undefined) {
-      profileData.availability = "Not specified";
-    }
+      // Keep availability as string but default to "Not specified" if empty
+      if (profileData.availability === '' || profileData.availability === undefined) {
+        profileData.availability = "Not specified";
+      }
 
-    // Handle file upload if provided
-    if (req.file) {
-      profileData.profileImagePath = req.file.path.replace(/^public\//, '');
-      console.log(`New profile image path: ${profileData.profileImagePath}`);
-    }
+      // Handle file upload if provided
+      if (req.file) {
+        profileData.profileImagePath = req.file.path.replace(/^public\//, '');
+        console.log(`New profile image path: ${profileData.profileImagePath}`);
+      }
 
-    console.log("Processed profile data for save:", {
-      ...profileData,
-      industryId: `${profileData.industryId} (type: ${typeof profileData.industryId})`,
-      ratePerHour: `${profileData.ratePerHour} (type: ${typeof profileData.ratePerHour})`,
-      yearsExperience: `${profileData.yearsExperience} (type: ${typeof profileData.yearsExperience})`
-    });
+      console.log("Processed profile data for save:", {
+        ...profileData,
+        industryId: `${profileData.industryId} (type: ${typeof profileData.industryId})`,
+        ratePerHour: `${profileData.ratePerHour} (type: ${typeof profileData.ratePerHour})`,
+        yearsExperience: `${profileData.yearsExperience} (type: ${typeof profileData.yearsExperience})`
+      });
 
-    let profile;
-    if (existingProfile) {
-      // Update existing profile
-      console.log(`Updating profile ID: ${existingProfile.id}`);
-      profile = await storage.updateProfessionalProfile(existingProfile.id, profileData);
-    } else {
-      // Create new profile
-      console.log(`Creating new profile for user ID: ${user.id}`);
-      profile = await storage.createProfessionalProfile(profileData);
-    }
+      let profile;
+      if (existingProfile) {
+        // Update existing profile
+        console.log(`Updating profile ID: ${existingProfile.id}`);
+        profile = await storage.updateProfessionalProfile(existingProfile.id, profileData);
+      } else {
+        // Create new profile
+        console.log(`Creating new profile for user ID: ${user.id}`);
+        profile = await storage.createProfessionalProfile(profileData);
+      }
 
-    // Ensure profile exists before trying to access its properties
-    if (profile) {
-      console.log(`Profile ${existingProfile ? 'updated' : 'created'} successfully: ${profile.id}`);
-      console.log(`Final saved industryId: ${profile.industryId} (type: ${typeof profile.industryId})`);
-      res.json(profile);
-    } else {
-      console.log(`Warning: Profile operation completed but profile object is undefined`);
-      throw new Error("Failed to create or update profile");
-    }
-  } catch (err) {
-    console.error("Error updating professional profile:", err);
+      // Ensure profile exists before trying to access its properties
+      if (profile) {
+        console.log(`Profile ${existingProfile ? 'updated' : 'created'} successfully: ${profile.id}`);
+        console.log(`Final saved industryId: ${profile.industryId} (type: ${typeof profile.industryId})`);
+        res.json(profile);
+      } else {
+        console.log(`Warning: Profile operation completed but profile object is undefined`);
+        throw new Error("Failed to create or update profile");
+      }
+    } catch (err) {
+      console.error("Error updating professional profile:", err);
 
-    // Provide more details in error response
-    if (err instanceof z.ZodError) {
-      return res.status(400).json({
-        message: "Invalid profile data provided",
-        errors: err.errors
+      // Provide more details in error response
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({
+          message: "Invalid profile data provided",
+          errors: err.errors
+        });
+      }
+
+      // More detailed error message for debugging client-side issues
+      res.status(500).json({
+        message: "Failed to update profile",
+        error: err instanceof Error ? err.message : "Unknown error"
       });
     }
-
-    // More detailed error message for debugging client-side issues
-    res.status(500).json({
-      message: "Failed to update profile",
-      error: err instanceof Error ? err.message : "Unknown error"
-    });
-  }
-});
+  });
   // Get certifications for the current professional user
   app.get("/api/professionals/me/certifications", isAuthenticated, async (req, res) => {
     try {
@@ -2147,7 +2227,21 @@ app.put("/api/professionals/me", isAuthenticated, uploadProfileImage.single('pro
       res.status(500).json({ message: "Internal server error" });
     }
   });
+  app.post("/api/validate-email", csrfProtection, async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: "Email is required" });
 
+    if (storage instanceof DatabaseStorage) {
+      try {
+        const result = await storage.validateEmailHunter(email);
+        res.json(result);
+      } catch (err) {
+        res.status(500).json({ isValid: false, error: "Validation failed" });
+      }
+    } else {
+      res.status(500).json({ isValid: false, error: "Email validation not supported in memory storage" });
+    }
+  });
   // Expertise Routes
   app.get("/api/expertise", async (req, res) => {
     const expertiseList = await storage.getAllExpertise();
@@ -5799,9 +5893,9 @@ app.put("/api/professionals/me", isAuthenticated, uploadProfileImage.single('pro
     try {
       console.log("Getting user settings");
       const user = req.user as any;
-      console.log(user,"User");
+      console.log(user, "User");
       const settings = await storage.getUserSettings(user.id);
-      console.log(settings,"settings");
+      console.log(settings, "settings");
       res.json(settings);
     } catch (err) {
       console.error("Error fetching user settings:", err);
@@ -5813,7 +5907,7 @@ app.put("/api/professionals/me", isAuthenticated, uploadProfileImage.single('pro
     try {
       const user = req.user as any;
       console.log("Updating user settings for user ID:", user);
-      const { notifications, profileVisible,contactVisible, emailUpdates } = req.body;
+      const { notifications, profileVisible, contactVisible, emailUpdates } = req.body;
 
       const settings = await storage.updateUserSettings(user.id, {
         notifications,

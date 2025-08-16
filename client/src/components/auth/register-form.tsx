@@ -35,7 +35,6 @@ const usernameChecks = [
   { id: "onlyLettersNumbers", label: "Only letters & numbers", test: (val: string) => /^[A-Za-z0-9]+$/.test(val) },
 ];
 
-
 // Validation schema
 const registerSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -64,7 +63,6 @@ export default function RegisterForm({ initialUserType }: RegisterFormProps) {
   const { login } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [showUsernameChecks, setShowUsernameChecks] = useState(false);
   const [showPasswordChecks, setShowPasswordChecks] = useState(false);
 
@@ -87,41 +85,89 @@ export default function RegisterForm({ initialUserType }: RegisterFormProps) {
   const confirmPasswordValue = form.watch("confirmPassword");
   const passwordsMatch = passwordValue === confirmPasswordValue;
 
-  async function onSubmit(values: z.infer<typeof registerSchema>) {
-    try {
-      setIsSubmitting(true);
+async function getCsrfToken() {
+  const res = await fetch("/api/csrf-token", {
+    credentials: "include",
+  });
+  const data = await res.json();
+  console.log("CSRF Token:", data.csrfToken);
+  return data.csrfToken;
+}
 
-      const response = await fetch("/api/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(values),
-      });
+async function onSubmit(values: z.infer<typeof registerSchema>) {
+  try {
+    setIsSubmitting(true);
 
-      const data = await response.json();
+    // 1️⃣ CSRF token al
+    const csrfToken = await getCsrfToken();
+    console.log("CSRF Token:", csrfToken);
+    // 2️⃣ Email mövcudluğunu yoxla
+    const emailCheck = await fetch("/api/validate-email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken,
+      },
+      credentials: "include", // cookie-lər getsin
+      body: JSON.stringify({ email: values.email }),
+    });
 
-      if (!response.ok) {
-        throw new Error(data.message || "Registration failed");
-      }
+    const emailData = await emailCheck.json();
+console.log("Email validation response:", emailData);
 
-      await login({ username: values.username, password: values.password });
-      toast({
-        title: t("auth.registerSuccess"),
-        description: "Welcome to L&D Nexus",
-      });
+if (!emailCheck.ok || !emailData.isValid) {
+  // real problemi göstər
+  const errorMessage = emailData.error
+    ? emailData.error
+    : !emailData.isValid
+      ? "This email is not valid or does not exist"
+      : "Email already exists";
 
-      setLocation(values.userType === "professional" ? "/professional-dashboard" : "/company-dashboard");
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: t("auth.registerFailed"),
-        description: error.message,
-      });
-    } finally {
-      setIsSubmitting(false);
+  toast({
+    variant: "destructive",
+    title: t("auth.registerFailed"),
+    description: errorMessage,
+  });
+  return;
+}
+
+
+    // 3️⃣ Qeydiyyat request-i
+    const response = await fetch("/api/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": csrfToken,
+      },
+      credentials: "include",
+      body: JSON.stringify(values),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Registration failed");
     }
+
+    // 4️⃣ Login ol və yönləndir
+    await login({ username: values.username, password: values.password });
+    toast({
+      title: t("auth.registerSuccess"),
+      description: "Welcome to L&D Nexus",
+    });
+
+    setLocation(values.userType === "professional" ? "/professional-dashboard" : "/company-dashboard");
+  } catch (error: any) {
+    toast({
+      variant: "destructive",
+      title: t("auth.registerFailed"),
+      description: error.message,
+    });
+  } finally {
+    setIsSubmitting(false);
   }
+}
+
 
   return (
     <Form {...form}>
@@ -135,26 +181,14 @@ export default function RegisterForm({ initialUserType }: RegisterFormProps) {
             <FormItem className="space-y-3">
               <FormLabel>{t("auth.userType")}</FormLabel>
               <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  className="flex space-x-4 rtl:space-x-reverse"
-                >
+                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex space-x-4 rtl:space-x-reverse">
                   <FormItem className="flex items-center space-x-2 rtl:space-x-reverse">
-                    <FormControl>
-                      <RadioGroupItem value="professional" />
-                    </FormControl>
-                    <FormLabel className="font-normal">
-                      {t("auth.professional")}
-                    </FormLabel>
+                    <FormControl><RadioGroupItem value="professional" /></FormControl>
+                    <FormLabel className="font-normal">{t("auth.professional")}</FormLabel>
                   </FormItem>
                   <FormItem className="flex items-center space-x-2 rtl:space-x-reverse">
-                    <FormControl>
-                      <RadioGroupItem value="company" />
-                    </FormControl>
-                    <FormLabel className="font-normal">
-                      {t("auth.company")}
-                    </FormLabel>
+                    <FormControl><RadioGroupItem value="company" /></FormControl>
+                    <FormLabel className="font-normal">{t("auth.company")}</FormLabel>
                   </FormItem>
                 </RadioGroup>
               </FormControl>
@@ -165,52 +199,68 @@ export default function RegisterForm({ initialUserType }: RegisterFormProps) {
 
         {/* Name Fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="firstName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("auth.firstName")}</FormLabel>
-                <FormControl>
-                  <Input placeholder="John" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="lastName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("auth.lastName")}</FormLabel>
-                <FormControl>
-                  <Input placeholder="Doe" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <FormField control={form.control} name="firstName" render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t("auth.firstName")}</FormLabel>
+              <FormControl><Input placeholder="John" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={form.control} name="lastName" render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t("auth.lastName")}</FormLabel>
+              <FormControl><Input placeholder="Doe" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
         </div>
 
         {/* Username */}
-        <FormField
-          control={form.control}
-          name="username"
-          render={({ field }) => (
+        <FormField control={form.control} name="username" render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t("auth.username")}</FormLabel>
+            <FormControl>
+              <Input {...field} placeholder="johndoe" onFocus={() => setShowUsernameChecks(true)} onBlur={() => setShowUsernameChecks(false)} />
+            </FormControl>
+            {showUsernameChecks && (
+              <div className="mt-1 space-y-1 text-sm">
+                {usernameChecks.map((check) => {
+                  const valid = check.test(field.value);
+                  return (
+                    <div key={check.id} className={clsx("flex items-center gap-1", valid ? "text-green-600" : "text-red-500")}>
+                      {valid ? <Check size={14} /> : <X size={14} />}
+                      {check.label}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            <FormMessage />
+          </FormItem>
+        )} />
+
+        {/* Email */}
+        <FormField control={form.control} name="email" render={({ field }) => (
+          <FormItem>
+            <FormLabel>{t("auth.email")}</FormLabel>
+            <FormControl>
+              <Input type="email" placeholder="john.doe@example.com" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )} />
+
+        {/* Password & Confirm */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField control={form.control} name="password" render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("auth.username")}</FormLabel>
+              <FormLabel>{t("auth.password")}</FormLabel>
               <FormControl>
-                <Input
-                  placeholder="johndoe"
-                  {...field}
-                  onFocus={() => setShowUsernameChecks(true)}
-                  onBlur={() => setShowUsernameChecks(false)}
-                />
+                <Input type="password" placeholder="********" {...field} onFocus={() => setShowPasswordChecks(true)} onBlur={() => setShowPasswordChecks(false)} />
               </FormControl>
-              {showUsernameChecks && (
+              {showPasswordChecks && (
                 <div className="mt-1 space-y-1 text-sm">
-                  {usernameChecks.map((check) => {
+                  {passwordChecks.map((check) => {
                     const valid = check.test(field.value);
                     return (
                       <div key={check.id} className={clsx("flex items-center gap-1", valid ? "text-green-600" : "text-red-500")}>
@@ -223,80 +273,15 @@ export default function RegisterForm({ initialUserType }: RegisterFormProps) {
               )}
               <FormMessage />
             </FormItem>
-          )}
-        />
-
-        {/* Email */}
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
+          )} />
+          <FormField control={form.control} name="confirmPassword" render={({ field }) => (
             <FormItem>
-              <FormLabel>{t("auth.email")}</FormLabel>
-              <FormControl>
-                <Input type="email" placeholder="john.doe@example.com" {...field} />
-              </FormControl>
+              <FormLabel>{t("auth.confirmPassword")}</FormLabel>
+              <FormControl><Input type="password" placeholder="********" {...field} /></FormControl>
+              {confirmPasswordValue.length > 0 && !passwordsMatch && <p className="text-red-500 text-sm mt-1">Passwords don’t match</p>}
               <FormMessage />
             </FormItem>
-          )}
-        />
-
-        {/* Password & Confirm */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("auth.password")}</FormLabel>
-                <FormControl>
-                  <Input
-                    type="password"
-                    placeholder="********"
-                    {...field}
-                    onFocus={() => setShowPasswordChecks(true)}
-                    onBlur={() => setShowPasswordChecks(false)}
-                  />
-                </FormControl>
-                {showPasswordChecks && (
-                  <div className="mt-1 space-y-1 text-sm">
-                    {passwordChecks.map((check) => {
-                      const valid = check.test(field.value);
-                      return (
-                        <div key={check.id} className={clsx("flex items-center gap-1", valid ? "text-green-600" : "text-red-500")}>
-                          {valid ? <Check size={14} /> : <X size={14} />}
-                          {check.label}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="confirmPassword"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t("auth.confirmPassword")}</FormLabel>
-                <FormControl>
-                  <Input type="password" placeholder="********" {...field} />
-                </FormControl>
-
-                {confirmPasswordValue.length > 0 && !passwordsMatch && (
-                  <p className="text-red-500 text-sm mt-1">
-                    Passwords don’t match
-                  </p>
-                )}
-
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
+          )} />
         </div>
 
         {/* Submit */}

@@ -13,6 +13,9 @@ export const users = pgTable("users", {
   lastName: text("last_name").notNull(),
   userType: text("user_type").notNull(), // "professional", "company", or "admin"
   isAdmin: boolean("is_admin").default(false).notNull(),
+  isEmailVerified: boolean("is_email_verified").default(false).notNull(),
+  emailVerificationToken: text("email_verification_token"),
+  status: text("status").notNull().default("pending"),
   profileVisible: boolean("profile_visible").default(true),
   contactVisible: boolean("contact_visible").default(true),
   notifications: boolean("notifications").default(true),

@@ -446,6 +446,9 @@ export class MemStorage implements IStorage {
         firstName: userData.firstName,
         lastName: userData.lastName,
         userType: userData.userType,
+        isEmailVerified: userData.isEmailVerified || false,
+        emailVerificationToken: userData.emailVerificationToken || null,
+        status: userData.status || "pending",
         isAdmin: userData.isAdmin || false,
         createdAt: new Date(),
         stripeCustomerId: null,
@@ -918,8 +921,8 @@ export class MemStorage implements IStorage {
           type.toLowerCase() === 'all' ||
           resource.resourceType.trim().toLowerCase() === type.trim().toLowerCase();
 
-        console.log("Resource type",resource.resourceType);
-        console.log("Type",type);
+        console.log("Resource type", resource.resourceType);
+        console.log("Type", type);
 
         const matchesCategory = !categoryId || isNaN(categoryId) || resource.categoryId === categoryId;
 
@@ -965,7 +968,7 @@ export class MemStorage implements IStorage {
       (user) => user.email === email
     );
   }
-   async getUserById(id: number): Promise<User | undefined> {
+  async getUserById(id: number): Promise<User | undefined> {
     return Array.from(this.users.values()).find(
       (user) => user.id === id
     );
@@ -991,6 +994,9 @@ export class MemStorage implements IStorage {
       firstName: insertUser.firstName,
       lastName: insertUser.lastName,
       userType: insertUser.userType,
+      isEmailVerified: insertUser.isEmailVerified || false,
+      emailVerificationToken: insertUser.emailVerificationToken || null,
+      status: insertUser.status || "pending",
       isAdmin: insertUser.isAdmin || false,
       createdAt: new Date(),
       stripeCustomerId: null,
@@ -1057,24 +1063,24 @@ export class MemStorage implements IStorage {
   }
 
   // Professional Profile operations
-getProfessionalProfile(id: number): ProfessionalProfile | undefined {
-  console.log("Fetching professional profile with ID:", id);
-  for (const profile of Array.from(this.professionalProfiles.values())) {
-    if (profile.id === id) { // burada professional_profiles.id ilə yoxlayırıq
-      if (typeof profile.galleryImages === 'string') {
-        try { profile.galleryImages = JSON.parse(profile.galleryImages); } catch { profile.galleryImages = []; }
+  getProfessionalProfile(id: number): ProfessionalProfile | undefined {
+    console.log("Fetching professional profile with ID:", id);
+    for (const profile of Array.from(this.professionalProfiles.values())) {
+      if (profile.id === id) { // burada professional_profiles.id ilə yoxlayırıq
+        if (typeof profile.galleryImages === 'string') {
+          try { profile.galleryImages = JSON.parse(profile.galleryImages); } catch { profile.galleryImages = []; }
+        }
+        if (typeof profile.workExperience === 'string') {
+          try { profile.workExperience = JSON.parse(profile.workExperience); } catch { profile.workExperience = []; }
+        }
+        if (typeof profile.testimonials === 'string') {
+          try { profile.testimonials = JSON.parse(profile.testimonials); } catch { profile.testimonials = []; }
+        }
+        return profile;
       }
-      if (typeof profile.workExperience === 'string') {
-        try { profile.workExperience = JSON.parse(profile.workExperience); } catch { profile.workExperience = []; }
-      }
-      if (typeof profile.testimonials === 'string') {
-        try { profile.testimonials = JSON.parse(profile.testimonials); } catch { profile.testimonials = []; }
-      }
-      return profile;
     }
+    return undefined;
   }
-  return undefined;
-}
 
 
 
@@ -1655,32 +1661,32 @@ getProfessionalProfile(id: number): ProfessionalProfile | undefined {
     return updated;
   }
 
- async deleteUser(id: number): Promise<boolean> {
-  // Professional profile varsa, sil
-  const profile = await this.getProfessionalProfileByUserId(id);
-  if (profile) {
-    this.professionalProfiles.delete(profile.id);
+  async deleteUser(id: number): Promise<boolean> {
+    // Professional profile varsa, sil
+    const profile = await this.getProfessionalProfileByUserId(id);
+    if (profile) {
+      this.professionalProfiles.delete(profile.id);
+    }
+
+    // İstəyə uyğun digər əlaqəli məlumatları da silmək olar (məsələn jobApplications, reviews və s.)
+
+    return this.users.delete(id);
   }
-
-  // İstəyə uyğun digər əlaqəli məlumatları da silmək olar (məsələn jobApplications, reviews və s.)
-
-  return this.users.delete(id);
-}
-async deleteProfessionalProfileByUserId(userId: number): Promise<boolean> {
-  const profile = await this.getProfessionalProfileByUserId(userId);
-  if (!profile) return false;
-  return this.professionalProfiles.delete(profile.id);
-}
-async deleteCompanyProfileByUserId(userId: number): Promise<boolean> {
-  const profile = await this.getCompanyProfileByUserId(userId);
-  if (!profile) return false;
-  return this.companyProfiles.delete(profile.id);
-}
-async deleteCompanyProfile(userId: number): Promise<boolean> {
-  const profile = await this.getCompanyProfileByUserId(userId);
-  if (!profile) return false;
-  return this.companyProfiles.delete(profile.id);
-}
+  async deleteProfessionalProfileByUserId(userId: number): Promise<boolean> {
+    const profile = await this.getProfessionalProfileByUserId(userId);
+    if (!profile) return false;
+    return this.professionalProfiles.delete(profile.id);
+  }
+  async deleteCompanyProfileByUserId(userId: number): Promise<boolean> {
+    const profile = await this.getCompanyProfileByUserId(userId);
+    if (!profile) return false;
+    return this.companyProfiles.delete(profile.id);
+  }
+  async deleteCompanyProfile(userId: number): Promise<boolean> {
+    const profile = await this.getCompanyProfileByUserId(userId);
+    if (!profile) return false;
+    return this.companyProfiles.delete(profile.id);
+  }
 
 
   // Stripe methods
@@ -2071,66 +2077,66 @@ async deleteCompanyProfile(userId: number): Promise<boolean> {
   // User Settings operations
   async getUserSettings(userId: number): Promise<any> {
     console.log('Fetching user settings for userId:', userId);
-  const result = await db.select()
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
+    const result = await db.select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
     console.log('User settings result:', result);
-  if (result.length === 0) {
+    if (result.length === 0) {
+      return {
+        notifications: true,
+        profileVisible: true,
+        contactVisible: true,
+        emailUpdates: false
+      };
+    }
+
+    // DB-də olan dəyərləri qaytar (məsələn, user cədvəlində fields varsa)
+    const user = result[0];
+
     return {
-      notifications: true,
-      profileVisible: true,
-      contactVisible: true,
-      emailUpdates: false
+      notifications: user.notifications ?? true,
+      profileVisible: user.profileVisible ?? true,
+      contactVisible: user.contactVisible ?? true,
+      emailUpdates: user.emailUpdates ?? false
     };
   }
 
-  // DB-də olan dəyərləri qaytar (məsələn, user cədvəlində fields varsa)
-  const user = result[0];
+  async updateUserSettings(userId: number, settings: {
+    notifications?: boolean;
+    profileVisible?: boolean;
+    contactVisible?: boolean;
+    emailUpdates?: boolean;
+  }) {
+    console.log('Updating user settings:', userId, settings);
+    // updateData plain obyekt kimi saxla
+    const updateData: Partial<{
+      notifications: boolean;
+      profileVisible: boolean;
+      contactVisible: boolean;
+      emailUpdates: boolean;
+    }> = {};
 
-  return {
-    notifications: user.notifications ?? true,
-    profileVisible: user.profileVisible ?? true,
-    contactVisible: user.contactVisible ?? true,
-    emailUpdates: user.emailUpdates ?? false
-  };
-}
+    if (settings.notifications !== undefined) {
+      updateData.notifications = settings.notifications;
+    }
+    if (settings.profileVisible !== undefined) {
+      updateData.profileVisible = settings.profileVisible;
+    }
+    if (settings.contactVisible !== undefined) {
+      updateData.contactVisible = settings.contactVisible;
+    }
+    if (settings.emailUpdates !== undefined) {
+      updateData.emailUpdates = settings.emailUpdates;
+    }
 
-async updateUserSettings(userId: number, settings: {
-  notifications?: boolean;
-  profileVisible?: boolean;
-  contactVisible?: boolean;
-  emailUpdates?: boolean;
-}) {
-  console.log('Updating user settings:', userId, settings);
-  // updateData plain obyekt kimi saxla
-  const updateData: Partial<{
-    notifications: boolean;
-    profileVisible: boolean;
-    contactVisible: boolean;
-    emailUpdates: boolean;
-  }> = {};
+    const [updatedUser] = await db.update(users)
+      .set(updateData)
+      .where(eq(users.id, userId))
+      .returning();
 
-  if (settings.notifications !== undefined) {
-    updateData.notifications = settings.notifications;
+    return updatedUser;
   }
-  if (settings.profileVisible !== undefined) {
-    updateData.profileVisible = settings.profileVisible;
-  }
-  if (settings.contactVisible !== undefined) {
-    updateData.contactVisible = settings.contactVisible;
-  }
-  if (settings.emailUpdates !== undefined) {
-    updateData.emailUpdates = settings.emailUpdates;
-  }
-
-  const [updatedUser] = await db.update(users)
-    .set(updateData)
-    .where(eq(users.id, userId))
-    .returning();
-
-  return updatedUser;
-}
 
 
   // Authentication token operations for "Remember Me"
@@ -2286,6 +2292,36 @@ export class DatabaseStorage implements IStorage {
     const [review] = await db?.select().from(reviews).where(eq(reviews.id, id)) || [];
     return review;
   }
+
+  async validateEmailHunter(email: string) {
+    const domain = email.split("@")[1];
+    const isGmail = domain === "gmail.com";
+
+    try {
+      const apiKey = process.env.HUNTER_API_KEY;
+      if (!apiKey) throw new Error("Hunter API key missing");
+
+      const response = await fetch(
+        `https://api.hunter.io/v2/email-verifier?email=${encodeURIComponent(email)}&api_key=${apiKey}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`Hunter API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log("Hunter API response:", data);
+
+      return {
+        isValid: data.data?.status === "valid" || false,
+        exists: data.data?.result === "deliverable" || false,
+        isGmail,
+      };
+    } catch (err: any) {
+      return { isValid: false, exists: false, isGmail, error: err.message };
+    }
+  }
+
 
   async getProfessionalReviews(professionalId: number): Promise<Review[]> {
     const results = await db?.select()
@@ -2539,19 +2575,19 @@ export class DatabaseStorage implements IStorage {
       return null;
     }
   }
- async getAllIndustries() {
-  if (!db) {
-    throw new Error('Database not initialized');
-  }
+  async getAllIndustries() {
+    if (!db) {
+      throw new Error('Database not initialized');
+    }
 
-  try {
-    const result = await db.select().from(industries).orderBy(industries.name);
-    return result;
-  } catch (error) {
-    console.error('Error fetching industries:', error);
-    throw error;
+    try {
+      const result = await db.select().from(industries).orderBy(industries.name);
+      return result;
+    } catch (error) {
+      console.error('Error fetching industries:', error);
+      throw error;
+    }
   }
-}
   async getUnreadNotifications(userId: number): Promise<Notification[]> {
     const results = await db?.select()
       .from(notifications)
@@ -2584,70 +2620,103 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
-
+  async getUserByVerificationToken(token) {
+    try {
+      const query = 'SELECT * FROM users WHERE emailVerificationToken = ? AND isEmailVerified = false';
+      const [rows] = await this.db.execute(query, [token]);
+      return rows[0] || null;
+    } catch (error) {
+      console.error("Error getting user by verification token:", error);
+      throw error;
+    }
+  }
+  async verifyUserEmail(userId) {
+    try {
+      const query = `
+      UPDATE users 
+      SET isEmailVerified = true, 
+          emailVerificationToken = NULL, 
+          status = 'active'
+      WHERE id = ?
+    `;
+      await this.db.execute(query, [userId]);
+    } catch (error) {
+      console.error("Error verifying user email:", error);
+      throw error;
+    }
+  }
+  async updateUserVerificationToken(userId, token) {
+    try {
+      const query = 'UPDATE users SET emailVerificationToken = ? WHERE id = ?';
+      await this.db.execute(query, [token, userId]);
+    } catch (error) {
+      console.error("Error updating verification token:", error);
+      throw error;
+    }
+  }
   // User Settings operations
   async getUserSettings(userId: number): Promise<any> {
     console.log('Fetching user settings for userId:', userId);
-  const result = await db.select()
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
+    const result = await db.select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
     console.log('User settings result:', result);
-  if (result.length === 0) {
+    if (result.length === 0) {
+      return {
+        notifications: true,
+        profileVisible: true,
+        contactVisible: true,
+        emailUpdates: false
+      };
+    }
+
+    // DB-də olan dəyərləri qaytar (məsələn, user cədvəlində fields varsa)
+    const user = result[0];
+
     return {
-      notifications: true,
-      profileVisible: true,
-      contactVisible: true,
-      emailUpdates: false
+      notifications: user.notifications ?? true,
+      profileVisible: user.profileVisible ?? true,
+      contactVisible: user.contactVisible ?? true,
+      emailUpdates: user.emailUpdates ?? false
     };
   }
 
-  // DB-də olan dəyərləri qaytar (məsələn, user cədvəlində fields varsa)
-  const user = result[0];
+  async updateUserSettings(userId: number, settings: {
+    notifications?: boolean;
+    profileVisible?: boolean;
+    contactVisible?: boolean;
+    emailUpdates?: boolean;
+  }) {
+    console.log('Updating user settings:', userId, settings);
+    // updateData plain obyekt kimi saxla
+    const updateData: Partial<{
+      notifications: boolean;
+      profileVisible: boolean;
+      contactVisible: boolean;
+      emailUpdates: boolean;
+    }> = {};
 
-  return {
-    notifications: user.notifications ?? true,
-    profileVisible: user.profileVisible ?? true,
-    contactVisible: user.contactVisible ?? true,
-    emailUpdates: user.emailUpdates ?? false
-  };
-}
+    if (settings.notifications !== undefined) {
+      updateData.notifications = settings.notifications;
+    }
+    if (settings.profileVisible !== undefined) {
+      updateData.profileVisible = settings.profileVisible;
+    }
+    if (settings.contactVisible !== undefined) {
+      updateData.contactVisible = settings.contactVisible;
+    }
+    if (settings.emailUpdates !== undefined) {
+      updateData.emailUpdates = settings.emailUpdates;
+    }
 
-async updateUserSettings(userId: number, settings: {
-  notifications?: boolean;
-  profileVisible?: boolean;
-  contactVisible?: boolean;
-  emailUpdates?: boolean;
-}) {
-  console.log('Updating user settings:', userId, settings);
-  // updateData plain obyekt kimi saxla
-  const updateData: Partial<{
-    notifications: boolean;
-    profileVisible: boolean;
-    contactVisible: boolean;
-    emailUpdates: boolean;
-  }> = {};
+    const [updatedUser] = await db.update(users)
+      .set(updateData)
+      .where(eq(users.id, userId))
+      .returning();
 
-  if (settings.notifications !== undefined) {
-    updateData.notifications = settings.notifications;
+    return updatedUser;
   }
-  if (settings.profileVisible !== undefined) {
-    updateData.profileVisible = settings.profileVisible;
-  }
-  if (settings.contactVisible !== undefined) {
-    updateData.contactVisible = settings.contactVisible;
-  }
-  if (settings.emailUpdates !== undefined) {
-    updateData.emailUpdates = settings.emailUpdates;
-  }
-
-  const [updatedUser] = await db.update(users)
-    .set(updateData)
-    .where(eq(users.id, userId))
-    .returning();
-
-  return updatedUser;
-}
 
   // User operations
   async getUser(id: number): Promise<User | undefined> {
@@ -2909,26 +2978,26 @@ async updateUserSettings(userId: number, settings: {
     return updatedProfile;
   }
 
-async deleteProfessionalProfile(id: number): Promise<boolean> {
-  console.log(`Deleting professional profile with ID: ${id}`);
+  async deleteProfessionalProfile(id: number): Promise<boolean> {
+    console.log(`Deleting professional profile with ID: ${id}`);
 
-  const existing = await db
-    .select()
-    .from(professionalProfiles)
-    .where(eq(professionalProfiles.id, id));
+    const existing = await db
+      .select()
+      .from(professionalProfiles)
+      .where(eq(professionalProfiles.id, id));
 
-  if (existing.length === 0) {
-    console.log(`No professional profile found with ID: ${id}`);
-    return false;
+    if (existing.length === 0) {
+      console.log(`No professional profile found with ID: ${id}`);
+      return false;
+    }
+
+    await db
+      .delete(professionalProfiles)
+      .where(eq(professionalProfiles.id, id)); // id ilə silirik
+
+    console.log(`Deleted professional profile with ID: ${id}`);
+    return true;
   }
-
-  await db
-    .delete(professionalProfiles)
-    .where(eq(professionalProfiles.id, id)); // id ilə silirik
-
-  console.log(`Deleted professional profile with ID: ${id}`);
-  return true;
-}
 
 
 
@@ -3555,15 +3624,15 @@ async deleteProfessionalProfile(id: number): Promise<boolean> {
       throw error;
     }
   }
-async deleteProfessionalProfileByUserId(userId: number): Promise<boolean> {
-  await db.delete(professionalProfiles).where(eq(professionalProfiles.userId, userId));
-  return true;
-}
+  async deleteProfessionalProfileByUserId(userId: number): Promise<boolean> {
+    await db.delete(professionalProfiles).where(eq(professionalProfiles.userId, userId));
+    return true;
+  }
 
-async deleteCompanyProfileByUserId(userId: number): Promise<boolean> {
-  await db.delete(companyProfiles).where(eq(companyProfiles.userId, userId));
-  return true;
-}
+  async deleteCompanyProfileByUserId(userId: number): Promise<boolean> {
+    await db.delete(companyProfiles).where(eq(companyProfiles.userId, userId));
+    return true;
+  }
   // Page Content operations
   async getPageContent(id: number): Promise<PageContent | undefined> {
     const [content] = await db
@@ -3962,22 +4031,22 @@ async deleteCompanyProfileByUserId(userId: number): Promise<boolean> {
     authToken.lastUsedAt = new Date();
     return authToken.userId;
   }
- async getUserById(id: number) {
-  const user = await db.select()
-    .from(users)
-    .where(eq(users.id, id))  
-    .limit(1);
-async function deleteProfessionalProfile(userId: number) {
-  console.log(`Deleting professional profile for user ID: ${userId}`);
-  return db('professional_profiles').where('id', userId).del();
-}
+  async getUserById(id: number) {
+    const user = await db.select()
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+    async function deleteProfessionalProfile(userId: number) {
+      console.log(`Deleting professional profile for user ID: ${userId}`);
+      return db('professional_profiles').where('id', userId).del();
+    }
 
-// async function deleteCompanyProfile(userId: number) {
-//   return db('company_profiles').where('id', userId).del();
-// }
+    // async function deleteCompanyProfile(userId: number) {
+    //   return db('company_profiles').where('id', userId).del();
+    // }
 
-  return user[0] || null;
-}
+    return user[0] || null;
+  }
 }
 
 // Add subscription methods to MemStorage before the closing brace
@@ -4011,8 +4080,8 @@ class MemStorageWithSubscriptions extends MemStorage {
     return super.updateUserSettings(userId, settings);
   }
   async getAllIndustries(): Promise<any> {
-  return super.getAllIndustries(); 
-}
+    return super.getAllIndustries();
+  }
 
 }
 console.log(useRealDatabase, "Use real db");

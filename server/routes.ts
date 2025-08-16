@@ -804,7 +804,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
- app.post("/api/register", async (req, res) => {
+app.post("/api/register", async (req, res) => {
   try {
     const userData = insertUserSchema.parse(req.body);
 
@@ -829,8 +829,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       password: hashedPassword,
       isEmailVerified: false,
       emailVerificationToken,
-      status: 'pending'  
+      status: 'pending'
     });
+
+    if (!user) {
+      return res.status(500).json({ message: "Failed to create user" });
+    }
 
     if (user.userType === "professional") {
       try {
@@ -853,15 +857,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     try {
       await emailService.sendVerificationEmail(
-        userData.email, 
-        userData.firstName, 
+        userData.email,
+        userData.firstName,
         emailVerificationToken
       );
       console.log(`Verification email sent to ${userData.email}`);
-    } catch (emailError) {
-      console.error("Failed to send verification email:", emailError);
-      return res.status(500).json({ 
-        message: "Registration completed but failed to send verification email. Please contact support." 
+    } catch (emailErr) {
+      console.error("Failed to send verification email:", emailErr);
+      return res.status(500).json({
+        message: "Registration succeeded but failed to send verification email. Please contact support."
       });
     }
 
@@ -876,9 +880,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ message: "Invalid input", errors: err.errors });
     }
     console.error("Register error:", err);
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 });
+
 
 app.get("/api/verify-email/:token", async (req, res) => {
   try {
